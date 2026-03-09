@@ -9,6 +9,9 @@ import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/job_logging/presentation/screens/job_list_screen.dart';
 import '../../features/job_logging/presentation/screens/log_job_screen.dart';
 import '../../features/whatsapp_followup/presentation/screens/job_detail_screen.dart';
+import '../../features/customer_history/presentation/screens/customer_list_screen.dart';
+import '../../features/customer_history/presentation/screens/add_customer_screen.dart';
+import '../../features/customer_history/presentation/screens/customer_detail_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -34,10 +37,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.customers,
         name: "customers",
-        builder: (context, state) => const Scaffold(body: Center(child: Text("Customers — coming soon"))),
+        builder: (context, state) => const CustomerListScreen(),
         routes: [
-          GoRoute(path: "new", name: "addCustomer", builder: (context, state) => const Scaffold(body: Center(child: Text("Add Customer — coming soon")))),
-          GoRoute(path: ":id", name: "customerDetail", builder: (context, state) => const Scaffold(body: Center(child: Text("Customer Detail — coming soon")))),
+          GoRoute(path: "new", name: "addCustomer", builder: (context, state) => const AddCustomerScreen()),
+          GoRoute(path: ":id", name: "customerDetail", builder: (context, state) => CustomerDetailScreen(customerId: state.pathParameters["id"]!)),
         ],
       ),
       GoRoute(
