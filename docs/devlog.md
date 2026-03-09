@@ -55,3 +55,47 @@ BREAK 4: widget_test.dart references MyApp which no longer exists
 No issues found ✅
 
 ---
+
+---
+
+## SESSION 2 — 2026-03-09
+
+### What was built
+- Supabase project created (keystone-dev, London region)
+- Database schema deployed: 6 tables, 4 enums, 5 triggers, RLS on all tables
+- Storage buckets created: profile-photos, note-photos
+- Phone auth enabled with test number: 233200000001 / OTP 123456
+- Core auth provider (lib/core/providers/auth_provider.dart)
+- Core router scaffold (lib/core/router/app_router.dart + route_names.dart)
+- Core utilities: phone_formatter, currency_formatter, date_formatter, whatsapp_launcher, slug_generator
+- App wired to GoRouter via MaterialApp.router
+- App boots and runs on physical Android device ✅
+
+### What broke and how it was fixed
+
+BREAK 1: Supabase Phone auth has no "none" SMS provider option
+  Fix: used Twilio with fake credentials + test phone number
+  Test number: 233200000001 / OTP: 123456
+  Impact: real SMS will work when Africa's Talking is configured in production
+
+BREAK 2: GitHub PAT accidentally posted publicly
+  Fix: token deleted immediately, new token generated, credential.helper store configured
+  Learning: never paste tokens in chat — use credential.helper store from the start
+
+### What was learned
+- Supabase SQL editor runs sections independently — run in order from Document 12.8
+- Git credential.helper store saves token permanently after first entry
+- Router placeholder screens ("coming soon") let us verify routing before building real screens
+- App redirects to /jobs correctly on boot — auth redirect will kick in once auth screens exist
+
+### What comes next
+- Phase 2 — Domain entities (Step 09)
+- All 6 entities: User, Profile, Customer, Job, KnowledgeNote, FollowUp
+- Then domain repository interfaces (Step 10)
+
+### Flutter analyze status
+No issues found ✅
+
+### Device test
+App boots on physical Android device ✅
+Shows "Jobs — coming soon" on neutral050 background ✅
