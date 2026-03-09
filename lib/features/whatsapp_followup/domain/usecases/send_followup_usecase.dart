@@ -35,7 +35,7 @@ class SendFollowupUsecase implements UseCase<FollowUpEntity, SendFollowupParams>
       message: params.messageText,
     );
 
-    // Record the follow-up
+    // Record the follow-up — only persist if jobId is a valid UUID
     final now = DateTime.now();
     final followUp = FollowUpEntity(
       id: '',
@@ -47,6 +47,9 @@ class SendFollowupUsecase implements UseCase<FollowUpEntity, SendFollowupParams>
       deliveryConfirmed: false,
       createdAt: now,
     );
+
+    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+    if (!uuidRegex.hasMatch(params.jobId)) return followUp;
 
     return _repository.createFollowUp(followUp);
   }

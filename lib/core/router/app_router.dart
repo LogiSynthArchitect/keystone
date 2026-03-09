@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/otp_verify_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/job_logging/presentation/screens/job_list_screen.dart';
 import '../../features/job_logging/presentation/screens/log_job_screen.dart';
+import '../../features/whatsapp_followup/presentation/screens/job_detail_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -27,7 +28,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const JobListScreen(),
         routes: [
           GoRoute(path: "new",  name: "logJob",    builder: (context, state) => const LogJobScreen()),
-          GoRoute(path: ":id",  name: "jobDetail", builder: (context, state) => Scaffold(body: Center(child: Text("Job Detail: ${state.pathParameters["id"]}")))),
+          GoRoute(path: ":id",  name: "jobDetail", builder: (context, state) => JobDetailScreen(jobId: state.pathParameters["id"]!)),
         ],
       ),
       GoRoute(

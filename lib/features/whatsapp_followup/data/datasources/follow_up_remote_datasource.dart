@@ -18,17 +18,13 @@ class FollowUpRemoteDatasource {
   }
 
   Future<FollowUpModel?> getFollowUpByJobId(String jobId) async {
+    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+    if (!uuidRegex.hasMatch(jobId)) return null;
     try {
-      final data = await _supabase
-          .from('follow_ups')
-          .select()
-          .eq('job_id', jobId)
-          .maybeSingle();
+      final data = await _supabase.from('follow_ups').select().eq('job_id', jobId).maybeSingle();
       return data != null ? FollowUpModel.fromJson(data) : null;
-    } on PostgrestException catch (e) {
-      throw NetworkException(message: 'Could not load follow-up.', code: 'FOLLOWUP_FETCH_FAILED', cause: e);
     } catch (e) {
-      throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
+      return null;
     }
   }
 }
