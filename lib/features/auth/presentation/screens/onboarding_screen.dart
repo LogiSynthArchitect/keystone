@@ -52,11 +52,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (authUser == null) return;
 
       final datasource = ref.read(authRemoteDatasourceProvider);
-      await datasource.createUser(
-        authId: authUser.id,
-        fullName: _nameController.text.trim(),
-        phoneNumber: authUser.phone ?? '',
-      );
+      // Check if user already exists — skip create if so
+      final existing = await datasource.getCurrentUser(authUser.id);
+      if (existing == null) {
+        await datasource.createUser(
+          authId: authUser.id,
+          fullName: _nameController.text.trim(),
+          phoneNumber: authUser.phone ?? '',
+        );
+      }
 
       if (mounted) context.go(RouteNames.jobs);
     } catch (e, stack) {

@@ -6,72 +6,59 @@ import '../widgets/ks_loading_indicator.dart';
 import '../../features/auth/presentation/screens/phone_entry_screen.dart';
 import '../../features/auth/presentation/screens/otp_verify_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
+import '../../features/job_logging/presentation/screens/job_list_screen.dart';
+import '../../features/job_logging/presentation/screens/log_job_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(ref);
-
   return GoRouter(
     initialLocation: RouteNames.phoneEntry,
     debugLogDiagnostics: false,
     refreshListenable: notifier,
     redirect: notifier.redirect,
     routes: [
-      GoRoute(
-        path: RouteNames.phoneEntry,
-        name: 'phoneEntry',
-        builder: (context, state) => const PhoneEntryScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.otpVerify,
-        name: 'otpVerify',
-        builder: (context, state) => const OtpVerifyScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.onboarding,
-        name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
-      ),
-      GoRoute(
-        path: '/p/:slug',
-        name: 'publicProfile',
-        builder: (context, state) => Scaffold(
-          body: Center(
-            child: Text('Public Profile: ${state.pathParameters['slug']}'),
-          ),
-        ),
-      ),
+      GoRoute(path: RouteNames.phoneEntry, name: "phoneEntry", builder: (context, state) => const PhoneEntryScreen()),
+      GoRoute(path: RouteNames.otpVerify,  name: "otpVerify",  builder: (context, state) => const OtpVerifyScreen()),
+      GoRoute(path: RouteNames.onboarding, name: "onboarding", builder: (context, state) => const OnboardingScreen()),
       GoRoute(
         path: RouteNames.jobs,
-        name: 'jobs',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Jobs — coming soon')),
-        ),
+        name: "jobs",
+        builder: (context, state) => const JobListScreen(),
+        routes: [
+          GoRoute(path: "new",  name: "logJob",    builder: (context, state) => const LogJobScreen()),
+          GoRoute(path: ":id",  name: "jobDetail", builder: (context, state) => Scaffold(body: Center(child: Text("Job Detail: ${state.pathParameters["id"]}")))),
+        ],
       ),
       GoRoute(
         path: RouteNames.customers,
-        name: 'customers',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Customers — coming soon')),
-        ),
+        name: "customers",
+        builder: (context, state) => const Scaffold(body: Center(child: Text("Customers — coming soon"))),
+        routes: [
+          GoRoute(path: "new", name: "addCustomer", builder: (context, state) => const Scaffold(body: Center(child: Text("Add Customer — coming soon")))),
+          GoRoute(path: ":id", name: "customerDetail", builder: (context, state) => const Scaffold(body: Center(child: Text("Customer Detail — coming soon")))),
+        ],
       ),
       GoRoute(
         path: RouteNames.notes,
-        name: 'notes',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Notes — coming soon')),
-        ),
+        name: "notes",
+        builder: (context, state) => const Scaffold(body: Center(child: Text("Notes — coming soon"))),
+        routes: [
+          GoRoute(path: "new", name: "addNote",    builder: (context, state) => const Scaffold(body: Center(child: Text("Add Note — coming soon")))),
+          GoRoute(path: ":id", name: "noteDetail", builder: (context, state) => const Scaffold(body: Center(child: Text("Note Detail — coming soon")))),
+        ],
       ),
       GoRoute(
         path: RouteNames.profile,
-        name: 'profile',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Profile — coming soon')),
-        ),
+        name: "profile",
+        builder: (context, state) => const Scaffold(body: Center(child: Text("Profile — coming soon"))),
+        routes: [
+          GoRoute(path: "edit", name: "editProfile", builder: (context, state) => const Scaffold(body: Center(child: Text("Edit Profile — coming soon")))),
+        ],
       ),
+      GoRoute(path: "/p/:slug", name: "publicProfile", builder: (context, state) => Scaffold(body: Center(child: Text("Public Profile: ${state.pathParameters["slug"]}")))),
     ],
-    errorBuilder: (context, state) =>
-        const KsLoadingIndicator(fullScreen: true),
+    errorBuilder: (context, state) => const KsLoadingIndicator(fullScreen: true),
   );
 });
 
@@ -92,25 +79,13 @@ class _RouterNotifier extends ChangeNotifier {
 
   String? redirect(BuildContext context, GoRouterState state) {
     if (_isLoading) return null;
-
     final location = state.matchedLocation;
-    final isAuthRoute = location.startsWith('/auth');
-    final isPublicRoute = location.startsWith('/p/');
-
+    final isAuthRoute = location.startsWith("/auth");
+    final isPublicRoute = location.startsWith("/p/");
     if (isPublicRoute) return null;
-
-    if (!_isAuthenticated) {
-      return isAuthRoute ? null : RouteNames.phoneEntry;
-    }
-
-    if (_isAuthenticated && !_hasProfile) {
-      return location == RouteNames.onboarding ? null : RouteNames.onboarding;
-    }
-
-    if (_isAuthenticated && _hasProfile && isAuthRoute) {
-      return RouteNames.jobs;
-    }
-
+    if (!_isAuthenticated) return isAuthRoute ? null : RouteNames.phoneEntry;
+    if (_isAuthenticated && !_hasProfile) return location == RouteNames.onboarding ? null : RouteNames.onboarding;
+    if (_isAuthenticated && _hasProfile && isAuthRoute) return RouteNames.jobs;
     return null;
   }
 }

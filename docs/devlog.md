@@ -173,3 +173,46 @@ Phone → OTP → Onboarding → Jobs placeholder ✅
 - Phase 2: Domain entities (User, Profile, Customer, Job, KnowledgeNote, FollowUp)
 - Domain repository interfaces
 - Then real screens per Document 16
+
+---
+
+## SESSION 4 — 2026-03-09
+
+### What was built
+- Phase 5 complete: Job Logging Feature
+- job_providers.dart — JobListNotifier + LogJobNotifier
+- JobCard widget with sync badges and follow-up badge
+- ServiceTypePicker widget
+- JobListScreen with summary strip, empty state, FAB, pull-to-refresh
+- LogJobScreen with service picker, customer name, location, amount, notes, date picker
+- Router updated with nested job routes
+
+### What broke and how it was fixed
+BREAK 1: Existing user hit duplicate on onboarding
+  Fix: check if user exists before createUser — skip if already exists
+
+BREAK 2: Pull-to-refresh wiped pending local jobs
+  Fix: getJobs always reads from local after remote sync — merge not replace
+
+BREAK 3: job disappeared after refresh
+  Fix: sort local jobs by jobDate desc after merge
+
+### What was learned
+- Always read from local after remote sync — never return remote directly
+- customer_id field needs real UUID — customer feature must come before full sync
+- Python heredoc is more reliable than bash heredoc for writing Dart files
+
+### Flutter analyze status
+3 const warnings only — no errors ✅
+
+### Device test
+Jobs screen loads ✅
+Log job saves locally and remotely ✅
+Summary strip shows correct totals ✅
+Pull-to-refresh merges correctly ✅
+
+### What comes next
+- Phase 6: WhatsApp Follow-up (Steps 34-40)
+- JobDetailScreen
+- FollowUpButton + FollowUpMessagePreview widgets
+- Checkpoint 3: tap send, WhatsApp opens, button locks

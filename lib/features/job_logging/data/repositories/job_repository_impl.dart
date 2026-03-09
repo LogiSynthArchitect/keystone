@@ -22,13 +22,14 @@ class JobRepositoryImpl implements JobRepository {
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
-        final models = await _remote.getJobs(userId: _userId, limit: limit, offset: offset);
-        for (final m in models) { await _local.saveJob(m); }
-        return models.map((m) => m.toEntity()).toList();
+        final remoteModels = await _remote.getJobs(userId: _userId, limit: limit, offset: offset);
+        for (final m in remoteModels) { await _local.saveJob(m); }
       } catch (_) {}
     }
+    // Always return from local — includes pending jobs that never synced
     final local = await _local.getJobs();
-    return local.map((m) => m.toEntity()).toList();
+    final sorted = local..sort((a, b) => b.jobDate.compareTo(a.jobDate));
+    return sorted.map((m) => m.toEntity()).toList();
   }
 
   @override
