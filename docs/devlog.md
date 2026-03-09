@@ -135,3 +135,41 @@ No issues found ✅
 
 ### Device test
 App boots on physical Android device ✅
+
+---
+
+## SESSION 3 — 2026-03-09
+
+### What was built
+- Fixed Supabase credentials not being passed (--dart-define missing from run command)
+- Created run.sh and .vscode/launch.json with dart-define flags
+- Fixed phone number not normalized to E.164 before being stored in auth state
+- Fixed infinite recursion in users RLS policies
+- Fixed missing users INSERT RLS policy
+- Fixed profile_slug empty string being sent (removed — trigger handles it)
+- Full auth flow working end to end: phone → OTP → onboarding → jobs placeholder
+
+### What broke and how it was fixed
+BREAK 1: SUPABASE_URL empty — app built without --dart-define flags
+  Fix: created run.sh with correct flags, flutter clean + rebuild
+
+BREAK 2: OTP verify failing — phone stored as 0200000001 not +233200000001
+  Fix: normalize phone number in auth_notifier.dart before saving to state
+
+BREAK 3: Onboarding save failing — infinite recursion in RLS policies
+  Fix: rewrote users RLS policies to use auth.uid() directly without subquery
+
+BREAK 4: Onboarding save failing — no INSERT policy on users table
+  Fix: added users_insert_own policy
+
+### Flutter analyze status
+To be verified
+
+### Device test
+Full auth flow working on physical Android device ✅
+Phone → OTP → Onboarding → Jobs placeholder ✅
+
+### What comes next
+- Phase 2: Domain entities (User, Profile, Customer, Job, KnowledgeNote, FollowUp)
+- Domain repository interfaces
+- Then real screens per Document 16

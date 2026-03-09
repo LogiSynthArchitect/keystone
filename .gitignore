@@ -22,3 +22,7 @@ key.properties
 # OS
 .DS_Store
 Thumbs.db
+run.sh
+.vscode/launch.json
+run.sh
+.vscode/launch.json

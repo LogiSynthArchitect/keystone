@@ -11,13 +11,24 @@ class AuthRemoteDatasource {
     try {
       await _supabase.auth.signInWithOtp(phone: phoneNumber);
     } on AuthException catch (e) {
-      throw AuthException(message: 'Could not send OTP. Please try again.', code: 'OTP_SEND_FAILED', cause: e);
+      throw AuthException(
+        message: e.message,
+        code: 'OTP_SEND_FAILED',
+        cause: e,
+      );
     } catch (e) {
-      throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
+      throw NetworkException(
+        message: 'Could not send OTP. Check your connection.',
+        code: 'NO_CONNECTION',
+        cause: e,
+      );
     }
   }
 
-  Future<Session> verifyOtp({required String phoneNumber, required String token}) async {
+  Future<Session> verifyOtp({
+    required String phoneNumber,
+    required String token,
+  }) async {
     try {
       final response = await _supabase.auth.verifyOTP(
         phone: phoneNumber,
@@ -25,13 +36,20 @@ class AuthRemoteDatasource {
         type: OtpType.sms,
       );
       if (response.session == null) {
-        throw const AuthException(message: 'Invalid or expired OTP.', code: 'OTP_INVALID');
+        throw const AuthException(
+          message: 'Invalid or expired OTP.',
+          code: 'OTP_INVALID',
+        );
       }
       return response.session!;
     } on AuthException {
       rethrow;
     } catch (e) {
-      throw NetworkException(message: 'Could not verify OTP.', code: 'OTP_VERIFY_FAILED', cause: e);
+      throw NetworkException(
+        message: 'Could not verify OTP.',
+        code: 'OTP_VERIFY_FAILED',
+        cause: e,
+      );
     }
   }
 
@@ -44,9 +62,17 @@ class AuthRemoteDatasource {
           .maybeSingle();
       return data != null ? UserModel.fromJson(data) : null;
     } on PostgrestException catch (e) {
-      throw NetworkException(message: 'Could not load user.', code: 'USER_FETCH_FAILED', cause: e);
+      throw NetworkException(
+        message: 'Could not load user.',
+        code: 'USER_FETCH_FAILED',
+        cause: e,
+      );
     } catch (e) {
-      throw NetworkException(message: 'Something went wrong.', code: 'UNKNOWN', cause: e);
+      throw NetworkException(
+        message: 'Something went wrong.',
+        code: 'UNKNOWN',
+        cause: e,
+      );
     }
   }
 
@@ -62,13 +88,20 @@ class AuthRemoteDatasource {
         'phone_number': phoneNumber,
         'role': 'technician',
         'status': 'active',
-        'profile_slug': '',
       }).select().single();
       return UserModel.fromJson(data);
     } on PostgrestException catch (e) {
-      throw NetworkException(message: 'Could not create account.', code: 'USER_CREATE_FAILED', cause: e);
+      throw NetworkException(
+        message: 'Could not create account.',
+        code: 'USER_CREATE_FAILED',
+        cause: e,
+      );
     } catch (e) {
-      throw NetworkException(message: 'Something went wrong.', code: 'UNKNOWN', cause: e);
+      throw NetworkException(
+        message: 'Something went wrong.',
+        code: 'UNKNOWN',
+        cause: e,
+      );
     }
   }
 

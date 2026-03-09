@@ -2,65 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/ks_loading_indicator.dart';
+import '../../features/auth/presentation/screens/phone_entry_screen.dart';
+import '../../features/auth/presentation/screens/otp_verify_screen.dart';
+import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authAsync = ref.watch(authStateProvider);
+  final notifier = _RouterNotifier(ref);
 
   return GoRouter(
-    initialLocation: RouteNames.jobs,
+    initialLocation: RouteNames.phoneEntry,
     debugLogDiagnostics: false,
-    redirect: (context, state) {
-      // While auth is loading — allow through
-      if (authAsync.isLoading) return null;
-
-      final auth = authAsync.valueOrNull;
-      final isAuthenticated = auth?.isAuthenticated ?? false;
-      final hasProfile = auth?.hasProfile ?? false;
-      final location = state.matchedLocation;
-
-      // Public routes — always allow
-      final isPublicRoute =
-          location.startsWith('/auth') || location.startsWith('/p/');
-      if (isPublicRoute) return null;
-
-      // No session — send to phone entry
-      if (!isAuthenticated) return RouteNames.phoneEntry;
-
-      // Session but no profile — send to onboarding
-      if (isAuthenticated && !hasProfile) {
-        if (location == RouteNames.onboarding) return null;
-        return RouteNames.onboarding;
-      }
-
-      // Fully authenticated hitting auth routes — send to jobs
-      if (isAuthenticated && hasProfile && location.startsWith('/auth')) {
-        return RouteNames.jobs;
-      }
-
-      return null;
-    },
+    refreshListenable: notifier,
+    redirect: notifier.redirect,
     routes: [
       GoRoute(
         path: RouteNames.phoneEntry,
         name: 'phoneEntry',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Phone Entry — coming soon')),
-        ),
+        builder: (context, state) => const PhoneEntryScreen(),
       ),
       GoRoute(
         path: RouteNames.otpVerify,
         name: 'otpVerify',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('OTP Verify — coming soon')),
-        ),
+        builder: (context, state) => const OtpVerifyScreen(),
       ),
       GoRoute(
         path: RouteNames.onboarding,
         name: 'onboarding',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Onboarding — coming soon')),
-        ),
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/p/:slug',
@@ -100,5 +70,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
     ],
+    errorBuilder: (context, state) =>
+        const KsLoadingIndicator(fullScreen: true),
   );
 });
+
+class _RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+  bool _isLoading = true;
+  bool _isAuthenticated = false;
+  bool _hasProfile = false;
+
+  _RouterNotifier(this._ref) {
+    _ref.listen(authStateProvider, (_, next) {
+      _isLoading = next.isLoading;
+      _isAuthenticated = next.valueOrNull?.isAuthenticated ?? false;
+      _hasProfile = next.valueOrNull?.hasProfile ?? false;
+      notifyListeners();
+    });
+  }
+
+  String? redirect(BuildContext context, GoRouterState state) {
+    if (_isLoading) return null;
+
+    final location = state.matchedLocation;
+    final isAuthRoute = location.startsWith('/auth');
+    final isPublicRoute = location.startsWith('/p/');
+
+    if (isPublicRoute) return null;
+
+    if (!_isAuthenticated) {
+      return isAuthRoute ? null : RouteNames.phoneEntry;
+    }
+
+    if (_isAuthenticated && !_hasProfile) {
+      return location == RouteNames.onboarding ? null : RouteNames.onboarding;
+    }
+
+    if (_isAuthenticated && _hasProfile && isAuthRoute) {
+      return RouteNames.jobs;
+    }
+
+    return null;
+  }
+}
