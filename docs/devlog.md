@@ -99,3 +99,39 @@ No issues found ✅
 ### Device test
 App boots on physical Android device ✅
 Shows "Jobs — coming soon" on neutral050 background ✅
+
+---
+
+## SESSION 2 — 2026-03-09
+
+### What was built
+- Supabase project created (keystone-dev, London region)
+- Database schema deployed: 6 tables, 4 enums, 5 triggers, RLS on all tables
+- Storage buckets created: profile-photos, note-photos
+- Phone auth enabled with test number: 233200000001 / OTP 123456
+- Core auth provider (lib/core/providers/auth_provider.dart)
+- Core router scaffold (lib/core/router/app_router.dart + route_names.dart)
+- Core utilities: phone_formatter, currency_formatter, date_formatter, whatsapp_launcher, slug_generator
+- App wired to GoRouter via MaterialApp.router
+- App boots and runs on physical Android device ✅
+
+### What broke and how it was fixed
+
+BREAK 1: Supabase Phone auth has no "none" SMS provider option
+  Fix: used Twilio with fake credentials + test phone number
+  Test number: 233200000001 / OTP: 123456
+
+BREAK 2: GitHub PAT accidentally posted publicly
+  Fix: token deleted immediately, new token generated, credential.helper store configured
+  Learning: never paste tokens in chat — use credential.helper store from the start
+
+### What was learned
+- Supabase SQL editor runs sections independently — run in order from Document 12.8
+- Git credential.helper store saves token permanently after first entry
+- Router placeholder screens let us verify routing before building real screens
+
+### Flutter analyze status
+No issues found ✅
+
+### Device test
+App boots on physical Android device ✅
