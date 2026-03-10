@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/network_exception.dart';
 import '../../../../core/constants/supabase_constants.dart';
@@ -10,11 +11,7 @@ class ProfileRemoteDatasource {
 
   Future<ProfileModel?> getProfile(String userId) async {
     try {
-      final data = await _supabase
-          .from('profiles')
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
+      final data = await _supabase.from('profiles').select().eq('user_id', userId).maybeSingle();
       return data != null ? ProfileModel.fromJson(data) : null;
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not load profile.', code: 'PROFILE_FETCH_FAILED', cause: e);
@@ -47,12 +44,7 @@ class ProfileRemoteDatasource {
 
   Future<ProfileModel?> getPublicProfile(String slug) async {
     try {
-      final data = await _supabase
-          .from('profiles')
-          .select()
-          .eq('profile_url', 'keystone.app/$slug')
-          .eq('is_public', true)
-          .maybeSingle();
+      final data = await _supabase.from('profiles').select().eq('profile_url', 'keystone.app/p/$slug').eq('is_public', true).maybeSingle();
       return data != null ? ProfileModel.fromJson(data) : null;
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not load profile.', code: 'PROFILE_FETCH_FAILED', cause: e);
@@ -64,15 +56,21 @@ class ProfileRemoteDatasource {
   Future<String> uploadPhoto({required String userId, required String filePath}) async {
     try {
       final file = File(filePath);
-      final ext = filePath.split('.').last;
+      final ext = filePath.split('.').last.toLowerCase();
       final path = '$userId/profile.$ext';
-      await _supabase.storage
-          .from(SupabaseConstants.profilePhotosBucket)
-          .upload(path, file, fileOptions: const FileOptions(upsert: true));
-      return _supabase.storage
-          .from(SupabaseConstants.profilePhotosBucket)
-          .getPublicUrl(path);
-    } catch (e) {
+      debugPrint('[KS:UPLOAD] userId: $userId');
+      debugPrint('[KS:UPLOAD] filePath: $filePath');
+      debugPrint('[KS:UPLOAD] storagePath: $path');
+      debugPrint('[KS:UPLOAD] fileExists: ${file.existsSync()}');
+      debugPrint('[KS:UPLOAD] fileSize: ${file.lengthSync()} bytes');
+      await _supabase.storage.from(SupabaseConstants.profilePhotosBucket).upload(path, file, fileOptions: const FileOptions(upsert: true));
+      final rawUrl = _supabase.storage.from(SupabaseConstants.profilePhotosBucket).getPublicUrl(path);
+      final url = '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+      debugPrint('[KS:UPLOAD] SUCCESS url: $url');
+      return url;
+    } catch (e, stack) {
+      debugPrint('[KS:UPLOAD] ERROR: $e');
+      debugPrint('[KS:UPLOAD] STACK: $stack');
       throw NetworkException(message: 'Could not upload photo.', code: 'PHOTO_UPLOAD_FAILED', cause: e);
     }
   }
