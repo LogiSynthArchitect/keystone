@@ -551,3 +551,30 @@ Supabase storage upsert needs both INSERT and UPDATE policies for overwriting ex
 ### Device test
 Photo upload — SUCCESS
 New photo displays immediately after save — SUCCESS
+
+---
+
+## SESSION 7 — Checkpoint 4 complete
+
+### Smoke test results
+- Auth flow: PASS
+- Log job online: PASS
+- Log job offline + sync: PASS
+- Add customer: PASS
+- Add note: PASS
+- Sign out / sign back in: PASS
+- Photo upload: PASS
+- Unsaved changes dialog: PASS
+
+### Bugs fixed during checkpoint
+1. Photo upload 403 — storage RLS policy was {public} not {authenticated}
+2. Photo not updating — NetworkImage caches by URL — fixed with cache-busting timestamp
+3. Unsaved changes dialog not showing — KsAppBar called Navigator.pop() directly bypassing PopScope
+   Fix: changed to Navigator.maybePop() which respects PopScope.canPop
+4. PopScope not intercepting Android back gesture — missing android:enableOnBackInvokedCallback="true" in manifest
+
+### What comes next
+- Step 70: Pre-release checklist
+- Domain registration: keystone.app
+- UI design and mockups phase
+- Play Store submission prep
