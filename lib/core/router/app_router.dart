@@ -17,6 +17,7 @@ import '../../features/knowledge_base/presentation/screens/add_note_screen.dart'
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -65,7 +66,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: "edit", name: "editProfile", builder: (context, state) => const EditProfileScreen()),
         ],
       ),
-      GoRoute(path: "/p/:slug", name: "publicProfile", builder: (context, state) => Scaffold(body: Center(child: Text("Public Profile: ${state.pathParameters["slug"]}")))),
+      GoRoute(
+        path: "/p/:slug",
+        name: "publicProfile",
+        builder: (context, state) => PublicProfileScreen(slug: state.pathParameters["slug"]!),
+      ),
     ],
     errorBuilder: (context, state) => const KsLoadingIndicator(fullScreen: true),
   );

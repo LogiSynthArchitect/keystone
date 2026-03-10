@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -25,6 +26,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   List<ServiceType> _services = [];
   bool _isPublic = true;
   bool _initialized = false;
+  bool _isUploadingPhoto = false;
+  String? _pendingPhotoUrl;
 
   @override
   void dispose() {
@@ -55,6 +58,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  Future<void> _onPickPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+    setState(() => _isUploadingPhoto = true);
+    final url = await ref.read(profileProvider.notifier).uploadPhoto(picked.path);
+    if (!mounted) return;
+    if (url != null) {
+      setState(() {
+        _pendingPhotoUrl = url;
+        _isUploadingPhoto = false;
+      });
+    } else {
+      setState(() => _isUploadingPhoto = false);
+      KsSnackbar.show(context, message: 'Could not upload photo.', type: KsSnackbarType.error);
+    }
+  }
+
   Future<void> _onSave() async {
     final profile = ref.read(profileProvider).profile!;
     final updated = ProfileEntity(
@@ -62,7 +88,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       userId: profile.userId,
       displayName: _nameController.text.trim(),
       bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
-      photoUrl: profile.photoUrl,
+      photoUrl: _pendingPhotoUrl ?? profile.photoUrl,
       services: _services,
       whatsappNumber: _whatsappController.text.trim(),
       isPublic: _isPublic,
@@ -85,6 +111,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(profileProvider);
     if (state.profile != null) _initFromProfile(state.profile!);
+    final photoUrl = _pendingPhotoUrl ?? state.profile?.photoUrl;
 
     return Scaffold(
       backgroundColor: AppColors.neutral050,
@@ -99,12 +126,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: AppSpacing.lg),
+
+                  // Photo picker
+                  Center(
+                    child: GestureDetector(
+                      onTap: _isUploadingPhoto ? null : _onPickPhoto,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 44,
+                            backgroundColor: AppColors.primary100,
+                            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                            child: photoUrl == null
+                                ? Text(
+                                    _nameController.text.isNotEmpty
+                                        ? _nameController.text[0].toUpperCase()
+                                        : '?',
+                                    style: AppTextStyles.h1.copyWith(color: AppColors.primary700))
+                                : null,
+                          ),
+                          if (_isUploadingPhoto)
+                            const Positioned.fill(
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700),
+                            ),
+                          Positioned(
+                            bottom: 0, right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary700,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.camera_alt, size: 14, color: AppColors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
                   KsTextField(label: 'Display name', hint: 'Jeremie Kouassi', controller: _nameController, onChanged: (_) => setState(() {}), textInputAction: TextInputAction.next),
                   const SizedBox(height: AppSpacing.lg),
                   KsTextField(label: 'Bio', hint: 'Professional locksmith with 10 years experience...', type: KsTextFieldType.multiline, controller: _bioController, textInputAction: TextInputAction.next),
                   const SizedBox(height: AppSpacing.lg),
                   KsTextField(label: 'WhatsApp number', hint: '0201234567', type: KsTextFieldType.phone, controller: _whatsappController, textInputAction: TextInputAction.done),
                   const SizedBox(height: AppSpacing.xl),
+
                   Text('Services offered', style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral700)),
                   const SizedBox(height: AppSpacing.sm),
                   ...ServiceType.values.map((type) {
@@ -131,6 +199,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     );
                   }),
                   const SizedBox(height: AppSpacing.lg),
+
                   Row(children: [
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Public profile', style: AppTextStyles.bodyMedium),
@@ -139,7 +208,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     Switch(value: _isPublic, onChanged: (v) => setState(() => _isPublic = v), activeThumbColor: AppColors.primary700),
                   ]),
                   const SizedBox(height: AppSpacing.xxxl),
-                  KsButton(label: 'Save changes', onPressed: _canSave && !state.isSaving ? _onSave : null, isLoading: state.isSaving),
+                  KsButton(label: 'Save changes', onPressed: _canSave && !state.isSaving && !_isUploadingPhoto ? _onSave : null, isLoading: state.isSaving),
                   const SizedBox(height: AppSpacing.lg),
                 ],
               ),
