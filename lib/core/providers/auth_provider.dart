@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_provider.dart';
@@ -6,15 +7,12 @@ class AuthState {
   final Session? session;
   final bool hasProfile;
   final bool isLoading;
-
   const AuthState({
     this.session,
     this.hasProfile = false,
     this.isLoading = false,
   });
-
   bool get isAuthenticated => session != null;
-
   AuthState copyWith({
     Session? session,
     bool? hasProfile,
@@ -32,21 +30,17 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
     final supabase = ref.watch(supabaseClientProvider);
-
-    // Listen to auth state changes — rebuild on any change
     final sub = supabase.auth.onAuthStateChange.listen((event) {
+      debugPrint('[KS:AUTH_STATE] onAuthStateChange — event: ${event.event.name}');
       ref.invalidateSelf();
     });
     ref.onDispose(() => sub.cancel());
-
     final session = supabase.auth.currentSession;
-
-    // No session — unauthenticated
     if (session == null) {
+      debugPrint('[KS:AUTH_STATE] no session — unauthenticated');
       return const AuthState();
     }
-
-    // Session exists — check if profile is complete
+    debugPrint('[KS:AUTH_STATE] session found — userId: ${session.user.id}');
     try {
       final userId = session.user.id;
       final profile = await supabase
@@ -54,20 +48,22 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
           .select()
           .eq('auth_id', userId)
           .maybeSingle();
-
+      debugPrint('[KS:AUTH_STATE] hasProfile: ${profile != null}');
       return AuthState(
         session: session,
         hasProfile: profile != null,
       );
-    } catch (_) {
-      // If profile check fails, treat as no profile
+    } catch (e) {
+      debugPrint('[KS:AUTH_STATE] profile check ERROR — $e');
       return AuthState(session: session, hasProfile: false);
     }
   }
 
   Future<void> signOut() async {
+    debugPrint('[KS:AUTH_STATE] signOut called');
     final supabase = ref.read(supabaseClientProvider);
     await supabase.auth.signOut();
+    debugPrint('[KS:AUTH_STATE] signOut complete');
     ref.invalidateSelf();
   }
 }
