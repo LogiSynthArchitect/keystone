@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
-import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../providers/auth_notifier.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 class OtpVerifyScreen extends ConsumerStatefulWidget {
   const OtpVerifyScreen({super.key});
@@ -56,10 +56,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
 
     if (!mounted) return;
     if (success) {
-      final authState = ref.read(authNotifierProvider);
-      if (authState.errorMessage == null) {
-        context.go(RouteNames.onboarding);
-      }
+      ref.invalidate(authStateProvider);
     } else {
       setState(() => _hasError = true);
       _pinController.clear();

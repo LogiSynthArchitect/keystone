@@ -9,7 +9,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   ProfileRepositoryImpl(this._remote, this._supabase);
 
-  String get _userId => _supabase.auth.currentUser!.id;
+  String get _userId => _supabase.auth.currentUser?.id ?? '';
 
   @override
   Future<ProfileEntity?> getProfile() async {

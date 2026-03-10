@@ -34,9 +34,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final supabase = ref.watch(supabaseClientProvider);
 
     // Listen to auth state changes — rebuild on any change
-    supabase.auth.onAuthStateChange.listen((event) {
+    final sub = supabase.auth.onAuthStateChange.listen((event) {
       ref.invalidateSelf();
     });
+    ref.onDispose(() => sub.cancel());
 
     final session = supabase.auth.currentSession;
 

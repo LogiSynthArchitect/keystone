@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/providers/supabase_provider.dart';
-import '../../../../core/router/route_names.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -13,6 +12,7 @@ import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_text_field.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../providers/auth_notifier.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -62,7 +62,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         );
       }
 
-      if (mounted) context.go(RouteNames.jobs);
+      // Create profile if it does not exist
+      final existingProfile = await ref.read(profileRepositoryProvider).getProfile();
+      if (existingProfile == null) {
+        final phone = authUser.phone ?? '';
+        final slug = _nameController.text.trim().toLowerCase().replaceAll(' ', '_');
+        final now = DateTime.now();
+        final profile = ProfileEntity(
+          id: '',
+          userId: authUser.id,
+          displayName: _nameController.text.trim(),
+          services: _selectedServices,
+          whatsappNumber: phone,
+          isPublic: true,
+          profileUrl: 'keystone.app/p/$slug',
+          createdAt: now,
+          updatedAt: now,
+        );
+        await ref.read(profileRepositoryProvider).createProfile(profile);
+      }
+      ref.invalidate(authStateProvider);
     } catch (e, stack) {
       debugPrint('=== ONBOARDING ERROR ===');
       debugPrint('Type: ${e.runtimeType}');

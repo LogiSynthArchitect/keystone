@@ -15,6 +15,8 @@ import '../../features/customer_history/presentation/screens/customer_detail_scr
 import '../../features/knowledge_base/presentation/screens/notes_list_screen.dart';
 import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
+import '../../features/technician_profile/presentation/screens/profile_screen.dart';
+import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -58,9 +60,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.profile,
         name: "profile",
-        builder: (context, state) => const Scaffold(body: Center(child: Text("Profile — coming soon"))),
+        builder: (context, state) => const ProfileScreen(),
         routes: [
-          GoRoute(path: "edit", name: "editProfile", builder: (context, state) => const Scaffold(body: Center(child: Text("Edit Profile — coming soon")))),
+          GoRoute(path: "edit", name: "editProfile", builder: (context, state) => const EditProfileScreen()),
         ],
       ),
       GoRoute(path: "/p/:slug", name: "publicProfile", builder: (context, state) => Scaffold(body: Center(child: Text("Public Profile: ${state.pathParameters["slug"]}")))),
