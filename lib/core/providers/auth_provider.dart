@@ -29,7 +29,7 @@ class AuthState {
 class AuthNotifier extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
-    final supabase = ref.watch(supabaseClientProvider);
+    final supabase = ref.read(supabaseClientProvider);
     final sub = supabase.auth.onAuthStateChange.listen((event) {
       debugPrint('[KS:AUTH_STATE] onAuthStateChange — event: ${event.event.name}');
       ref.invalidateSelf();

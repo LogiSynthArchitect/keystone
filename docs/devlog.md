@@ -306,3 +306,67 @@ No issues found ✅
   Phone → OTP → Onboarding → Jobs → Profile → Sign out → Phone entry
 - If all passing: Phase 9 remaining work (PublicProfileScreen, photo upload)
 - Then Phase 10: Polish and production readiness
+
+---
+
+## SESSION 6 CONTINUED — 2026-03-10
+
+### What was built
+- Added structured debug logging to auth flow
+- All KS:AUTH and KS:AUTH_STATE log lines now print to terminal during testing
+- Logging covers: requestOtp, verifyOtp, getCurrentUser, createUser, signOut, onAuthStateChange, profile check
+
+### What broke and how it was fixed
+BREAK: debugPrint not available in AuthRemoteDatasource
+  Cause: missing flutter/foundation.dart import
+  Fix: full rewrite of auth_remote_datasource.dart with import added
+
+BREAK: string concatenation warnings in auth_provider.dart
+  Cause: used + operator instead of string interpolation in debugPrint calls
+  Fix: full rewrite of auth_provider.dart using interpolation throughout
+
+### Key learning
+- Surgical patching with bash heredoc is unreliable — bash interprets $, !, and em-dashes
+- Full file rewrites using python3 << PYEOF are the correct approach for every file change
+- Never use inline python3 -c with multi-line strings containing special characters
+
+### Flutter analyze status
+No issues found
+
+### What comes next
+- Run app with two terminals
+- Terminal 1: bash run.sh
+- Terminal 2: flutter logs | grep KS:
+- Test full auth flow and paste Terminal 2 output to diagnose any remaining issues
+
+---
+
+## SESSION 6 CONTINUED — 2026-03-10
+
+### What was built
+- Added structured debug logging to auth flow
+- All KS:AUTH and KS:AUTH_STATE log lines now print to terminal during testing
+- Logging covers: requestOtp, verifyOtp, getCurrentUser, createUser, signOut, onAuthStateChange, profile check
+
+### What broke and how it was fixed
+BREAK: debugPrint not available in AuthRemoteDatasource
+  Cause: missing flutter/foundation.dart import
+  Fix: full rewrite of auth_remote_datasource.dart with import added
+
+BREAK: string concatenation warnings in auth_provider.dart
+  Cause: used + operator instead of string interpolation in debugPrint calls
+  Fix: full rewrite of auth_provider.dart using interpolation throughout
+
+### Key learning
+- Surgical patching with bash heredoc is unreliable — bash interprets $, !, and em-dashes
+- Full file rewrites using python3 << PYEOF are the correct approach for every file change
+- Never use inline python3 -c with multi-line strings containing special characters
+
+### Flutter analyze status
+No issues found
+
+### What comes next
+- Run app with two terminals
+- Terminal 1: bash run.sh
+- Terminal 2: flutter logs | grep KS:
+- Test full auth flow and paste Terminal 2 output to diagnose any remaining issues
