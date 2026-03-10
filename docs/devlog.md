@@ -370,3 +370,95 @@ No issues found
 - Terminal 1: bash run.sh
 - Terminal 2: flutter logs | grep KS:
 - Test full auth flow and paste Terminal 2 output to diagnose any remaining issues
+
+---
+
+## SESSION 6 FINAL — 2026-03-10
+
+### What was built
+- Full auth flow working end to end on physical device
+- Phone entry → OTP → Jobs dashboard
+- Jobs dashboard → Profile → Sign out → Phone entry
+- Clean log output — no loops, no crashes
+
+### What broke and how it was fixed
+
+BREAK 1: OTP verify had double-navigation race condition
+  File: otp_verify_screen.dart
+  Cause: screen manually called context.go() AND invalidated authStateProvider
+         simultaneously — two navigations racing each other
+  Fix: removed all manual context.go() calls — router redirect handles navigation
+
+BREAK 2: Onboarding bounced user back to onboarding after saving profile
+  File: onboarding_screen.dart
+  Cause: context.go(RouteNames.jobs) called but authStateProvider never invalidated
+         so router still saw hasProfile=false and redirected back
+  Fix: replaced context.go() with ref.invalidate(authStateProvider)
+
+BREAK 3: Profile screen crashed on sign out
+  File: profile_repository_impl.dart
+  Cause: _userId getter used bang operator _supabase.auth.currentUser!.id
+         after signOut() currentUser becomes null — null crash before router redirect
+  Fix: changed to _supabase.auth.currentUser?.id ?? '' safe null handling
+
+BREAK 4: Infinite rebuild loop on initialSession event
+  File: auth_provider.dart
+  Cause: onAuthStateChange listener called ref.invalidateSelf() on every event
+         including initialSession. Supabase replays current auth state to every
+         new listener. So every invalidateSelf() created a new notifier, new listener,
+         new initialSession event, new invalidateSelf() — infinite loop
+  Fix: filtered to only react to initialSession events — but signedIn still looped
+
+BREAK 5: Infinite rebuild loop on signedIn event
+  File: auth_provider.dart
+  Cause: same root cause as BREAK 4 — signedIn also replayed to new listeners
+         Every invalidateSelf() → new build() → new listener → signedIn replayed
+  Fix attempted: filter signedIn too — but pattern is fundamentally broken
+
+BREAK 6: Root cause identified and fixed — onAuthStateChange listener removed entirely
+  File: auth_provider.dart
+  Cause: The fundamental problem is that Supabase onAuthStateChange replays
+         current auth state to every new subscriber. Since Riverpod creates a new
+         notifier (and new listener) on every invalidateSelf(), any event that
+         triggers invalidateSelf() inside the listener causes an infinite loop.
+         This is not fixable by filtering events — the architecture is wrong.
+  Fix: Removed onAuthStateChange listener completely from AuthNotifier.build()
+       Added explicit refresh() method — called once from otp_verify_screen after
+       successful OTP verify
+       signOut() already calls invalidateSelf() directly — no listener needed
+       Result: authStateProvider only rebuilds when explicitly told to
+
+### What was learned
+1. Supabase onAuthStateChange replays current state to every new subscriber
+   Never call invalidateSelf() inside an onAuthStateChange listener — infinite loop
+   Always trigger auth state rebuilds explicitly from the call site instead
+
+2. Surgical patching with bash heredoc is unreliable
+   Bash interprets $, !, em-dashes inside heredocs
+   Always use python3 << PYEOF for file writes
+   Always do full file rewrites — never surgical string replacement
+
+3. ref.watch() inside AsyncNotifier.build() causes rebuild loops
+   Use ref.read() for providers that do not change (like supabaseClientProvider)
+
+4. Router redirect depends on authStateProvider — not profileProvider
+   Invalidating profileProvider alone does not trigger router redirect
+   Must invalidate authStateProvider to make router re-evaluate redirect rules
+
+5. Two sources of truth = bugs
+   Never force state manually (e.g. forceProfileComplete())
+   Always derive state from database — invalidate and let provider refetch
+
+### Flutter analyze status
+No issues found
+
+### Device test
+App boots → straight to jobs (session persisted) ✅
+Sign out → phone entry screen ✅
+Phone entry → OTP → jobs dashboard ✅
+Full auth flow clean with no loops ✅
+
+### What comes next
+- Phase 9 remaining: PublicProfileScreen, photo upload flow
+- Phase 10: Polish and production readiness
+- Checkpoint 4: Full smoke test
