@@ -12,6 +12,9 @@ import '../../features/whatsapp_followup/presentation/screens/job_detail_screen.
 import '../../features/customer_history/presentation/screens/customer_list_screen.dart';
 import '../../features/customer_history/presentation/screens/add_customer_screen.dart';
 import '../../features/customer_history/presentation/screens/customer_detail_screen.dart';
+import '../../features/knowledge_base/presentation/screens/notes_list_screen.dart';
+import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
+import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -46,10 +49,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.notes,
         name: "notes",
-        builder: (context, state) => const Scaffold(body: Center(child: Text("Notes — coming soon"))),
+        builder: (context, state) => const NotesListScreen(),
         routes: [
-          GoRoute(path: "new", name: "addNote",    builder: (context, state) => const Scaffold(body: Center(child: Text("Add Note — coming soon")))),
-          GoRoute(path: ":id", name: "noteDetail", builder: (context, state) => const Scaffold(body: Center(child: Text("Note Detail — coming soon")))),
+          GoRoute(path: "new", name: "addNote",    builder: (context, state) => const AddNoteScreen()),
+          GoRoute(path: ":id", name: "noteDetail", builder: (context, state) => NoteDetailScreen(noteId: state.pathParameters["id"]!)),
         ],
       ),
       GoRoute(

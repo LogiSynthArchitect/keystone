@@ -6,10 +6,18 @@ import '../datasources/knowledge_note_remote_datasource.dart';
 class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
   final KnowledgeNoteRemoteDatasource _remote;
   final SupabaseClient _supabase;
-
   KnowledgeNoteRepositoryImpl(this._remote, this._supabase);
-
   String get _userId => _supabase.auth.currentUser!.id;
+
+  String _serviceTypeToDb(String camelCase) {
+    switch (camelCase) {
+      case 'carLockProgramming':    return 'car_lock_programming';
+      case 'doorLockInstallation':  return 'door_lock_installation';
+      case 'doorLockRepair':        return 'door_lock_repair';
+      case 'smartLockInstallation': return 'smart_lock_installation';
+      default:                      return camelCase;
+    }
+  }
 
   @override
   Future<List<KnowledgeNoteEntity>> getNotes({int limit = 25, int offset = 0}) async {
@@ -25,13 +33,14 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<KnowledgeNoteEntity> createNote(KnowledgeNoteEntity note) async {
+    final serviceTypeDb = note.serviceType != null ? _serviceTypeToDb(note.serviceType!.name) : null;
     final model = await _remote.createNote({
       'user_id': _userId,
       'title': note.title,
       'description': note.description,
       'tags': note.tags,
       'photo_url': note.photoUrl,
-      'service_type': note.serviceType?.name,
+      'service_type': serviceTypeDb,
       'is_archived': false,
     });
     return model.toEntity();
@@ -39,12 +48,13 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<KnowledgeNoteEntity> updateNote(KnowledgeNoteEntity note) async {
+    final serviceTypeDb = note.serviceType != null ? _serviceTypeToDb(note.serviceType!.name) : null;
     final model = await _remote.updateNote(note.id, {
       'title': note.title,
       'description': note.description,
       'tags': note.tags,
       'photo_url': note.photoUrl,
-      'service_type': note.serviceType?.name,
+      'service_type': serviceTypeDb,
     });
     return model.toEntity();
   }

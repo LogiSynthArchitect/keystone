@@ -1,0 +1,152 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/providers/supabase_provider.dart';
+import '../../data/datasources/knowledge_note_remote_datasource.dart';
+import '../../data/repositories/knowledge_note_repository_impl.dart';
+import '../../domain/entities/knowledge_note_entity.dart';
+import '../../domain/repositories/knowledge_note_repository.dart';
+import '../../domain/usecases/create_note_usecase.dart';
+import '../../domain/usecases/get_notes_usecase.dart';
+import '../../domain/usecases/archive_note_usecase.dart';
+import '../../../technician_profile/domain/entities/profile_entity.dart';
+
+final knowledgeNoteRemoteDatasourceProvider = Provider<KnowledgeNoteRemoteDatasource>(
+  (ref) => KnowledgeNoteRemoteDatasource(ref.watch(supabaseClientProvider)));
+
+final knowledgeNoteRepositoryProvider = Provider<KnowledgeNoteRepository>(
+  (ref) => KnowledgeNoteRepositoryImpl(ref.watch(knowledgeNoteRemoteDatasourceProvider), ref.watch(supabaseClientProvider)));
+
+final getNotesUsecaseProvider = Provider<GetNotesUsecase>(
+  (ref) => GetNotesUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
+
+final createNoteUsecaseProvider = Provider<CreateNoteUsecase>(
+  (ref) => CreateNoteUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
+
+final archiveNoteUsecaseProvider = Provider<ArchiveNoteUsecase>(
+  (ref) => ArchiveNoteUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
+
+// ── Notes List ─────────────────────────────────────────────────
+class NotesListState {
+  final List<KnowledgeNoteEntity> notes;
+  final List<KnowledgeNoteEntity> searchResults;
+  final bool isLoading;
+  final String? errorMessage;
+  final String searchQuery;
+
+  const NotesListState({
+    this.notes = const [],
+    this.searchResults = const [],
+    this.isLoading = false,
+    this.errorMessage,
+    this.searchQuery = '',
+  });
+
+  List<KnowledgeNoteEntity> get displayed => searchQuery.isEmpty ? notes : searchResults;
+
+  NotesListState copyWith({
+    List<KnowledgeNoteEntity>? notes,
+    List<KnowledgeNoteEntity>? searchResults,
+    bool? isLoading,
+    String? errorMessage,
+    String? searchQuery,
+    bool clearError = false,
+  }) => NotesListState(
+    notes: notes ?? this.notes,
+    searchResults: searchResults ?? this.searchResults,
+    isLoading: isLoading ?? this.isLoading,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    searchQuery: searchQuery ?? this.searchQuery,
+  );
+}
+
+class NotesListNotifier extends StateNotifier<NotesListState> {
+  final KnowledgeNoteRepository _repository;
+  NotesListNotifier(this._repository) : super(const NotesListState()) { load(); }
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final notes = await _repository.getNotes();
+      state = state.copyWith(notes: notes, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Could not load notes.');
+    }
+  }
+
+  Future<void> search(String query) async {
+    state = state.copyWith(searchQuery: query);
+    if (query.trim().isEmpty) {
+      state = state.copyWith(searchResults: []);
+      return;
+    }
+    try {
+      final results = await _repository.searchNotes(query);
+      state = state.copyWith(searchResults: results);
+    } catch (e) {
+      state = state.copyWith(searchResults: []);
+    }
+  }
+
+  void addNote(KnowledgeNoteEntity note) {
+    state = state.copyWith(notes: [note, ...state.notes]);
+  }
+
+  Future<void> archiveNote(String id) async {
+    try {
+      await _repository.archiveNote(id);
+      state = state.copyWith(notes: state.notes.where((n) => n.id != id).toList());
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Could not archive note.');
+    }
+  }
+
+  Future<void> refresh() => load();
+}
+
+final notesListProvider = StateNotifierProvider<NotesListNotifier, NotesListState>(
+  (ref) => NotesListNotifier(ref.watch(knowledgeNoteRepositoryProvider)));
+
+// ── Add Note ───────────────────────────────────────────────────
+class AddNoteState {
+  final bool isLoading;
+  final String? errorMessage;
+  final bool saved;
+  const AddNoteState({this.isLoading = false, this.errorMessage, this.saved = false});
+  AddNoteState copyWith({bool? isLoading, String? errorMessage, bool? saved, bool clearError = false}) =>
+    AddNoteState(isLoading: isLoading ?? this.isLoading, errorMessage: clearError ? null : (errorMessage ?? this.errorMessage), saved: saved ?? this.saved);
+}
+
+class AddNoteNotifier extends StateNotifier<AddNoteState> {
+  final CreateNoteUsecase _createNote;
+  final SupabaseClient _supabase;
+  AddNoteNotifier(this._createNote, this._supabase) : super(const AddNoteState());
+
+  void reset() => state = const AddNoteState();
+
+  Future<KnowledgeNoteEntity?> save({
+    required String title,
+    required String description,
+    required List<String> tags,
+    ServiceType? serviceType,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final note = await _createNote(CreateNoteParams(
+        userId: _supabase.auth.currentUser!.id,
+        title: title,
+        description: description,
+        tags: tags,
+        serviceType: serviceType,
+      ));
+      state = state.copyWith(isLoading: false, saved: true);
+      return note;
+    } catch (e) {
+
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return null;
+    }
+  }
+}
+
+final addNoteProvider = StateNotifierProvider<AddNoteNotifier, AddNoteState>(
+  (ref) => AddNoteNotifier(ref.watch(createNoteUsecaseProvider), ref.watch(supabaseClientProvider)));
