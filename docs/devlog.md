@@ -526,3 +526,28 @@ No issues found
 - Step 70: Pre-release checklist
 - UI design and mockups phase (separate track)
 - Domain registration: keystone.app
+
+---
+
+## SESSION 7 — Bug fix: photo upload
+
+### What broke
+Photo upload returning 403 Unauthorized from Supabase storage
+
+### Root cause
+storage_profile_photos_insert RLS policy was assigned to {public} role instead of {authenticated}
+Authenticated users were being blocked by their own upload policy
+
+### Fix
+1. Dropped and recreated storage_profile_photos_insert with TO authenticated
+2. Did same for storage_note_photos_insert
+3. Added cache-busting timestamp to uploaded photo URL (?t=milliseconds)
+   — Without this, NetworkImage shows cached old photo even after successful upload
+
+### Lesson
+Always check the roles column on storage RLS policies — {public} and {authenticated} are different
+Supabase storage upsert needs both INSERT and UPDATE policies for overwriting existing files
+
+### Device test
+Photo upload — SUCCESS
+New photo displays immediately after save — SUCCESS
