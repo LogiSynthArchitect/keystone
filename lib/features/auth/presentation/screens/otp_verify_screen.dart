@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../providers/auth_notifier.dart';
 
 class OtpVerifyScreen extends ConsumerStatefulWidget {
@@ -52,12 +53,13 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     final success =
         await ref.read(authNotifierProvider.notifier).verifyOtp(token);
     if (!mounted) return;
-    if (!success) {
+    if (success) {
+      debugPrint('[KS:OTP] verify success — calling authStateProvider.refresh()');
+      await ref.read(authStateProvider.notifier).refresh();
+    } else {
       setState(() => _hasError = true);
       _pinController.clear();
     }
-    // On success — do nothing. Supabase onAuthStateChange fires signedIn,
-    // which invalidates authStateProvider, which triggers router redirect.
   }
 
   Future<void> _onResend() async {

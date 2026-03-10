@@ -30,16 +30,6 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
     final supabase = ref.read(supabaseClientProvider);
-    final sub = supabase.auth.onAuthStateChange.listen((event) {
-      debugPrint('[KS:AUTH_STATE] onAuthStateChange — event: ${event.event.name}');
-      // Only react to signedIn and tokenRefreshed
-      // initialSession causes rebuild loop — signedOut is handled by signOut() directly
-      if (event.event == AuthChangeEvent.signedIn ||
-          event.event == AuthChangeEvent.tokenRefreshed) {
-        ref.invalidateSelf();
-      }
-    });
-    ref.onDispose(() => sub.cancel());
     final session = supabase.auth.currentSession;
     if (session == null) {
       debugPrint('[KS:AUTH_STATE] no session — unauthenticated');
@@ -47,28 +37,29 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
     debugPrint('[KS:AUTH_STATE] session found — userId: ${session.user.id}');
     try {
-      final userId = session.user.id;
       final profile = await supabase
           .from('users')
           .select()
-          .eq('auth_id', userId)
+          .eq('auth_id', session.user.id)
           .maybeSingle();
       debugPrint('[KS:AUTH_STATE] hasProfile: ${profile != null}');
-      return AuthState(
-        session: session,
-        hasProfile: profile != null,
-      );
+      return AuthState(session: session, hasProfile: profile != null);
     } catch (e) {
       debugPrint('[KS:AUTH_STATE] profile check ERROR — $e');
       return AuthState(session: session, hasProfile: false);
     }
   }
 
+  Future<void> refresh() async {
+    debugPrint('[KS:AUTH_STATE] refresh called');
+    ref.invalidateSelf();
+  }
+
   Future<void> signOut() async {
     debugPrint('[KS:AUTH_STATE] signOut called');
     final supabase = ref.read(supabaseClientProvider);
     await supabase.auth.signOut();
-    debugPrint('[KS:AUTH_STATE] signOut complete — invalidating self');
+    debugPrint('[KS:AUTH_STATE] signOut complete');
     ref.invalidateSelf();
   }
 }
