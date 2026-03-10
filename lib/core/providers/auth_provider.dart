@@ -32,6 +32,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final supabase = ref.read(supabaseClientProvider);
     final sub = supabase.auth.onAuthStateChange.listen((event) {
       debugPrint('[KS:AUTH_STATE] onAuthStateChange — event: ${event.event.name}');
+      // Only react to real auth changes — ignore initialSession to prevent rebuild loop
+      if (event.event == AuthChangeEvent.initialSession) return;
       ref.invalidateSelf();
     });
     ref.onDispose(() => sub.cancel());
