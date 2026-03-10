@@ -497,3 +497,32 @@ No issues found
   - Step 69: app_events Supabase table
   - Step 70: Pre-release checklist
 - Checkpoint 4: Full smoke test on physical device
+
+---
+
+## SESSION 7 CONTINUED — Phase 10 complete
+
+### What was built
+- Step 66: Unsaved changes dialogs — PopScope added to all 4 edit screens (log_job, add_note, add_customer, edit_profile)
+- Step 67: Analytics — KsAnalytics helper created, fire-and-forget events wired into job_logged, note_saved, customer_added, profile_shared
+- Step 68: Error boundary — _ErrorBoundary widget wraps entire app, catches Flutter errors, shows restart screen
+- Step 69: app_events Supabase table created with RLS — authenticated users can insert and select own events
+- Steps 63-65 were already complete from previous phases (offline banner, skeleton loaders, pull-to-refresh)
+
+### Lessons
+- PopScope.onPopInvokedWithResult — capture Navigator.of(context) BEFORE the await to avoid use_build_context_synchronously warning
+- Analytics must never throw — always wrap in try/catch, fire and forget
+- AppColors.error700 does not exist — use error600
+
+### Flutter analyze status
+No issues found
+
+### Device test
+- To be tested: unsaved changes dialog on back press
+- To be tested: analytics events appearing in app_events table
+
+### What comes next
+- Checkpoint 4: Full smoke test on physical device — all 5 features + offline + sync
+- Step 70: Pre-release checklist
+- UI design and mockups phase (separate track)
+- Domain registration: keystone.app
