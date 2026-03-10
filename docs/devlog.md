@@ -216,3 +216,48 @@ Pull-to-refresh merges correctly ✅
 - JobDetailScreen
 - FollowUpButton + FollowUpMessagePreview widgets
 - Checkpoint 3: tap send, WhatsApp opens, button locks
+
+---
+
+## SESSION 5 — 2026-03-10
+
+### What was built
+- Phase 8 complete: Knowledge Base feature
+- notes_providers.dart — NotesListNotifier + AddNoteNotifier
+- NoteCard widget with tag chips
+- TagInputField widget with add/remove tags
+- NotesListScreen with search and empty state
+- AddNoteScreen with tag input and service type selector
+- NoteDetailScreen with archive action
+
+### What broke and how it was fixed
+BREAK 1: knowledge_notes RLS policies used users.id subquery instead of auth.uid()
+  Fix: dropped and recreated all policies using auth.uid() = user_id directly
+
+BREAK 2: knowledge_notes FK pointed to public.users not auth.users
+  Fix: dropped and recreated FK to reference auth.users(id)
+
+BREAK 3: service_type enum rejected camelCase values e.g. doorLockInstallation
+  Fix: replaced regex _toSnakeCase (broken by Python escaping) with explicit switch map
+
+BREAK 4: second note save failed — addNoteProvider state stuck on saved:true
+  Fix: added reset() call in AddNoteScreen.initState()
+
+BREAK 5: Python heredoc escaped dollar signs — string interpolation printed as literals
+  Fix: rewrote entire repository file via Python to avoid interpolation issues
+
+### Flutter analyze status
+No issues found ✅
+
+### Device test
+Notes list loads ✅
+Add note without service type ✅
+Add note with service type ✅
+Search by tag ✅
+Note detail and archive ✅
+
+### What comes next
+- Phase 9: Technician Profile (Steps 56-62)
+- ProfileScreen, EditProfileScreen, PublicProfileScreen
+- Photo upload flow
+- Share profile link
