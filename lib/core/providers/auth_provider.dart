@@ -32,9 +32,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final supabase = ref.read(supabaseClientProvider);
     final sub = supabase.auth.onAuthStateChange.listen((event) {
       debugPrint('[KS:AUTH_STATE] onAuthStateChange — event: ${event.event.name}');
-      // Only react to real auth changes — ignore initialSession to prevent rebuild loop
-      if (event.event == AuthChangeEvent.initialSession) return;
-      ref.invalidateSelf();
+      // Only react to signedIn and tokenRefreshed
+      // initialSession causes rebuild loop — signedOut is handled by signOut() directly
+      if (event.event == AuthChangeEvent.signedIn ||
+          event.event == AuthChangeEvent.tokenRefreshed) {
+        ref.invalidateSelf();
+      }
     });
     ref.onDispose(() => sub.cancel());
     final session = supabase.auth.currentSession;
@@ -65,7 +68,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     debugPrint('[KS:AUTH_STATE] signOut called');
     final supabase = ref.read(supabaseClientProvider);
     await supabase.auth.signOut();
-    debugPrint('[KS:AUTH_STATE] signOut complete');
+    debugPrint('[KS:AUTH_STATE] signOut complete — invalidating self');
     ref.invalidateSelf();
   }
 }
