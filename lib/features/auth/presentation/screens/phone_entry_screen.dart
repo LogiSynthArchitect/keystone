@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_text_field.dart';
+import '../../../../core/widgets/ks_logo.dart';
 import '../providers/auth_notifier.dart';
 
 class PhoneEntryScreen extends ConsumerStatefulWidget {
@@ -53,6 +54,10 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(flex: 1),
+              Center(
+                child: const KsLogo(size: 120),
+              ),
+              const SizedBox(height: 8),
               Center(
                 child: Text(
                   'Keystone',

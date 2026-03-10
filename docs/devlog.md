@@ -578,3 +578,70 @@ New photo displays immediately after save — SUCCESS
 - Domain registration: keystone.app
 - UI design and mockups phase
 - Play Store submission prep
+
+---
+
+## SESSION 9 — App Icon & Splash Screen
+
+### Goal
+Design and implement the Keystone app icon and splash screen.
+
+### Icon Design Process
+- Concept: arch with keystone block at crown, keyhole inside keystone block
+- Colors: navy blue (#1A237E) arch, gold (#F9A825) keystone, navy keyhole
+- Used AI image generator (Gemini) iteratively to refine the design
+- Key iterations:
+  1. First attempt — key symbol too detailed, arch legs cut off
+  2. Second attempt — keyhole cleaner, arch had proper base — best open arch version
+  3. Tried solid arch — looked like a mailbox, lost arch character
+  4. Switched to white arch on navy background — strong but generator kept adding rounded square container
+  5. Went back to isolated logo on white background approach
+  6. Final logo saved as logos.png (1248x1248 RGBA) from Adobe Express
+
+### Splash Screen — Long Journey
+Iterations and lessons learned:
+
+1. **Manual PNG approach** — placed logo PNG directly in drawable folder
+   - Problem: Android bitmap tag scales image down no matter how large the PNG
+   - Result: always small and sometimes blurry
+
+2. **flutter_native_splash package** — correct tool for the job
+   - Generates splash files for all Android densities automatically
+   - Controls size through canvas proportion — logo size relative to canvas
+   - CRITICAL LESSON: this package must be added, used to generate, then REMOVED
+   - Reason: flutter_native_splash has its own build.gradle requiring AGP 8.7.0
+   - AGP 8.7.0 cannot be downloaded on this network (dl.google.com blocked)
+   - Project uses AGP 8.11.1 which is cached — conflict cannot be resolved
+   - Workflow every time splash needs updating:
+       1. flutter pub add dev:flutter_native_splash
+       2. dart run flutter_native_splash:create --path=flutter_native_splash.yaml
+       3. flutter pub remove flutter_native_splash
+       4. run.sh
+
+3. **SVG attempt** — tried using logo.svg thinking it was true vector
+   - Problem: the SVG was just a wrapper around an embedded PNG (created by Inkscape)
+   - rsvg-convert rendered it tiny because the embedded PNG was small
+   - Lesson: always verify SVG is true vector paths, not embedded raster
+
+4. **Final solution** — use logos.png (1248x1248) as source, render at exact dimensions
+   - Canvas: 1080x1920 (standard phone screen)
+   - Logo: 900x1300 (slightly taller than wide to show full arch with legs)
+   - Logo centered on canvas
+   - Result: clear, sharp, well proportioned splash screen
+
+### Final Splash Dimensions
+- Canvas: 1080 x 1920
+- Logo: 900 x 1300
+- Source: ~/Downloads/logos.png
+
+### App Icon
+- White background square canvas
+- Logo centered with padding
+- Generated all Android mipmap sizes from master 1024x1024
+
+### Key Rules Learned
+- flutter_native_splash: add → generate → remove (every time)
+- SVG from Inkscape may contain embedded PNG — verify before using
+- Control splash logo size through canvas proportion, not package parameters
+- Never scale PNG above its source resolution — causes blur
+- logos.png (1248x1248) is the master source for all icon/splash work
