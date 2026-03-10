@@ -29,7 +29,7 @@ class KsAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: showBack
           ? IconButton(
               icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-              onPressed: onBack ?? () => Navigator.of(context).pop(),
+              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           : null,
       automaticallyImplyLeading: showBack,
