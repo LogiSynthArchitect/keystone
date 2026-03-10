@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/analytics/ks_analytics.dart';
+import '../../../../core/analytics/analytics_constants.dart';
 import '../../data/datasources/profile_remote_datasource.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../domain/entities/profile_entity.dart';
@@ -59,7 +61,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   ProfileNotifier(this._repository, SupabaseClient _) : super(const ProfileState()) {
     load();
   }
-
   Future<void> load() async {
     debugPrint('[KS:PROFILE] load called');
     state = state.copyWith(isLoading: true, clearError: true);
@@ -72,7 +73,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load profile.');
     }
   }
-
   Future<bool> update(ProfileEntity profile) async {
     debugPrint('[KS:PROFILE] update called');
     state = state.copyWith(isSaving: true, clearError: true);
@@ -87,15 +87,14 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       return false;
     }
   }
-
   Future<void> shareProfile() async {
     if (state.profile == null) return;
     await Share.share(
       'Check out my locksmith profile: https://${state.profile!.profileUrl}',
       subject: 'My Keystone Profile',
     );
+    KsAnalytics.log(AnalyticsEvents.profileShared);
   }
-
   Future<String?> uploadPhoto(String filePath) async {
     debugPrint('[KS:PROFILE] uploadPhoto called');
     try {
@@ -115,7 +114,6 @@ final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>(
     ref.watch(profileRepositoryProvider),
     ref.watch(supabaseClientProvider)));
 
-// Public profile provider — used by PublicProfileScreen (no auth required)
 final publicProfileProvider = FutureProvider.family<ProfileEntity?, String>((ref, slug) async {
   debugPrint('[KS:PROFILE] publicProfileProvider — slug: $slug');
   final repo = ref.watch(profileRepositoryProvider);

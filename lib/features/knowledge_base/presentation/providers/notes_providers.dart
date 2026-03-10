@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/analytics/ks_analytics.dart';
+import '../../../../core/analytics/analytics_constants.dart';
 import '../../data/datasources/knowledge_note_remote_datasource.dart';
 import '../../data/repositories/knowledge_note_repository_impl.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
@@ -25,14 +27,12 @@ final createNoteUsecaseProvider = Provider<CreateNoteUsecase>(
 final archiveNoteUsecaseProvider = Provider<ArchiveNoteUsecase>(
   (ref) => ArchiveNoteUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
 
-// ── Notes List ─────────────────────────────────────────────────
 class NotesListState {
   final List<KnowledgeNoteEntity> notes;
   final List<KnowledgeNoteEntity> searchResults;
   final bool isLoading;
   final String? errorMessage;
   final String searchQuery;
-
   const NotesListState({
     this.notes = const [],
     this.searchResults = const [],
@@ -40,9 +40,7 @@ class NotesListState {
     this.errorMessage,
     this.searchQuery = '',
   });
-
   List<KnowledgeNoteEntity> get displayed => searchQuery.isEmpty ? notes : searchResults;
-
   NotesListState copyWith({
     List<KnowledgeNoteEntity>? notes,
     List<KnowledgeNoteEntity>? searchResults,
@@ -62,7 +60,6 @@ class NotesListState {
 class NotesListNotifier extends StateNotifier<NotesListState> {
   final KnowledgeNoteRepository _repository;
   NotesListNotifier(this._repository) : super(const NotesListState()) { load(); }
-
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -72,7 +69,6 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load notes.');
     }
   }
-
   Future<void> search(String query) async {
     state = state.copyWith(searchQuery: query);
     if (query.trim().isEmpty) {
@@ -86,11 +82,9 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
       state = state.copyWith(searchResults: []);
     }
   }
-
   void addNote(KnowledgeNoteEntity note) {
     state = state.copyWith(notes: [note, ...state.notes]);
   }
-
   Future<void> archiveNote(String id) async {
     try {
       await _repository.archiveNote(id);
@@ -99,14 +93,12 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
       state = state.copyWith(errorMessage: 'Could not archive note.');
     }
   }
-
   Future<void> refresh() => load();
 }
 
 final notesListProvider = StateNotifierProvider<NotesListNotifier, NotesListState>(
   (ref) => NotesListNotifier(ref.watch(knowledgeNoteRepositoryProvider)));
 
-// ── Add Note ───────────────────────────────────────────────────
 class AddNoteState {
   final bool isLoading;
   final String? errorMessage;
@@ -120,9 +112,7 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
   final CreateNoteUsecase _createNote;
   final SupabaseClient _supabase;
   AddNoteNotifier(this._createNote, this._supabase) : super(const AddNoteState());
-
   void reset() => state = const AddNoteState();
-
   Future<KnowledgeNoteEntity?> save({
     required String title,
     required String description,
@@ -139,9 +129,12 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
         serviceType: serviceType,
       ));
       state = state.copyWith(isLoading: false, saved: true);
+      KsAnalytics.log(AnalyticsEvents.noteSaved, properties: {
+        'has_service_type': serviceType != null,
+        'tag_count': tags.length,
+      });
       return note;
     } catch (e) {
-
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return null;
     }

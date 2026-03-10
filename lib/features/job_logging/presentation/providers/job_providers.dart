@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/network/connectivity_service.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/analytics/ks_analytics.dart';
+import '../../../../core/analytics/analytics_constants.dart';
 import '../../data/datasources/job_local_datasource.dart';
 import '../../data/datasources/job_remote_datasource.dart';
 import '../../data/repositories/job_repository_impl.dart';
@@ -74,6 +76,10 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       final userId = _supabase.auth.currentUser!.id;
       final job = await _logJob(LogJobParams(userId: userId, customerId: customerId, serviceType: serviceType, jobDate: jobDate, location: location, latitude: latitude, longitude: longitude, notes: notes, amountCharged: amountCharged));
       state = state.copyWith(isLoading: false, saved: true);
+      KsAnalytics.log(AnalyticsEvents.jobLogged, properties: {
+        'service_type': serviceType.name,
+        'has_amount': amountCharged != null,
+      });
       return job;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

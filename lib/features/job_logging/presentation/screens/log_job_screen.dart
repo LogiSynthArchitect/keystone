@@ -37,7 +37,30 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     super.dispose();
   }
 
+  bool get _isDirty =>
+      _serviceType != null ||
+      _customerController.text.trim().isNotEmpty ||
+      _locationController.text.trim().isNotEmpty ||
+      _amountController.text.trim().isNotEmpty ||
+      _notesController.text.trim().isNotEmpty;
+
   bool get _canSave => _serviceType != null && _customerController.text.trim().isNotEmpty;
+
+  Future<bool> _confirmDiscard() async {
+    if (!_isDirty) return true;
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('You have unsaved changes. Leave anyway?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep editing')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Discard', style: TextStyle(color: AppColors.error600))),
+        ],
+      ),
+    ) ?? false;
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -59,7 +82,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     final target = DateTime(date.year, date.month, date.day);
     if (target == today) return "Today";
     if (target == today.subtract(const Duration(days: 1))) return "Yesterday";
-    final months = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const months = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     return "${date.day} ${months[date.month]} ${date.year}";
   }
 
@@ -88,51 +111,60 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(logJobProvider);
-    return Scaffold(
-      backgroundColor: AppColors.neutral050,
-      appBar: const KsAppBar(title: "Log a job", showBack: true),
-      body: Column(
-        children: [
-          const KsOfflineBanner(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.pagePadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSpacing.lg),
-                  Text("Service", style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral700)),
-                  const SizedBox(height: AppSpacing.sm),
-                  ServiceTypePicker(selected: _serviceType, onSelected: (t) => setState(() => _serviceType = t)),
-                  const SizedBox(height: AppSpacing.xl),
-                  KsTextField(label: "Customer name", hint: "Kwame Mensah", controller: _customerController, onChanged: (_) => setState(() {}), textInputAction: TextInputAction.next),
-                  const SizedBox(height: AppSpacing.lg),
-                  KsTextField(label: "Location", hint: "East Legon, Accra", controller: _locationController, textInputAction: TextInputAction.next),
-                  const SizedBox(height: AppSpacing.lg),
-                  KsTextField(label: "Amount charged (GHS)", hint: "350", type: KsTextFieldType.amount, controller: _amountController, textInputAction: TextInputAction.next),
-                  const SizedBox(height: AppSpacing.lg),
-                  KsTextField(label: "Notes", hint: "Car model, key type, solution used...", type: KsTextFieldType.multiline, controller: _notesController, textInputAction: TextInputAction.done),
-                  const SizedBox(height: AppSpacing.lg),
-                  GestureDetector(
-                    onTap: _pickDate,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                      decoration: BoxDecoration(color: AppColors.neutral100, borderRadius: BorderRadius.circular(AppSpacing.radiusMd), border: Border.all(color: AppColors.neutral300)),
-                      child: Row(children: [
-                        const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.neutral500),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(_formatDate(_jobDate), style: AppTextStyles.body.copyWith(color: AppColors.neutral700)),
-                      ]),
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final nav = Navigator.of(context);
+        final ok = await _confirmDiscard();
+        if (ok) nav.pop();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.neutral050,
+        appBar: const KsAppBar(title: "Log a job", showBack: true),
+        body: Column(
+          children: [
+            const KsOfflineBanner(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.pagePadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSpacing.lg),
+                    Text("Service", style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral700)),
+                    const SizedBox(height: AppSpacing.sm),
+                    ServiceTypePicker(selected: _serviceType, onSelected: (t) => setState(() => _serviceType = t)),
+                    const SizedBox(height: AppSpacing.xl),
+                    KsTextField(label: "Customer name", hint: "Kwame Mensah", controller: _customerController, onChanged: (_) => setState(() {}), textInputAction: TextInputAction.next),
+                    const SizedBox(height: AppSpacing.lg),
+                    KsTextField(label: "Location", hint: "East Legon, Accra", controller: _locationController, textInputAction: TextInputAction.next),
+                    const SizedBox(height: AppSpacing.lg),
+                    KsTextField(label: "Amount charged (GHS)", hint: "350", type: KsTextFieldType.amount, controller: _amountController, textInputAction: TextInputAction.next),
+                    const SizedBox(height: AppSpacing.lg),
+                    KsTextField(label: "Notes", hint: "Car model, key type, solution used...", type: KsTextFieldType.multiline, controller: _notesController, textInputAction: TextInputAction.done),
+                    const SizedBox(height: AppSpacing.lg),
+                    GestureDetector(
+                      onTap: _pickDate,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                        decoration: BoxDecoration(color: AppColors.neutral100, borderRadius: BorderRadius.circular(AppSpacing.radiusMd), border: Border.all(color: AppColors.neutral300)),
+                        child: Row(children: [
+                          const Icon(Icons.calendar_today_outlined, size: 18, color: AppColors.neutral500),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(_formatDate(_jobDate), style: AppTextStyles.body.copyWith(color: AppColors.neutral700)),
+                        ]),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  KsButton(label: "Save job", onPressed: _canSave && !state.isLoading ? _onSave : null, isLoading: state.isLoading),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
+                    const SizedBox(height: AppSpacing.xxxl),
+                    KsButton(label: "Save job", onPressed: _canSave && !state.isLoading ? _onSave : null, isLoading: state.isLoading),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

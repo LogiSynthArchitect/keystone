@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/analytics/ks_analytics.dart';
+import '../../../../core/analytics/analytics_constants.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
 import '../../data/repositories/customer_repository_impl.dart';
 import '../../domain/entities/customer_entity.dart';
@@ -20,7 +22,6 @@ final getCustomersUsecaseProvider = Provider<GetCustomersUsecase>(
 final createCustomerUsecaseProvider = Provider<CreateCustomerUsecase>(
   (ref) => CreateCustomerUsecase(ref.watch(customerRepositoryProvider)));
 
-// ── Customer List ──────────────────────────────────────────────
 class CustomerListState {
   final List<CustomerEntity> customers;
   final List<CustomerEntity> searchResults;
@@ -28,7 +29,6 @@ class CustomerListState {
   final bool isSearching;
   final String? errorMessage;
   final String searchQuery;
-
   const CustomerListState({
     this.customers = const [],
     this.searchResults = const [],
@@ -37,9 +37,7 @@ class CustomerListState {
     this.errorMessage,
     this.searchQuery = '',
   });
-
   List<CustomerEntity> get displayed => searchQuery.isEmpty ? customers : searchResults;
-
   CustomerListState copyWith({
     List<CustomerEntity>? customers,
     List<CustomerEntity>? searchResults,
@@ -61,7 +59,6 @@ class CustomerListState {
 class CustomerListNotifier extends StateNotifier<CustomerListState> {
   final CustomerRepository _repository;
   CustomerListNotifier(this._repository) : super(const CustomerListState()) { load(); }
-
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -71,7 +68,6 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load customers.');
     }
   }
-
   Future<void> search(String query) async {
     state = state.copyWith(searchQuery: query);
     if (query.trim().isEmpty) {
@@ -86,20 +82,17 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
       state = state.copyWith(isSearching: false, searchResults: []);
     }
   }
-
   void addCustomer(CustomerEntity customer) {
     final updated = [customer, ...state.customers]
       ..sort((a, b) => a.fullName.compareTo(b.fullName));
     state = state.copyWith(customers: updated);
   }
-
   Future<void> refresh() => load();
 }
 
 final customerListProvider = StateNotifierProvider<CustomerListNotifier, CustomerListState>(
   (ref) => CustomerListNotifier(ref.watch(customerRepositoryProvider)));
 
-// ── Add Customer ───────────────────────────────────────────────
 class AddCustomerState {
   final bool isLoading;
   final String? errorMessage;
@@ -113,7 +106,6 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
   final CreateCustomerUsecase _createCustomer;
   final SupabaseClient _supabase;
   AddCustomerNotifier(this._createCustomer, this._supabase) : super(const AddCustomerState());
-
   Future<CustomerEntity?> save({required String fullName, required String phoneNumber, String? location, String? notes}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -125,6 +117,10 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
         notes: notes,
       ));
       state = state.copyWith(isLoading: false, saved: true);
+      KsAnalytics.log(AnalyticsEvents.customerAdded, properties: {
+        'has_location': location != null,
+        'has_notes': notes != null,
+      });
       return customer;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
