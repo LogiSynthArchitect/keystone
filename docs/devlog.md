@@ -261,3 +261,48 @@ Note detail and archive ✅
 - ProfileScreen, EditProfileScreen, PublicProfileScreen
 - Photo upload flow
 - Share profile link
+
+---
+
+## SESSION 6 — 2026-03-10
+
+### What was built
+- Diagnosed and fixed 3 auth flow bugs that were breaking the core user journey
+
+### What broke and how it was fixed
+
+BREAK 1: OTP verify had a double-navigation race condition
+  File: lib/features/auth/presentation/screens/otp_verify_screen.dart
+  Cause: _onVerify() manually called context.go() AND invalidated authStateProvider,
+         which triggered the router's _RouterNotifier to also navigate simultaneously.
+         Two navigations firing at once caused unpredictable behaviour.
+  Fix: Removed all manual context.go() calls from _onVerify(). Now only calls
+       ref.invalidate(authStateProvider) and lets the router redirect handle navigation.
+  Also removed unused route_names.dart import. Kept go_router import for context.pop().
+
+BREAK 2: Onboarding completed but router immediately bounced user back to onboarding
+  File: lib/features/auth/presentation/screens/onboarding_screen.dart
+  Cause: After saving profile, screen called context.go(RouteNames.jobs) but never
+         invalidated authStateProvider. Router still had hasProfile=false in its state,
+         so the redirect rule (_isAuthenticated && !_hasProfile → onboarding) fired
+         and sent the user straight back.
+  Fix: Replaced context.go(RouteNames.jobs) with ref.invalidate(authStateProvider).
+       Router now re-reads auth state, sees hasProfile=true, and navigates to /jobs.
+  Also removed unused go_router and route_names imports, added auth_provider import.
+
+BREAK 3: Sign out could crash with null error before redirect fired
+  File: lib/features/technician_profile/data/repositories/profile_repository_impl.dart
+  Cause: String get _userId => _supabase.auth.currentUser!.id used bang operator.
+         After signOut(), currentUser becomes null. Any profileProvider rebuild
+         during the sign-out window would throw a null crash before the router
+         could redirect away from the profile screen.
+  Fix: Changed to _supabase.auth.currentUser?.id ?? '' — safe null handling.
+
+### Flutter analyze status
+No issues found ✅
+
+### What comes next
+- Test the full auth flow on physical device:
+  Phone → OTP → Onboarding → Jobs → Profile → Sign out → Phone entry
+- If all passing: Phase 9 remaining work (PublicProfileScreen, photo upload)
+- Then Phase 10: Polish and production readiness
