@@ -185,3 +185,20 @@ V1 Polish is complete when:
 - Checkpoint 4 smoke test passes on redesigned app
 - APK built with release signing
 - Sent to Jeremie and Jean via WhatsApp
+
+### Landing Screen ✅
+- [x] Split screen design — off-white top / navy bottom
+- [x] KsLogo 170px with staggered entrance animation
+- [x] Gold label: LOCKSMITH MANAGEMENT
+- [x] Keystone 54px weight 800
+- [x] Subtitle centered, weight 600
+- [x] Gold Get Started button on navy
+- [x] RichText sign in line — white + gold
+- [x] Routed as initial screen for unauthenticated users
+- [x] Font system: BarlowSemiCondensed full family registered
+
+### Font System ✅
+- [x] Barlow Semi Condensed — all 18 variants in assets/fonts/
+- [x] Registered in pubspec.yaml (weights 100-900, italic variants)
+- [x] app_text_styles.dart migrated from GoogleFonts.inter to BarlowSemiCondensed
+- [x] Rule: weight 600+ only throughout the app

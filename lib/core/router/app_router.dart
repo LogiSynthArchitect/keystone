@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/ks_loading_indicator.dart';
+import '../../features/auth/presentation/screens/landing_screen.dart';
 import '../../features/auth/presentation/screens/phone_entry_screen.dart';
 import '../../features/auth/presentation/screens/otp_verify_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
@@ -23,11 +24,12 @@ import 'route_names.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final notifier = _RouterNotifier(ref);
   return GoRouter(
-    initialLocation: RouteNames.phoneEntry,
+    initialLocation: RouteNames.landing,
     debugLogDiagnostics: false,
     refreshListenable: notifier,
     redirect: notifier.redirect,
     routes: [
+      GoRoute(path: RouteNames.landing,    name: "landing",    builder: (context, state) => const LandingScreen()),
       GoRoute(path: RouteNames.phoneEntry, name: "phoneEntry", builder: (context, state) => const PhoneEntryScreen()),
       GoRoute(path: RouteNames.otpVerify,  name: "otpVerify",  builder: (context, state) => const OtpVerifyScreen()),
       GoRoute(path: RouteNames.onboarding, name: "onboarding", builder: (context, state) => const OnboardingScreen()),
@@ -97,7 +99,7 @@ class _RouterNotifier extends ChangeNotifier {
     final isAuthRoute = location.startsWith("/auth");
     final isPublicRoute = location.startsWith("/p/");
     if (isPublicRoute) return null;
-    if (!_isAuthenticated) return isAuthRoute ? null : RouteNames.phoneEntry;
+    if (!_isAuthenticated) return (isAuthRoute || location == RouteNames.landing) ? null : RouteNames.landing;
     if (_isAuthenticated && !_hasProfile) return location == RouteNames.onboarding ? null : RouteNames.onboarding;
     if (_isAuthenticated && _hasProfile && isAuthRoute) return RouteNames.jobs;
     return null;

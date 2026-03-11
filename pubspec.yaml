@@ -59,3 +59,53 @@ flutter:
   assets:
     - assets/
     - assets/logo/
+    - assets/fonts/
+  fonts:
+    - family: BarlowSemiCondensed
+      fonts:
+        - asset: assets/fonts/BarlowSemiCondensed-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/BarlowSemiCondensed-ThinItalic.ttf
+          weight: 100
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/BarlowSemiCondensed-ExtraLightItalic.ttf
+          weight: 200
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-Light.ttf
+          weight: 300
+        - asset: assets/fonts/BarlowSemiCondensed-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/BarlowSemiCondensed-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/BarlowSemiCondensed-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BarlowSemiCondensed-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BarlowSemiCondensed-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/BarlowSemiCondensed-ExtraBoldItalic.ttf
+          weight: 800
+          style: italic
+        - asset: assets/fonts/BarlowSemiCondensed-Black.ttf
+          weight: 900
+        - asset: assets/fonts/BarlowSemiCondensed-BlackItalic.ttf
+          weight: 900
+          style: italic
+

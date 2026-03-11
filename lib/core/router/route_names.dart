@@ -2,6 +2,7 @@ class RouteNames {
   RouteNames._();
 
   // Auth
+  static const String landing     = '/';
   static const String phoneEntry  = '/auth/phone';
   static const String otpVerify   = '/auth/otp';
   static const String onboarding  = '/auth/onboarding';

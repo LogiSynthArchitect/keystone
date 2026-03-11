@@ -714,3 +714,53 @@ Create a pixel-perfect programmatically controllable Flutter logo widget.
 - Widget: lib/core/widgets/ks_logo.dart
 - Parts data: assets/logo/parts_data.json (reference)
 - Individual parts: assets/logo/left_arm.svg, right_arm.svg, keystone_block.svg, keyhole.svg
+
+---
+
+## SESSION 10 — Landing Screen & Font System
+
+### Font System
+- Added Barlow Semi Condensed full family (18 variants) to assets/fonts/
+- Registered all weights (100-900) and italic variants in pubspec.yaml
+- Replaced all GoogleFonts.inter() calls in app_text_styles.dart with
+  TextStyle(fontFamily: 'BarlowSemiCondensed')
+- Removed google_fonts import from app_text_styles.dart
+- Rule: all text in app uses BarlowSemiCondensed, weight 600+ preferred
+
+### Landing Screen — New Screen Created
+File: lib/features/auth/presentation/screens/landing_screen.dart
+
+Design concept: split screen
+- Top 62%: off-white #FAFAF8 background, logo centered, text block
+- Bottom 38%: deep navy #1A237E background, gold CTA button, sign in link
+
+Layout (top to bottom):
+- KsLogo 170px centered with fade+slide entrance animation
+- Gold spaced label: LOCKSMITH MANAGEMENT (11px, weight 600, tracking 3.5)
+- Keystone (54px, weight 800, navy)
+- Subtitle: Built for Ghana's professional locksmiths (17px, weight 600, grey)
+- Gold button: Get Started (navy bg bottom section, gold button)
+- Sign in line: RichText — white70 + gold Sign in (weight 700)
+
+Animations: staggered entrance via AnimationController 1400ms
+- Logo: fade + slide up (0-50%)
+- Text: fade in (30-65%)
+- Button: fade in (60-100%)
+
+Typography decisions:
+- All weights 600+ only — no thin or regular weight text
+- No underlines on links — use color contrast instead
+- Two-tone RichText for "Already have an account? Sign in"
+
+### Router Updates
+- Added RouteNames.landing = '/'
+- Initial location changed from phoneEntry to landing
+- Redirect logic: unauthenticated users go to landing not phoneEntry
+- Authenticated users bypass landing entirely → jobs dashboard
+
+### Key Design Lessons
+1. Split screen (light top / dark bottom) creates strong visual hierarchy
+2. Gold accent on navy is the brand signature — use it for all CTAs
+3. Never underline links in mobile — use color contrast
+4. BarlowSemiCondensed at 800 weight is the hero font for this app
+5. RichText for mixed-style inline text (no wrapping widgets needed)
