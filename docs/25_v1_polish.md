@@ -1,0 +1,177 @@
+# DOCUMENT 25 — V1 POLISH & UI REDESIGN
+### Project: Keystone
+**Purpose:** Track every UI and feature improvement before sending to Jeremie and Jean
+**Status:** IN PROGRESS
+**Started:** March 2026
+
+---
+
+## 25.1 What This Document Is
+
+This document tracks every screen, every UI change, and every known feature addition
+we are making before V1 launch. We work through it screen by screen, item by item.
+Each item gets checked off when complete and tested on physical device.
+
+---
+
+## 25.2 Completed
+
+### App Icon
+- [x] Designed arch + keystone + keyhole logo mark
+- [x] Colors: navy (#1A237E) arch, gold (#F9A825) keystone, navy keyhole
+- [x] Source file: ~/Downloads/logos.png (1248x1248 RGBA)
+- [x] Generated all Android mipmap sizes (mdpi through xxxhdpi)
+- [x] White background, logo centered with padding
+- [x] Tested on physical device
+
+### Splash Screen
+- [x] White background
+- [x] Logo centered, sharp, well proportioned
+- [x] Canvas: 1080x1920, Logo: 900x1300
+- [x] Generated using flutter_native_splash (add → generate → remove workflow)
+- [x] Tested on physical device
+- LESSON: flutter_native_splash must be added, used, then removed every time
+  because it requires AGP 8.7.0 which cannot be downloaded on restricted networks
+
+---
+
+## 25.3 Screens To Redesign
+
+### 1. Phone Entry Screen (Login)
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 2. OTP Verify Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 3. Onboarding Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 4. Jobs Dashboard
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 5. Log Job Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 6. Job Detail Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 7. Customer List Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 8. Customer Detail Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 9. Add Customer Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 10. Notes List Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 11. Note Detail Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 12. Add Note Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 13. Profile Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 14. Edit Profile Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+### 15. Public Profile Screen
+- [ ] Review current design
+- [ ] Sketch new design
+- [ ] Agree on design
+- [ ] Build in Flutter
+- [ ] Test on device
+
+---
+
+## 25.4 Known Feature Additions
+
+These are features we know are needed without waiting for user feedback:
+
+- [ ] Editable WhatsApp follow-up message — user can customize before sending
+- [ ] App version number visible somewhere in settings or profile
+- [ ] Confirmation dialog before deleting any item
+
+---
+
+## 25.5 Process
+
+For each screen:
+1. Claude describes the new design in detail
+2. User takes description to AI image generator for visual mockup
+3. User reviews and gives feedback
+4. Design agreed
+5. Claude builds it in Flutter
+6. Test on physical device
+7. Check off and move to next screen
+
+---
+
+## 25.6 Definition of Done
+
+V1 Polish is complete when:
+- All 15 screens redesigned and tested on device
+- All known feature additions built and tested
+- Checkpoint 4 smoke test passes on redesigned app
+- APK built with release signing
+- Sent to Jeremie and Jean via WhatsApp

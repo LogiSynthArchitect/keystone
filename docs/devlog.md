@@ -645,3 +645,72 @@ Iterations and lessons learned:
 - Control splash logo size through canvas proportion, not package parameters
 - Never scale PNG above its source resolution — causes blur
 - logos.png (1248x1248) is the master source for all icon/splash work
+
+---
+
+## SESSION 9 CONTINUED — KsLogo SVG Implementation
+
+### Goal
+Create a pixel-perfect programmatically controllable Flutter logo widget.
+
+### The Long Journey
+
+**Attempt 1 — CustomPainter from scratch**
+- Drew arch, keystone, keyhole manually using cubic bezier curves
+- Result: looked like a horseshoe — single continuous arch, not two separate arms
+- Lesson: cannot guess path coordinates for a complex logo — need exact data
+
+**Attempt 2 — Inkscape trace by color**
+- Traced logos.png in Inkscape using color mode
+- Problem: both arms and keyhole are same navy color — Inkscape merged them into one object
+- Used Path → Break Apart to separate sub-paths
+- Got 4 separate parts: left_arm, right_arm, keystone_block, keyhole
+- Exported each as individual SVG
+
+**Attempt 3 — flutter_svg with Stack positioning**
+- Tried placing each SVG part in a Flutter Stack at calculated positions
+- Problem: each exported SVG has its own coordinate system starting at 0,0
+- Parts lost their original positions relative to each other
+- Result: scattered, wrong positions
+
+**Attempt 4 — Combined SVG with translate**
+- Tried combining parts using SVG transform="translate(x,y)"
+- Problem: mm vs px unit confusion caused parts to not render
+- Multiple iterations, still not working
+
+**Attempt 5 — svgpathtools analysis**
+- Installed svgpathtools to analyze path coordinates
+- Confirmed all parts start at 0,0 — no original position data preserved
+- Tried calculating positions manually — keyhole still wrong
+
+**The Breakthrough — Full combined SVG from Inkscape**
+- Instead of combining parts manually, went back to Inkscape
+- Selected all parts together and exported as one complete SVG
+- This preserved the original coordinate relationships between all parts
+- Result: perfect logo with all parts in exact correct positions
+
+**Final Solution**
+- Complete SVG with 4 named paths: keystone_block, keyhole, right_arm, left_arm
+- Cleaned up SVG — removed style= attributes, kept only fill= attributes
+- Each path has its own id for programmatic control
+- Saved as: assets/logo/ks_logo_combined.svg
+- KsLogo widget uses flutter_svg SvgPicture.asset to render it
+
+### Key Lessons Learned
+1. Never try to manually reassemble SVG parts that were exported individually
+2. The correct workflow is: arrange all parts in Inkscape → export the whole thing as one SVG
+3. Individual part exports lose their position context — useless for reassembly
+4. flutter_svg renders SVG perfectly at any size — no blur, no scaling issues
+5. Clean SVG = fill attributes only, no style= tags, named ids on each path
+
+### What We Now Have
+- ks_logo_combined.svg with 4 independently addressable paths
+- Fully programmatic — colors changeable at runtime
+- Scalable to any size with zero blur
+- Ready for animations, theming, dark mode
+
+### File Locations
+- SVG: assets/logo/ks_logo_combined.svg
+- Widget: lib/core/widgets/ks_logo.dart
+- Parts data: assets/logo/parts_data.json (reference)
+- Individual parts: assets/logo/left_arm.svg, right_arm.svg, keystone_block.svg, keyhole.svg
