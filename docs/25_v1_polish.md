@@ -202,3 +202,13 @@ V1 Polish is complete when:
 - [x] Registered in pubspec.yaml (weights 100-900, italic variants)
 - [x] app_text_styles.dart migrated from GoogleFonts.inter to BarlowSemiCondensed
 - [x] Rule: weight 600+ only throughout the app
+
+### Phone Entry Screen ✅
+- [x] Icon badge — navy square, gold mobile icon
+- [x] Heading 38px w800 left-aligned
+- [x] Unified phone input — no divider, flag + prefix + number seamless
+- [x] Ghana flag SVG
+- [x] Gold check / grey X validation icon
+- [x] Animated feedback banner — slide in, auto dismiss, error/success states
+- [x] Keyboard aware — navy bottom hides, floating button appears
+- [x] Consistent split screen language with landing screen

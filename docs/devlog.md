@@ -764,3 +764,34 @@ Typography decisions:
 3. Never underline links in mobile — use color contrast
 4. BarlowSemiCondensed at 800 weight is the hero font for this app
 5. RichText for mixed-style inline text (no wrapping widgets needed)
+
+---
+
+## SESSION 10 CONTINUED — Phone Entry Screen Redesign
+
+### Design
+- Removed KsLogo and Keystone title — user already saw them on landing screen
+- Icon badge: navy rounded square, gold mobile icon (28px) — establishes screen identity
+- Split layout: off-white top / navy bottom — consistent with landing screen language
+- Heading: 38px w800 navy, left-aligned — task-focused not brand moment
+- Subtitle: 16px w600 grey
+- Unified phone input: one seamless box, no divider between flag and number field
+- Ghana flag SVG + +233 prefix left side, number input flows naturally right
+- Gold check icon when number is valid, grey X when invalid
+- Animated feedback banner: slides in from top, red for error, green for success, auto-dismisses after 4s
+- Keyboard aware: navy bottom hides when keyboard opens, floating navy Continue button appears above keyboard instead
+
+### Files changed
+- lib/features/auth/presentation/screens/phone_entry_screen.dart — full rewrite
+- assets/flags/gh.svg — Ghana flag downloaded from flagcdn.com
+- pubspec.yaml — assets/flags/ registered
+
+### Packages used
+- flutter_svg — renders Ghana flag
+- line_awesome_flutter — back arrow, mobile icon, check, X, error icons
+
+### Key lessons
+- Never use Row with BoxDecoration border to split a text field — it creates a visible divider
+- For prefix + input in one box: use Padding widget for prefix, TextField with InputBorder.none for input
+- hot reload does not re-run initState — LateInitializationError means you need full restart
+- keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0 is reliable for keyboard detection
