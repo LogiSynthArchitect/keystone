@@ -795,3 +795,22 @@ Typography decisions:
 - For prefix + input in one box: use Padding widget for prefix, TextField with InputBorder.none for input
 - hot reload does not re-run initState — LateInitializationError means you need full restart
 - keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0 is reliable for keyboard detection
+
+---
+
+## SESSION 10 CONTINUED — OTP Verify Screen Redesign
+
+### Design
+- Same pattern as phone entry: off-white top / navy bottom
+- Icon badge: navy square, gold shield icon (28px)
+- Heading: "Verify your number" 38px w800
+- Phone number highlighted in navy bold in the subtitle
+- 6 Pinput boxes: white bg, grey border, navy focused border + glow, navy filled bg + white digit
+- Feedback banner: same component as phone entry — slide in, auto dismiss
+- Resend: countdown timer with navy bold seconds, gold Resend when timer hits 0
+- Keyboard aware: same floating button pattern
+
+### Key details
+- Used _canResend bool to control resend display — more reliable than countdown > 0
+- Timer fix: cancel + reset both _resendCooldown and _canResend in _startCooldown
+- pinput submittedPinTheme: navy bg, white text — filled boxes look confirmed

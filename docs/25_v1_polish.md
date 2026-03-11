@@ -212,3 +212,13 @@ V1 Polish is complete when:
 - [x] Animated feedback banner — slide in, auto dismiss, error/success states
 - [x] Keyboard aware — navy bottom hides, floating button appears
 - [x] Consistent split screen language with landing screen
+
+### OTP Verify Screen ✅
+- [x] Icon badge — navy square, gold shield icon
+- [x] Heading 38px w800 left-aligned
+- [x] Phone number highlighted navy bold in subtitle
+- [x] 6 Pinput boxes — white, grey border, navy focus, navy filled
+- [x] Animated feedback banner — same as phone entry
+- [x] Countdown timer — navy bold seconds, gold Resend on expiry
+- [x] Keyboard aware — floating button pattern
+- [x] Consistent with landing and phone entry screen language
