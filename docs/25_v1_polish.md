@@ -33,6 +33,16 @@ Each item gets checked off when complete and tested on physical device.
 - LESSON: flutter_native_splash must be added, used, then removed every time
   because it requires AGP 8.7.0 which cannot be downloaded on restricted networks
 
+### KsLogo Widget
+- [x] Pixel perfect SVG logo — ks_logo_combined.svg
+- [x] 4 named paths: left_arm, right_arm, keystone_block, keyhole
+- [x] Fully programmatic — colors changeable at runtime
+- [x] Scales to any size with zero blur
+- [x] Rendered via flutter_svg SvgPicture.asset
+- [x] Ready for animations and theming
+- LESSON: never manually reassemble individually exported SVG parts
+  Always arrange all parts in Inkscape and export as one complete SVG
+
 ---
 
 ## 25.3 Screens To Redesign
