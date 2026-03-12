@@ -4,7 +4,8 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static TextStyle get display => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get display => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 32,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
@@ -12,7 +13,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get h1 => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get h1 => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 24,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.3,
@@ -20,7 +22,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get h2 => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get h2 => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
@@ -28,7 +31,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get h3 => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get h3 => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 17,
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
@@ -36,7 +40,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get bodyLarge => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get bodyLarge => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 16,
         fontWeight: FontWeight.w400,
         letterSpacing: 0,
@@ -44,7 +49,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get body => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get body => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         letterSpacing: 0,
@@ -52,7 +58,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get bodyMedium => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get bodyMedium => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
@@ -60,7 +67,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get caption => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get caption => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 12,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.1,
@@ -68,7 +76,8 @@ class AppTextStyles {
         color: AppColors.neutral600,
       );
 
-  static TextStyle get captionMedium => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get captionMedium => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
@@ -76,7 +85,8 @@ class AppTextStyles {
         color: AppColors.neutral700,
       );
 
-  static TextStyle get label => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get label => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.1,
@@ -84,7 +94,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get labelSmall => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get labelSmall => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.2,
@@ -92,7 +103,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get amount => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get amount => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 20,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
@@ -100,7 +112,8 @@ class AppTextStyles {
         color: AppColors.neutral900,
       );
 
-  static TextStyle get amountSmall => TextStyle(fontFamily: 'BarlowSemiCondensed',
+  static TextStyle get amountSmall => const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         letterSpacing: 0,

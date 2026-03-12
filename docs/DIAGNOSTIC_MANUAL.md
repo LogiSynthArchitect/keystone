@@ -1,5 +1,39 @@
 # KEYSTONE DIAGNOSTIC MANUAL
-*Version 1.1 - Post-Onboarding Modularization*
+*Version 1.2 - Supabase & Identity Special Edition*
+
+## I. SUPABASE ERROR CODES & REMEDIES
+
+### Code 23503: Foreign Key Violation
+- **Context:** Occurs when inserting a Job, Customer, or Profile.
+- **Cause:** You are likely passing the **Auth UID** to a column that expects the **Internal UUID**.
+- **Remedy:** Check  ID Matrix. Use  to get the correct internal ID.
+
+### Code 42501: RLS Violation (Permission Denied)
+- **Context:** Select/Insert fails even when logged in.
+- **Cause:** The RLS policy for that table is likely 'Nested' (checking a different table for ownership).
+- **Remedy:** Verify if the user has a record in . If not, the nested lookup will return 0 rows, causing an RLS fail.
+
+### Code 23505: Unique Constraint Violation
+- **Context:** 'duplicate key value violates unique constraint "users_auth_id_key"'.
+- **Cause:** Onboarding failed halfway. A record exists in  but not in .
+- **Remedy:** The  is now idempotent. It will automatically detect the existing user and proceed to profile creation.
+
+## II. CORE FEATURE LOGIC
+
+### 133. lib/features/auth/domain/usecases/verify_otp_usecase.dart
+- **Critical Logic:** Normalizes phone number to E.164.
+- **Failure Mode:** Verification fails with 'Invalid phone number format' if normalization is skipped.
+
+### 134. lib/core/providers/auth_provider.dart ()
+- **Objective:** The bridge between Supabase Auth and our Application Data.
+- **Criticality:** High. This is the only way to get the **Internal UUID** required for logging jobs and customers.
+- **Failure Mode:** Returns null if the  record is missing.
+
+### 135. lib/core/router/app_router.dart
+- **Objective:** Route registry and Auth-guarded redirects.
+- **Failure Mode:** Navigation crash ('No initial matches') if a new screen is added but not registered in the  array.
+
+
 
 ## I. ROOT ARCHITECTURE
 ... (entries 1-58) ...
@@ -23,3 +57,41 @@
 
 ### 132. lib/features/auth/presentation/widgets/onboarding_step_indicator.dart
 - **Objective:** Visual progress for the 2-step flow.
+
+### lib/features/technician_profile/data/datasources/profile_remote_datasource.dart
+- **Responsibility:** Direct Supabase communication for profile data and storage.
+- **Talks to:** Supabase (profiles table, storage)
+- **Breaks if missing:** Onboarding and profile management fail.
+
+### lib/features/technician_profile/data/repositories/profile_repository_impl.dart
+- **Responsibility:** Maps entities to models and enforces ID consistency.
+- **Talks to:** ProfileRemoteDatasource, Supabase Auth
+- **Breaks if missing:** Critical ID mismatch causes Foreign Key failures on onboarding.
+
+### lib/features/auth/presentation/screens/landing_screen.dart
+- **Objective:** Brand introduction and initial entry point.
+- **Core Logic:** Staggered animations for brand elements; redirects to phone entry.
+- **Modularity:** Pure UI coordinator; no business logic.
+
+### lib/features/auth/presentation/screens/phone_entry_screen.dart
+- **Objective:** Identity initiation via phone number.
+- **Core Logic:** Validates Ghana phone format; triggers OTP request.
+- **Modularity:** Separates input handling from auth logic.
+
+### lib/features/auth/presentation/screens/otp_verify_screen.dart
+- **Objective:** Identity verification.
+- **Core Logic:** Manages 6-digit PIN input and resend cooldown timer.
+- **Modularity:** Uses Pinput for specialized field behavior.
+
+### lib/features/auth/presentation/providers/auth_notifier.dart
+- **Objective:** Orchestrates UI state for the entire authentication and onboarding lifecycle.
+- **Critical Dependency:** Requires `RequestOtpUsecase`, `VerifyOtpUsecase`, `ProfileRepository`, and `AuthRepository`.
+- **Modularity:** Successfully encapsulated all dependency injection within the file to resolve identifier errors.
+
+### lib/core/router/app_router.dart
+- **Objective:** Guards application routes based on asynchronous authentication state.
+- **Failure Mode:** Redirect logic fails if `authStateProvider` (AsyncValue) is not correctly unwrapped before checking `isAuthenticated`.
+
+### lib/core/constants/supabase_constants.dart
+- **Objective:** Centralized configuration for Supabase environment variables and table names.
+- **Failure Mode:** Empty URL or Key causes `No host specified` error during API calls. Ensure values are hardcoded or passed correctly via `--dart-define`.

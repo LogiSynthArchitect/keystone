@@ -34,7 +34,7 @@ class OnboardingBottomBar extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF9A825),
                   foregroundColor: AppColors.primary700,
-                  disabledBackgroundColor: const Color(0xFFF9A825).withOpacity(0.4),
+                  disabledBackgroundColor: const Color(0xFFF9A825).withValues(alpha: 0.4),
                   elevation: 4,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),

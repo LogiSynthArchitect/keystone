@@ -16,10 +16,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<supa.Session> verifyOtp({
     required String phoneNumber,
     required String token,
-  }) => _remote.verifyOtp(phoneNumber: phoneNumber, token: token);
+  }) => _remote.verifyOtp(phoneNumber, token);
 
   @override
-  Future<void> signOut() => _remote.signOut();
+  Future<void> signOut() => _remote.logout();
 
   @override
   Future<UserEntity?> getCurrentUser() async {
@@ -43,8 +43,8 @@ class AuthRepositoryImpl implements AuthRepository {
     }
     final model = await _remote.createUser(
       authId: authUser.id,
-      fullName: fullName,
-      phoneNumber: phoneNumber,
+      name: fullName,
+      phone: phoneNumber,
     );
     return model.toEntity();
   }

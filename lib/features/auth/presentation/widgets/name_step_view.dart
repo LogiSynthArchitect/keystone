@@ -39,7 +39,7 @@ class NameStepView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           'What should\nwe call you?',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
@@ -51,7 +51,7 @@ class NameStepView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
+        const Text(
           'Your name appears on your public profile.',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
@@ -64,7 +64,7 @@ class NameStepView extends StatelessWidget {
         const SizedBox(height: 36),
         const OnboardingStepIndicator(activeStep: 0),
         const SizedBox(height: 32),
-        Text(
+        const Text(
           'Full name',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
@@ -93,7 +93,7 @@ class NameStepView extends StatelessWidget {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
             onSubmitted: isValid ? (_) => onSubmitted() : null,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'BarlowSemiCondensed',
               fontSize: 18,
               fontWeight: FontWeight.w600,
