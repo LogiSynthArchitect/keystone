@@ -21,7 +21,7 @@ class KsLogoAnimated extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           // Left Arm Assembly
-          // Visual: 1200ms | Pause: 2800ms | Total: 4000ms
+          // Visual: 1200ms | Pause: 2800ms | Total Loop: 4000ms
           SvgPicture.asset(
             'assets/logo/left_arm.svg',
             width: size,
@@ -34,7 +34,7 @@ class KsLogoAnimated extends StatelessWidget {
               .then(delay: 2800.ms),
 
           // Right Arm Assembly
-          // Visual: 1200ms | Pause: 2800ms | Total: 4000ms
+          // Visual: 1200ms | Pause: 2800ms | Total Loop: 4000ms
           SvgPicture.asset(
             'assets/logo/right_arm.svg',
             width: size,
@@ -47,7 +47,7 @@ class KsLogoAnimated extends StatelessWidget {
               .then(delay: 2800.ms),
 
           // The Keystone Block
-          // Visual ends at 2500ms (1000ms delay + 1500ms slide) | Pause: 1500ms | Total: 4000ms
+          // Visual: 2500ms (1000ms delay + 1500ms slide) | Pause: 1500ms | Total Loop: 4000ms
           SvgPicture.asset(
             'assets/logo/keystone_block.svg',
             width: size,
@@ -60,7 +60,7 @@ class KsLogoAnimated extends StatelessWidget {
               .then(delay: 1500.ms),
 
           // The Keyhole
-          // Visual ends at 3000ms (2200ms delay + 800ms fade) | Pause: 1000ms | Total: 4000ms
+          // Visual: 3000ms (2200ms delay + 800ms fade) | Pause: 1000ms | Total Loop: 4000ms
           SvgPicture.asset(
             'assets/logo/keyhole.svg',
             width: size,
