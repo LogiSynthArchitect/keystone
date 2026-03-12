@@ -8,6 +8,9 @@ class KsLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const navyFilter = ColorFilter.mode(AppColors.primary900, BlendMode.srcIn);
+    const goldFilter = ColorFilter.mode(AppColors.accent500, BlendMode.srcIn);
+
     return SizedBox(
       width: size,
       height: size,
@@ -22,7 +25,7 @@ class KsLogo extends StatelessWidget {
               width: size, 
               height: size,
               fit: BoxFit.contain,
-              colorFilter: const ColorFilter.mode(AppColors.primary700, BlendMode.srcIn),
+              colorFilter: navyFilter,
             ),
             // Right Arm (Navy)
             SvgPicture.asset(
@@ -30,7 +33,7 @@ class KsLogo extends StatelessWidget {
               width: size, 
               height: size,
               fit: BoxFit.contain,
-              colorFilter: const ColorFilter.mode(AppColors.primary700, BlendMode.srcIn),
+              colorFilter: navyFilter,
             ),
             // Keystone Block (Gold)
             SvgPicture.asset(
@@ -38,7 +41,7 @@ class KsLogo extends StatelessWidget {
               width: size, 
               height: size,
               fit: BoxFit.contain,
-              colorFilter: const ColorFilter.mode(Color(0xFFF9A825), BlendMode.srcIn),
+              colorFilter: goldFilter,
             ),
             // Keyhole (Navy)
             SvgPicture.asset(
@@ -46,7 +49,7 @@ class KsLogo extends StatelessWidget {
               width: size, 
               height: size,
               fit: BoxFit.contain,
-              colorFilter: const ColorFilter.mode(AppColors.primary700, BlendMode.srcIn),
+              colorFilter: navyFilter,
             ),
           ],
         ),
