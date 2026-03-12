@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
@@ -30,7 +29,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = authStateAsync.valueOrNull ?? const AuthState();
 
   return GoRouter(
-    initialLocation: RouteNames.landing,
+    // SURGICAL CHANGE: Open directly on the Portal to check session silently
+    initialLocation: RouteNames.transition,
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isLoggedIn = authState.isAuthenticated;
@@ -39,7 +39,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                           state.matchedLocation == RouteNames.otpVerify ||
                           state.matchedLocation == RouteNames.landing;
 
-      debugPrint('[KS:ROUTER] Redirect check — isLoggedIn: $isLoggedIn, hasProfile: $hasProfile, location: ${state.matchedLocation}');
+      // Allow the transition portal to remain while resolving session
+      if (state.matchedLocation == RouteNames.transition) return null;
 
       if (!isLoggedIn) {
         return isLoggingIn ? null : RouteNames.landing;
@@ -49,36 +50,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         return state.matchedLocation == RouteNames.onboarding ? null : RouteNames.onboarding;
       }
 
+      // Default redirect for authenticated users coming from login flows
       if (isLoggedIn && hasProfile && isLoggingIn) {
-        return RouteNames.jobs;
+        return RouteNames.transition;
       }
 
       return null;
     },
     routes: [
-      // Auth
       GoRoute(path: RouteNames.landing, builder: (context, state) => const LandingScreen()),
       GoRoute(path: RouteNames.phoneEntry, builder: (context, state) => const PhoneEntryScreen()),
       GoRoute(path: RouteNames.otpVerify, builder: (context, state) => const OtpVerifyScreen()),
       GoRoute(path: RouteNames.onboarding, builder: (context, state) => const OnboardingScreen()),
       GoRoute(path: RouteNames.transition, builder: (context, state) => const TransitionScreen()),
-      
-      // Jobs
       GoRoute(path: RouteNames.jobs, builder: (context, state) => const JobListScreen()),
       GoRoute(path: RouteNames.logJob, builder: (context, state) => const LogJobScreen()),
       GoRoute(path: '/jobs/:id', builder: (context, state) => JobDetailScreen(jobId: state.pathParameters['id']!)),
-
-      // Customers
       GoRoute(path: RouteNames.customers, builder: (context, state) => const CustomerListScreen()),
       GoRoute(path: RouteNames.addCustomer, builder: (context, state) => const AddCustomerScreen()),
       GoRoute(path: '/customers/:id', builder: (context, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!)),
-
-      // Knowledge Base
       GoRoute(path: RouteNames.notes, builder: (context, state) => const NotesListScreen()),
       GoRoute(path: RouteNames.addNote, builder: (context, state) => const AddNoteScreen()),
       GoRoute(path: '/notes/:id', builder: (context, state) => NoteDetailScreen(noteId: state.pathParameters['id']!)),
-
-      // Profile
       GoRoute(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       GoRoute(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
       GoRoute(path: '/p/:slug', builder: (context, state) => PublicProfileScreen(slug: state.pathParameters['slug']!)),
