@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/providers/supabase_provider.dart';
-import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_avatar.dart';
-import '../../../../core/widgets/ks_button.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_text_field.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../technician_profile/domain/entities/profile_entity.dart';
-import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../providers/auth_notifier.dart';
+import '../widgets/name_step_view.dart';
+import '../widgets/services_step_view.dart';
+import '../widgets/onboarding_bottom_bar.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -24,180 +19,85 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _nameController = TextEditingController();
+  final _nameFocusNode = FocusNode();
+  int _step = 0; // 0 = name, 1 = services
   final List<ServiceType> _selectedServices = [];
-  bool _isLoading = false;
+  bool _nameFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameFocusNode.addListener(() => setState(() => _nameFocused = _nameFocusNode.hasFocus));
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFocusNode.dispose();
     super.dispose();
   }
 
-  bool get _canSubmit =>
-      _nameController.text.trim().length >= 2 && _selectedServices.isNotEmpty;
+  bool get _isValid => _nameController.text.trim().length >= 2;
 
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
-
-  Future<void> _onGetStarted() async {
-    setState(() => _isLoading = true);
-    try {
-      final supabase = ref.read(supabaseClientProvider);
-      final authUser = supabase.auth.currentUser;
-      if (authUser == null) return;
-
-      final datasource = ref.read(authRemoteDatasourceProvider);
-      // Check if user already exists — skip create if so
-      final existing = await datasource.getCurrentUser(authUser.id);
-      if (existing == null) {
-        await datasource.createUser(
-          authId: authUser.id,
-          fullName: _nameController.text.trim(),
-          phoneNumber: authUser.phone ?? '',
-        );
-      }
-
-      // Create profile if it does not exist
-      final existingProfile = await ref.read(profileRepositoryProvider).getProfile();
-      if (existingProfile == null) {
-        final phone = authUser.phone ?? '';
-        final slug = _nameController.text.trim().toLowerCase().replaceAll(' ', '_');
-        final now = DateTime.now();
-        final profile = ProfileEntity(
-          id: '',
-          userId: authUser.id,
-          displayName: _nameController.text.trim(),
-          services: _selectedServices,
-          whatsappNumber: phone,
-          isPublic: true,
-          profileUrl: 'keystone.app/p/$slug',
-          createdAt: now,
-          updatedAt: now,
-        );
-        await ref.read(profileRepositoryProvider).createProfile(profile);
-      }
-      ref.invalidate(authStateProvider);
-    } catch (e, stack) {
-      debugPrint('=== ONBOARDING ERROR ===');
-      debugPrint('Type: ${e.runtimeType}');
-      debugPrint('Error: $e');
-      debugPrint('Stack: $stack');
-      debugPrint('========================');
-      if (mounted) {
-        KsSnackbar.show(context,
-            message: 'Could not save your profile. Please try again.',
-            type: KsSnackbarType.error);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  String _serviceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return 'Car Key Programming';
-      case ServiceType.doorLockInstallation:  return 'Door Lock Installation';
-      case ServiceType.doorLockRepair:        return 'Door Lock Repair';
-      case ServiceType.smartLockInstallation: return 'Smart Lock Installation';
+  void _onContinue() async {
+    if (_step == 0) {
+      _nameFocusNode.unfocus();
+      setState(() => _step = 1);
+    } else {
+      final success = await ref.read(authNotifierProvider.notifier).completeOnboarding(
+            name: _nameController.text.trim(),
+            services: _selectedServices,
+          );
+      if (success && mounted) context.go(RouteNames.transition);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    ref.listen<AuthUiState>(authNotifierProvider, (prev, next) {
+      if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+        KsSnackbar.show(context, message: next.errorMessage!, type: KsSnackbarType.error);
+      }
+    });
+
     return Scaffold(
-      backgroundColor: AppColors.neutral050,
-      appBar: const KsAppBar(title: 'Set up your profile'),
+      backgroundColor: const Color(0xFFFAFAF8),
       body: Column(
         children: [
-          const KsOfflineBanner(),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.pagePadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSpacing.xxl),
-                  Center(
-                    child: KsAvatar(
-                      size: KsAvatarSize.xl,
-                      initials: _initials(_nameController.text),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
-                  KsTextField(
-                    label: 'Full name',
-                    hint: 'Jeremie Mensah',
-                    controller: _nameController,
-                    onChanged: (_) => setState(() {}),
-                    autofocus: true,
-                    textInputAction: TextInputAction.done,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text('Services you offer', style: AppTextStyles.h3),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Select all that apply.',
-                    style: AppTextStyles.body.copyWith(color: AppColors.neutral600),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  ...ServiceType.values.map((type) {
-                    final selected = _selectedServices.contains(type);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (selected) {
-                              _selectedServices.remove(type);
-                            } else {
-                              _selectedServices.add(type);
-                            }
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                            vertical: AppSpacing.md,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected ? AppColors.primary050 : AppColors.white,
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                            border: Border.all(
-                              color: selected ? AppColors.primary600 : AppColors.neutral200,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                selected ? Icons.check_circle : Icons.circle_outlined,
-                                color: selected ? AppColors.primary700 : AppColors.neutral400,
-                                size: 20,
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              Text(_serviceLabel(type), style: AppTextStyles.bodyMedium),
-                            ],
-                          ),
-                        ),
+            child: SafeArea(
+              bottom: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                child: _step == 0
+                    ? NameStepView(
+                        controller: _nameController,
+                        focusNode: _nameFocusNode,
+                        isFocused: _nameFocused,
+                        isValid: _isValid,
+                        onSubmitted: _onContinue,
+                      )
+                    : ServicesStepView(
+                        selectedServices: _selectedServices,
+                        onToggle: (type) => setState(() =>
+                            _selectedServices.contains(type) 
+                                ? _selectedServices.remove(type) 
+                                : _selectedServices.add(type)),
                       ),
-                    );
-                  }),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  KsButton(
-                    label: 'Get started',
-                    onPressed: _canSubmit && !_isLoading ? _onGetStarted : null,
-                    isLoading: _isLoading,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
               ),
             ),
           ),
+          if (!keyboardVisible || _step == 0)
+            OnboardingBottomBar(
+              step: _step,
+              isLoading: authState.isLoading,
+              onPressed: (_step == 0 && _isValid) || (_step == 1 && _selectedServices.isNotEmpty)
+                  ? _onContinue
+                  : null,
+            ),
         ],
       ),
     );

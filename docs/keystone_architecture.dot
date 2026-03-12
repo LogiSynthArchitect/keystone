@@ -1,0 +1,112 @@
+digraph KeystoneArchitecture {
+    // Global Configuration
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, margin="0.2,0.1"];
+    edge [fontname="Helvetica", fontsize=10, color="#666666"];
+
+    // 1. ROOT ENGINE
+    subgraph cluster_root {
+        label="Root Engine";
+        style=filled; fillcolor="#f8f9fa"; color="#ced4da";
+        main [label="main.dart\n(App Entry)", fillcolor="#e9ecef"];
+        app [label="app.dart\n(MaterialApp)", fillcolor="#e9ecef"];
+        main -> app [label="Runs"];
+    }
+
+    // 2. CORE SERVICES
+    subgraph cluster_core {
+        label="Core Infrastructure";
+        style=filled; fillcolor="#e3f2fd"; color="#90caf9";
+        router [label="app_router.dart\n(GoRouter)"];
+        supabase [label="supabase_client.dart\n(Postgrest/Auth)"];
+        hive [label="hive_service.dart\n(Local NoSQL)"];
+        connectivity [label="connectivity_service.dart"];
+        wa_launcher [label="whatsapp_launcher.dart"];
+    }
+
+    main -> supabase [label="Initializes"];
+    main -> hive [label="Opens Boxes"];
+    app -> router;
+
+    // 3. FEATURE: AUTHENTICATION
+    subgraph cluster_auth {
+        label="Auth & Onboarding";
+        style=filled; fillcolor="#fff3e0"; color="#ffcc80";
+        auth_ui [label="Landing, Phone, OTP\nOnboarding Screens"];
+        auth_prov [label="AuthNotifier"];
+        auth_uc [label="RequestOTP, VerifyOTP\nLogout UseCases"];
+        auth_repo [label="Auth Repository"];
+        auth_ui -> auth_prov -> auth_uc -> auth_repo;
+    }
+
+    // 4. FEATURE: TECHNICIAN PROFILE
+    subgraph cluster_profile {
+        label="Technician Profile";
+        style=filled; fillcolor="#f3e5f5"; color="#ce93d8";
+        prof_ui [label="Profile Screens\n(Edit, Public)"];
+        prof_prov [label="ProfileProvider"];
+        prof_uc [label="Update, Share UseCases"];
+        prof_repo [label="Profile Repository"];
+        prof_ui -> prof_prov -> prof_uc -> prof_repo;
+    }
+
+    // 5. FEATURE: JOB LOGGING
+    subgraph cluster_jobs {
+        label="Job Logging (Offline-First)";
+        style=filled; fillcolor="#e8f5e9"; color="#a5d6a7";
+        job_ui [label="Log Job, Job List Screens"];
+        job_prov [label="Job Providers"];
+        job_uc [label="LogJob, Sync, Get UseCases"];
+        job_repo [label="Job Repository"];
+        job_local [label="Job Local DataSource"];
+        job_ui -> job_prov -> job_uc -> job_repo;
+        job_repo -> job_local [label="Save Offline"];
+    }
+
+    // 6. FEATURE: CUSTOMER HISTORY
+    subgraph cluster_crm {
+        label="Customer History";
+        style=filled; fillcolor="#e0f7fa"; color="#80deea";
+        crm_ui [label="Customer List, Detail Screens"];
+        crm_repo [label="Customer Repository"];
+        crm_ui -> crm_repo;
+    }
+
+    // 7. FEATURE: KNOWLEDGE BASE
+    subgraph cluster_notes {
+        label="Knowledge Base";
+        style=filled; fillcolor="#fff9c4"; color="#fff59d";
+        note_ui [label="Notes Directory, Add Note"];
+        note_repo [label="Knowledge Repository"];
+        note_ui -> note_repo [label="Tag Search / Soft Delete"];
+    }
+
+    // 8. FEATURE: WHATSAPP FOLLOW-UP
+    subgraph cluster_followup {
+        label="WhatsApp Follow-up";
+        style=filled; fillcolor="#fce4ec"; color="#f48fb1";
+        wa_ui [label="Follow-up Button/Preview"];
+        wa_uc [label="SendFollowupUsecase"];
+        wa_repo [label="FollowUp Repository"];
+        wa_ui -> wa_uc -> wa_repo;
+    }
+
+    // DATA LAYER CONNECTIONS
+    auth_repo -> supabase;
+    prof_repo -> supabase;
+    job_repo -> supabase [label="RPC Batch Sync"];
+    crm_repo -> supabase;
+    note_repo -> supabase;
+    wa_repo -> supabase;
+    job_local -> hive;
+    
+    // UTILITY CONNECTIONS
+    router -> auth_ui;
+    router -> job_ui;
+    router -> crm_ui;
+    router -> prof_ui;
+    router -> note_ui;
+
+    connectivity -> job_prov [label="Triggers Sync", style=dashed, color="#d32f2f"];
+    wa_uc -> wa_launcher [label="Opens App", style=dashed];
+}

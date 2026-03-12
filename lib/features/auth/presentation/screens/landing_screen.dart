@@ -80,10 +80,10 @@ class _LandingScreenState extends State<LandingScreen>
                             child: child,
                           ),
                         ),
-                        child: const KsLogo(size: 170),
+                        child: const KsLogo(size: 110),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
                       // Text
                       AnimatedBuilder(

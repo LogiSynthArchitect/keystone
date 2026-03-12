@@ -43,6 +43,7 @@ dependencies:
   json_annotation: ^4.9.0
   flutter_svg: ^2.2.4
   line_awesome_flutter: ^3.0.1
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +63,7 @@ flutter:
     - assets/logo/
     - assets/fonts/
     - assets/flags/
+    - assets/services/
   fonts:
     - family: BarlowSemiCondensed
       fonts:

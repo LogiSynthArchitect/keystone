@@ -7,6 +7,7 @@ import '../../features/auth/presentation/screens/landing_screen.dart';
 import '../../features/auth/presentation/screens/phone_entry_screen.dart';
 import '../../features/auth/presentation/screens/otp_verify_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
+import '../../features/auth/presentation/screens/transition_screen.dart';
 import '../../features/job_logging/presentation/screens/job_list_screen.dart';
 import '../../features/job_logging/presentation/screens/log_job_screen.dart';
 import '../../features/whatsapp_followup/presentation/screens/job_detail_screen.dart';
@@ -33,6 +34,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.phoneEntry, name: "phoneEntry", builder: (context, state) => const PhoneEntryScreen()),
       GoRoute(path: RouteNames.otpVerify,  name: "otpVerify",  builder: (context, state) => const OtpVerifyScreen()),
       GoRoute(path: RouteNames.onboarding, name: "onboarding", builder: (context, state) => const OnboardingScreen()),
+      GoRoute(path: RouteNames.transition, name: "transition", builder: (context, state) => const TransitionScreen()),
       GoRoute(
         path: RouteNames.jobs,
         name: "jobs",
@@ -100,6 +102,7 @@ class _RouterNotifier extends ChangeNotifier {
     final isPublicRoute = location.startsWith("/p/");
     if (isPublicRoute) return null;
     if (!_isAuthenticated) return (isAuthRoute || location == RouteNames.landing) ? null : RouteNames.landing;
+    if (_isAuthenticated && location == RouteNames.transition) return null;
     if (_isAuthenticated && !_hasProfile) return location == RouteNames.onboarding ? null : RouteNames.onboarding;
     if (_isAuthenticated && _hasProfile && isAuthRoute) return RouteNames.jobs;
     return null;

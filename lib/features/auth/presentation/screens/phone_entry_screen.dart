@@ -266,25 +266,29 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen>
                     // Phone input — one unified container
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      height: 56,
+                      height: 64,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _isFocused
                               ? AppColors.primary700
-                              : const Color(0xFFE0E0E0),
+                              : const Color(0xFFEAEAEC), // Softer resting border
                           width: _isFocused ? 2 : 1,
                         ),
                         boxShadow: _isFocused
                             ? [
-                                BoxShadow(
-                                  color: AppColors.primary700.withOpacity(0.08),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                )
+                                // Layer 1 - Ambient
+                                BoxShadow(color: AppColors.primary700.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+                                // Layer 2 - Direct
+                                BoxShadow(color: AppColors.primary700.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8)),
+                                // Layer 3 - Glow
+                                BoxShadow(color: AppColors.primary700.withOpacity(0.12), blurRadius: 32, offset: const Offset(0, 16)),
                               ]
-                            : [],
+                            : [
+                                // Resting ambient depth
+                                const BoxShadow(color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2)),
+                              ],
                       ),
                       child: Row(
                         children: [
@@ -397,7 +401,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen>
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 64,
                       child: ElevatedButton(
                         onPressed: _canContinue && !authState.isLoading
                             ? _onContinue
@@ -409,9 +413,18 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen>
                               const Color(0xFFF9A825).withOpacity(0.4),
                           disabledForegroundColor:
                               AppColors.primary700.withOpacity(0.5),
-                          elevation: 0,
+                          elevation: 4, // Mechanical resting height
+                          shadowColor: const Color(0xFFF9A825).withOpacity(0.5), // Colored glow
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
+                          ),
+                        ).copyWith(
+                          elevation: WidgetStateProperty.resolveWith<double>(
+                            (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.pressed)) return 0; // Physically presses down
+                              if (states.contains(WidgetState.disabled)) return 0;
+                              return 6; // Resting lift
+                            },
                           ),
                         ),
                         child: authState.isLoading

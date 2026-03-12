@@ -814,3 +814,9 @@ Typography decisions:
 - Used _canResend bool to control resend display — more reliable than countdown > 0
 - Timer fix: cancel + reset both _resendCooldown and _canResend in _startCooldown
 - pinput submittedPinTheme: navy bg, white text — filled boxes look confirmed
+
+## [2026-03-12] - Onboarding Modularization
+- **Issue:** Build failure due to syntax error in monolith `onboarding_screen.dart`.
+- **Action:** Split `onboarding_screen.dart` into 4 modular widgets and 1 coordinator screen.
+- **Logic:** Moved database insertion logic (`createUser`, `createProfile`) from UI layer to `AuthNotifier`.
+- **Result:** Resolved syntax errors and enforced logic/UI separation.

@@ -115,18 +115,19 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
 
     // Pin themes
     final defaultTheme = PinTheme(
-      width: 48,
-      height: 56,
+      width: 56,
+      height: 64,
       textStyle: const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 24,
         fontWeight: FontWeight.w800,
-        color: Colors.white,
+        color: AppColors.primary700, // Visible text in resting state
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFCCCCCC), width: 1.5),
+        border: Border.all(color: const Color(0xFFEAEAEC), width: 1.5),
+        boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2))],
       ),
     );
 
@@ -136,20 +137,25 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary700, width: 2),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.primary700.withOpacity(0.12),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: AppColors.primary700.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary700.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8)),
+          BoxShadow(color: AppColors.primary700.withOpacity(0.12), blurRadius: 32, offset: const Offset(0, 16)),
         ],
       ),
     );
 
     final filledTheme = defaultTheme.copyWith(
+      textStyle: const TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        color: Colors.white, // Turns white when background turns navy
+      ),
       decoration: BoxDecoration(
         color: AppColors.primary700,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary700, width: 2),
+        boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2))],
       ),
     );
 
@@ -414,9 +420,17 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                               const Color(0xFFF9A825).withOpacity(0.4),
                           disabledForegroundColor:
                               AppColors.primary700.withOpacity(0.5),
-                          elevation: 0,
+                          elevation: 4,
+                          shadowColor: const Color(0xFFF9A825).withOpacity(0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
+                          ),
+                        ).copyWith(
+                          elevation: WidgetStateProperty.resolveWith<double>(
+                            (Set<WidgetState> states) {
+                              if (states.contains(WidgetState.pressed) || states.contains(WidgetState.disabled)) return 0;
+                              return 6;
+                            },
                           ),
                         ),
                         child: authState.isLoading
@@ -460,9 +474,17 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen>
                     foregroundColor: Colors.white,
                     disabledBackgroundColor:
                         AppColors.primary700.withOpacity(0.3),
-                    elevation: 0,
+                    elevation: 4,
+                    shadowColor: AppColors.primary700.withOpacity(0.4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
+                    ),
+                  ).copyWith(
+                    elevation: WidgetStateProperty.resolveWith<double>(
+                      (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.pressed) || states.contains(WidgetState.disabled)) return 0;
+                        return 6;
+                      },
                     ),
                   ),
                   child: const Text(
