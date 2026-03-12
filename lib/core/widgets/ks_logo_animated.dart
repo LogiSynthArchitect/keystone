@@ -11,7 +11,7 @@ class KsLogoAnimated extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const navyFilter = ColorFilter.mode(AppColors.primary900, BlendMode.srcIn);
+    const navyFilter = ColorFilter.mode(AppColors.primary700, BlendMode.srcIn);
     const goldFilter = ColorFilter.mode(AppColors.accent500, BlendMode.srcIn);
 
     return SizedBox(
@@ -20,58 +20,43 @@ class KsLogoAnimated extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Left Arm Assembly
-          // Visual: 1200ms | Pause: 2800ms | Total Loop: 4000ms
-          SvgPicture.asset(
-            'assets/logo/left_arm.svg',
-            width: size,
-            height: size,
-            colorFilter: navyFilter,
-          )
-              .animate(onPlay: (controller) => controller.repeat())
-              .fadeIn(duration: 800.ms)
-              .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic, duration: 1200.ms)
-              .then(delay: 2800.ms),
+          // 01. THE ARMS
+          _buildPart('assets/logo/left_arm.svg', navyFilter)
+              .animate(onPlay: (c) => c.repeat())
+              .fadeIn(duration: 400.ms)
+              .slideX(begin: -0.3, end: 0, curve: Curves.easeOutQuart, duration: 800.ms)
+              .fadeOut(delay: 3500.ms, duration: 500.ms), // All parts vanish at exactly 3.5s
 
-          // Right Arm Assembly
-          // Visual: 1200ms | Pause: 2800ms | Total Loop: 4000ms
-          SvgPicture.asset(
-            'assets/logo/right_arm.svg',
-            width: size,
-            height: size,
-            colorFilter: navyFilter,
-          )
-              .animate(onPlay: (controller) => controller.repeat())
-              .fadeIn(duration: 800.ms)
-              .slideX(begin: 0.2, end: 0, curve: Curves.easeOutCubic, duration: 1200.ms)
-              .then(delay: 2800.ms),
+          _buildPart('assets/logo/right_arm.svg', navyFilter)
+              .animate(onPlay: (c) => c.repeat())
+              .fadeIn(duration: 400.ms)
+              .slideX(begin: 0.3, end: 0, curve: Curves.easeOutQuart, duration: 800.ms)
+              .fadeOut(delay: 3500.ms, duration: 500.ms),
 
-          // The Keystone Block
-          // Visual: 2500ms (1000ms delay + 1500ms slide) | Pause: 1500ms | Total Loop: 4000ms
-          SvgPicture.asset(
-            'assets/logo/keystone_block.svg',
-            width: size,
-            height: size,
-            colorFilter: goldFilter,
-          )
-              .animate(onPlay: (controller) => controller.repeat())
-              .fadeIn(delay: 1000.ms, duration: 300.ms)
-              .slideY(begin: -0.5, end: 0, curve: Curves.bounceOut, duration: 1500.ms)
-              .then(delay: 1500.ms),
+          // 02. THE KEYSTONE
+          _buildPart('assets/logo/keystone_block.svg', goldFilter)
+              .animate(onPlay: (c) => c.repeat())
+              .fadeIn(delay: 800.ms, duration: 200.ms)
+              .slideY(begin: -0.4, end: 0, curve: Curves.bounceOut, duration: 1000.ms, delay: 800.ms)
+              .fadeOut(delay: 3500.ms, duration: 500.ms),
 
-          // The Keyhole
-          // Visual: 3000ms (2200ms delay + 800ms fade) | Pause: 1000ms | Total Loop: 4000ms
-          SvgPicture.asset(
-            'assets/logo/keyhole.svg',
-            width: size,
-            height: size,
-            colorFilter: navyFilter,
-          )
-              .animate(onPlay: (controller) => controller.repeat())
-              .fadeIn(delay: 2200.ms, duration: 800.ms)
-              .then(delay: 1000.ms),
+          // 03. THE KEYHOLE
+          _buildPart('assets/logo/keyhole.svg', navyFilter)
+              .animate(onPlay: (c) => c.repeat())
+              .fadeIn(delay: 1800.ms, duration: 300.ms)
+              .scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1), curve: Curves.elasticOut, duration: 600.ms, delay: 1800.ms)
+              .fadeOut(delay: 3500.ms, duration: 500.ms),
         ],
       ),
+    );
+  }
+
+  Widget _buildPart(String asset, ColorFilter filter) {
+    return SvgPicture.asset(
+      asset,
+      width: size,
+      height: size,
+      colorFilter: filter,
     );
   }
 }
