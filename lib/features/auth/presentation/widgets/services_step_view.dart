@@ -37,7 +37,7 @@ class ServicesStepView extends StatelessWidget {
           child: const Icon(LineAwesomeIcons.tools_solid, color: Color(0xFFF9A825), size: 26),
         ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           'What services\ndo you offer?',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
@@ -49,7 +49,7 @@ class ServicesStepView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
+        const Text(
           'Select all that apply.',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
@@ -111,7 +111,7 @@ class _ServiceItem extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Image.asset(data.image, fit: BoxFit.cover),
-              Container(color: Colors.black.withOpacity(0.3)),
+              Container(color: Colors.black.withValues(alpha: 0.3)),
               Positioned(
                 bottom: 12,
                 left: 12,

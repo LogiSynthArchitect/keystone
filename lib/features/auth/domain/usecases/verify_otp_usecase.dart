@@ -1,5 +1,6 @@
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/usecases/use_case.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../repositories/auth_repository.dart';
 
 class VerifyOtpParams {
@@ -28,8 +29,12 @@ class VerifyOtpUsecase implements UseCase<void, VerifyOtpParams> {
         field: 'otp',
       );
     }
+
+    // Normalize phone number to E.164 before repository call
+    final normalizedPhone = PhoneFormatter.normalize(params.phoneNumber);
+
     await _repository.verifyOtp(
-      phoneNumber: params.phoneNumber,
+      phoneNumber: normalizedPhone,
       token: params.token,
     );
   }

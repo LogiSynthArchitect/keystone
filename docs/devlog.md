@@ -820,3 +820,61 @@ Typography decisions:
 - **Action:** Split `onboarding_screen.dart` into 4 modular widgets and 1 coordinator screen.
 - **Logic:** Moved database insertion logic (`createUser`, `createProfile`) from UI layer to `AuthNotifier`.
 - **Result:** Resolved syntax errors and enforced logic/UI separation.
+
+## [2026-03-12] — Environment Reset for Onboarding Test
+**Change type:** chore
+**Files affected:** Database (Supabase)
+**Why:** To verify the fix for the modularized onboarding flow from a zero-data state.
+**What changed:** Deleted test user '+233200000001' from auth.users and public.users.
+**Risk:** None. CASCADE delete ensured all dependent records (profiles, jobs) were removed.
+
+## [2026-03-12] — Environment Reset for Onboarding Test
+**Change type:** chore
+**Files affected:** Database (Supabase)
+**Why:** To verify the modular onboarding flow and router redirection from a zero-data state.
+**What changed:** Deleted test user '+233200000001' from auth.users. 
+**Modularity note:** N/A (Data cleanup)
+**Tests:** N/A
+**Risk:** None. CASCADE delete ensured all dependent records were removed cleanly.
+
+---
+## SESSION 10 — Linting and ID Mismatch Resolution
+
+### What was built
+- Resolved 38 linting issues across the authentication flow.
+- Added `const` optimizations to `app_text_styles.dart` and auth screens.
+- Replaced deprecated `withOpacity` with `withValues` for Flutter 3.41.4 compliance.
+
+### What broke and how it was fixed
+- **BREAK**: Onboarding profile creation failed due to ID mismatch.
+- **Cause**: Repository was using Supabase Auth ID instead of the internal User ID for the `profiles` table.
+- **Fix**: Updated `ProfileRepositoryImpl` to use `profile.userId` from the entity.
+- **Diagnostic**: Added structured logging `[KS:PROFILE]` to remote datasource and repository.
+
+### Flutter analyze status
+No issues found ✅
+
+---
+## SESSION 12 — Compilation Recovery & Dependency Alignment
+
+### What was built
+- Fixed 17+ compilation errors related to provider scope and type mismatches.
+- Properly implemented `AsyncValue` unwrapping in the `AppRouter`.
+- Aligned `AuthNotifier` with the `Params` pattern for use cases.
+
+### What was fixed
+- **Ambiguous Imports**: Resolved `AuthException` collisions between Supabase and local error classes.
+- **Provider Scope**: Defined missing repository and use case providers within the Auth feature.
+- **Interface Stability**: Corrected `verifyOtp` return types and `createUser` parameter naming.
+
+### Status
+- **Flutter Analyze**: No issues found ✅
+- **Next Goal**: Functional end-to-end test of the onboarding flow.
+
+---
+## SESSION 13 — URI Host Resolution
+
+### What was fixed
+- **ISSUE**: `AuthException: Invalid argument(s): No host specified in URI` during OTP request.
+- **CAUSE**: `SupabaseConstants` used `String.fromEnvironment` but values were missing when launching via standard `flutter run`.
+- **FIX**: Hardcoded Supabase URL and Anon Key directly into `lib/core/constants/supabase_constants.dart` based on values in `run.sh`.

@@ -13,7 +13,7 @@ class KeystoneApp extends ConsumerWidget {
       FlutterError.presentError(details);
       _logError(details.exception.toString(), details.stack.toString());
     };
-    final router = ref.watch(appRouterProvider);
+    final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'Keystone',
       debugShowCheckedModeBanner: false,

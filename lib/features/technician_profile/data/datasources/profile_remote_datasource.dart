@@ -21,12 +21,16 @@ class ProfileRemoteDatasource {
   }
 
   Future<ProfileModel> createProfile(Map<String, dynamic> json) async {
+    debugPrint('[KS:PROFILE] createProfile — body: $json');
     try {
       final data = await _supabase.from('profiles').insert(json).select().single();
+      debugPrint('[KS:PROFILE] createProfile SUCCESS');
       return ProfileModel.fromJson(data);
     } on PostgrestException catch (e) {
+      debugPrint('[KS:PROFILE] createProfile PostgrestException — ${e.message} (code: ${e.code})');
       throw NetworkException(message: 'Could not create profile.', code: 'PROFILE_CREATE_FAILED', cause: e);
     } catch (e) {
+      debugPrint('[KS:PROFILE] createProfile unknown error — $e');
       throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
     }
   }
@@ -58,19 +62,10 @@ class ProfileRemoteDatasource {
       final file = File(filePath);
       final ext = filePath.split('.').last.toLowerCase();
       final path = '$userId/profile.$ext';
-      debugPrint('[KS:UPLOAD] userId: $userId');
-      debugPrint('[KS:UPLOAD] filePath: $filePath');
-      debugPrint('[KS:UPLOAD] storagePath: $path');
-      debugPrint('[KS:UPLOAD] fileExists: ${file.existsSync()}');
-      debugPrint('[KS:UPLOAD] fileSize: ${file.lengthSync()} bytes');
       await _supabase.storage.from(SupabaseConstants.profilePhotosBucket).upload(path, file, fileOptions: const FileOptions(upsert: true));
       final rawUrl = _supabase.storage.from(SupabaseConstants.profilePhotosBucket).getPublicUrl(path);
-      final url = '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
-      debugPrint('[KS:UPLOAD] SUCCESS url: $url');
-      return url;
-    } catch (e, stack) {
-      debugPrint('[KS:UPLOAD] ERROR: $e');
-      debugPrint('[KS:UPLOAD] STACK: $stack');
+      return '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+    } catch (e) {
       throw NetworkException(message: 'Could not upload photo.', code: 'PHOTO_UPLOAD_FAILED', cause: e);
     }
   }

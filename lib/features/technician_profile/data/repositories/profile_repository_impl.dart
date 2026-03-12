@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -9,18 +10,20 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   ProfileRepositoryImpl(this._remote, this._supabase);
 
-  String get _userId => _supabase.auth.currentUser?.id ?? '';
+  // Note: This is the Auth ID, used for storage paths but NOT for profile table FKs
+  String get _authUserId => _supabase.auth.currentUser?.id ?? '';
 
   @override
   Future<ProfileEntity?> getProfile() async {
-    final model = await _remote.getProfile(_userId);
+    final model = await _remote.getProfile(_authUserId);
     return model?.toEntity();
   }
 
   @override
   Future<ProfileEntity> createProfile(ProfileEntity profile) async {
+    debugPrint('[KS:PROFILE_REPO] createProfile — internalUserId: ${profile.userId}');
     final model = await _remote.createProfile({
-      'user_id': _userId,
+      'user_id': profile.userId, // FIXED: Now uses the internal DB ID from the entity
       'display_name': profile.displayName,
       'bio': profile.bio,
       'photo_url': profile.photoUrl,
@@ -34,6 +37,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   @override
   Future<ProfileEntity> updateProfile(ProfileEntity profile) async {
+    debugPrint('[KS:PROFILE_REPO] updateProfile — profileId: ${profile.id}');
     final model = await _remote.updateProfile(profile.id, {
       'display_name': profile.displayName,
       'bio': profile.bio,
@@ -53,7 +57,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   @override
   Future<String> uploadPhoto(String filePath) =>
-      _remote.uploadPhoto(userId: _userId, filePath: filePath);
+      _remote.uploadPhoto(userId: _authUserId, filePath: filePath);
 
   static String _serviceTypeToString(ServiceType type) {
     switch (type) {

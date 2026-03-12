@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
@@ -20,7 +21,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _nameController = TextEditingController();
   final _nameFocusNode = FocusNode();
-  int _step = 0; // 0 = name, 1 = services
+  int _step = 0; 
   final List<ServiceType> _selectedServices = [];
   bool _nameFocused = false;
 
@@ -41,14 +42,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _onContinue() async {
     if (_step == 0) {
+      debugPrint('[KS:UI] Onboarding: Switching to Step 1 (Services)');
       _nameFocusNode.unfocus();
       setState(() => _step = 1);
     } else {
+      debugPrint('[KS:UI] Onboarding: Attempting completeOnboarding...');
       final success = await ref.read(authNotifierProvider.notifier).completeOnboarding(
             name: _nameController.text.trim(),
             services: _selectedServices,
           );
-      if (success && mounted) context.go(RouteNames.transition);
+      
+      debugPrint('[KS:UI] Onboarding completeOnboarding result: $success');
+      
+      if (success && mounted) {
+        debugPrint('[KS:UI] Onboarding SUCCESS. Invalidating authStateProvider and navigating...');
+        await ref.read(authStateProvider.notifier).refresh();
+        if (mounted) context.go(RouteNames.jobs);
+      }
     }
   }
 

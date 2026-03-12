@@ -92,11 +92,11 @@ class _LandingScreenState extends State<LandingScreen>
                           opacity: _textFade.value,
                           child: child,
                         ),
-                        child: Column(
+                        child: const Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               'LOCKSMITH MANAGEMENT',
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -107,7 +107,7 @@ class _LandingScreenState extends State<LandingScreen>
                                 letterSpacing: 3.5,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
                               'Keystone',
                               textAlign: TextAlign.center,
@@ -120,8 +120,8 @@ class _LandingScreenState extends State<LandingScreen>
                                 height: 1.0,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
+                            SizedBox(height: 12),
+                            Text(
                               "Built for Ghana's professional locksmiths",
                               textAlign: TextAlign.center,
                               style: TextStyle(
