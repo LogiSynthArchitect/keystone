@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../theme/app_colors.dart';
 
 class KsLogoAnimated extends StatelessWidget {
   final double size;
@@ -10,6 +11,9 @@ class KsLogoAnimated extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const navyFilter = ColorFilter.mode(AppColors.primary900, BlendMode.srcIn);
+    const goldFilter = ColorFilter.mode(AppColors.accent500, BlendMode.srcIn);
+
     return SizedBox(
       width: size,
       height: size,
@@ -17,35 +21,53 @@ class KsLogoAnimated extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           // Left Arm Assembly
-          SvgPicture.asset('assets/logo/left_arm.svg', width: size, height: size)
-              .animate()
-              .fadeIn(duration: 400.ms)
-              .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic, duration: 600.ms),
+          SvgPicture.asset(
+            'assets/logo/left_arm.svg',
+            width: size,
+            height: size,
+            colorFilter: navyFilter,
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .fadeIn(duration: 800.ms)
+              .slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic, duration: 1200.ms)
+              .then(delay: 4000.ms),
 
           // Right Arm Assembly
-          SvgPicture.asset('assets/logo/right_arm.svg', width: size, height: size)
-              .animate()
-              .fadeIn(duration: 400.ms)
-              .slideX(begin: 0.2, end: 0, curve: Curves.easeOutCubic, duration: 600.ms),
+          SvgPicture.asset(
+            'assets/logo/right_arm.svg',
+            width: size,
+            height: size,
+            colorFilter: navyFilter,
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .fadeIn(duration: 800.ms)
+              .slideX(begin: 0.2, end: 0, curve: Curves.easeOutCubic, duration: 1200.ms)
+              .then(delay: 4000.ms),
 
-          // The Keystone Block (The Impact)
-          SvgPicture.asset('assets/logo/keystone_block.svg', width: size, height: size)
-              .animate(delay: 600.ms)
-              .fadeIn(duration: 100.ms)
-              .slideY(begin: -0.5, end: 0, curve: Curves.bounceOut, duration: 800.ms),
+          // The Keystone Block
+          SvgPicture.asset(
+            'assets/logo/keystone_block.svg',
+            width: size,
+            height: size,
+            colorFilter: goldFilter,
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .fadeIn(delay: 1000.ms, duration: 300.ms)
+              .slideY(begin: -0.5, end: 0, curve: Curves.bounceOut, duration: 1500.ms)
+              .then(delay: 3200.ms),
 
-          // The Keyhole (The Access)
-          SvgPicture.asset('assets/logo/keyhole.svg', width: size, height: size)
-              .animate(delay: 1200.ms)
-              .fadeIn(duration: 400.ms),
+          // The Keyhole
+          SvgPicture.asset(
+            'assets/logo/keyhole.svg',
+            width: size,
+            height: size,
+            colorFilter: navyFilter,
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .fadeIn(delay: 2200.ms, duration: 800.ms)
+              .then(delay: 3000.ms),
         ],
-      ).animate(onComplete: (_) => onComplete?.call()).scale(
-            begin: const Offset(1, 1),
-            end: const Offset(1.05, 1.05),
-            duration: 200.ms,
-            delay: 1400.ms,
-            curve: Curves.easeInOut,
-          ),
+      ),
     );
   }
 }
