@@ -20,6 +20,17 @@ class ProfileRemoteDatasource {
     }
   }
 
+  Future<ProfileModel?> getProfileByPhone(String phone) async {
+    try {
+      final data = await _supabase.from('profiles').select().eq('whatsapp_number', phone).maybeSingle();
+      return data != null ? ProfileModel.fromJson(data) : null;
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Profile lookup failed.', code: 'PROFILE_PHONE_FETCH_FAILED', cause: e);
+    } catch (e) {
+      throw NetworkException(message: 'Connection lost.', code: 'NO_CONNECTION', cause: e);
+    }
+  }
+
   Future<ProfileModel> createProfile(Map<String, dynamic> json) async {
     debugPrint('[KS:PROFILE] createProfile — body: $json');
     try {

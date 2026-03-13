@@ -10,6 +10,7 @@ import '../../data/repositories/job_repository_impl.dart';
 import '../../domain/entities/job_entity.dart';
 import '../../domain/repositories/job_repository.dart';
 import '../../domain/usecases/get_jobs_usecase.dart';
+import '../../domain/usecases/get_job_usecase.dart';
 import '../../domain/usecases/log_job_usecase.dart';
 import '../../domain/usecases/sync_offline_jobs_usecase.dart';
 import '../../../technician_profile/domain/entities/profile_entity.dart';
@@ -19,8 +20,14 @@ final jobRemoteDatasourceProvider = Provider<JobRemoteDatasource>((ref) => JobRe
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) => ConnectivityService());
 final jobRepositoryProvider = Provider<JobRepository>((ref) => JobRepositoryImpl(ref.watch(jobRemoteDatasourceProvider), ref.watch(jobLocalDatasourceProvider), ref.watch(connectivityServiceProvider), ref.watch(supabaseClientProvider)));
 final getJobsUsecaseProvider = Provider<GetJobsUsecase>((ref) => GetJobsUsecase(ref.watch(jobRepositoryProvider)));
+final getJobUsecaseProvider = Provider<GetJobUsecase>((ref) => GetJobUsecase(ref.watch(jobRepositoryProvider)));
 final logJobUsecaseProvider = Provider<LogJobUsecase>((ref) => LogJobUsecase(ref.watch(jobRepositoryProvider)));
 final syncOfflineJobsUsecaseProvider = Provider<SyncOfflineJobsUsecase>((ref) => SyncOfflineJobsUsecase(ref.watch(jobRepositoryProvider)));
+
+final jobDetailProvider = FutureProvider.family<JobEntity?, String>((ref, jobId) async {
+  final getJob = ref.watch(getJobUsecaseProvider);
+  return await getJob(jobId);
+});
 
 class JobListState {
   final List<JobEntity> jobs;
@@ -76,10 +83,6 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       final userId = _supabase.auth.currentUser!.id;
       final job = await _logJob(LogJobParams(userId: userId, customerId: customerId, serviceType: serviceType, jobDate: jobDate, location: location, latitude: latitude, longitude: longitude, notes: notes, amountCharged: amountCharged));
       state = state.copyWith(isLoading: false, saved: true);
-      KsAnalytics.log(AnalyticsEvents.jobLogged, properties: {
-        'service_type': serviceType.name,
-        'has_amount': amountCharged != null,
-      });
       return job;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

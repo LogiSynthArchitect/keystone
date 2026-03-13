@@ -12,20 +12,19 @@ class LandingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary900, // The Void
+      backgroundColor: AppColors.primary900,
       body: Stack(
         children: [
-          // 01. TEXTURE (Simulated Grain via subtle gradient)
+          // 01. THE VOID TEXTURE (With light lift for logo contrast)
           Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              gradient: RadialGradient(
+                center: Alignment(-0.8, -0.8), // Lift exactly behind the logo
+                radius: 1.5,
                 colors: [
-                  Colors.white10,
-                  Colors.transparent,
+                  Color(0xFF1E3F7A), 
+                  AppColors.primary900,
                 ],
-                stops: [0.0, 0.3],
               ),
             ),
           ),
@@ -36,112 +35,137 @@ class LandingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 02. SIGNATURE
-                  const KsLogo(size: 48).animate().fadeIn(duration: 800.ms),
+                  // 02. SIGNATURE (Sized and lifted for contrast)
+                  const KsLogo(size: 48, primaryColor: AppColors.white)
+                    .animate()
+                    .fadeIn(duration: 800.ms)
+                    .slideY(begin: -0.2, end: 0),
                   
                   const Spacer(flex: 2),
                   
-                  // 03. EYEBROW (Tracked out, Gold)
+                  // 03. EYEBROW
                   Text(
                     'LOCKSMITH  M G M T.',
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.accent500,
+                      color: AppColors.accent400,
                       letterSpacing: 4.0,
+                      fontWeight: FontWeight.w700,
                     ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 400.ms)
-                  .slideX(begin: -0.1, end: 0, curve: Curves.easeOutCubic, duration: 600.ms),
+                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
                   
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   
-                  // 04. THE DISPLAY (Massive, Left Aligned)
-                  Text(
-                    'KEYSTONE',
-                    style: AppTextStyles.display.copyWith(
-                      fontSize: 64,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.white,
-                      letterSpacing: -1.5,
-                      height: 0.9,
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuart, duration: 800.ms),
+                  // 04. ASYMMETRIC DISPLAY (Scaled for mobile widths)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'KEY',
+                        style: AppTextStyles.display.copyWith(
+                          fontSize: 72,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.white,
+                          height: 0.85,
+                          letterSpacing: -2,
+                        ),
+                      ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 40.0),
+                        child: Text(
+                          'STONE',
+                          style: AppTextStyles.display.copyWith(
+                            fontSize: 72,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.accent500,
+                            height: 0.85,
+                            letterSpacing: -2,
+                          ),
+                        ).animate().fadeIn(delay: 700.ms).slideX(begin: 0.2, end: 0, curve: Curves.easeOutBack),
+                      ),
+                    ],
+                  ),
                   
                   const SizedBox(height: 24),
                   
-                  // 05. THE SUPPORT
+                  // 05. SUPPORT
                   Text(
-                    "Built for Ghana's\nprofessional locksmiths.",
+                    "Built for Ghana's professional locksmiths.",
                     style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.neutral400,
+                      color: AppColors.neutral300,
+                      fontWeight: FontWeight.w600,
                       height: 1.4,
                     ),
-                  )
-                  .animate()
-                  .fadeIn(delay: 400.ms, duration: 600.ms),
+                  ).animate().fadeIn(delay: 900.ms),
                   
                   const Spacer(flex: 3),
                   
-                  // 06. THE ACTION CARD (Floating Surface)
+                  // 06. THE COMMAND SURFACE (Flexible Layout Fix)
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: AppColors.primary700,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                      boxShadow: [
+                      borderRadius: BorderRadius.circular(4), 
+                      border: Border(
+                        top: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                      ),
+                      boxShadow: const [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.6),
+                          color: Colors.black54,
                           blurRadius: 40,
-                          offset: const Offset(0, 16),
+                          offset: Offset(0, 20),
                         ),
                       ],
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
                         onTap: () => context.push(RouteNames.phoneEntry),
                         child: Padding(
-                          padding: const EdgeInsets.all(24.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'GET STARTED',
-                                    style: AppTextStyles.h2.copyWith(
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.0,
+                                  Expanded(
+                                    child: Text(
+                                      'BUILD YOUR BACKBONE',
+                                      style: AppTextStyles.h2.copyWith(
+                                        color: AppColors.white,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const Icon(Icons.arrow_forward_rounded, color: AppColors.accent500),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.arrow_forward, color: AppColors.accent500),
                                 ],
                               ),
                               const SizedBox(height: 20),
-                              Container(height: 1, color: AppColors.primary900), // The Cut
+                              const Divider(color: AppColors.primary900, thickness: 1),
                               const SizedBox(height: 20),
-                              RichText(
-                                text: TextSpan(
-                                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400),
-                                  children: [
-                                    const TextSpan(text: 'Already have an account?  '),
-                                    TextSpan(
-                                      text: 'Sign in.',
-                                      style: AppTextStyles.label.copyWith(color: AppColors.accent500),
+                              GestureDetector(
+                                onTap: () => context.push(RouteNames.phoneEntry),
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.neutral300,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                  ],
+                                    children: [
+                                      const TextSpan(text: 'Already have an account?  '),
+                                      TextSpan(
+                                        text: 'SIGN IN',
+                                        style: AppTextStyles.label.copyWith(
+                                          color: AppColors.accent500,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -149,10 +173,7 @@ class LandingScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                  )
-                  .animate()
-                  .fadeIn(delay: 800.ms, duration: 400.ms)
-                  .slideY(begin: 0.3, end: 0, curve: Curves.easeOutBack, duration: 700.ms),
+                  ).animate().fadeIn(delay: 1100.ms).slideY(begin: 0.1, end: 0),
                 ],
               ),
             ),

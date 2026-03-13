@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
-import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_skeleton_loader.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/note_card.dart';
@@ -22,6 +20,7 @@ class NotesListScreen extends ConsumerStatefulWidget {
 
 class _NotesListScreenState extends ConsumerState<NotesListScreen> {
   final _searchController = TextEditingController();
+  bool _isSearchFocused = false;
 
   @override
   void dispose() {
@@ -49,58 +48,84 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.neutral050,
-      appBar: const KsAppBar(title: "Notes"),
+      backgroundColor: AppColors.primary900,
+      appBar: const KsAppBar(title: "NOTES"),
       body: Column(
         children: [
           const KsOfflineBanner(),
+          
+          // Search Bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.pagePadding, AppSpacing.md, AppSpacing.pagePadding, 0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (q) => ref.read(notesListProvider.notifier).search(q),
-              decoration: InputDecoration(
-                hintText: "Search notes or tags...",
-                hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
-                prefixIcon: const Icon(Icons.search, color: AppColors.neutral400, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () { _searchController.clear(); ref.read(notesListProvider.notifier).search(''); setState(() {}); },
-                        child: const Icon(Icons.close, color: AppColors.neutral400, size: 20))
-                    : null,
-                filled: true,
-                fillColor: AppColors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd), borderSide: const BorderSide(color: AppColors.neutral200)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd), borderSide: const BorderSide(color: AppColors.neutral200)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd), borderSide: const BorderSide(color: AppColors.primary600, width: 1.5)),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Focus(
+              onFocusChange: (hasFocus) => setState(() => _isSearchFocused = hasFocus),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary800,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: _isSearchFocused ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
+                    width: _isSearchFocused ? 2 : 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (q) {
+                    ref.read(notesListProvider.notifier).search(q);
+                    setState(() {});
+                  },
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
+                  cursorColor: AppColors.accent500,
+                  decoration: InputDecoration(
+                    hintText: "Search for a note...",
+                    hintStyle: AppTextStyles.body.copyWith(color: Colors.white.withValues(alpha: 0.2)),
+                    prefixIcon: const Icon(LineAwesomeIcons.search_solid, color: AppColors.neutral500, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? GestureDetector(
+                            onTap: () {
+                              _searchController.clear();
+                              ref.read(notesListProvider.notifier).search('');
+                              setState(() {});
+                            },
+                            child: const Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
+                        : null,
+                    filled: true,
+                    fillColor: Colors.transparent, // Fixes white-out bug
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          
+          const SizedBox(height: 8),
+          
           Expanded(
             child: state.isLoading
                 ? ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.pagePadding),
-                    itemCount: 3,
-                    separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                    itemBuilder: (_, __) => const KsSkeletonLoader(height: 88),
+                    padding: const EdgeInsets.all(24.0),
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, __) => Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary800,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                      ),
+                    ),
                   )
                 : state.displayed.isEmpty
-                    ? KsEmptyState(
-                        icon: Icons.lightbulb_outline,
-                        title: state.searchQuery.isNotEmpty ? "No results for \"${state.searchQuery}\"" : "No notes yet",
-                        subtitle: state.searchQuery.isEmpty ? "Save tips, techniques and solutions you want to remember." : null,
-                        actionLabel: state.searchQuery.isEmpty ? "Add note" : null,
-                        onAction: state.searchQuery.isEmpty ? () => context.push(RouteNames.addNote) : null,
-                      )
+                    ? _buildEmptyState(state.searchQuery)
                     : RefreshIndicator(
                         onRefresh: () => ref.read(notesListProvider.notifier).refresh(),
-                        color: AppColors.primary700,
+                        color: AppColors.accent500,
+                        backgroundColor: AppColors.primary800,
                         child: ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: AppSpacing.sm),
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
                           itemCount: state.displayed.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final note = state.displayed[index];
                             return NoteCard(
@@ -115,11 +140,45 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(RouteNames.addNote),
-        backgroundColor: AppColors.primary700,
+        backgroundColor: AppColors.accent500,
+        foregroundColor: AppColors.primary900,
         elevation: 4,
-        child: const Icon(Icons.add, color: AppColors.white),
+        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 2, onTabTapped: _onTabTapped),
+    );
+  }
+
+  Widget _buildEmptyState(String query) {
+    final isSearching = query.isNotEmpty;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSearching ? LineAwesomeIcons.search_minus_solid : LineAwesomeIcons.lightbulb, 
+              size: 80, 
+              color: Colors.white.withValues(alpha: 0.05)
+            ),
+            const SizedBox(height: 24),
+            Text(
+              isSearching ? "NO RESULTS FOUND" : "NO NOTES YET", 
+              textAlign: TextAlign.center,
+              style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isSearching 
+                ? "No matching notes found for \"$query\"." 
+                : "You haven't saved any notes yet.\nTap the + button to add your first tip.", 
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, height: 1.5)
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

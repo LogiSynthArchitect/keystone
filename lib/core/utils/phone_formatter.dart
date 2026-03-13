@@ -4,22 +4,22 @@ class PhoneFormatter {
   PhoneFormatter._();
 
   static String normalize(String input) {
-    // Remove spaces, dashes, parentheses
-    String cleaned = input.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    // Remove spaces, dashes, parentheses, and non-digits
+    String cleaned = input.replaceAll(RegExp(r'\D'), '');
 
-    // Already in E.164 format
-    if (cleaned.startsWith('+233') && cleaned.length == 13) {
-      return cleaned;
-    }
-
-    // 233XXXXXXXXX format (no +)
-    if (cleaned.startsWith('233') && cleaned.length == 12) {
+    // Already in E.164 format logic
+    if (cleaned.startsWith('233') && (cleaned.length == 12)) {
       return '+$cleaned';
     }
 
-    // 0XXXXXXXXX format (local)
+    // 0XXXXXXXXX format (local) - Truncate the 0 and append +233
     if (cleaned.startsWith('0') && cleaned.length == 10) {
       return '+233${cleaned.substring(1)}';
+    }
+
+    // XXXXXXXXX format (no zero) - Append +233
+    if (cleaned.length == 9) {
+      return '+233$cleaned';
     }
 
     throw const ValidationException(
@@ -38,7 +38,6 @@ class PhoneFormatter {
     }
   }
 
-  // Format for display: +233244123456 → 0244 123 456
   static String display(String normalized) {
     if (normalized.startsWith('+233') && normalized.length == 13) {
       final local = '0${normalized.substring(4)}';

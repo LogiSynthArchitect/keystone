@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -16,19 +16,19 @@ class JobCard extends StatelessWidget {
 
   IconData _serviceIcon(ServiceType type) {
     switch (type) {
-      case ServiceType.carLockProgramming:    return Icons.car_repair;
-      case ServiceType.doorLockInstallation:  return Icons.door_front_door_outlined;
-      case ServiceType.doorLockRepair:        return Icons.lock_outlined;
-      case ServiceType.smartLockInstallation: return Icons.lock_outlined;
+      case ServiceType.carLockProgramming:    return LineAwesomeIcons.car_solid;
+      case ServiceType.doorLockInstallation:  return LineAwesomeIcons.door_closed_solid;
+      case ServiceType.doorLockRepair:        return LineAwesomeIcons.tools_solid;
+      case ServiceType.smartLockInstallation: return LineAwesomeIcons.lock_solid;
     }
   }
 
   String _serviceLabel(ServiceType type) {
     switch (type) {
-      case ServiceType.carLockProgramming:    return "Car Key Programming";
-      case ServiceType.doorLockInstallation:  return "Door Lock Installation";
-      case ServiceType.doorLockRepair:        return "Door Lock Repair";
-      case ServiceType.smartLockInstallation: return "Smart Lock Installation";
+      case ServiceType.carLockProgramming:    return "CAR KEY PROGRAMMING";
+      case ServiceType.doorLockInstallation:  return "DOOR LOCK INSTALLATION";
+      case ServiceType.doorLockRepair:        return "DOOR LOCK REPAIR";
+      case ServiceType.smartLockInstallation: return "SMART LOCK INSTALLATION";
     }
   }
 
@@ -38,46 +38,54 @@ class JobCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(_serviceIcon(job.serviceType), size: 20, color: AppColors.primary500),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: Text(_serviceLabel(job.serviceType), style: AppTextStyles.bodyMedium)),
-                Text(DateFormatter.short(job.jobDate), style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                Icon(_serviceIcon(job.serviceType), size: 20, color: AppColors.accent500),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _serviceLabel(job.serviceType), 
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)
+                  )
+                ),
+                Text(
+                  DateFormatter.short(job.jobDate).toUpperCase(), 
+                  style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w700)
+                ),
               ],
             ),
             if (customerName != null) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(customerName!, style: AppTextStyles.body.copyWith(color: AppColors.neutral700)),
+              const SizedBox(height: 12),
+              Text(customerName!, style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
             ],
             if (job.hasLocation || job.hasAmount) ...[
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   if (job.hasLocation) Expanded(child: Row(children: [
-                    const Icon(Icons.location_on_outlined, size: 12, color: AppColors.neutral400),
-                    const SizedBox(width: 2),
-                    Flexible(child: Text(job.location!, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500), overflow: TextOverflow.ellipsis)),
+                    const Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: AppColors.neutral500),
+                    const SizedBox(width: 4),
+                    Flexible(child: Text(job.location!, style: AppTextStyles.caption.copyWith(color: AppColors.neutral400), overflow: TextOverflow.ellipsis)),
                   ])),
-                  if (job.hasAmount) Text(CurrencyFormatter.formatShort(job.amountCharged!), style: AppTextStyles.amountSmall.copyWith(color: AppColors.neutral900)),
+                  if (job.hasAmount) Text(CurrencyFormatter.formatShort(job.amountCharged!), style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
                 ],
               ),
             ],
             if (job.followUpSent || job.syncStatus != SyncStatus.synced) ...[
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 16),
               Row(
                 children: [
-                  if (job.followUpSent) const _Badge(label: "Follow-up sent", bg: AppColors.success100, textColor: AppColors.success600, icon: Icons.check_circle_outline),
-                  if (job.syncStatus == SyncStatus.pending) const _Badge(label: "Saving...", bg: AppColors.warning100, textColor: AppColors.warning600, icon: Icons.sync),
-                  if (job.syncStatus == SyncStatus.failed) const _Badge(label: "Sync failed", bg: AppColors.error100, textColor: AppColors.error600, icon: Icons.sync_problem),
+                  if (job.followUpSent) const _Badge(label: "FOLLOW-UP SENT", color: Colors.greenAccent, icon: LineAwesomeIcons.check_circle_solid),
+                  if (job.syncStatus == SyncStatus.pending) const _Badge(label: "SAVING...", color: Colors.orangeAccent, icon: LineAwesomeIcons.sync_solid),
+                  if (job.syncStatus == SyncStatus.failed) const _Badge(label: "SYNC FAILED", color: Colors.redAccent, icon: LineAwesomeIcons.exclamation_circle_solid),
                 ],
               ),
             ],
@@ -90,21 +98,29 @@ class JobCard extends StatelessWidget {
 
 class _Badge extends StatelessWidget {
   final String label;
-  final Color bg;
-  final Color textColor;
+  final Color color;
   final IconData icon;
-  const _Badge({required this.label, required this.bg, required this.textColor, required this.icon});
+  
+  const _Badge({required this.label, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppSpacing.radiusFull)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12, color: textColor),
-        const SizedBox(width: 3),
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: textColor)),
-      ]),
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1), 
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min, 
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+        ]
+      ),
     );
   }
 }

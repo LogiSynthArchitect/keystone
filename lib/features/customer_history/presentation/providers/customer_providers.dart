@@ -131,3 +131,13 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
 
 final addCustomerProvider = StateNotifierProvider<AddCustomerNotifier, AddCustomerState>(
   (ref) => AddCustomerNotifier(ref.watch(createCustomerUsecaseProvider), ref.watch(supabaseClientProvider)));
+
+final customerDetailProvider = FutureProvider.family<CustomerEntity?, String>((ref, customerId) async {
+  final repo = ref.watch(customerRepositoryProvider);
+  final customers = await repo.getCustomers();
+  try {
+    return customers.firstWhere((c) => c.id == customerId);
+  } catch (_) {
+    return null;
+  }
+});
