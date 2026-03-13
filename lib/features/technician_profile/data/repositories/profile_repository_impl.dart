@@ -10,7 +10,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   ProfileRepositoryImpl(this._remote, this._supabase);
 
-  // Note: This is the Auth ID, used for storage paths but NOT for profile table FKs
   String get _authUserId => _supabase.auth.currentUser?.id ?? '';
 
   @override
@@ -20,10 +19,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<ProfileEntity?> getProfileByPhone(String phone) async {
+    final model = await _remote.getProfileByPhone(phone);
+    return model?.toEntity();
+  }
+
+  @override
   Future<ProfileEntity> createProfile(ProfileEntity profile) async {
     debugPrint('[KS:PROFILE_REPO] createProfile — internalUserId: ${profile.userId}');
     final model = await _remote.createProfile({
-      'user_id': profile.userId, // FIXED: Now uses the internal DB ID from the entity
+      'user_id': profile.userId,
       'display_name': profile.displayName,
       'bio': profile.bio,
       'photo_url': profile.photoUrl,

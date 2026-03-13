@@ -29,17 +29,18 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = authStateAsync.valueOrNull ?? const AuthState();
 
   return GoRouter(
-    // SURGICAL CHANGE: Open directly on the Portal to check session silently
     initialLocation: RouteNames.transition,
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isLoggedIn = authState.isAuthenticated;
       final hasProfile = authState.hasProfile;
-      final isLoggingIn = state.matchedLocation == RouteNames.phoneEntry || 
+      
+      // THE FIX: Added RouteNames.onboarding to the buffer zone
+      final isLoggingIn = state.matchedLocation == RouteNames.phoneEntry ||
                           state.matchedLocation == RouteNames.otpVerify ||
-                          state.matchedLocation == RouteNames.landing;
+                          state.matchedLocation == RouteNames.landing ||
+                          state.matchedLocation == RouteNames.onboarding;
 
-      // Allow the transition portal to remain while resolving session
       if (state.matchedLocation == RouteNames.transition) return null;
 
       if (!isLoggedIn) {
@@ -50,7 +51,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         return state.matchedLocation == RouteNames.onboarding ? null : RouteNames.onboarding;
       }
 
-      // Default redirect for authenticated users coming from login flows
       if (isLoggedIn && hasProfile && isLoggingIn) {
         return RouteNames.transition;
       }

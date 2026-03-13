@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/widgets/ks_banner.dart';
 import '../providers/auth_notifier.dart';
-import '../widgets/auth_header.dart';
 
 class OtpVerifyScreen extends ConsumerStatefulWidget {
   const OtpVerifyScreen({super.key});
@@ -19,8 +21,10 @@ class OtpVerifyScreen extends ConsumerStatefulWidget {
 
 class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   final _pinController = TextEditingController();
+  final _focusNode = FocusNode();
   int _resendCooldown = 30;
   Timer? _timer;
+  bool _canVerify = false;
 
   @override
   void initState() {
@@ -31,6 +35,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   @override
   void dispose() {
     _pinController.dispose();
+    _focusNode.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -39,28 +44,26 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     _timer?.cancel();
     if (mounted) setState(() => _resendCooldown = 30);
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_resendCooldown <= 0) {
-        t.cancel();
-      } else if (mounted) {
-        setState(() => _resendCooldown--);
-      }
+      if (_resendCooldown <= 0) t.cancel();
+      else if (mounted) setState(() => _resendCooldown--);
     });
   }
 
   Future<void> _onVerify() async {
-    final uiState = ref.read(authNotifierProvider);
-    if (uiState.isLoading) return;
+    if (_pinController.text.length != 6) return;
 
-    final token = _pinController.text.trim();
-    if (token.length != 6) return;
+    final success = await ref.read(authNotifierProvider.notifier).verifyOtp(_pinController.text.trim());
 
-    final success = await ref.read(authNotifierProvider.notifier).verifyOtp(token);
-    
-    if (!mounted) return;
-    if (success) {
-      await ref.read(authStateProvider.notifier).refresh();
-    } else {
-      _pinController.clear();
+    if (mounted && success) {
+      final hasProfile = ref.read(authNotifierProvider).hasProfile ?? false;
+
+      if (hasProfile) {
+        // VETERAN: Celebrate and bridge to dashboard
+        context.go(RouteNames.transition);
+      } else {
+        // RECRUIT: Forge the identity first
+        context.go(RouteNames.onboarding);
+      }
     }
   }
 
@@ -69,110 +72,137 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     final authState = ref.watch(authNotifierProvider);
     final phone = authState.phoneNumber ?? '';
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final errorMessage = authState.errorMessage;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAF8),
-      body: Column(
+      backgroundColor: AppColors.primary900,
+      body: Stack(
         children: [
-          Expanded(
-            child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    _buildBackButton(),
-                    const SizedBox(height: 32),
-                    AuthHeader(
-                      icon: LineAwesomeIcons.shield_alt_solid,
-                      title: 'Verify your\nnumber',
-                      subtitle: 'Code sent to $phone',
-                    ),
-                    const SizedBox(height: 32),
-                    _buildOtpInput(authState.isLoading),
-                    const SizedBox(height: 24),
-                    _buildResendRow(phone),
-                  ],
-                ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(-0.8, -0.8),
+                radius: 1.5,
+                colors: [Color(0xFF1E3F7A), AppColors.primary900],
               ),
             ),
           ),
-          if (!keyboardVisible) _buildBottomBar(authState.isLoading),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildBackButton(),
+                        const SizedBox(height: 48),
+                        Row(
+                          children: [
+                            Container(
+                              width: 44, height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary700,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: AppColors.accent500.withValues(alpha: 0.2)),
+                              ),
+                              child: const Icon(LineAwesomeIcons.shield_alt_solid, size: 24, color: AppColors.accent500),
+                            ),
+                            const SizedBox(width: 16),
+                            Text('VERIFY ACCESS CODE',
+                                style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                          ],
+                        ).animate().fadeIn().slideX(begin: -0.1, end: 0),
+                        const SizedBox(height: 24),
+                        Text('Provide the security code sent to $phone.',
+                            style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 48),
+                        
+                        // --- THE WARNING LIGHT ---
+                        if (errorMessage != null && errorMessage.isNotEmpty) ...[
+                          KsBanner(message: errorMessage),
+                          const SizedBox(height: 24),
+                        ],
+
+                        _buildOtpInput(authState.isLoading),
+                        const SizedBox(height: 32),
+                        _buildResendRow(phone),
+                      ],
+                    ),
+                  ),
+                ),
+                if (!keyboardVisible) _buildBottomBar(authState.isLoading),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBackButton() => GestureDetector(
-    onTap: () => context.pop(),
-    child: Container(
-      width: 40, height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white, 
-        borderRadius: BorderRadius.circular(10), 
-        border: Border.all(color: const Color(0xFFE0E0E0))
-      ),
-      child: const Icon(LineAwesomeIcons.angle_left_solid, size: 18, color: AppColors.primary700),
-    ),
-  );
+        onTap: () => context.pop(),
+        child: Container(
+          width: 44, height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.primary700.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
+        ),
+      );
 
   Widget _buildOtpInput(bool isLoading) {
     final defaultTheme = PinTheme(
-      width: 52, height: 60,
-      textStyle: const TextStyle(fontFamily: 'BarlowSemiCondensed', fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primary700),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEAEAEC)),
-      ),
+      width: 52, height: 64,
+      textStyle: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
+      decoration: BoxDecoration(color: AppColors.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
     );
-
-    return Center(
-      child: Pinput(
-        controller: _pinController,
-        length: 6,
-        readOnly: isLoading,
-        defaultPinTheme: defaultTheme,
-        focusedPinTheme: defaultTheme.copyWith(
-          decoration: defaultTheme.decoration!.copyWith(
-            border: Border.all(color: AppColors.primary700, width: 2),
-          ),
-        ),
-        submittedPinTheme: defaultTheme.copyWith(
-          decoration: BoxDecoration(color: AppColors.primary700, borderRadius: BorderRadius.circular(12)),
-          textStyle: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
-        ),
-        onCompleted: (_) => _onVerify(),
-      ),
-    );
+    return Pinput(
+      controller: _pinController,
+      focusNode: _focusNode,
+      length: 6,
+      readOnly: isLoading,
+      defaultPinTheme: defaultTheme,
+      focusedPinTheme: defaultTheme.copyWith(decoration: defaultTheme.decoration!.copyWith(border: Border.all(color: AppColors.accent500, width: 2))),
+      onChanged: (v) {
+        // Clear the error state when the user starts modifying the code
+        ref.read(authNotifierProvider.notifier).clearError();
+        setState(() => _canVerify = v.length == 6);
+      },
+      onCompleted: (_) => _onVerify(),
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildResendRow(String phone) => Center(
-    child: _resendCooldown > 0
-        ? Text('Resend code in 0:${_resendCooldown.toString().padLeft(2, '0')}', 
-            style: const TextStyle(fontFamily: 'BarlowSemiCondensed', fontWeight: FontWeight.w600, color: Color(0xFF9E9E9E)))
-        : GestureDetector(
-            onTap: () {
-              ref.read(authNotifierProvider.notifier).requestOtp(phone);
-              _startCooldown();
-            },
-            child: const Text('Resend', style: TextStyle(color: Color(0xFFF9A825), fontWeight: FontWeight.w700))
-          ),
-  );
+  Widget _buildResendRow(String phone) => Row(
+        children: [
+          Text("Didn't receive the code?  ", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+          _resendCooldown > 0
+              ? Text('Wait 0:${_resendCooldown.toString().padLeft(2, '0')}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700))
+              : GestureDetector(
+                  onTap: () { ref.read(authNotifierProvider.notifier).requestOtp(phone); _startCooldown(); },
+                  child: Text('RESEND', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900)),
+                ),
+        ],
+      ).animate().fadeIn(delay: 500.ms);
 
   Widget _buildBottomBar(bool isLoading) => Container(
-    width: double.infinity, color: AppColors.primary700,
-    padding: const EdgeInsets.all(AppSpacing.pagePadding),
-    child: SafeArea(top: false, child: SizedBox(
-      width: double.infinity, height: 56,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : _onVerify,
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF9A825)),
-        child: isLoading 
-          ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-          : const Text('Verify', style: TextStyle(fontFamily: 'BarlowSemiCondensed', fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.primary700)),
-      ),
-    )),
-  );
+        width: double.infinity,
+        decoration: BoxDecoration(color: AppColors.primary700, border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1)))),
+        padding: const EdgeInsets.all(24.0),
+        child: InkWell(
+          onTap: _canVerify && !isLoading ? _onVerify : null,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('VERIFY ACCESS', style: AppTextStyles.h2.copyWith(color: _canVerify ? AppColors.white : Colors.white.withValues(alpha: 0.3), fontWeight: FontWeight.w900, letterSpacing: 2.0)),
+              if (isLoading) const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+              else Icon(Icons.arrow_forward, color: _canVerify ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)),
+            ],
+          ),
+        ),
+      ).animate().fadeIn(delay: 600.ms);
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
@@ -18,25 +18,50 @@ class NoteCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Expanded(child: Text(note.title, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              Text(DateFormatter.short(note.createdAt), style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
-            ]),
-            const SizedBox(height: AppSpacing.xs),
-            Text(note.description, style: AppTextStyles.body.copyWith(color: AppColors.neutral600), maxLines: 2, overflow: TextOverflow.ellipsis),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    note.title.toUpperCase(), 
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.white, 
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ), 
+                    maxLines: 1, 
+                    overflow: TextOverflow.ellipsis
+                  )
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  DateFormatter.short(note.createdAt).toUpperCase(), 
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.accent500, 
+                    fontWeight: FontWeight.w700
+                  )
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              note.description, 
+              style: AppTextStyles.body.copyWith(color: AppColors.neutral400, height: 1.4), 
+              maxLines: 2, 
+              overflow: TextOverflow.ellipsis
+            ),
             if (note.hasTags) ...[
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 16),
               Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
+                spacing: 8,
+                runSpacing: 8,
                 children: note.tags.take(4).map((tag) => _TagChip(tag: tag)).toList(),
               ),
             ],
@@ -50,12 +75,24 @@ class NoteCard extends StatelessWidget {
 class _TagChip extends StatelessWidget {
   final String tag;
   const _TagChip({required this.tag});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-      decoration: BoxDecoration(color: AppColors.neutral100, borderRadius: BorderRadius.circular(AppSpacing.radiusFull)),
-      child: Text("#$tag", style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral600)),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.accent500.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        "#${tag.toLowerCase()}", 
+        style: AppTextStyles.labelSmall.copyWith(
+          color: AppColors.accent500, 
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        )
+      ),
     );
   }
 }

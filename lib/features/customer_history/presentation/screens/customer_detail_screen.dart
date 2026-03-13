@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_offline_banner.dart';
+import '../../../../core/router/route_names.dart';
+// Fixed relative paths:
+import '../../../job_logging/presentation/providers/job_providers.dart';
+import '../../../job_logging/domain/entities/job_entity.dart';
 import '../providers/customer_providers.dart';
 import '../../domain/entities/customer_entity.dart';
 
@@ -13,161 +18,240 @@ class CustomerDetailScreen extends ConsumerWidget {
   final String customerId;
   const CustomerDetailScreen({super.key, required this.customerId});
 
-  CustomerEntity? _findCustomer(CustomerListState state) {
-    try { return state.customers.firstWhere((c) => c.id == customerId); }
-    catch (_) { return null; }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(customerListProvider);
-    final customer = _findCustomer(state);
-
-    if (customer == null) {
-      return const Scaffold(
-        appBar: KsAppBar(title: "Customer", showBack: true),
-        body: Center(child: Text("Customer not found.")),
-      );
-    }
+    final customerAsync = ref.watch(customerDetailProvider(customerId));
+    final allJobsState = ref.watch(jobListProvider);
+    
+    final customerJobs = allJobsState.jobs.where((j) => j.customerId == customerId).toList()
+      ..sort((a, b) => b.jobDate.compareTo(a.jobDate));
 
     return Scaffold(
-      backgroundColor: AppColors.neutral050,
-      appBar: KsAppBar(title: customer.fullName, showBack: true),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.pagePadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar + name header
-            Center(
-              child: Column(children: [
-                const SizedBox(height: AppSpacing.lg),
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.primary100,
-                  child: Text(
-                    customer.fullName[0].toUpperCase(),
-                    style: AppTextStyles.h1.copyWith(color: AppColors.primary700),
+      backgroundColor: AppColors.primary900,
+      appBar: KsAppBar(
+        title: "CUSTOMER DOSSIER", 
+        showBack: true,
+        actions: [
+          IconButton(
+            icon: const Icon(LineAwesomeIcons.edit, color: AppColors.accent500),
+            onPressed: () {
+              // Edit functionality
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const KsOfflineBanner(),
+          Expanded(
+            child: customerAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
+              error: (err, _) => Center(child: Text("Error loading dossier", style: AppTextStyles.body.copyWith(color: Colors.white))),
+              data: (customer) {
+                if (customer == null) return const Center(child: Text("Customer not found", style: TextStyle(color: Colors.white)));
+                
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader("PROFILE SUMMARY"),
+                      _buildProfileModule(customer),
+                      const SizedBox(height: 24),
+                      
+                      _buildStatsRow(customer, customerJobs.length),
+                      const SizedBox(height: 24),
+                      
+                      _buildSectionHeader("SERVICE LEDGER"),
+                      if (customerJobs.isEmpty)
+                        _buildEmptyLedger()
+                      else
+                        ...customerJobs.map((job) => _buildLedgerItem(context, job)),
+                      
+                      const SizedBox(height: 100), 
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomSheet: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.primary700,
+          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        ),
+        padding: const EdgeInsets.all(24.0),
+        child: SafeArea(
+          top: false,
+          child: InkWell(
+            onTap: () {
+              context.push(RouteNames.logJob, extra: customerId);
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'LOG NEW JOB',
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2.0,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(customer.fullName, style: AppTextStyles.h2),
-                if (customer.isRepeatCustomer) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 3),
-                    decoration: BoxDecoration(color: AppColors.primary050, borderRadius: BorderRadius.circular(AppSpacing.radiusFull)),
-                    child: Text("Repeat customer", style: AppTextStyles.caption.copyWith(color: AppColors.primary700)),
+                const Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 28),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(
+        title, 
+        style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)
+      ),
+    );
+  }
+
+  Widget _buildProfileModule(CustomerEntity customer) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary800,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.primary900,
+            child: Text(
+              customer.fullName[0].toUpperCase(), 
+              style: AppTextStyles.h1.copyWith(color: AppColors.accent500)
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  customer.fullName.toUpperCase(),
+                  style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+                if (customer.location != null) ...[
+                  const SizedBox(height: 4),
+                  Text(customer.location!.toUpperCase(), style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.bold)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(CustomerEntity customer, int jobCount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primary800.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildTacticalStat("TOTAL JOBS", jobCount.toString().padLeft(2, '0')),
+          Container(width: 1, height: 20, color: Colors.white.withValues(alpha: 0.1)),
+          _buildTacticalStat("STATUS", customer.isRepeatCustomer ? "REPEAT" : "NEW"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTacticalStat(String label, String value) {
+    return Row(
+      children: [
+        Text("$label: ", style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
+        Text(value, style: AppTextStyles.labelSmall.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900)),
+      ],
+    );
+  }
+
+  Widget _buildLedgerItem(BuildContext context, JobEntity job) {
+    final serviceName = job.serviceType.toString().split('.').last
+        .replaceAllMapped(RegExp(r'(?<=[a-z])[A-Z]'), (Match m) => ' ${m.group(0)}');
+
+    return GestureDetector(
+      onTap: () => context.push(RouteNames.jobDetail(job.id)),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormatter.short(job.jobDate).toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    serviceName.toUpperCase(),
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.xl),
-              ]),
-            ),
-
-            // Contact info card
-            _SectionCard(children: [
-              _InfoRow(icon: Icons.phone_outlined, label: customer.phoneNumber),
-              if (customer.location != null) _InfoRow(icon: Icons.location_on_outlined, label: customer.location!),
-              if (customer.hasNotes) _InfoRow(icon: Icons.notes_outlined, label: customer.notes!),
-            ]),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Stats row
-            Row(children: [
-              Expanded(child: _StatCard(value: "${customer.totalJobs}", label: "Total jobs")),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(child: _StatCard(
-                value: customer.lastJobAt != null ? DateFormatter.relative(customer.lastJobAt!) : "—",
-                label: "Last job",
-              )),
-            ]),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            // WhatsApp button
-            GestureDetector(
-              onTap: () {
-                final phone = customer.phoneNumber.replaceAll('+', '');
-                final url = Uri.parse("https://wa.me/$phone");
-                launchUrl(url, mode: LaunchMode.externalApplication);
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF25D366),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.chat, size: 20, color: Colors.white),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text("Message on WhatsApp", style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
-                ]),
               ),
             ),
-
-            const SizedBox(height: AppSpacing.xxxl),
+            if (job.hasAmount)
+              Text(
+                "GHS ${job.amountCharged?.toInt()}",
+                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
+              ),
+            const SizedBox(width: 12),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.neutral600, size: 14),
           ],
         ),
       ),
     );
   }
-}
 
-class _SectionCard extends StatelessWidget {
-  final List<Widget> children;
-  const _SectionCard({required this.children});
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildEmptyLedger() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+        color: AppColors.primary800.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05), style: BorderStyle.solid),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _InfoRow({required this.icon, required this.label});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(children: [
-        Icon(icon, size: 16, color: AppColors.neutral400),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(child: Text(label, style: AppTextStyles.body.copyWith(color: AppColors.neutral700))),
-      ]),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  const _StatCard({required this.value, required this.label});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+      child: Column(
+        children: [
+          Icon(LineAwesomeIcons.history_solid, color: Colors.white.withValues(alpha: 0.1), size: 48),
+          const SizedBox(height: 16),
+          Text(
+            "NO SERVICE HISTORY",
+            style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral600, fontWeight: FontWeight.w900),
+          ),
+        ],
       ),
-      child: Column(children: [
-        Text(value, style: AppTextStyles.h2.copyWith(color: AppColors.primary700)),
-        const SizedBox(height: 2),
-        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-      ]),
     );
   }
 }

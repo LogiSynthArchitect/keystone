@@ -95,3 +95,25 @@
 ### lib/core/constants/supabase_constants.dart
 - **Objective:** Centralized configuration for Supabase environment variables and table names.
 - **Failure Mode:** Empty URL or Key causes `No host specified` error during API calls. Ensure values are hardcoded or passed correctly via `--dart-define`.
+
+## III. UI RENDERING & VISUAL FIXES
+
+### Input Text Visibility (White-Out Bug)
+- **Context:** Occurs when using `TextField` or `KsTextField` inside a dark container (like `Primary800`).
+- **Cause:** The default `InputDecoration` fill properties can clash with parent container backgrounds, making white text appear invisible or highlighting the field with a solid white block.
+- **Remedy:** Ensure `filled: true` and `fillColor: Colors.transparent` are set within the `InputDecoration`. This allows the dark `Primary800` background of the parent `Container` to show through while maintaining the correct text contrast.
+
+## IV. RUNTIME & PATHING RESOLUTIONS
+
+### Enum String Conversion (NoSuchMethodError: 'name')
+- **Context:** Occurs when calling `.name` on a ServiceType enum in older or specific Dart environments.
+- **Remedy:** Use `serviceType.toString().split('.').last` for a robust string extraction.
+
+### Relative Path Leveling
+- **Context:** `lib/features/customer_history/presentation/screens/`
+- **Error:** "Error when reading... No such file or directory"
+- **Logic:** When jumping between features from deep screen folders, use `../../../` to reach the `lib/features/` root before descending into a different feature folder.
+
+### Identity Mapping (whatsappNumber)
+- **Error:** "Getter 'phoneNumber' isn't defined for ProfileEntity"
+- **Remedy:** The `ProfileEntity` explicitly uses `whatsappNumber`. Use this field for all profile-related identity displays.

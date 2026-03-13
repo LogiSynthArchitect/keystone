@@ -1,206 +1,153 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:go_router/go_router.dart';
-import '../../../../core/router/route_names.dart';
-import '../../../../core/providers/auth_provider.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_bottom_nav.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_skeleton_loader.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
-import '../../domain/entities/profile_entity.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  void _onTabTapped(BuildContext context, int index) {
-    switch (index) {
-      case 0: context.go(RouteNames.jobs); break;
-      case 1: context.go(RouteNames.customers); break;
-      case 2: context.go(RouteNames.notes); break;
-      case 3: context.go(RouteNames.profile); break;
-    }
-  }
-
-  String _serviceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return 'Car Key Programming';
-      case ServiceType.doorLockInstallation:  return 'Door Lock Installation';
-      case ServiceType.doorLockRepair:        return 'Door Lock Repair';
-      case ServiceType.smartLockInstallation: return 'Smart Lock Installation';
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(profileProvider);
+    final profileState = ref.watch(profileProvider);
+    final profile = profileState.profile;
 
     return Scaffold(
-      backgroundColor: AppColors.neutral050,
+      backgroundColor: AppColors.primary900,
       appBar: KsAppBar(
-        title: 'Profile',
+        title: "MY PROFILE",
+        showBack: false,
         actions: [
-          if (state.hasProfile)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: AppColors.neutral600),
-              onPressed: () => context.push(RouteNames.editProfile),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          const KsOfflineBanner(),
-          Expanded(
-            child: state.isLoading
-                ? _buildSkeleton()
-                : !state.hasProfile
-                    ? _buildNoProfile(context)
-                    : _buildProfile(context, ref, state.profile!),
+          IconButton(
+            icon: const Icon(LineAwesomeIcons.sign_out_alt_solid, color: AppColors.error500),
+            onPressed: () => ref.read(authStateProvider.notifier).signOut(),
           ),
         ],
       ),
-      bottomNavigationBar: KsBottomNav(currentIndex: 3, onTabTapped: (i) => _onTabTapped(context, i)),
-    );
-  }
+      body: profileState.isLoading 
+          ? const Center(child: CircularProgressIndicator(color: AppColors.accent500))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile Header
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary800,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: AppColors.primary900,
+                          backgroundImage: (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty) 
+                              ? NetworkImage(profile.photoUrl!) 
+                              : null,
+                          child: (profile?.photoUrl == null || profile!.photoUrl!.isEmpty)
+                              ? Text(profile?.displayName[0].toUpperCase() ?? "?", style: AppTextStyles.h1.copyWith(color: AppColors.accent500))
+                              : null,
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(profile?.displayName.toUpperCase() ?? "UNKNOWN", style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 4),
+                              Text(profile?.whatsappNumber ?? "", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-  Widget _buildSkeleton() {
-    return const Padding(
-      padding: EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(children: [
-        SizedBox(height: AppSpacing.xl),
-        Center(child: KsSkeletonLoader(width: 80, height: 80, borderRadius: 40)),
-        SizedBox(height: AppSpacing.lg),
-        KsSkeletonLoader(height: 24, width: 160),
-        SizedBox(height: AppSpacing.sm),
-        KsSkeletonLoader(height: 16, width: 200),
-      ]),
-    );
-  }
+                  _buildSectionLabel("BUSINESS LINK"),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary800,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(LineAwesomeIcons.link_solid, color: AppColors.accent500, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "keystone.app/p/${profile?.profileUrl ?? ''}",
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(LineAwesomeIcons.share_square, color: AppColors.accent500),
+                          onPressed: () => ref.read(profileProvider.notifier).shareProfile(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-  Widget _buildNoProfile(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxxl),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.person_outline, size: 64, color: AppColors.neutral300),
-          const SizedBox(height: AppSpacing.lg),
-          Text('No profile yet', style: AppTextStyles.h3.copyWith(color: AppColors.neutral600)),
-          const SizedBox(height: AppSpacing.sm),
-          Text('Your profile is created automatically when you complete onboarding.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500), textAlign: TextAlign.center),
-        ]),
-      ),
-    );
-  }
-
-  Widget _buildProfile(BuildContext context, WidgetRef ref, ProfileEntity profile) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Center(
-            child: Column(children: [
-              const SizedBox(height: AppSpacing.lg),
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.primary100,
-                backgroundImage: profile.hasPhoto ? NetworkImage(profile.photoUrl!) : null,
-                child: !profile.hasPhoto
-                    ? Text(profile.displayName[0].toUpperCase(), style: AppTextStyles.h1.copyWith(color: AppColors.primary700))
-                    : null,
+                  _buildSectionLabel("SETTINGS"),
+                  _buildSettingsTile(LineAwesomeIcons.map_marker_solid, "REGION", "ACCRA, GHANA"),
+                  _buildSettingsTile(LineAwesomeIcons.language_solid, "LANGUAGE", "ENGLISH (UK)"),
+                  
+                  const SizedBox(height: 48),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: AppColors.primary800,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        side: const BorderSide(color: AppColors.accent500),
+                      ),
+                      onPressed: () => context.push(RouteNames.editProfile),
+                      child: Text("EDIT PROFILE", style: AppTextStyles.label.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              Text(profile.displayName, style: AppTextStyles.h2),
-              if (profile.hasBio) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(profile.bio!, style: AppTextStyles.body.copyWith(color: AppColors.neutral600), textAlign: TextAlign.center),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-            ]),
-          ),
-
-          // Services
-          Text('Services', style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral500)),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: profile.services.map((s) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-              decoration: BoxDecoration(color: AppColors.primary050, borderRadius: BorderRadius.circular(AppSpacing.radiusFull), border: Border.all(color: AppColors.primary100)),
-              child: Text(_serviceLabel(s), style: AppTextStyles.caption.copyWith(color: AppColors.primary700)),
-            )).toList(),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Share profile button
-          GestureDetector(
-            onTap: () => ref.read(profileProvider.notifier).shareProfile(),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              decoration: BoxDecoration(color: AppColors.primary700, borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.share_outlined, size: 18, color: AppColors.white),
-                const SizedBox(width: AppSpacing.sm),
-                Text('Share my profile', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
-              ]),
             ),
-          ),
+    );
+  }
 
-          const SizedBox(height: AppSpacing.md),
+  Widget _buildSectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+    );
+  }
 
-          // Profile URL
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(AppSpacing.radiusMd), border: Border.all(color: AppColors.neutral200)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Your profile link', style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral500)),
-              const SizedBox(height: AppSpacing.xs),
-              Text('https://${profile.profileUrl}', style: AppTextStyles.body.copyWith(color: AppColors.primary600)),
-            ]),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Sign out
-          GestureDetector(
-            onTap: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Sign out?'),
-                  content: const Text('You will need to log in again.'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sign out', style: TextStyle(color: AppColors.error600))),
-                  ],
-                ),
-              );
-              if (confirm == true && context.mounted) {
-                await ref.read(authStateProvider.notifier).signOut();
-              }
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(AppSpacing.radiusMd), border: Border.all(color: AppColors.neutral200)),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.logout, size: 18, color: AppColors.error600),
-                const SizedBox(width: AppSpacing.sm),
-                Text('Sign out', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error600)),
-              ]),
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.xxxl),
+  Widget _buildSettingsTile(IconData icon, String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary800,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.neutral500, size: 20),
+          const SizedBox(width: 16),
+          Text(label, style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500)),
+          const Spacer(),
+          Text(value, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)),
         ],
       ),
     );

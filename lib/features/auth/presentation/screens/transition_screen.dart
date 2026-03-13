@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_logo_animated.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
+import '../providers/auth_notifier.dart';
 
 class TransitionScreen extends ConsumerStatefulWidget {
   const TransitionScreen({super.key});
@@ -13,115 +17,125 @@ class TransitionScreen extends ConsumerStatefulWidget {
 }
 
 class _TransitionScreenState extends ConsumerState<TransitionScreen> {
-  String _milestone = "SECURELY INITIALIZING VAULT...";
-  double _progress = 0.1;
-
   @override
   void initState() {
     super.initState();
-    _startCommissioning();
+    _startTransition();
   }
 
-  void _startCommissioning() async {
-    // INCREASED DELAYS FOR TESTING
-    await Future.delayed(const Duration(milliseconds: 2000));
-    if (mounted) setState(() { _milestone = "SYNCING PROFESSIONAL PROFILE..."; _progress = 0.4; });
-    
-    await Future.delayed(const Duration(milliseconds: 2000));
-    if (mounted) setState(() { _milestone = "OPTIMIZING FOR OFFLINE ACCESS..."; _progress = 0.8; });
+  void _startTransition() async {
+    // MANDATORY: 6-second total brand moment for the cinematic intro
+    await Future.delayed(const Duration(seconds: 6));
+    if (!mounted) return;
 
-    await Future.delayed(const Duration(milliseconds: 2000));
-    if (mounted) setState(() { _milestone = "WORKSHOP READY."; _progress = 1.0; });
-  }
+    final authState = ref.read(authStateProvider).valueOrNull;
 
-  void _onComplete() {
-    // Delay the exit after the logo finishes its pulse
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted) context.go(RouteNames.jobs);
-    });
+    // Final routing decision after the 6s brand moment
+    if (authState == null || !authState.isAuthenticated) {
+      context.go(RouteNames.landing);
+    } else if (!authState.hasProfile) {
+      context.go(RouteNames.onboarding);
+    } else {
+      context.go(RouteNames.jobs);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authStateAsync = ref.watch(authStateProvider);
     final profile = ref.watch(profileProvider).profile;
-    final name = profile?.displayName.toUpperCase() ?? "LOCKSMITH";
+    final authUiState = ref.watch(authNotifierProvider);
+
+    String greeting = "";
+    String subtext = "";
+    bool isIdentified = false;
+
+    authStateAsync.whenData((state) {
+      if (state.isAuthenticated) {
+        isIdentified = true;
+        // Check for Veteran status via Profile or Auth State
+        if ((state.hasProfile && profile != null) || (authUiState.hasProfile == true && profile != null)) {
+          // VETERAN: Recognition of existing backbone
+          greeting = "WELCOME BACK,\n${profile.displayName.toUpperCase()}";
+          subtext = "Synchronizing backbone...";
+        } else {
+          // RECRUIT: Acknowledgement of forging a new identity
+          greeting = "PROFILE FORGED";
+          subtext = "Establishing your workspace...";
+        }
+      }
+    });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAF8),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 62,
-            child: Center(
-              child: KsLogoAnimated(size: 220, onComplete: _onComplete),
-            ),
-          ),
-          LinearProgressIndicator(
-            value: _progress,
-            backgroundColor: Colors.transparent,
-            color: const Color(0xFFF9A825),
-            minHeight: 2,
-          ),
-          Expanded(
-            flex: 38,
-            child: Container(
-              width: double.infinity,
-              color: const Color(0xFF1A237E),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "WELCOME,",
-                    style: TextStyle(
-                      fontFamily: 'BarlowSemiCondensed',
-                      color: Color(0xFFF9A825),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontFamily: 'BarlowSemiCondensed',
-                      color: Colors.white,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white70,
-                        ),
+      backgroundColor: AppColors.primary900, // THE VOID: Fixed "Flashbang" background
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const KsLogoAnimated(size: 240, primaryColor: AppColors.white),
+            if (isIdentified) ...[
+              const SizedBox(height: 60),
+              FadeInDelayed(
+                child: Column(
+                  children: [
+                    Text(
+                      greeting,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.h1.copyWith(
+                        color: AppColors.accent500, // Gold for high authority
+                        height: 1.1,
+                        letterSpacing: 1.0,
                       ),
-                      const SizedBox(width: 16),
-                      Text(
-                        _milestone,
-                        style: const TextStyle(
-                          fontFamily: 'BarlowSemiCondensed',
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      subtext,
+                      style: AppTextStyles.label.copyWith(
+                        color: AppColors.neutral400, // Lightened for dark background contrast
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
+}
+
+class FadeInDelayed extends StatefulWidget {
+  final Widget child;
+  const FadeInDelayed({super.key, required this.child});
+
+  @override
+  State<FadeInDelayed> createState() => _FadeInDelayedState();
+}
+
+class _FadeInDelayedState extends State<FadeInDelayed> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(opacity: _opacity, child: widget.child);
 }

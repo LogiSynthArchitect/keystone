@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -17,45 +18,73 @@ class CustomerCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primary100,
-              child: Text(
-                customer.fullName.isNotEmpty ? customer.fullName[0].toUpperCase() : "?",
-                style: AppTextStyles.h3.copyWith(color: AppColors.primary700),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primary900,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Center(
+                child: Text(
+                  customer.fullName.isNotEmpty ? customer.fullName[0].toUpperCase() : "?",
+                  style: AppTextStyles.h3.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900),
+                ),
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Expanded(child: Text(customer.fullName, style: AppTextStyles.bodyMedium)),
-                    if (customer.isRepeatCustomer)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                        decoration: BoxDecoration(color: AppColors.primary050, borderRadius: BorderRadius.circular(AppSpacing.radiusFull)),
-                        child: Text("Repeat", style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary700)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          customer.fullName, 
+                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)
+                        )
                       ),
-                  ]),
-                  const SizedBox(height: 2),
-                  Text(customer.phoneNumber, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                      if (customer.isRepeatCustomer)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent500.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(2),
+                            border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            "REPEAT", 
+                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 0.5)
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    customer.phoneNumber, 
+                    style: AppTextStyles.caption.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)
+                  ),
                   if (customer.lastJobAt != null) ...[
-                    const SizedBox(height: 2),
-                    Text("Last job: ${DateFormatter.relative(customer.lastJobAt!)}", style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Last job: ${DateFormatter.relative(customer.lastJobAt!)}", 
+                      style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)
+                    ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.neutral300),
+            const SizedBox(width: 8),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.neutral500, size: 16),
           ],
         ),
       ),

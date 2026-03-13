@@ -16,12 +16,14 @@ class AuthUiState {
   final String? errorMessage;
   final String? phoneNumber;
   final bool isOtpSent;
+  final bool? hasProfile;
 
   AuthUiState({
     this.isLoading = false,
     this.errorMessage,
     this.phoneNumber,
     this.isOtpSent = false,
+    this.hasProfile,
   });
 
   AuthUiState copyWith({
@@ -29,11 +31,14 @@ class AuthUiState {
     String? errorMessage,
     String? phoneNumber,
     bool? isOtpSent,
+    bool? hasProfile,
+    bool clearError = false,
   }) => AuthUiState(
     isLoading: isLoading ?? this.isLoading,
-    errorMessage: errorMessage,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     phoneNumber: phoneNumber ?? this.phoneNumber,
     isOtpSent: isOtpSent ?? this.isOtpSent,
+    hasProfile: hasProfile ?? this.hasProfile,
   );
 }
 
@@ -45,14 +50,21 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
 
   AuthNotifier(this._requestOtp, this._verifyOtp, this._profileRepo, this._authRepo) : super(AuthUiState());
 
+  void clearError() {
+    if (state.errorMessage != null) {
+      state = state.copyWith(clearError: true);
+    }
+  }
+
   Future<bool> requestOtp(String phone) async {
     debugPrint('[KS:FLOW] AuthNotifier.requestOtp — phone: $phone');
-    
-    final normalized = PhoneFormatter.isValid(phone) 
-        ? PhoneFormatter.normalize(phone) 
+
+    final normalized = PhoneFormatter.isValid(phone)
+        ? PhoneFormatter.normalize(phone)
         : phone;
 
-    state = state.copyWith(isLoading: true, phoneNumber: normalized);
+    state = state.copyWith(isLoading: true, phoneNumber: normalized, clearError: true);
+    
     try {
       await _requestOtp(RequestOtpParams(phoneNumber: normalized));
       debugPrint('[KS:FLOW] AuthNotifier.requestOtp SUCCESS');
@@ -60,7 +72,15 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       return true;
     } catch (e) {
       debugPrint('[KS:FLOW] AuthNotifier.requestOtp ERROR: $e');
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      
+      String cleanError = e.toString();
+      if (cleanError.contains('20003') || cleanError.contains('invalid username')) {
+        cleanError = "SMS Gateway Fault: Check Twilio Credentials.";
+      } else {
+        cleanError = cleanError.replaceFirst(RegExp(r"AppException\(\d+\):\s*"), "").trim();
+      }
+
+      state = state.copyWith(isLoading: false, errorMessage: cleanError);
       return false;
     }
   }
@@ -70,15 +90,22 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     final phone = state.phoneNumber;
     if (phone == null) return false;
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, clearError: true);
+    
     try {
       await _verifyOtp(VerifyOtpParams(phoneNumber: phone, token: token));
-      debugPrint('[KS:FLOW] AuthNotifier.verifyOtp SUCCESS');
-      state = state.copyWith(isLoading: false);
+
+      debugPrint('[KS:FLOW] Interrogating profile for phone: $phone');
+      final profile = await _profileRepo.getProfileByPhone(phone);
+      final exists = profile != null;
+
+      debugPrint('[KS:FLOW] Identity Check: ${exists ? "VETERAN" : "RECRUIT"}');
+      state = state.copyWith(isLoading: false, hasProfile: exists);
       return true;
     } catch (e) {
       debugPrint('[KS:FLOW] AuthNotifier.verifyOtp ERROR: $e');
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      String cleanError = e.toString().replaceFirst(RegExp(r"AppException\(\d+\):\s*"), "").trim();
+      state = state.copyWith(isLoading: false, errorMessage: cleanError);
       return false;
     }
   }
@@ -88,20 +115,19 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     final phone = state.phoneNumber;
     if (phone == null) return false;
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, clearError: true);
+    
     try {
       debugPrint('[KS:FLOW] Calling authRepo.createUser...');
       final user = await _authRepo.createUser(
         fullName: name,
         phoneNumber: phone,
       );
-      debugPrint('[KS:FLOW] authRepo.createUser SUCCESS — userId: ${user.id}, authId: ${user.authId}');
 
       debugPrint('[KS:FLOW] Calling profileRepo.createProfile...');
-      // FIX: Use user.authId to satisfy the profiles_user_id_fkey constraint
       final profile = ProfileEntity(
-        id: '', 
-        userId: user.authId ?? '', 
+        id: '',
+        userId: user.authId ?? '',
         displayName: name,
         bio: '',
         photoUrl: '',
@@ -112,21 +138,18 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       await _profileRepo.createProfile(profile);
-      debugPrint('[KS:FLOW] profileRepo.createProfile SUCCESS');
-      
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, hasProfile: true);
       return true;
     } catch (e) {
       debugPrint('[KS:FLOW] AuthNotifier.completeOnboarding ERROR: $e');
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      String cleanError = e.toString().replaceFirst(RegExp(r"AppException\(\d+\):\s*"), "").trim();
+      state = state.copyWith(isLoading: false, errorMessage: cleanError);
       return false;
     }
   }
 }
-
-// ── Dependency Providers ───────────────────────────────────────────────────
 
 final authRemoteDatasourceProvider = Provider<AuthRemoteDatasource>((ref) {
   return AuthRemoteDatasource(ref.watch(supabaseClientProvider));

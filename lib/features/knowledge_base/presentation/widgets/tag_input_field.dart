@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class TagInputField extends StatefulWidget {
   final List<String> tags;
   final ValueChanged<List<String>> onChanged;
-  final int maxTags;
 
-  const TagInputField({super.key, required this.tags, required this.onChanged, this.maxTags = 10});
+  const TagInputField({
+    super.key,
+    required this.tags,
+    required this.onChanged,
+  });
 
   @override
   State<TagInputField> createState() => _TagInputFieldState();
@@ -17,23 +19,18 @@ class TagInputField extends StatefulWidget {
 class _TagInputFieldState extends State<TagInputField> {
   final _controller = TextEditingController();
 
+  void _addTag(String value) {
+    final tag = value.trim().toLowerCase();
+    if (tag.isNotEmpty && !widget.tags.contains(tag)) {
+      widget.onChanged([...widget.tags, tag]);
+    }
+    _controller.clear();
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  void _addTag(String value) {
-    final tag = value.trim().toLowerCase().replaceAll(' ', '_');
-    if (tag.isEmpty) return;
-    if (widget.tags.contains(tag)) { _controller.clear(); return; }
-    if (widget.tags.length >= widget.maxTags) return;
-    widget.onChanged([...widget.tags, tag]);
-    _controller.clear();
-  }
-
-  void _removeTag(String tag) {
-    widget.onChanged(widget.tags.where((t) => t != tag).toList());
   }
 
   @override
@@ -41,67 +38,91 @@ class _TagInputFieldState extends State<TagInputField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Tags", style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral700)),
-        const SizedBox(height: AppSpacing.xs),
         Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(color: AppColors.neutral300),
+            color: AppColors.primary800,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (widget.tags.isNotEmpty) ...[
                 Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: widget.tags.map((tag) => _RemovableTag(tag: tag, onRemove: () => _removeTag(tag))).toList(),
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: widget.tags.map((tag) => _TagChip(
+                    label: tag,
+                    onRemove: () {
+                      widget.onChanged(
+                        widget.tags.where((t) => t != tag).toList(),
+                      );
+                    },
+                  )).toList(),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 12),
               ],
               TextField(
                 controller: _controller,
                 onSubmitted: _addTag,
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white),
+                cursorColor: AppColors.accent500,
                 decoration: InputDecoration(
-                  hintText: widget.tags.length >= widget.maxTags ? "Max tags reached" : "Add tag, press Enter",
-                  hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
+                  hintText: "Add tag, press Enter",
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
                   border: InputBorder.none,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  filled: true,
+                  fillColor: Colors.transparent, // Fixes white-out bug for tags
                 ),
-                enabled: widget.tags.length < widget.maxTags,
-                style: AppTextStyles.body,
-                textInputAction: TextInputAction.done,
               ),
             ],
           ),
         ),
-        if (widget.tags.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text("${widget.tags.length}/${widget.maxTags} tags", style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
-        ],
       ],
     );
   }
 }
 
-class _RemovableTag extends StatelessWidget {
-  final String tag;
+class _TagChip extends StatelessWidget {
+  final String label;
   final VoidCallback onRemove;
-  const _RemovableTag({required this.tag, required this.onRemove});
+
+  const _TagChip({required this.label, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
-      decoration: BoxDecoration(color: AppColors.primary050, borderRadius: BorderRadius.circular(AppSpacing.radiusFull)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text("#$tag", style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary700)),
-        const SizedBox(width: 3),
-        GestureDetector(onTap: onRemove, child: const Icon(Icons.close, size: 12, color: AppColors.primary500)),
-      ]),
+      padding: const EdgeInsets.only(left: 10, right: 4, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: AppColors.accent500.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "#$label",
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.accent500,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: Icon(
+              Icons.close,
+              size: 14,
+              color: AppColors.accent500.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
