@@ -1,4 +1,5 @@
 import 'package:url_launcher/url_launcher.dart';
+import '../errors/network_exception.dart';
 
 class WhatsAppLauncher {
   WhatsAppLauncher._();
@@ -17,7 +18,11 @@ class WhatsAppLauncher {
       return true;
     }
 
-    return _fallbackToSms(phoneNumber: phoneNumber, message: message);
+    // Task 1 fix: Prevent silent failure to protect state integrity
+    throw const NetworkException(
+      message: 'WhatsApp is not installed on this device.',
+      code: 'WHATSAPP_NOT_INSTALLED',
+    );
   }
 
   static Future<bool> _fallbackToSms({

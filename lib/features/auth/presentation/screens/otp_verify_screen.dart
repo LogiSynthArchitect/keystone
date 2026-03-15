@@ -7,8 +7,6 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/router/route_names.dart';
-import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../providers/auth_notifier.dart';
 
@@ -52,19 +50,10 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   Future<void> _onVerify() async {
     if (_pinController.text.length != 6) return;
 
-    final success = await ref.read(authNotifierProvider.notifier).verifyOtp(_pinController.text.trim());
-
-    if (mounted && success) {
-      final hasProfile = ref.read(authNotifierProvider).hasProfile ?? false;
-
-      if (hasProfile) {
-        // VETERAN: Celebrate and bridge to dashboard
-        context.go(RouteNames.transition);
-      } else {
-        // RECRUIT: Forge the identity first
-        context.go(RouteNames.onboarding);
-      }
-    }
+    // SMART ENGINE ACTIVATED: The UI no longer dictates navigation!
+    // We simply verify the OTP. The Notifier updates the Router State, 
+    // and the Router automatically takes you to the right place.
+    await ref.read(authNotifierProvider.notifier).verifyOtp(_pinController.text.trim());
   }
 
   @override
@@ -120,7 +109,6 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                             style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 48),
                         
-                        // --- THE WARNING LIGHT ---
                         if (errorMessage != null && errorMessage.isNotEmpty) ...[
                           KsBanner(message: errorMessage),
                           const SizedBox(height: 24),
@@ -169,7 +157,6 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
       defaultPinTheme: defaultTheme,
       focusedPinTheme: defaultTheme.copyWith(decoration: defaultTheme.decoration!.copyWith(border: Border.all(color: AppColors.accent500, width: 2))),
       onChanged: (v) {
-        // Clear the error state when the user starts modifying the code
         ref.read(authNotifierProvider.notifier).clearError();
         setState(() => _canVerify = v.length == 6);
       },

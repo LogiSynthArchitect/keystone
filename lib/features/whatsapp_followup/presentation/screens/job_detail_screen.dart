@@ -27,8 +27,23 @@ class JobDetailScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(LineAwesomeIcons.trash_solid, color: AppColors.error500),
-            onPressed: () {
-              // Archive logic planned for future update
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.primary800,
+                  title: Text("ARCHIVE JOB?", style: AppTextStyles.h3.copyWith(color: Colors.white)),
+                  content: Text("This will remove the job from your dashboard.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("CANCEL")),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("ARCHIVE", style: TextStyle(color: AppColors.error500))),
+                  ],
+                ),
+              );
+              if (confirmed == true) {
+                await ref.read(jobListProvider.notifier).archive(jobId);
+                if (context.mounted) Navigator.pop(context);
+              }
             },
           ),
         ],
@@ -42,29 +57,32 @@ class JobDetailScreen extends ConsumerWidget {
               error: (err, _) => Center(child: Text("Error loading job details", style: AppTextStyles.body.copyWith(color: Colors.white))),
               data: (job) {
                 if (job == null) return const Center(child: Text("Job not found", style: TextStyle(color: Colors.white)));
-                
+
+                // Task 3: 24-Hour UI Lock Calculation
+                final bool isLocked = DateTime.now().difference(job.createdAt).inHours >= 24;
+
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildSectionHeader("SERVICE"),
-                      _buildServiceModule(job),
+                      _buildServiceModule(job, isLocked),
                       const SizedBox(height: 24),
-                      
+
                       _buildSectionHeader("CUSTOMER"),
                       _buildCustomerModule(ref, job.customerId),
                       const SizedBox(height: 24),
-                      
+
                       if (job.notes != null && job.notes!.isNotEmpty) ...[
                         _buildSectionHeader("TECHNICAL NOTES"),
                         _buildNotesModule(job.notes!),
                         const SizedBox(height: 24),
                       ],
-                      
+
                       _buildSectionHeader("FOLLOW-UP STATUS"),
                       FollowUpMessagePreview(job: job),
-                      const SizedBox(height: 100), 
+                      const SizedBox(height: 100),
                     ],
                   ),
                 );
@@ -85,16 +103,15 @@ class JobDetailScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
-        title, 
+        title,
         style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)
       ),
     );
   }
 
-  Widget _buildServiceModule(job) {
-    // FIX: Handling enum string conversion safely
+  Widget _buildServiceModule(job, bool isLocked) {
     final serviceName = job.serviceType.toString().split('.').last;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -114,9 +131,17 @@ class JobDetailScreen extends ConsumerWidget {
                   style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
                 ),
               ),
-              Text(
-                DateFormatter.short(job.jobDate).toUpperCase(),
-                style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800),
+              Row(
+                children: [
+                  if (isLocked) const Padding(
+                    padding: EdgeInsets.only(right: 8.0),
+                    child: Icon(LineAwesomeIcons.lock_solid, size: 14, color: AppColors.neutral500),
+                  ),
+                  Text(
+                    DateFormatter.short(job.jobDate).toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(color: isLocked ? AppColors.neutral500 : AppColors.accent500, fontWeight: FontWeight.w800),
+                  ),
+                ],
               ),
             ],
           ),

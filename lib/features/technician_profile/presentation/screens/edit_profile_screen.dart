@@ -12,6 +12,7 @@ import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/widgets/ks_text_field.dart';
 import '../providers/profile_provider.dart';
 import '../../domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});

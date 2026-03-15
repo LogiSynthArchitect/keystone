@@ -1,9 +1,4 @@
-enum ServiceType {
-  carLockProgramming,
-  doorLockInstallation,
-  doorLockRepair,
-  smartLockInstallation,
-}
+import '../../../../core/constants/app_enums.dart';
 
 class ProfileEntity {
   final String id;

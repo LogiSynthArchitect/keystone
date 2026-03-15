@@ -9,6 +9,7 @@ class CustomerModel {
   final String? notes;
   final int totalJobs;
   final String? lastJobAt;
+  final String syncStatus;
   final String createdAt;
   final String updatedAt;
 
@@ -21,6 +22,7 @@ class CustomerModel {
     this.notes,
     required this.totalJobs,
     this.lastJobAt,
+    this.syncStatus = 'synced',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -34,6 +36,7 @@ class CustomerModel {
         notes: json['notes'] as String?,
         totalJobs: (json['total_jobs'] as num).toInt(),
         lastJobAt: json['last_job_at'] as String?,
+        syncStatus: json['sync_status'] as String? ?? 'synced',
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
@@ -47,6 +50,7 @@ class CustomerModel {
         'notes': notes,
         'total_jobs': totalJobs,
         'last_job_at': lastJobAt,
+        'sync_status': syncStatus,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };

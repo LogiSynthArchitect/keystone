@@ -1,4 +1,4 @@
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class KnowledgeNoteEntity {
   final String id;

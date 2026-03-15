@@ -1,5 +1,5 @@
 import '../../domain/entities/knowledge_note_entity.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class KnowledgeNoteModel {
   final String id;

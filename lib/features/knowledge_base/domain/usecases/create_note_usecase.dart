@@ -2,7 +2,7 @@ import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/usecases/use_case.dart';
 import '../entities/knowledge_note_entity.dart';
 import '../repositories/knowledge_note_repository.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class CreateNoteParams {
   final String userId;
