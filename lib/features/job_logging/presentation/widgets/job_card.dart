@@ -4,15 +4,16 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../customer_history/domain/entities/customer_entity.dart';
 import '../../domain/entities/job_entity.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class JobCard extends StatelessWidget {
   final JobEntity job;
-  final String? customerName;
+  final CustomerEntity? customer; // Changed from String? customerName
   final VoidCallback? onTap;
 
-  const JobCard({super.key, required this.job, this.customerName, this.onTap});
+  const JobCard({super.key, required this.job, this.customer, this.onTap});
 
   IconData _serviceIcon(ServiceType type) {
     switch (type) {
@@ -52,19 +53,23 @@ class JobCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _serviceLabel(job.serviceType), 
+                    _serviceLabel(job.serviceType),
                     style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)
                   )
                 ),
                 Text(
-                  DateFormatter.short(job.jobDate).toUpperCase(), 
+                  DateFormatter.short(job.jobDate).toUpperCase(),
+                  if (job.follow_up_sent) ...[
+                    const SizedBox(width: 4),
+                    const Icon(LineAwesomeIcons.check_double_solid, size: 14, color: Colors.greenAccent),
+                  ],
                   style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w700)
                 ),
               ],
             ),
-            if (customerName != null) ...[
+            if (customer != null) ...[
               const SizedBox(height: 12),
-              Text(customerName!, style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+              Text(customer?.fullName ?? "Deleted Customer", style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
             ],
             if (job.hasLocation || job.hasAmount) ...[
               const SizedBox(height: 12),
@@ -84,8 +89,20 @@ class JobCard extends StatelessWidget {
               Row(
                 children: [
                   if (job.followUpSent) const _Badge(label: "FOLLOW-UP SENT", color: Colors.greenAccent, icon: LineAwesomeIcons.check_circle_solid),
-                  if (job.syncStatus == SyncStatus.pending) const _Badge(label: "SAVING...", color: Colors.orangeAccent, icon: LineAwesomeIcons.sync_solid),
-                  if (job.syncStatus == SyncStatus.failed) const _Badge(label: "SYNC FAILED", color: Colors.redAccent, icon: LineAwesomeIcons.exclamation_circle_solid),
+                  
+                  if (job.syncStatus == SyncStatus.pending) 
+                    Tooltip(
+                      message: (customer != null && customer!.isFailed) 
+                        ? "Waiting for Customer sync to complete." 
+                        : "Waiting for network to sync...",
+                      child: const _Badge(label: "SAVING...", color: Colors.orangeAccent, icon: LineAwesomeIcons.sync_solid),
+                    ),
+
+                  if (job.syncStatus == SyncStatus.failed)
+                    Tooltip(
+                      message: "${job.syncErrorMessage ?? "Sync failed"} - Pull to refresh to retry",
+                      child: const _Badge(label: "SYNC FAILED", color: Colors.redAccent, icon: LineAwesomeIcons.exclamation_circle_solid),
+                    ),
                 ],
               ),
             ],
@@ -100,7 +117,7 @@ class _Badge extends StatelessWidget {
   final String label;
   final Color color;
   final IconData icon;
-  
+
   const _Badge({required this.label, required this.color, required this.icon});
 
   @override
@@ -109,12 +126,12 @@ class _Badge extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1), 
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(2),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min, 
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),

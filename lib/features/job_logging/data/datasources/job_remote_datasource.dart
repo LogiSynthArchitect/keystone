@@ -45,12 +45,14 @@ class JobRemoteDatasource {
     }
   }
 
-  Future<void> batchSync(String userId, List<Map<String, dynamic>> jobs) async {
+  // Task 2: Return the RPC payload for cache reconciliation
+  Future<Map<String, dynamic>> batchSync(String userId, List<Map<String, dynamic>> jobs) async {
     try {
-      await _supabase.rpc('batch_sync_jobs', params: {
+      final response = await _supabase.rpc('batch_sync_jobs', params: {
         'p_user_id': userId,
         'p_jobs': jobs,
       });
+      return response as Map<String, dynamic>;
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not sync jobs.', code: 'SYNC_FAILED', cause: e);
     } catch (e) {

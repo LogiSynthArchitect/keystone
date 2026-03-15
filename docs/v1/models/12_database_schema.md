@@ -119,7 +119,7 @@ CREATE TABLE jobs (
   latitude            DECIMAL(9,6)   CHECK (latitude BETWEEN -90 AND 90),
   longitude           DECIMAL(9,6)   CHECK (longitude BETWEEN -180 AND 180),
   notes               VARCHAR(2000),
-  amount_charged      DECIMAL(8,2)   CHECK (amount_charged > 0),
+  amount_charged      DECIMAL(8,2)   CHECK (amount_charged >= 0),
   follow_up_sent      BOOLEAN        NOT NULL DEFAULT FALSE,
   follow_up_sent_at   TIMESTAMPTZ,
   sync_status         sync_status    NOT NULL DEFAULT 'pending',
@@ -336,6 +336,44 @@ CREATE POLICY followups_insert_own ON follow_ups
 
 ## 12.6 Database Functions
 
+-- Task 3: Handle Offline Duplicate Customer Profiles with Upsert
+CREATE OR REPLACE FUNCTION batch_sync_customers(p_user_id UUID, p_customers JSONB)
+RETURNS JSONB AS $$
+DECLARE
+  customer_record JSONB;
+  new_customer_id UUID;
+  synced_customers JSONB := '[]';
+  failed_customers JSONB := '[]';
+BEGIN
+  FOR customer_record IN SELECT * FROM jsonb_array_elements(p_customers)
+  LOOP
+    BEGIN
+      INSERT INTO customers (id, user_id, full_name, phone_number, location, notes)
+      VALUES (
+        (customer_record->>'id')::UUID,
+        p_user_id,
+        customer_record->>'full_name',
+        customer_record->>'phone_number',
+        customer_record->>'location',
+        customer_record->>'notes'
+      )
+      ON CONFLICT (user_id, phone_number) DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        location = COALESCE(EXCLUDED.location, customers.location),
+        notes = COALESCE(EXCLUDED.notes, customers.notes),
+        updated_at = NOW()
+      RETURNING id INTO new_customer_id;
+      
+      synced_customers := synced_customers || jsonb_build_object('local_id', customer_record->>'id', 'server_id', new_customer_id, 'sync_status', 'synced');
+    EXCEPTION WHEN OTHERS THEN
+      failed_customers := failed_customers || jsonb_build_object('local_id', customer_record->>'id', 'error', SQLERRM);
+    END;
+  END LOOP;
+  RETURN jsonb_build_object('synced', synced_customers, 'failed', failed_customers);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 CREATE OR REPLACE FUNCTION batch_sync_jobs(p_user_id UUID, p_jobs JSONB)
 RETURNS JSONB AS $$
 DECLARE
@@ -347,8 +385,9 @@ BEGIN
   FOR job_record IN SELECT * FROM jsonb_array_elements(p_jobs)
   LOOP
     BEGIN
-      INSERT INTO jobs (user_id, customer_id, service_type, job_date, location, notes, amount_charged, sync_status)
+      INSERT INTO jobs (id, user_id, customer_id, service_type, job_date, location, notes, amount_charged, sync_status)
       VALUES (
+        (job_record->>'id')::UUID,
         p_user_id,
         (job_record->>'customer_id')::UUID,
         (job_record->>'service_type')::service_type,
@@ -357,10 +396,15 @@ BEGIN
         job_record->>'notes',
         (job_record->>'amount_charged')::DECIMAL,
         'synced'
-      ) RETURNING id INTO new_job_id;
-      synced_jobs := synced_jobs || jsonb_build_object('local_id', job_record->>'local_id', 'server_id', new_job_id, 'sync_status', 'synced');
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        sync_status = EXCLUDED.sync_status,
+        updated_at = NOW()
+      RETURNING id INTO new_job_id;
+      
+      synced_jobs := synced_jobs || jsonb_build_object('local_id', job_record->>'id', 'server_id', new_job_id, 'sync_status', 'synced');
     EXCEPTION WHEN OTHERS THEN
-      failed_jobs := failed_jobs || jsonb_build_object('local_id', job_record->>'local_id', 'error', SQLERRM);
+      failed_jobs := failed_jobs || jsonb_build_object('local_id', job_record->>'id', 'error', SQLERRM);
     END;
   END LOOP;
   RETURN jsonb_build_object('synced', synced_jobs, 'failed', failed_jobs);
@@ -387,14 +431,14 @@ CREATE POLICY storage_note_photos_read ON storage.objects
 
 ## 12.8 Execution Order
 
-1. Extensions     (12.1)
-2. Enums          (12.2)
-3. Tables         (12.3) in order: users, profiles, customers, jobs, knowledge_notes, follow_ups
-4. Triggers       (12.4)
-5. RLS Enable     (12.5 ALTER TABLE statements first)
-6. RLS Policies   (12.5 CREATE POLICY statements)
-7. Functions      (12.6)
-8. Storage        (12.7)
+1. Extensions      (12.1)
+2. Enums           (12.2)
+3. Tables          (12.3) in order: users, profiles, customers, jobs, knowledge_notes, follow_ups
+4. Triggers        (12.4)
+5. RLS Enable      (12.5 ALTER TABLE statements first)
+6. RLS Policies    (12.5 CREATE POLICY statements)
+7. Functions       (12.6)
+8. Storage         (12.7)
 
 ---
 
@@ -410,5 +454,147 @@ CREATE POLICY storage_note_photos_read ON storage.objects
 - [x] profile_slug auto-generated via trigger
 - [x] RLS enabled and policies defined for all tables
 - [x] Storage buckets created with RLS policies
-- [x] batch_sync_jobs function supports offline-first sync
+- [x] batch_sync_jobs function supports offline-first sync (Idempotent UPSERT implemented)
+- [x] batch_sync_customers function explicitly handles user_id/phone_number uniqueness
 - [x] Execution order documented
+
+---
+
+## Supabase Reference
+
+# Developer Guide: Supabase Integration & ID Usage
+
+## ID Selection Matrix
+Always check this matrix before writing a new Repository or UseCase.
+
+| Data Category | Target Table | Required ID | Why? |
+| --- | --- | --- | --- |
+| **Identity** | `profiles` | `auth_id` | Linked to Auth.users for security. |
+| **Business** | `jobs` | `id` | Matches the `user_id` FK in the schema. |
+| **Business** | `customers` | `id` | Matches the `user_id` FK in the schema. |
+| **Tracking** | `app_events`| `auth_id` | Uses RLS `auth.uid() = user_id`. |
+
+## The "Invisible Data" Trap
+If a technician says "I can't see my jobs," check these three things in order:
+1. Does the technician have a record in `auth.users`?
+2. Does the technician have a record in `public.users` where `auth_id` matches?
+3. In the `jobs` table, does the `user_id` match the `id` from `public.users` (NOT the Auth UID)?
+
+## Adding New Tables
+1. **Always** enable RLS.
+2. **Always** use `uuid_generate_v4()` for the primary key.
+3. If the data is private to the user, add a `user_id` column and link it to `public.users(id)`.
+
+---
+
+# Keystone Supabase Architecture Documentation
+
+## 1. Identity Architecture
+The system follows a linked identity model.
+
+| Entity | Schema | Key ID Type | Purpose |
+| --- | --- | --- | --- |
+| **Auth User** | `auth` | `UID` (Supabase) | Login, Session, Security JWT |
+| **App User** | `public.users` | `UUID` (Table PK) | Profile status, Role (Founding/Admin), Phone |
+| **Profile** | `public.profiles` | `UUID` (Auth UID) | Public-facing technician identity |
+
+---
+
+## 2. Table Definitions & Relationships
+
+### `public.users` (The Central Hub)
+- **Primary Key:** `id` (UUID)
+- **Link:** `auth_id` -> `auth.users.id`
+- **Logic:** Every technician MUST have a record here to see their own data.
+- **Notable Columns:** `role` (technician/founding_technician), `status` (pending/active).
+
+### `public.profiles`
+- **Primary Key:** `id` (UUID)
+- **Foreign Key:** `user_id` -> **`auth.users.id`** (Confirmed via Audit)
+- **Logic:** This table stores public info (bio, services). It uses the Auth UID directly.
+
+### `public.jobs`
+- **Primary Key:** `id` (UUID)
+- **Foreign Key:** `user_id` -> `public.users.id`
+- **Foreign Key:** `customer_id` -> `public.customers.id`
+
+### `public.customers`
+- **Primary Key:** `id` (UUID)
+- **Owner:** `user_id` -> `public.users.id`
+- **Note:** Contains `USER-DEFINED` type for `phone_number`.
+
+---
+
+## 3. Security (Row Level Security)
+
+All tables have RLS **ENABLED**.
+
+### Security Patterns:
+1. **Direct Ownership:** `auth.uid() = user_id`
+   - Used by: `app_events`, `customers`, `knowledge_notes`.
+2. **Nested Ownership:** `user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())`
+   - Used by: `jobs`, `profiles`, `follow_ups`.
+   - **CRITICAL:** This means if a user record is missing from the `users` table, the technician will see 0 jobs, even if they are logged in.
+
+---
+
+## 4. Custom Database Types
+The schema utilizes PostgreSQL Enums for strict data integrity:
+- `user_role`: `technician`, `founding_technician`, `admin`
+- `user_status`: `pending`, `active`, `suspended`
+- `service_type`: Used in `profiles` and `jobs`.
+- `sync_status`: `pending`, `synced`.
+
+## 5. Maintenance Notes
+- **Deletion:** Deleting a `customer` uses "Soft Delete" logic (`deleted_at IS NULL` check in RLS).
+- **Versioning:** All tables include `created_at` and `updated_at` timestamps managed by `now()`.
+
+---
+
+# Supabase Technical Reference: Keystone Backend
+
+## 1. Schema Overview (Public)
+
+### Table: `users`
+The core technician registry.
+- **Columns:** `id` (PK), `auth_id` (Link to Auth), `full_name`, `phone_number`, `email`, `role`, `status`, `profile_slug`, `last_seen_at`.
+- **Note:** `profile_slug` is managed by a database trigger.
+
+### Table: `profiles`
+Public-facing technician profiles.
+- **Foreign Key:** `user_id` -> `auth.users.id`
+- **Automation:** Updates its own `updated_at` via trigger.
+
+### Table: `customers`
+- **Note:** Stores `total_jobs` and `last_job_at`, which are automatically updated when jobs are logged.
+
+### Table: `jobs`
+- **Security:** Fields may be "locked" after creation via `trigger_enforce_job_lock`.
+- **Relations:** Links to `public.users(id)` and `public.customers(id)`.
+
+---
+
+## 2. Automated Database Logic (Triggers)
+
+| Trigger Name | Action | Logic Description |
+| --- | --- | --- |
+| `trigger_generate_profile_slug` | INSERT | Automatically creates a URL-friendly slug for new technicians. |
+| `trigger_update_customer_stats` | INSERT | Updates customer summary data whenever a job is added. |
+| `trigger_update_job_follow_up` | INSERT | Links follow-up records back to job status updates. |
+| `trigger_enforce_job_lock` | UPDATE | Prevents modification of finalized job data. |
+
+---
+
+## 3. Data Integrity & Types
+The database uses custom domains and enums to enforce strict formatting:
+- **`user_role`**: `technician`, `founding_technician`, `admin`.
+- **`user_status`**: `pending`, `active`, `suspended`.
+- **`sync_status`**: Handles offline-first logic transitions.
+- **`service_type`**: Shared across jobs and profiles.
+
+---
+
+## 4. RLS & Security Model
+Access is governed by `auth.uid()`. 
+- **Pattern A (Direct):** Tables like `customers` check `auth.uid() == user_id`.
+- **Pattern B (Relational):** Tables like `jobs` check the `auth_id` inside the `users` table to verify ownership.

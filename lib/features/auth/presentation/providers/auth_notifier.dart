@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/providers/auth_provider.dart'; // NEW: Imported the router's auth state
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 import '../../../technician_profile/domain/repositories/profile_repository.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
@@ -47,8 +49,9 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
   final VerifyOtpUsecase _verifyOtp;
   final ProfileRepository _profileRepo;
   final AuthRepository _authRepo;
+  final Ref _ref; // NEW: Added Ref to communicate with the Router
 
-  AuthNotifier(this._requestOtp, this._verifyOtp, this._profileRepo, this._authRepo) : super(AuthUiState());
+  AuthNotifier(this._requestOtp, this._verifyOtp, this._profileRepo, this._authRepo, this._ref) : super(AuthUiState());
 
   void clearError() {
     if (state.errorMessage != null) {
@@ -64,7 +67,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
         : phone;
 
     state = state.copyWith(isLoading: true, phoneNumber: normalized, clearError: true);
-    
+
     try {
       await _requestOtp(RequestOtpParams(phoneNumber: normalized));
       debugPrint('[KS:FLOW] AuthNotifier.requestOtp SUCCESS');
@@ -72,7 +75,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       return true;
     } catch (e) {
       debugPrint('[KS:FLOW] AuthNotifier.requestOtp ERROR: $e');
-      
+
       String cleanError = e.toString();
       if (cleanError.contains('20003') || cleanError.contains('invalid username')) {
         cleanError = "SMS Gateway Fault: Check Twilio Credentials.";
@@ -91,7 +94,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     if (phone == null) return false;
 
     state = state.copyWith(isLoading: true, clearError: true);
-    
+
     try {
       await _verifyOtp(VerifyOtpParams(phoneNumber: phone, token: token));
 
@@ -101,6 +104,10 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
 
       debugPrint('[KS:FLOW] Identity Check: ${exists ? "VETERAN" : "RECRUIT"}');
       state = state.copyWith(isLoading: false, hasProfile: exists);
+
+      // THE SMART ENGINE FIX: Invalidate the Router's provider so it performs a fresh check!
+      _ref.invalidate(authStateProvider);
+
       return true;
     } catch (e) {
       debugPrint('[KS:FLOW] AuthNotifier.verifyOtp ERROR: $e');
@@ -116,7 +123,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     if (phone == null) return false;
 
     state = state.copyWith(isLoading: true, clearError: true);
-    
+
     try {
       debugPrint('[KS:FLOW] Calling authRepo.createUser...');
       final user = await _authRepo.createUser(
@@ -141,6 +148,10 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
 
       await _profileRepo.createProfile(profile);
       state = state.copyWith(isLoading: false, hasProfile: true);
+
+      // THE SMART ENGINE FIX: Invalidate here too, so Onboarding auto-navigates to Dashboard!
+      _ref.invalidate(authStateProvider);
+
       return true;
     } catch (e) {
       debugPrint('[KS:FLOW] AuthNotifier.completeOnboarding ERROR: $e');
@@ -172,5 +183,7 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthUiState>((r
   final verifyOtp = ref.watch(verifyOtpProvider);
   final profileRepo = ref.watch(profileRepositoryProvider);
   final authRepo = ref.watch(authRepositoryProvider);
-  return AuthNotifier(requestOtp, verifyOtp, profileRepo, authRepo);
+  
+  // NEW: Pass 'ref' into the Notifier
+  return AuthNotifier(requestOtp, verifyOtp, profileRepo, authRepo, ref); 
 });

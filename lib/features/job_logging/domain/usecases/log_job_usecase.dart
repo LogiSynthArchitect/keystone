@@ -1,8 +1,9 @@
+import 'package:uuid/uuid.dart';
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/usecases/use_case.dart';
 import '../entities/job_entity.dart';
 import '../repositories/job_repository.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class LogJobParams {
   final String userId;
@@ -34,24 +35,28 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
 
   @override
   Future<JobEntity> call(LogJobParams params) async {
-    if (params.jobDate.isAfter(DateTime.now())) {
+    // FIX [JOB-005]: Allow logging jobs for "today" by ignoring time components
+    final endOfToday = DateTime.now().copyWith(hour: 23, minute: 59, second: 59);
+    if (params.jobDate.isAfter(endOfToday)) {
       throw const ValidationException(
         message: 'Job date cannot be in the future.',
         code: 'JOB_DATE_FUTURE',
         field: 'job_date',
       );
     }
-    if (params.amountCharged != null && params.amountCharged! < 0) {
+
+    // FIX [JOB-003]: Disallow zero-value charges (Amount must be > 0)
+    if (params.amountCharged != null && params.amountCharged! <= 0) {
       throw const ValidationException(
-        message: 'Amount charged cannot be negative.',
-        code: 'AMOUNT_NEGATIVE',
+        message: 'Amount charged must be greater than zero.',
+        code: 'AMOUNT_ZERO_OR_NEGATIVE',
         field: 'amount_charged',
       );
     }
 
     final now = DateTime.now();
     final job = JobEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       userId: params.userId,
       customerId: params.customerId,
       serviceType: params.serviceType,

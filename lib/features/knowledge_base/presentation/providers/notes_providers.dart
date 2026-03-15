@@ -10,7 +10,7 @@ import '../../domain/repositories/knowledge_note_repository.dart';
 import '../../domain/usecases/create_note_usecase.dart';
 import '../../domain/usecases/get_notes_usecase.dart';
 import '../../domain/usecases/archive_note_usecase.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 final knowledgeNoteRemoteDatasourceProvider = Provider<KnowledgeNoteRemoteDatasource>(
   (ref) => KnowledgeNoteRemoteDatasource(ref.watch(supabaseClientProvider)));

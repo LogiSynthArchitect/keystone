@@ -62,11 +62,25 @@ class CustomerRemoteDatasource {
           .select()
           .eq('user_id', userId)
           .isFilter('deleted_at', null)
-          .ilike('full_name', '%$query%')
+          .or('full_name.ilike.%$query%,phone_number.ilike.%$query%')
           .limit(20);
       return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Search failed.', code: 'SEARCH_FAILED', cause: e);
+    } catch (e) {
+      throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
+    }
+  }
+
+  Future<Map<String, dynamic>> batchSyncCustomers(String userId, List<Map<String, dynamic>> customers) async {
+    try {
+      final response = await _supabase.rpc('batch_sync_customers', params: {
+        'p_user_id': userId,
+        'p_customers': customers,
+      });
+      return response as Map<String, dynamic>;
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not sync customers.', code: 'SYNC_FAILED', cause: e);
     } catch (e) {
       throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
     }

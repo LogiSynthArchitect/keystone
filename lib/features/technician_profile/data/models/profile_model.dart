@@ -1,4 +1,5 @@
 import '../../domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class ProfileModel {
   final String id;
