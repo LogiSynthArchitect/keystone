@@ -1,8 +1,15 @@
 class SupabaseConstants {
   SupabaseConstants._();
 
-  static const String url     = 'https://DEV_REF_REMOVED.supabase.co';
-  static const String anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a2tudHhlbXJjamJ4dmx6ZmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNDE1NTIsImV4cCI6MjA4ODYxNzU1Mn0.JWT_REMOVED';
+  static const String url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: '',
+  );
+
+  static const String anonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '',
+  );
 
   static const String profilePhotosBucket = 'profile-photos';
   static const String notePhotosBucket    = 'note-photos';
