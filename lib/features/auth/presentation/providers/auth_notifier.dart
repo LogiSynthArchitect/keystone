@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart'; // NEW: Imported the router's auth state
 import '../../../../core/utils/phone_formatter.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
 import '../../../../core/constants/app_enums.dart';
-import '../../../technician_profile/domain/repositories/profile_repository.dart';
-import '../../../technician_profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/shared_feature_providers.dart';
+import 'package:keystone/features/technician_profile/domain/entities/profile_entity.dart';
+import 'package:keystone/features/technician_profile/domain/repositories/profile_repository.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';

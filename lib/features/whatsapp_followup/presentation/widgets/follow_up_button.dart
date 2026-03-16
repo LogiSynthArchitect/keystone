@@ -5,9 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
-import '../../../job_logging/domain/entities/job_entity.dart';
-import '../../../customer_history/presentation/providers/customer_providers.dart';
-import '../../../technician_profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/shared_feature_providers.dart';
+import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 
 class FollowUpButton extends ConsumerWidget {
   final JobEntity job;

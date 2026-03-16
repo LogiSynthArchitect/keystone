@@ -1,7 +1,5 @@
 import '../../../../core/constants/app_enums.dart';
 
-enum SyncStatus { pending, synced, failed }
-
 class JobEntity {
   final String id;
   final String userId;

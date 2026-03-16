@@ -5,7 +5,12 @@ import '../repositories/job_repository.dart';
 class GetJobsParams {
   final int limit;
   final int offset;
-  const GetJobsParams({this.limit = 25, this.offset = 0});
+  final bool includeArchived;
+  const GetJobsParams({
+    this.limit = 25, 
+    this.offset = 0, 
+    this.includeArchived = false,
+  });
 }
 
 class GetJobsUsecase implements UseCase<List<JobEntity>, GetJobsParams> {
@@ -14,5 +19,9 @@ class GetJobsUsecase implements UseCase<List<JobEntity>, GetJobsParams> {
 
   @override
   Future<List<JobEntity>> call(GetJobsParams params) =>
-      _repository.getJobs(limit: params.limit, offset: params.offset);
+      _repository.getJobs(
+        limit: params.limit, 
+        offset: params.offset, 
+        includeArchived: params.includeArchived,
+      );
 }

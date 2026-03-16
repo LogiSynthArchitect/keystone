@@ -6,8 +6,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../job_logging/presentation/providers/job_providers.dart';
-import '../../../customer_history/presentation/providers/customer_providers.dart';
+import '../../../../core/providers/shared_feature_providers.dart';
+import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import '../widgets/follow_up_button.dart';
 import '../widgets/follow_up_message_preview.dart';
 
@@ -109,7 +109,7 @@ class JobDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildServiceModule(job, bool isLocked) {
+  Widget _buildServiceModule(JobEntity job, bool isLocked) {
     final serviceName = job.serviceType.toString().split('.').last;
 
     return Container(

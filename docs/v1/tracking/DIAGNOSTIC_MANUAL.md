@@ -117,3 +117,39 @@
 ### Identity Mapping (whatsappNumber)
 - **Error:** "Getter 'phoneNumber' isn't defined for ProfileEntity"
 - **Remedy:** The `ProfileEntity` explicitly uses `whatsappNumber`. Use this field for all profile-related identity displays.
+
+## V. SUPABASE CLI & TESTING ENVIRONMENT
+
+### Supabase CLI Installation on Pop OS Linux
+- **Context:** CLI shows command not found after npm install attempt
+- **Cause:** npm install -g supabase is not supported. curl script returns 404.
+- **Remedy:** Download binary directly:
+  wget -qO- https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar xvz -C /tmp
+  sudo mv /tmp/supabase /usr/local/bin/supabase
+  supabase --version
+
+### supabase db execute Not Found
+- **Context:** Trying to run SQL directly via CLI
+- **Cause:** CLI version 2.78.1 does not have db execute subcommand
+- **Remedy:** Create a migration file and push it:
+  supabase migration new fix_description
+  Then write SQL into the migration file
+  Then run: supabase db push --linked
+
+### mocktail TypeError on any() with Custom Types
+- **Context:** Flutter test fails with TypeError when using any() matcher
+- **Cause:** mocktail needs a fallback value for every custom type used with any()
+- **Remedy:** Add before your test group:
+  class FakeJobEntity extends Fake implements JobEntity {}
+  setUpAll(() { registerFallbackValue(FakeJobEntity()); });
+
+### MockUrlLauncher Platform Interface Assertion Failed
+- **Context:** Test setup fails with platform interface assertion error
+- **Cause:** Plugin platform interfaces reject implements-only mocks
+- **Remedy:** Use MockPlatformInterfaceMixin:
+  class MockUrlLauncher extends Mock with MockPlatformInterfaceMixin implements UrlLauncherPlatform {}
+
+### launchUrl Mock Argument Mismatch
+- **Context:** mocktail throws invalid argument error on launchUrl stub
+- **Cause:** launchUrl requires exactly two positional arguments
+- **Remedy:** when(() => mockUrlLauncher.launchUrl(any(), any())).thenAnswer((_) async => true);

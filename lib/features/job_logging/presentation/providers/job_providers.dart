@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/network/connectivity_service.dart';
@@ -7,9 +6,8 @@ import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../customer_history/domain/repositories/customer_repository.dart';
-import '../../customer_history/presentation/providers/customer_providers.dart';
-import '../../whatsapp_followup/presentation/providers/follow_up_provider.dart';
+import 'package:keystone/features/customer_history/domain/repositories/customer_repository.dart';
+import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../../data/datasources/job_local_datasource.dart';
 import '../../data/datasources/job_remote_datasource.dart';
 import '../../data/repositories/job_repository_impl.dart';
@@ -217,7 +215,7 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       double? finalAmount;
       if (amountChargedString != null && amountChargedString.trim().isNotEmpty) {
         finalAmount = CurrencyFormatter.parse(amountChargedString);
-        if (finalAmount == null) throw const ValidationException(message: "Invalid currency format.");
+        if (finalAmount == null) throw const ValidationException(message: "Invalid currency format.", code: "INVALID_AMOUNT");
       }
 
       String finalCustomerId;
@@ -229,7 +227,7 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
         finalCustomerId = newCustomer.id;
         rolledBackCustomerId = finalCustomerId;
       } else {
-        throw const ValidationException(message: "Customer identification missing.");
+        throw const ValidationException(message: "Customer identification missing.", code: "MISSING_CUSTOMER");
       }
 
       final job = await _logJob(LogJobParams(userId: userId, customerId: finalCustomerId, serviceType: serviceType, jobDate: jobDate, location: location, notes: notes, amountCharged: finalAmount));

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../technician_profile/domain/entities/profile_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 import 'onboarding_step_indicator.dart';
 
 class ServicesStepView extends StatelessWidget {

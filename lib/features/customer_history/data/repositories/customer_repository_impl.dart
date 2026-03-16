@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/network/connectivity_service.dart';
-import '../../job_logging/data/datasources/job_local_datasource.dart';
+import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../datasources/customer_remote_datasource.dart';

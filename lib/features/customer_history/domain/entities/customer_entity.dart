@@ -1,4 +1,4 @@
-import '../../../job_logging/domain/entities/job_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 
 class CustomerEntity {
   final String id;

@@ -51,14 +51,18 @@ class JobLocalDatasource {
     try {
       final keysToUpdate = [];
       for (var key in _box.keys) {
-        final jobMap = Map<String, dynamic>.from(_box.get(key));
+        final raw = _box.get(key);
+        if (raw == null) continue;
+        final jobMap = Map<String, dynamic>.from(raw);
         if (jobMap['customer_id'] == oldId) {
           keysToUpdate.add(key);
         }
       }
 
       for (var key in keysToUpdate) {
-        final jobMap = Map<String, dynamic>.from(_box.get(key));
+        final raw = _box.get(key);
+        if (raw == null) continue;
+        final jobMap = Map<String, dynamic>.from(raw);
         jobMap['customer_id'] = newId;
         await _box.put(key, jobMap);
       }
@@ -72,14 +76,18 @@ class JobLocalDatasource {
     try {
       final followUpsToUpdate = [];
       for (var key in _followUpBox.keys) {
-        final followUpMap = Map<String, dynamic>.from(_followUpBox.get(key));
+        final raw = _followUpBox.get(key);
+        if (raw == null) continue;
+        final followUpMap = Map<String, dynamic>.from(raw);
         if (followUpMap['job_id'] == oldId) {
           followUpsToUpdate.add(key);
         }
       }
 
       for (var key in followUpsToUpdate) {
-        final followUpMap = Map<String, dynamic>.from(_followUpBox.get(key));
+        final raw = _followUpBox.get(key);
+        if (raw == null) continue;
+        final followUpMap = Map<String, dynamic>.from(raw);
         followUpMap['job_id'] = newId;
         await _followUpBox.put(key, followUpMap);
       }
