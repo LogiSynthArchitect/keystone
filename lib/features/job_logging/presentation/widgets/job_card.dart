@@ -4,9 +4,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../customer_history/domain/entities/customer_entity.dart';
-import '../../domain/entities/job_entity.dart';
 import '../../../../core/constants/app_enums.dart';
+import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
+import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 
 class JobCard extends StatelessWidget {
   final JobEntity job;
@@ -59,12 +59,12 @@ class JobCard extends StatelessWidget {
                 ),
                 Text(
                   DateFormatter.short(job.jobDate).toUpperCase(),
-                  if (job.follow_up_sent) ...[
-                    const SizedBox(width: 4),
-                    const Icon(LineAwesomeIcons.check_double_solid, size: 14, color: Colors.greenAccent),
-                  ],
                   style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w700)
                 ),
+                if (job.followUpSent) ...[
+                  const SizedBox(width: 4),
+                  const Icon(LineAwesomeIcons.check_double_solid, size: 14, color: Colors.greenAccent),
+                ],
               ],
             ),
             if (customer != null) ...[

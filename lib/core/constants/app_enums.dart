@@ -4,3 +4,5 @@ enum ServiceType {
   doorLockRepair,
   smartLockInstallation,
 }
+
+enum SyncStatus { pending, synced, failed }

@@ -6,7 +6,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_logo_animated.dart';
-import '../../../technician_profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/shared_feature_providers.dart';
 import '../providers/auth_notifier.dart';
 
 class TransitionScreen extends ConsumerStatefulWidget {

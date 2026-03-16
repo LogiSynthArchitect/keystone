@@ -23,7 +23,7 @@ class CustomerDetailScreen extends ConsumerWidget {
     final customerAsync = ref.watch(customerDetailProvider(customerId));
     final allJobsState = ref.watch(jobListProvider);
     
-    final customerJobs = allJobsState.jobs.where((j) => j.customerId == customerId).toList()
+    final customerJobs = allJobsState.activeJobs.where((j) => j.customerId == customerId).toList()
       ..sort((a, b) => b.jobDate.compareTo(a.jobDate));
 
     return Scaffold(

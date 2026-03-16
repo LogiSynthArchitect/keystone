@@ -43,14 +43,14 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
     final keysToUpdate = [];
     
     for (var key in box.keys) {
-      final map = Map<String, dynamic>.from(box.get(key));
+      final map = Map<String, dynamic>.from(box.get(key) ?? {});
       if (map['job_id'] == oldJobId) {
         keysToUpdate.add(key);
       }
     }
 
     for (var key in keysToUpdate) {
-      final map = Map<String, dynamic>.from(box.get(key));
+      final map = Map<String, dynamic>.from(box.get(key) ?? {});
       map['job_id'] = newJobId;
       await box.put(key, map);
     }

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
 import '../../data/datasources/follow_up_remote_datasource.dart';
@@ -54,8 +53,7 @@ class FollowUpState {
 
 class FollowUpNotifier extends StateNotifier<FollowUpState> {
   final SendFollowupUsecase _sendFollowup;
-  FollowUpNotifier(this._sendFollowup, BuildFollowupMessageUsecase _, SupabaseClient __)
-      : super(const FollowUpState());
+  FollowUpNotifier(this._sendFollowup) : super(const FollowUpState());
 
   void buildPreview({
     required String customerName,
@@ -109,7 +107,5 @@ state = state.copyWith(isLoading: false, errorMessage: e.toString());
 final followUpProvider = StateNotifierProvider.family<FollowUpNotifier, FollowUpState, String>(
   (ref, jobId) => FollowUpNotifier(
     ref.watch(sendFollowupUsecaseProvider),
-    ref.watch(buildFollowupMessageUsecaseProvider),
-    ref.watch(supabaseClientProvider),
   ),
 );

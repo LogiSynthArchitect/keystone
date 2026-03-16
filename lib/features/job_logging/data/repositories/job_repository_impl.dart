@@ -2,8 +2,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/storage_exception.dart' as core_storage;
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/network/connectivity_service.dart';
-import '../../customer_history/data/datasources/customer_local_datasource.dart';
-import '../../whatsapp_followup/domain/repositories/follow_up_repository.dart';
+import '../../../../core/constants/app_enums.dart';
+import 'package:keystone/features/customer_history/data/datasources/customer_local_datasource.dart';
+import 'package:keystone/features/whatsapp_followup/domain/repositories/follow_up_repository.dart';
 import '../../domain/entities/job_entity.dart';
 import '../../domain/repositories/job_repository.dart';
 import '../datasources/job_remote_datasource.dart';
@@ -56,7 +57,7 @@ class JobRepositoryImpl implements JobRepository {
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
-        final customer = await _customerLocal.getCustomerById(job.customerId);
+        final customer = await _customerLocal.getCustomer(job.customerId);
         if (customer != null && customer.syncStatus != 'pending') {
           final synced = await _remote.createJob({...json, 'sync_status': 'synced'});
           await _local.saveJob(synced);
@@ -77,14 +78,14 @@ class JobRepositoryImpl implements JobRepository {
       existing = await getJobById(job.id);
     } catch (_) {
       final all = await _local.getJobs();
-      final matched = all.where((j) => j.createdAt.toIso8601String() == job.createdAt.toIso8601String() && j.customerId == job.customerId).firstOrNull;
+      final matched = all.where((j) => j.createdAt == job.createdAt.toIso8601String() && j.customerId == job.customerId).firstOrNull;
       if (matched == null) throw const core_storage.StorageException(message: "Job record lost or synced during edit. Please refresh.", code: "CONCURRENCY_CONFLICT");
       existing = matched.toEntity();
     }
     
     if (DateTime.now().difference(existing.createdAt).inHours >= 24) {
       if (existing.serviceType != job.serviceType || existing.jobDate != job.jobDate) {
-        throw const ValidationException(message: 'Service type and date are locked after 24 hours.');
+        throw const ValidationException(message: 'Service type and date are locked after 24 hours.', code: 'JOB_LOCKED');
       }
     }
     final json = _jobEntityToJson(job);
@@ -133,7 +134,7 @@ class JobRepositoryImpl implements JobRepository {
     
     final safeToSync = <JobModel>[];
     for (final job in pending) {
-      final customer = await _customerLocal.getCustomerById(job.customerId);
+      final customer = await _customerLocal.getCustomer(job.customerId);
       // FIX [JOB-004]: Unblock jobs where customer sync failed. 
       // Allows Job sync attempt (server RLS/constraints will handle integrity).
       if (customer != null && customer.syncStatus != 'pending') {

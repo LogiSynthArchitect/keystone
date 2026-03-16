@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/network/connectivity_service.dart';
-import '../../job_logging/presentation/providers/job_providers.dart';
+import '../../../../core/constants/app_enums.dart';
+import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
 import '../../data/datasources/customer_local_datasource.dart';
 import '../../data/repositories/customer_repository_impl.dart';
@@ -88,7 +89,7 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final allCustomers = await _repository.getCustomers();
-      final activeCustomers = allCustomers.where((c) => c.syncStatus != 'pending_deletion').toList();
+      final activeCustomers = allCustomers.where((c) => c.syncStatus == SyncStatus.synced).toList();
       state = state.copyWith(customers: activeCustomers, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load customers.');
@@ -104,7 +105,7 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
     state = state.copyWith(isSearching: true);
     try {
       final results = await _repository.searchCustomers(query);
-      final filteredResults = results.where((c) => c.syncStatus != 'pending_deletion').toList();
+      final filteredResults = results.where((c) => c.syncStatus == SyncStatus.synced).toList();
       state = state.copyWith(searchResults: filteredResults, isSearching: false);
     } catch (e) {
       state = state.copyWith(isSearching: false, searchResults: []);
@@ -140,3 +141,77 @@ final customerDetailProvider = FutureProvider.family<CustomerEntity?, String>((r
     return null;
   }
 });
+
+class AddCustomerState {
+  final bool isLoading;
+  final bool isSubmitting;
+  final String? errorMessage;
+  final bool saved;
+
+  const AddCustomerState({
+    this.isLoading = false,
+    this.isSubmitting = false,
+    this.errorMessage,
+    this.saved = false,
+  });
+
+  AddCustomerState copyWith({
+    bool? isLoading,
+    bool? isSubmitting,
+    String? errorMessage,
+    bool? saved,
+    bool clearError = false,
+  }) {
+    return AddCustomerState(
+      isLoading: isLoading ?? this.isLoading,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      saved: saved ?? this.saved,
+    );
+  }
+}
+
+class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
+  final CreateCustomerUsecase _createCustomer;
+  final SupabaseClient _supabase;
+
+  AddCustomerNotifier(this._createCustomer, this._supabase) : super(const AddCustomerState());
+
+  Future<CustomerEntity?> save({
+    required String fullName,
+    required String phoneNumber,
+    String? location,
+    String? notes,
+  }) async {
+    if (state.isSubmitting) return null;
+    state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
+
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+      final customer = await _createCustomer(CreateCustomerParams(
+        userId: userId,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        location: location,
+        notes: notes,
+      ));
+
+      state = state.copyWith(isLoading: false, isSubmitting: false, saved: true);
+      return customer;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        isSubmitting: false,
+        errorMessage: e.toString(),
+      );
+      return null;
+    }
+  }
+}
+
+final addCustomerProvider = StateNotifierProvider<AddCustomerNotifier, AddCustomerState>((ref) =>
+  AddCustomerNotifier(
+    ref.watch(createCustomerUsecaseProvider),
+    ref.watch(supabaseClientProvider),
+  ),
+);
