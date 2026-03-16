@@ -87,10 +87,6 @@ BREAK 2: GitHub PAT accidentally posted publicly
 ### Flutter analyze status
 No issues found ✅
 
-### Device test
-App boots on physical Android device ✅
-Shows "Jobs — coming soon" on neutral050 background ✅
-
 ---
 
 ## SESSION 3 — Auth Flow Calibration — 2026-03-09
@@ -558,3 +554,23 @@ BREAK 5: launchUrl mock argument mismatch
 
 ### Test status
 12 tests passing — 0 failing
+
+---
+
+## SESSION 12 CONTINUED — Core Utils Tests — 2026-03-16
+
+### What was built
+- phone_formatter_test.dart — 10 tests all passing
+- currency_formatter_test.dart — 8 tests all passing
+- date_formatter_test.dart — 6 tests all passing
+- Total real tests this session: 36 passing, 0 failing
+
+### What was learned
+- PhoneFormatter handles 3 input formats: 0XXXXXXXXX, 233XXXXXXXXX, +233XXXXXXXXX
+- PhoneFormatter.display formats E164 back to local display format 0XXX XXX XXX
+- CurrencyFormatter.parse strips all non-numeric characters before parsing
+- DateFormatter.relative uses day-level comparison not timestamp comparison
+- All 3 formatters are pure Dart — zero Flutter dependencies — fast to test
+
+### Test status
+36 real tests passing — 0 failing — 50 scaffold todos remaining
