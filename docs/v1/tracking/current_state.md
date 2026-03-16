@@ -29,7 +29,11 @@
 - test/helpers/mocks.dart — 9 mock classes
 - test/features/job_logging/domain/usecases/log_job_usecase_test.dart — 8 passing
 - test/features/whatsapp_followup/domain/usecases/send_followup_usecase_test.dart — 4 passing
-- Total: 12 tests, 12 passing, 0 failing
+- test/core/utils/phone_formatter_test.dart — 10 passing
+- test/core/utils/currency_formatter_test.dart — 8 passing
+- test/core/utils/date_formatter_test.dart — 6 passing
+- 19 scaffold test files — ready to fill
+- Total: 36 real tests passing, 50 scaffold todos, 0 failing
 
 ---
 

@@ -4,39 +4,39 @@ import 'package:keystone/core/utils/currency_formatter.dart';
 void main() {
   group('CurrencyFormatter.parse', () {
     test('parses valid amount string to double', () {
-      // TODO
+      expect(CurrencyFormatter.parse('150.00'), equals(150.00));
     });
 
     test('strips commas before parsing', () {
-      // TODO
+      expect(CurrencyFormatter.parse('1,500.00'), equals(1500.00));
     });
 
     test('returns null for empty string', () {
-      // TODO
+      expect(CurrencyFormatter.parse(''), isNull);
     });
 
     test('returns null for non-numeric string', () {
-      // TODO
+      expect(CurrencyFormatter.parse('abc'), isNull);
     });
   });
 
   group('CurrencyFormatter.format', () {
     test('formats amount with GHS prefix', () {
-      // TODO
+      expect(CurrencyFormatter.format(150.00), startsWith('GHS'));
     });
 
     test('formats amount with two decimal places', () {
-      // TODO
+      expect(CurrencyFormatter.format(150.00), equals('GHS 150.00'));
     });
 
     test('formats large amount with comma separator', () {
-      // TODO
+      expect(CurrencyFormatter.format(1500.00), equals('GHS 1,500.00'));
     });
   });
 
   group('CurrencyFormatter.formatShort', () {
     test('formats amount without decimal places', () {
-      // TODO
+      expect(CurrencyFormatter.formatShort(150.00), equals('GHS 150'));
     });
   });
 }
