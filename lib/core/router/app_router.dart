@@ -45,13 +45,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.isAuthenticated;
       final hasProfile = authState.hasProfile;
       
-      final isInAuthFlow = state.matchedLocation == RouteNames.phoneEntry ||
-                           state.matchedLocation == RouteNames.otpVerify ||
-                           state.matchedLocation == RouteNames.landing;
+      final path = state.uri.path;
+      final isInAuthFlow = path == RouteNames.phoneEntry ||
+                           path == RouteNames.otpVerify ||
+                           path == RouteNames.landing;
       
-      final isPublicProfile = state.matchedLocation.startsWith('/p/');
+      final isPublicProfile = path.startsWith('/p/');
       
-      final isOnboarding = state.matchedLocation == RouteNames.onboarding;
+      final isOnboarding = path == RouteNames.onboarding;
 
       // 2. Unauthenticated Path
       if (!isLoggedIn) {
@@ -62,16 +63,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // 3. Authenticated but No Profile Path
       if (isLoggedIn && !hasProfile) {
-        // Must complete onboarding.
-        if (isOnboarding) return null;
+        // Allow public profile viewing even if the technician hasn't finished their own onboarding
+        if (isOnboarding || isPublicProfile) return null;
         return RouteNames.onboarding;
       }
 
       // 4. Fully Authenticated Path
       if (isLoggedIn && hasProfile) {
         // If they are trying to access auth/onboarding/transition screens while already fully ready,
-        // redirect them to the Dashboard (Jobs).
-        if (isInAuthFlow || isOnboarding || state.matchedLocation == RouteNames.transition) {
+        // redirect them to the Dashboard (Jobs), UNLESS they are viewing a public profile.
+        if (isPublicProfile) return null;
+        
+        if (isInAuthFlow || isOnboarding || path == RouteNames.transition) {
           return RouteNames.jobs;
         }
       }
