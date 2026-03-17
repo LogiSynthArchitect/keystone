@@ -51,13 +51,13 @@ class PublicProfileScreen extends ConsumerWidget {
             children: [
               Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 80, color: AppColors.error500),
               const SizedBox(height: 24),
-              Text("SUPABASE ERROR", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+              Text("LOADING ERROR", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(e.toString(), 
+                child: Text("Could not connect to the database. Please refresh.", 
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body.copyWith(color: AppColors.error500, fontSize: 10, fontFamily: 'monospace')),
+                  style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
               ),
             ],
           ),
@@ -72,7 +72,7 @@ class PublicProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   Text("PROFILE NOT FOUND", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 12),
-                  Text("This operator profile does not exist or is no longer public.", 
+                  Text("This profile link is inactive or no longer exists.", 
                     textAlign: TextAlign.center,
                     style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
                 ],
@@ -96,13 +96,6 @@ class PublicProfileScreen extends ConsumerWidget {
                             shape: BoxShape.circle,
                             color: AppColors.primary800,
                             border: Border.all(color: AppColors.accent500, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.accent500.withValues(alpha: 0.2),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              )
-                            ],
                             image: profile.hasPhoto 
                                 ? DecorationImage(image: NetworkImage(profile.photoUrl!), fit: BoxFit.cover) 
                                 : null,
@@ -116,18 +109,10 @@ class PublicProfileScreen extends ConsumerWidget {
                         const SizedBox(height: 24),
                         Text(profile.displayName.toUpperCase(), 
                           textAlign: TextAlign.center,
-                          style: AppTextStyles.display.copyWith(fontSize: 28, letterSpacing: 2.0)),
+                          style: AppTextStyles.display.copyWith(fontSize: 28, letterSpacing: 1.0)),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent500.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: AppColors.accent500.withValues(alpha: 0.4)),
-                          ),
-                          child: Text("VERIFIED KEYSTONE OPERATOR", 
-                            style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
-                        ),
+                        Text("PROFESSIONAL LOCKSMITH", 
+                          style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
                         if (profile.hasBio) ...[
                           const SizedBox(height: 24),
                           Text(profile.bio!,
@@ -141,7 +126,7 @@ class PublicProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 56),
                   
                   // --- TECHNICAL CAPABILITIES GRID ---
-                  Text('TECHNICAL CAPABILITIES', 
+                  Text('MY SERVICES', 
                     style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 2.0)),
                   const SizedBox(height: 20),
                   GridView.builder(
@@ -194,7 +179,7 @@ class PublicProfileScreen extends ConsumerWidget {
                       children: [
                         Icon(LineAwesomeIcons.whatsapp, size: 32),
                         SizedBox(width: 12),
-                        Text('INITIATE SECURE CHAT', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 16)),
+                        Text('CHAT ON WHATSAPP', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0, fontSize: 16)),
                       ]
                     ),
                   ),
@@ -204,13 +189,8 @@ class PublicProfileScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         Opacity(
-                          opacity: 0.2,
-                          child: Icon(LineAwesomeIcons.shield_alt_solid, color: AppColors.neutral500, size: 32),
-                        ),
-                        const SizedBox(height: 12),
-                        Opacity(
                           opacity: 0.3,
-                          child: Text('POWERED BY KEYSTONE TERMINAL v1.0',
+                          child: Text('POWERED BY KEYSTONE TERMINAL',
                               style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w900, letterSpacing: 2.0, fontSize: 8)),
                         ),
                       ],

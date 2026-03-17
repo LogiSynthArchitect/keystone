@@ -84,7 +84,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                     const SizedBox(height: 8),
                     
                     Text(
-                      'INITIALIZE BACKBONE',
+                      'ACCESS TERMINAL',
                       style: AppTextStyles.h1.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w800,

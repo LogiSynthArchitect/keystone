@@ -143,7 +143,7 @@ class JobCard extends StatelessWidget {
                   
                   if (job.syncStatus == SyncStatus.pending) 
                     _Badge(
-                      label: "SAVING TO BACKBONE", 
+                      label: "SYNCING TO CLOUD", 
                       color: AppColors.accent500, 
                       icon: LineAwesomeIcons.sync_solid,
                     ),

@@ -60,14 +60,14 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         final isJustForged = authUiState.hasProfile == true;
         
         if (isJustForged) {
-          greeting = "PROFILE FORGED";
-          subtext = "Establishing your workspace...";
+          greeting = "PROFILE CREATED";
+          subtext = "Setting up your terminal...";
         } else if (state.hasProfile && profile != null) {
           greeting = "WELCOME BACK,\n${profile.displayName.toUpperCase()}";
-          subtext = "Synchronizing backbone...";
+          subtext = "Loading your account...";
         } else {
-          greeting = "RECOGNIZING IDENTITY";
-          subtext = "Authenticating with backbone...";
+          greeting = "IDENTIFYING...";
+          subtext = "Connecting to Keystone...";
         }
       }
     });
