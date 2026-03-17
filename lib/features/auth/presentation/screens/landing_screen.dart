@@ -78,7 +78,7 @@ class LandingScreen extends StatelessWidget {
                   
                   // 05. SUPPORTING STATEMENT
                   Text(
-                    "The professional backbone for independent locksmiths in Ghana.",
+                    "The professional tool for independent locksmiths in Ghana.",
                     style: AppTextStyles.h2.copyWith(
                       color: AppColors.neutral300,
                       fontWeight: FontWeight.w600,
