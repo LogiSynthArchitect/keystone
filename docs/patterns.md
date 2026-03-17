@@ -126,3 +126,15 @@
   3. Use `CurrencyFormatter` consistently at the presentation layer to prevent "Pesewas vs GHS" multiplier display errors.
 **Result:** Reliable, "Battle-Ready" dashboard readouts that technicians can trust for financial planning.
 **Applies to:** Any offline-first app with financial or time-series dashboards.
+
+---
+
+## Pattern 12 — Lightweight Web Entry Points
+**Context:** Hosting specific app features (like Public Profiles) on the web without the overhead of the full mobile application.
+**Problem:** The full mobile app often contains dependencies (Analytics, Local Storage, Mobile-only plugins) that cause compilation errors or performance lag on Flutter Web.
+**Solution:**
+  1. Create a `lib/main_web.dart` file that acts as a "Lite" gateway.
+  2. Isolate web-specific data providers (e.g., `public_profile_provider.dart`) that fetch data via REST instead of heavy mobile repositories.
+  3. Use the `--target lib/main_web.dart` flag during the Flutter Web build.
+**Result:** 10x faster build times, zero compilation errors from mobile dependencies, and a significantly smaller payload for web visitors.
+**Applies to:** Any Flutter project using a "Web Portal" or "Public Profile" strategy.
