@@ -51,12 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.isAuthenticated;
       final hasProfile = authState.hasProfile;
       
-      final path = state.uri.path;
       final isInAuthFlow = path == RouteNames.phoneEntry ||
                            path == RouteNames.otpVerify ||
                            path == RouteNames.landing;
-      
-      final isPublicProfile = path.startsWith('/p/');
       
       final isOnboarding = path == RouteNames.onboarding;
 
