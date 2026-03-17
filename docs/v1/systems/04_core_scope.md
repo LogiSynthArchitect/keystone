@@ -82,6 +82,26 @@ Acceptance Criteria:
 
 ---
 
+**Feature 6 — Income & Earnings Summary**
+What it does: Displays a real-time tactical summary of monthly and total earnings on the main dashboard.
+Why it is required: Motivating technicians to log jobs by showing immediate financial progress.
+Acceptance Criteria:
+- Dashboard shows "THIS MONTH" earnings in GHS.
+- Data updates instantly when a job is saved.
+- Uses monospace typography for financial trust.
+
+---
+
+**Feature 7 — Admin Correction Terminal**
+What it does: Provides a secure in-app dashboard for admins to approve or reject job correction requests.
+Why it is required: Ensures data integrity while allowing for the correction of human errors without direct SQL intervention.
+Acceptance Criteria:
+- Accessible only to users with the 'admin' role.
+- List of pending correction requests with technician reasons.
+- One-tap "APPROVE" updates the target job automatically.
+
+---
+
 ## 4.2 Excluded Features — V1 Backlog
 
 **Excluded: Team Collaboration Between Jeremie and Jean**
@@ -91,10 +111,6 @@ When to reconsider: V2 — after both technicians use V1 consistently for 60+ da
 **Excluded: New Technician Onboarding and Validation System**
 Why excluded: The franchise model and technician validation flow is a V3 feature.
 When to reconsider: V3 — when the first external technician wants to join.
-
-**Excluded: Income and Earnings Reports**
-Why excluded: Useful but not core. A technician can survive without a revenue dashboard.
-When to reconsider: V2 — after job logging habit is established.
 
 **Excluded: Automated Scheduled Follow-up Reminders**
 Why excluded: V1 uses manual one-tap WhatsApp follow-ups. Automated scheduling
@@ -122,8 +138,8 @@ When to reconsider: V2/V3 — after business is formally registered.
 Why excluded: English is sufficient for V1 with Jeremie and Jean.
 When to reconsider: V2 — before expanding beyond the founding technicians.
 
-**Excluded: Analytics Dashboard**
-Why excluded: With 2 users there is nothing meaningful to analyze.
+**Excluded: Analytics Dashboard (Advanced)**
+Why excluded: Basic earnings are included in V1. Deep analytics require more data.
 When to reconsider: V2 — when there are enough jobs to show meaningful patterns.
 
 **Excluded: CCTV and Electrical Work Tracking**
@@ -248,9 +264,8 @@ The following will NOT be built or supported in V1 under any circumstances:
 - No payment processing of any kind
 - No external technician onboarding
 - No automated message scheduling
-- No analytics or reporting dashboards
+- No advanced analytics or reporting dashboards
 - No social media integration
-- No admin panel beyond basic profile editing
 - No CCTV or electrical service categories
 - No customer accounts or login
 - No booking or appointment system
