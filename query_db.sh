@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# Keystone Database Query Utility
-# Usage: ./query_db.sh "SELECT * FROM public.jobs;"
+# Keystone Cloud Database Query Utility
+# Connects directly to the live Supabase Cloud
+
+# Load environment variables from .env
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
 
 if [ -z "$1" ]; then
   echo "Error: No SQL query provided."
@@ -9,4 +14,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-docker exec supabase_db_keystone psql -U postgres -d postgres -c "$1"
+# Extract project ref from URL
+PROJECT_REF="mxkkntxemrcjbxvlzfbt"
+HOST="db.$PROJECT_REF.supabase.co"
+
+PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $HOST -p 5432 -U postgres -d postgres -c "$1"
