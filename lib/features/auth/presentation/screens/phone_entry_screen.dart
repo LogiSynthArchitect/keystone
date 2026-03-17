@@ -58,90 +58,83 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primary900,
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.8, -0.8),
-                radius: 1.5,
-                colors: [Color(0xFF1E3F7A), AppColors.primary900],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    _buildBackButton(),
+                    const SizedBox(height: 48),
+                    
+                    // INDUSTRIAL EYEBROW
+                    Text(
+                      'SECURE ACCESS',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.accent500,
+                        letterSpacing: 2.0,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ).animate().fadeIn().slideX(begin: -0.1, end: 0),
+                    
+                    const SizedBox(height: 8),
+                    
+                    Text(
+                      'INITIALIZE BACKBONE',
+                      style: AppTextStyles.h1.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+                    
+                    const SizedBox(height: 24),
+                    
+                    Text(
+                      'Provide your phone number to authorize this terminal.',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.neutral400,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ).animate().fadeIn(delay: 200.ms),
+                    
+                    const SizedBox(height: 48),
+
+                    if (errorMessage != null && errorMessage.isNotEmpty) ...[
+                      KsBanner(message: errorMessage),
+                      const SizedBox(height: 24),
+                    ],
+
+                    _buildPhoneInput(),
+                  ],
+                ),
               ),
             ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        _buildBackButton(),
-                        const SizedBox(height: 48),
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary700,
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: AppColors.accent500.withValues(alpha: 0.2)),
-                              ),
-                              child: const Icon(LineAwesomeIcons.mobile_alt_solid, size: 24, color: AppColors.accent500),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              'ENTER PHONE NUMBER',
-                              style: AppTextStyles.h2.copyWith(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ).animate().fadeIn().slideX(begin: -0.1, end: 0),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Provide your credentials to access the business backbone.',
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.neutral400,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ).animate().fadeIn(delay: 200.ms),
-                        const SizedBox(height: 48),
-
-                        if (errorMessage != null && errorMessage.isNotEmpty) ...[
-                          KsBanner(message: errorMessage),
-                          const SizedBox(height: 24),
-                        ],
-
-                        _buildPhoneInput(),
-                      ],
-                    ),
-                  ),
-                ),
-                if (!keyboardVisible) _buildBottomBar(authState.isLoading),
-              ],
-            ),
-          ),
-        ],
+            if (!keyboardVisible) _buildBottomBar(authState.isLoading),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildBackButton() => GestureDetector(
-        onTap: () => Navigator.maybePop(context),
+        onTap: () => context.pop(),
         child: Container(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primary700.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          decoration: const BoxDecoration(
+            color: AppColors.primary800,
+            borderRadius: BorderRadius.all(Radius.circular(4)),
+            border: Border(
+              top: BorderSide(color: AppColors.primary700),
+              bottom: BorderSide(color: AppColors.primary700),
+              left: BorderSide(color: AppColors.primary700),
+              right: BorderSide(color: AppColors.primary700),
+            ),
           ),
           child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
         ),
@@ -153,17 +146,9 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
           color: AppColors.primary800,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: _isFocused ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
+            color: _isFocused ? AppColors.accent500 : AppColors.primary700,
             width: _isFocused ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              offset: const Offset(0, 2),
-              blurRadius: 4,
-              spreadRadius: -1,
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -197,12 +182,13 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                   color: AppColors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
+                  letterSpacing: 2.0,
                 ),
                 cursorColor: AppColors.accent500,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: '024 412 3456',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.15)),
-                  contentPadding: const EdgeInsets.only(right: 16),
+                  hintStyle: TextStyle(color: AppColors.neutral600),
+                  contentPadding: EdgeInsets.only(right: 16),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
@@ -217,32 +203,36 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
 
   Widget _buildBottomBar(bool isLoading) => Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.primary700,
-          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        decoration: const BoxDecoration(
+          color: AppColors.primary800,
+          border: Border(top: BorderSide(color: AppColors.primary700)),
         ),
         padding: const EdgeInsets.all(24.0),
-        child: InkWell(
-          onTap: _canContinue && !isLoading ? _onContinue : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'CONTINUE',
-                style: AppTextStyles.h2.copyWith(
-                  color: _canContinue ? AppColors.white : Colors.white.withValues(alpha: 0.3),
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2.0,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _canContinue && !isLoading ? _onContinue : null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'CONTINUE',
+                  style: AppTextStyles.h2.copyWith(
+                    color: _canContinue ? AppColors.white : AppColors.neutral600,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.0,
+                  ),
                 ),
-              ),
-              if (isLoading)
-                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
-              else
-                Icon(
-                  Icons.arrow_forward,
-                  color: _canContinue ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
-                ),
-            ],
+                if (isLoading)
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                else
+                  Icon(
+                    LineAwesomeIcons.angle_right_solid,
+                    color: _canContinue ? AppColors.accent500 : AppColors.neutral700,
+                    size: 20,
+                  ),
+              ],
+            ),
           ),
         ),
       ).animate().fadeIn(delay: 600.ms);

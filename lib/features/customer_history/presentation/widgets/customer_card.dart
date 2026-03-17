@@ -19,7 +19,7 @@ class CustomerCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: AppColors.primary700),
         ),
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -30,12 +30,12 @@ class CustomerCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.primary900,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                border: Border.all(color: AppColors.primary700),
               ),
               child: Center(
                 child: Text(
                   customer.fullName.isNotEmpty ? customer.fullName[0].toUpperCase() : "?",
-                  style: AppTextStyles.h3.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900),
+                  style: AppTextStyles.h2.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900),
                 ),
               ),
             ),
@@ -48,42 +48,54 @@ class CustomerCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          customer.fullName, 
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)
+                          customer.fullName.toUpperCase(), 
+                          style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          overflow: TextOverflow.ellipsis,
                         )
                       ),
                       if (customer.isRepeatCustomer)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.accent500.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(2),
-                            border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+                            border: Border.all(color: AppColors.accent500.withValues(alpha: 0.2)),
                           ),
                           child: Text(
                             "REPEAT", 
-                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 0.5)
+                            style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1.0)
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     customer.phoneNumber, 
-                    style: AppTextStyles.caption.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.neutral400, 
+                      fontWeight: FontWeight.w600, 
+                      letterSpacing: 1.0,
+                      fontFeatures: [const FontFeature.tabularFigures()],
+                    )
                   ),
                   if (customer.lastJobAt != null) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      "Last job: ${DateFormatter.relative(customer.lastJobAt!)}", 
-                      style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)
+                    Row(
+                      children: [
+                        const Icon(LineAwesomeIcons.history_solid, size: 10, color: AppColors.neutral500),
+                        const SizedBox(width: 4),
+                        Text(
+                          "LAST RECORD: ${DateFormatter.relative(customer.lastJobAt!).toUpperCase()}", 
+                          style: AppTextStyles.caption.copyWith(color: AppColors.neutral600, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)
+                        ),
+                      ],
                     ),
                   ],
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.neutral500, size: 16),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
           ],
         ),
       ),

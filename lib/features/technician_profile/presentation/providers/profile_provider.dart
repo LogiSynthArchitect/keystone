@@ -6,6 +6,7 @@ import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/analytics/ks_analytics.dart';
 import '../../../../core/analytics/analytics_constants.dart';
 import '../../data/datasources/profile_remote_datasource.dart';
+import '../../data/datasources/profile_local_datasource.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
@@ -16,9 +17,13 @@ import '../../domain/usecases/share_profile_usecase.dart';
 final profileRemoteDatasourceProvider = Provider<ProfileRemoteDatasource>(
   (ref) => ProfileRemoteDatasource(ref.watch(supabaseClientProvider)));
 
+final profileLocalDatasourceProvider = Provider<ProfileLocalDatasource>(
+  (ref) => ProfileLocalDatasource());
+
 final profileRepositoryProvider = Provider<ProfileRepository>(
   (ref) => ProfileRepositoryImpl(
     ref.watch(profileRemoteDatasourceProvider),
+    ref.watch(profileLocalDatasourceProvider),
     ref.watch(supabaseClientProvider)));
 
 final getProfileUsecaseProvider = Provider<GetProfileUsecase>(

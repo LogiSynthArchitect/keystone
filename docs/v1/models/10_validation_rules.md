@@ -13,7 +13,7 @@
 
 | Field | Rule | Error Message |
 |---|---|---|
-| full_name | Required. Min 2 characters. Max 100 characters. No special characters except hyphen and apostrophe. | "Please enter your full name." |
+| full_name | Required. Min 2 characters. Max 100 characters. Emojis and standard symbols allowed. | "Please enter your full name." |
 | phone_number | Required. Must be valid Ghana format: 024XXXXXXX, 054XXXXXXX, 055XXXXXXX, 059XXXXXXX, 020XXXXXXX, 050XXXXXXX or international format +233XXXXXXXXX. No spaces or dashes. | "Please enter a valid Ghana phone number." |
 | email | Optional. If provided must be valid email format. Max 255 characters. | "Please enter a valid email address." |
 | password | Required. Min 6 characters. No maximum. At least one number. | "Password must be at least 6 characters and include one number." |
@@ -101,6 +101,7 @@ Rationale: A customer may have two numbers — do not force deduplication.
 Condition: Technician tries to edit service_type or job_date more than 24 hours after creation.
 Behavior: Fields are read-only. Show tooltip: "Service type and date cannot be changed after 24 hours."
 Rationale: Prevents historical record manipulation.
+*Note (V1/V2 Correction Path):* If a genuine error was made, corrections must be requested manually through a Founding Technician, who will forward the request for an admin database update until an `is_verified` or correction request flow is introduced in V2.
 
 **Rule 3 — Single Follow-up Per Job**
 Condition: Technician tries to trigger a second follow-up on a job with follow_up_sent = true.

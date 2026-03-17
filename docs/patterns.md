@@ -52,3 +52,28 @@
   3. A setUp block that creates fresh mocks before each test
 **Result:** Tests run with zero network, zero database, zero Flutter binding needed
 **Applies to:** Any Clean Architecture Flutter project
+
+---
+
+## Pattern 06 — Dark Industrial Design Wave Redesign
+**Context:** Systematically migrating a legacy or generic UI to a high-signal industrial aesthetic.
+**Pattern:** 
+  1. Define a "Command Surface" (Bottom Action Bar with InkWell).
+  2. Switch background to deepest navy/black (primary900).
+  3. Use primary800 for content modules with sharp 4px radii.
+  4. Global replacement of Material Icons with LineAwesomeIcons.
+  5. Enforce 600+ font weight for high-contrast visibility.
+**Result:** Professional tool feel that reads well in direct sunlight.
+**Applies to:** Professional/Industrial tool apps.
+
+---
+
+## Pattern 07 — Offline-First Repository Coordination
+**Context:** Handling data writes in unreliable network conditions (e.g., Accra job sites).
+**Pattern:** 
+  1. Write to local storage (Hive) immediately with a 'pending' status.
+  2. Return the local entity to the UI for immediate feedback (The "Trust Signal").
+  3. Trigger background sync to remote (Supabase).
+  4. Update local storage status to 'synced' upon success.
+**Result:** Zero latency for the user; guaranteed eventual consistency.
+**Applies to:** Any offline-capable Flutter app.

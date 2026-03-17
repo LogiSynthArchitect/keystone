@@ -1,7 +1,7 @@
 import '../entities/knowledge_note_entity.dart';
 
 abstract class KnowledgeNoteRepository {
-  Future<List<KnowledgeNoteEntity>> getNotes({int limit = 25, int offset = 0});
+  Future<List<KnowledgeNoteEntity>> getNotes({int limit = 25, int offset = 0, bool includeArchived = false});
   Future<KnowledgeNoteEntity> getNoteById(String id);
   Future<KnowledgeNoteEntity> createNote(KnowledgeNoteEntity note);
   Future<KnowledgeNoteEntity> updateNote(KnowledgeNoteEntity note);

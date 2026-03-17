@@ -3,6 +3,7 @@ import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/usecases/use_case.dart';
 import '../entities/job_entity.dart';
 import '../repositories/job_repository.dart';
+import '../../../customer_history/domain/repositories/customer_repository.dart';
 import '../../../../core/constants/app_enums.dart';
 
 class LogJobParams {
@@ -14,7 +15,7 @@ class LogJobParams {
   final double? latitude;
   final double? longitude;
   final String? notes;
-  final double? amountCharged;
+  final int? amountCharged;
 
   const LogJobParams({
     required this.userId,
@@ -31,11 +32,24 @@ class LogJobParams {
 
 class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
   final JobRepository _repository;
-  LogJobUsecase(this._repository);
+  final CustomerRepository _customerRepository;
+  
+  LogJobUsecase(this._repository, this._customerRepository);
 
   @override
   Future<JobEntity> call(LogJobParams params) async {
-    // FIX [JOB-005]: Allow logging jobs for "today" by ignoring time components
+    // Relationship validation: Verify Customer exists
+    try {
+      await _customerRepository.getCustomerById(params.customerId);
+    } catch (e) {
+      throw const ValidationException(
+        message: 'The selected customer no longer exists.',
+        code: 'CUSTOMER_NOT_FOUND',
+        field: 'customer_id',
+      );
+    }
+
+    // Validation: Job date cannot be in the future
     final endOfToday = DateTime.now().copyWith(hour: 23, minute: 59, second: 59);
     if (params.jobDate.isAfter(endOfToday)) {
       throw const ValidationException(
@@ -45,7 +59,7 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
       );
     }
 
-    // FIX [JOB-003]: Disallow zero-value charges (Amount must be > 0)
+    // Validation: Amount charged must be greater than zero
     if (params.amountCharged != null && params.amountCharged! <= 0) {
       throw const ValidationException(
         message: 'Amount charged must be greater than zero.',

@@ -5,4 +5,4 @@ enum ServiceType {
   smartLockInstallation,
 }
 
-enum SyncStatus { pending, synced, failed }
+enum SyncStatus { pending, synced, failed, deleted }

@@ -49,11 +49,11 @@ class AuthRemoteDatasource {
   Future<UserModel> createUser({required String authId, required String name, required String phone}) async {
     debugPrint('[KS:AUTH] createUser — authId: $authId, name: $name');
     try {
-      final data = await _supabase.from('users').insert({
+      final data = await _supabase.from('users').upsert({
         'auth_id': authId,
         'full_name': name,
         'phone_number': phone,
-      }).select().single();
+      }, onConflict: 'auth_id').select().single();
       debugPrint('[KS:AUTH] createUser SUCCESS');
       return UserModel.fromJson(data);
     } on supa.PostgrestException catch (e) {

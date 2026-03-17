@@ -4,19 +4,29 @@ import '../../domain/entities/profile_entity.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
+import 'package:keystone/features/technician_profile/data/datasources/profile_local_datasource.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDatasource _remote;
+  final ProfileLocalDatasource _local;
   final SupabaseClient _supabase;
 
-  ProfileRepositoryImpl(this._remote, this._supabase);
+  ProfileRepositoryImpl(this._remote, this._local, this._supabase);
 
   String get _authUserId => _supabase.auth.currentUser?.id ?? '';
 
   @override
   Future<ProfileEntity?> getProfile() async {
-    final model = await _remote.getProfile(_authUserId);
-    return model?.toEntity();
+    try {
+      final model = await _remote.getProfile(_authUserId);
+      if (model != null) {
+        await _local.saveProfile(model);
+        return model.toEntity();
+      }
+    } catch (_) {}
+    
+    final local = await _local.getProfile();
+    return local?.toEntity();
   }
 
   @override
@@ -38,6 +48,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'is_public': profile.isPublic,
       'profile_url': profile.profileUrl,
     });
+    await _local.saveProfile(model);
     return model.toEntity();
   }
 
@@ -52,6 +63,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'whatsapp_number': profile.whatsappNumber,
       'is_public': profile.isPublic,
     });
+    await _local.saveProfile(model);
     return model.toEntity();
   }
 

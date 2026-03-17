@@ -8,7 +8,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/router/route_names.dart';
-// Fixed relative paths:
+import '../../../../core/constants/app_enums.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../job_logging/domain/entities/job_entity.dart';
 import '../providers/customer_providers.dart';
@@ -33,9 +33,9 @@ class CustomerDetailScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           IconButton(
-            icon: const Icon(LineAwesomeIcons.edit, color: AppColors.accent500),
+            icon: const Icon(LineAwesomeIcons.edit_solid, color: AppColors.accent500, size: 22),
             onPressed: () {
-              // Edit functionality
+              // Edit functionality could be added here
             },
           ),
         ],
@@ -46,9 +46,9 @@ class CustomerDetailScreen extends ConsumerWidget {
           Expanded(
             child: customerAsync.when(
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
-              error: (err, _) => Center(child: Text("Error loading dossier", style: AppTextStyles.body.copyWith(color: Colors.white))),
+              error: (err, _) => Center(child: Text("ERROR LOADING DOSSIER", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
               data: (customer) {
-                if (customer == null) return const Center(child: Text("Customer not found", style: TextStyle(color: Colors.white)));
+                if (customer == null) return Center(child: Text("CUSTOMER NOT FOUND", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)));
                 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(24.0),
@@ -60,7 +60,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
                       
                       _buildStatsRow(customer, customerJobs.length),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                       
                       _buildSectionHeader("SERVICE LEDGER"),
                       if (customerJobs.isEmpty)
@@ -77,32 +77,35 @@ class CustomerDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      bottomSheet: Container(
+      bottomNavigationBar: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.primary700,
-          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        decoration: const BoxDecoration(
+          color: AppColors.primary800,
+          border: Border(top: BorderSide(color: AppColors.primary700)),
         ),
         padding: const EdgeInsets.all(24.0),
         child: SafeArea(
           top: false,
-          child: InkWell(
-            onTap: () {
-              context.push(RouteNames.logJob, extra: customerId);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'LOG NEW JOB',
-                  style: AppTextStyles.h2.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                context.push(RouteNames.logJob, extra: customerId);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'LOG NEW JOB',
+                    style: AppTextStyles.h2.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2.0,
+                    ),
                   ),
-                ),
-                const Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 28),
-              ],
+                  const Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 24),
+                ],
+              ),
             ),
           ),
         ),
@@ -126,16 +129,23 @@ class CustomerDetailScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.primary700),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.primary900,
-            child: Text(
-              customer.fullName[0].toUpperCase(), 
-              style: AppTextStyles.h1.copyWith(color: AppColors.accent500)
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.primary900,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.primary700),
+            ),
+            child: Center(
+              child: Text(
+                customer.fullName[0].toUpperCase(), 
+                style: AppTextStyles.h1.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900)
+              ),
             ),
           ),
           const SizedBox(width: 20),
@@ -145,13 +155,25 @@ class CustomerDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   customer.fullName.toUpperCase(),
-                  style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
+                  style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                 ),
                 const SizedBox(height: 4),
-                Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+                Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                 if (customer.location != null) ...[
-                  const SizedBox(height: 4),
-                  Text(customer.location!.toUpperCase(), style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(LineAwesomeIcons.map_marker_solid, size: 12, color: AppColors.accent500),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          customer.location!.toUpperCase(), 
+                          style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -163,16 +185,17 @@ class CustomerDetailScreen extends ConsumerWidget {
 
   Widget _buildStatsRow(CustomerEntity customer, int jobCount) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: AppColors.primary800.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppColors.primary700),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildTacticalStat("TOTAL JOBS", jobCount.toString().padLeft(2, '0')),
-          Container(width: 1, height: 20, color: Colors.white.withValues(alpha: 0.1)),
+          _buildTacticalStat("TOTAL RECORDS", jobCount.toString().padLeft(2, '0')),
+          Container(width: 1, height: 20, color: AppColors.primary700),
           _buildTacticalStat("STATUS", customer.isRepeatCustomer ? "REPEAT" : "NEW"),
         ],
       ),
@@ -180,17 +203,18 @@ class CustomerDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildTacticalStat(String label, String value) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("$label: ", style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
-        Text(value, style: AppTextStyles.labelSmall.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 1.0)),
+        const SizedBox(height: 2),
+        Text(value, style: AppTextStyles.label.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
       ],
     );
   }
 
   Widget _buildLedgerItem(BuildContext context, JobEntity job) {
-    final serviceName = job.serviceType.toString().split('.').last
-        .replaceAllMapped(RegExp(r'(?<=[a-z])[A-Z]'), (Match m) => ' ${m.group(0)}');
+    final serviceLabel = _getServiceLabel(job.serviceType);
 
     return GestureDetector(
       onTap: () => context.push(RouteNames.jobDetail(job.id)),
@@ -200,7 +224,7 @@ class CustomerDetailScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: AppColors.primary700),
         ),
         child: Row(
           children: [
@@ -210,12 +234,12 @@ class CustomerDetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     DateFormatter.short(job.jobDate).toUpperCase(),
-                    style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.0),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    serviceName.toUpperCase(),
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w800),
+                    serviceLabel,
+                    style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
                 ],
               ),
@@ -223,32 +247,41 @@ class CustomerDetailScreen extends ConsumerWidget {
             if (job.hasAmount)
               Text(
                 "GHS ${job.amountCharged?.toInt()}",
-                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
+                style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
               ),
-            const SizedBox(width: 12),
-            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.neutral600, size: 14),
+            const SizedBox(width: 16),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
           ],
         ),
       ),
     );
   }
 
+  String _getServiceLabel(ServiceType type) {
+    switch (type) {
+      case ServiceType.carLockProgramming:    return "CAR KEY PROGRAMMING";
+      case ServiceType.doorLockInstallation:  return "DOOR LOCK INSTALLATION";
+      case ServiceType.doorLockRepair:        return "DOOR LOCK REPAIR";
+      case ServiceType.smartLockInstallation: return "SMART LOCK INSTALLATION";
+    }
+  }
+
   Widget _buildEmptyLedger() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
         color: AppColors.primary800.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05), style: BorderStyle.solid),
+        border: Border.all(color: AppColors.primary700, style: BorderStyle.solid),
       ),
       child: Column(
         children: [
-          Icon(LineAwesomeIcons.history_solid, color: Colors.white.withValues(alpha: 0.1), size: 48),
-          const SizedBox(height: 16),
+          const Icon(LineAwesomeIcons.history_solid, color: AppColors.primary700, size: 48),
+          const SizedBox(height: 24),
           Text(
-            "NO SERVICE HISTORY",
-            style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral600, fontWeight: FontWeight.w900),
+            "NO SERVICE RECORDS",
+            style: AppTextStyles.caption.copyWith(color: AppColors.neutral600, fontWeight: FontWeight.w900, letterSpacing: 2.0),
           ),
         ],
       ),

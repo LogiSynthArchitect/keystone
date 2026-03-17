@@ -4,22 +4,28 @@ class PhoneFormatter {
   PhoneFormatter._();
 
   static String normalize(String input) {
-    // Remove spaces, dashes, parentheses, and non-digits
-    String cleaned = input.replaceAll(RegExp(r'\D'), '');
+    // 1. First, strip all non-numeric characters EXCEPT '+'
+    String cleaned = input.replaceAll(RegExp(r'[^\d+]'), '');
 
-    // Already in E.164 format logic
-    if (cleaned.startsWith('233') && (cleaned.length == 12)) {
-      return '+$cleaned';
+    // 2. If it starts with '+', it's already in international format; verify length
+    if (cleaned.startsWith('+')) {
+      if (cleaned.length >= 10 && cleaned.length <= 15) return cleaned;
+      throw const ValidationException(message: 'Invalid international format.', code: 'INVALID_E164');
     }
 
-    // 0XXXXXXXXX format (local) - Truncate the 0 and append +233
+    // 3. Handle local Ghana format (024, 055, etc.) -> Convert to +233
     if (cleaned.startsWith('0') && cleaned.length == 10) {
       return '+233${cleaned.substring(1)}';
     }
 
-    // XXXXXXXXX format (no zero) - Append +233
+    // 4. Handle Ghana format without zero (24, 55, etc.) -> Convert to +233
     if (cleaned.length == 9) {
       return '+233$cleaned';
+    }
+
+    // 5. Handle Ghana format with 233 but no plus
+    if (cleaned.startsWith('233') && cleaned.length == 12) {
+      return '+$cleaned';
     }
 
     throw const ValidationException(

@@ -32,7 +32,7 @@ class JobRepositoryImpl implements JobRepository {
         for (final m in remoteModels) { await _local.saveJob(m); }
       } catch (_) {}
     }
-    var local = await _local.getJobs();
+    var local = await _local.getJobs(limit: limit, offset: offset);
     if (!includeArchived) local = local.where((j) => !j.isArchived).toList();
     local.sort((a, b) {
       final dateCompare = b.jobDate.compareTo(a.jobDate);
@@ -58,7 +58,7 @@ class JobRepositoryImpl implements JobRepository {
     if (isOnline) {
       try {
         final customer = await _customerLocal.getCustomer(job.customerId);
-        if (customer != null && customer.syncStatus != 'pending') {
+        if (customer != null && customer.syncStatus != SyncStatus.pending) {
           final synced = await _remote.createJob({...json, 'sync_status': 'synced'});
           await _local.saveJob(synced);
           return synced.toEntity();
@@ -83,9 +83,11 @@ class JobRepositoryImpl implements JobRepository {
       existing = matched.toEntity();
     }
     
-    if (DateTime.now().difference(existing.createdAt).inHours >= 24) {
-      if (existing.serviceType != job.serviceType || existing.jobDate != job.jobDate) {
-        throw const ValidationException(message: 'Service type and date are locked after 24 hours.', code: 'JOB_LOCKED');
+    if (existing.syncStatus == SyncStatus.synced) {
+      if (DateTime.now().difference(existing.createdAt).inHours >= 24) {
+        if (existing.serviceType != job.serviceType || existing.jobDate != job.jobDate) {
+          throw const ValidationException(message: 'Service type and date are locked after 24 hours of syncing.', code: 'JOB_LOCKED');
+        }
       }
     }
     final json = _jobEntityToJson(job);
@@ -135,9 +137,10 @@ class JobRepositoryImpl implements JobRepository {
     final safeToSync = <JobModel>[];
     for (final job in pending) {
       final customer = await _customerLocal.getCustomer(job.customerId);
-      // FIX [JOB-004]: Unblock jobs where customer sync failed. 
-      // Allows Job sync attempt (server RLS/constraints will handle integrity).
-      if (customer != null && customer.syncStatus != 'pending') {
+      if (customer == null) {
+        // Orphaned job linked to a deleted customer. Break the infinite loop by deleting it locally.
+        await _local.deleteJob(job.id);
+      } else if (customer.syncStatus != SyncStatus.pending) {
         safeToSync.add(job);
       }
     }
@@ -145,7 +148,9 @@ class JobRepositoryImpl implements JobRepository {
 
     final result = await _remote.batchSync(_userId, safeToSync.map((m) => m.toJson()).toList());
     final syncedList = result['synced'] as List<dynamic>? ?? [];
+    final failedList = result['failed'] as List<dynamic>? ?? [];
 
+    // 1. Process successful syncs
     for (final syncedItem in syncedList) {
       final localId = syncedItem['local_id'] as String;
       final serverId = syncedItem['server_id'] as String;
@@ -154,13 +159,27 @@ class JobRepositoryImpl implements JobRepository {
       updatedJson['id'] = serverId;
       updatedJson['sync_status'] = syncedItem['sync_status'] as String;
       
-      // FIX [JOB-006]: Order of reconciliation. 
-      // Update follow-up link BEFORE deleting the local job ID to prevent orphans.
+      await _local.saveJob(JobModel.fromJson(updatedJson));
+
       if (localId != serverId) {
         await _followUpRepo.updateJobId(localId, serverId);
         await _local.deleteJob(localId);
       }
-      await _local.saveJob(JobModel.fromJson(updatedJson));
+    }
+
+    // 2. Process failed syncs
+    for (final failedItem in failedList) {
+      final localId = failedItem['local_id'] as String;
+      final errorMessage = failedItem['error'] as String?;
+      final originalJob = safeToSync.where((j) => j.id == localId).firstOrNull;
+      
+      if (originalJob != null) {
+        final failedModel = originalJob.copyWith(
+          syncStatus: SyncStatus.failed.name,
+          syncErrorMessage: errorMessage ?? 'Server rejection',
+        );
+        await _local.saveJob(failedModel);
+      }
     }
   }
 

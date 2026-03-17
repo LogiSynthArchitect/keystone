@@ -12,6 +12,7 @@ class KnowledgeNoteModel {
   final bool isArchived;
   final String createdAt;
   final String updatedAt;
+  final String syncStatus;
 
   const KnowledgeNoteModel({
     required this.id,
@@ -24,6 +25,7 @@ class KnowledgeNoteModel {
     required this.isArchived,
     required this.createdAt,
     required this.updatedAt,
+    this.syncStatus = 'synced',
   });
 
   factory KnowledgeNoteModel.fromJson(Map<String, dynamic> json) =>
@@ -38,6 +40,7 @@ class KnowledgeNoteModel {
         isArchived: json['is_archived'] as bool,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
+        syncStatus: json['sync_status'] as String? ?? 'synced',
       );
 
   Map<String, dynamic> toJson() => {
@@ -51,7 +54,50 @@ class KnowledgeNoteModel {
         'is_archived': isArchived,
         'created_at': createdAt,
         'updated_at': updatedAt,
+        'sync_status': syncStatus,
       };
+
+  factory KnowledgeNoteModel.fromEntity(KnowledgeNoteEntity entity) =>
+      KnowledgeNoteModel(
+        id: entity.id,
+        userId: entity.userId,
+        title: entity.title,
+        description: entity.description,
+        tags: entity.tags,
+        photoUrl: entity.photoUrl,
+        serviceType: entity.serviceType?.name,
+        isArchived: entity.isArchived,
+        createdAt: entity.createdAt.toIso8601String(),
+        updatedAt: entity.updatedAt.toIso8601String(),
+        syncStatus: 'synced',
+      );
+
+  KnowledgeNoteModel copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? description,
+    List<String>? tags,
+    String? photoUrl,
+    String? serviceType,
+    bool? isArchived,
+    String? createdAt,
+    String? updatedAt,
+    String? syncStatus,
+  }) =>
+      KnowledgeNoteModel(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        title: title ?? this.title,
+        description: description ?? this.description,
+        tags: tags ?? this.tags,
+        photoUrl: photoUrl ?? this.photoUrl,
+        serviceType: serviceType ?? this.serviceType,
+        isArchived: isArchived ?? this.isArchived,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        syncStatus: syncStatus ?? this.syncStatus,
+      );
 
   KnowledgeNoteEntity toEntity() => KnowledgeNoteEntity(
         id: id,

@@ -24,20 +24,4 @@ class WhatsAppLauncher {
       code: 'WHATSAPP_NOT_INSTALLED',
     );
   }
-
-  static Future<bool> _fallbackToSms({
-    required String phoneNumber,
-    required String message,
-  }) async {
-    final smsUrl = Uri.parse(
-      'sms:$phoneNumber?body=${Uri.encodeComponent(message)}',
-    );
-
-    if (await canLaunchUrl(smsUrl)) {
-      await launchUrl(smsUrl);
-      return true;
-    }
-
-    return false;
-  }
 }

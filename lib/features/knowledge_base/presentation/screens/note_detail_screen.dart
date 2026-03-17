@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -25,28 +26,37 @@ class NoteDetailScreen extends ConsumerWidget {
 
     if (note == null) {
       return const Scaffold(
-        appBar: KsAppBar(title: "Note", showBack: true),
-        body: Center(child: Text("Note not found.")),
+        backgroundColor: AppColors.primary900,
+        appBar: KsAppBar(title: "NOTE", showBack: true),
+        body: Center(child: Text("NOTE NOT FOUND", style: TextStyle(color: AppColors.neutral400))),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.neutral050,
+      backgroundColor: AppColors.primary900,
       appBar: KsAppBar(
-        title: "Note",
+        title: "NOTE DETAIL",
         showBack: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.archive_outlined, color: AppColors.neutral500),
+            icon: const Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text("Archive note?"),
-                  content: const Text("This note will be removed from your list."),
+                  backgroundColor: AppColors.primary800,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  title: Text("ARCHIVE NOTE?", style: AppTextStyles.h2.copyWith(color: AppColors.white)),
+                  content: Text("This technical note will be moved to the archive.", style: AppTextStyles.body.copyWith(color: AppColors.neutral300)),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Archive", style: TextStyle(color: AppColors.error600))),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false), 
+                      child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: AppColors.neutral400))
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true), 
+                      child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: AppColors.error500))
+                    ),
                   ],
                 ),
               );
@@ -54,7 +64,7 @@ class NoteDetailScreen extends ConsumerWidget {
                 await ref.read(notesListProvider.notifier).archiveNote(note.id);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  KsSnackbar.show(context, message: "Note archived.", type: KsSnackbarType.info);
+                  KsSnackbar.show(context, message: "Note moved to archive.", type: KsSnackbarType.info);
                 }
               }
             },
@@ -66,36 +76,100 @@ class NoteDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: AppSpacing.md),
-            Text(note.title, style: AppTextStyles.h2),
-            const SizedBox(height: AppSpacing.xs),
-            Text(DateFormatter.display(note.createdAt), style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
-            const SizedBox(height: AppSpacing.lg),
+            // INDUSTRIAL EYEBROW
+            Text(
+              "TECHNICAL DOCUMENTATION",
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.accent500,
+                letterSpacing: 2.0,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              note.title.toUpperCase(),
+              style: AppTextStyles.h1.copyWith(color: AppColors.white, letterSpacing: 0.5),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(LineAwesomeIcons.calendar, size: 14, color: AppColors.neutral500),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormatter.display(note.createdAt).toUpperCase(), 
+                  style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700)
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // CONTENT MODULE
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(AppSpacing.cardPadding),
               decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+                color: AppColors.primary800,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AppColors.primary700),
               ),
-              child: Text(note.description, style: AppTextStyles.body.copyWith(color: AppColors.neutral800, height: 1.6)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "ANALYSIS & SOLUTION",
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.neutral500,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    note.description, 
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: AppColors.neutral100,
+                      height: 1.6,
+                      fontWeight: FontWeight.w500,
+                    )
+                  ),
+                ],
+              ),
             ),
+            
             if (note.hasTags) ...[
-              const SizedBox(height: AppSpacing.lg),
-              Text("Tags", style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral500)),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 32),
+              Text(
+                "SYSTEM TAGS", 
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.neutral500,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w800,
+                )
+              ),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
                 children: note.tags.map((tag) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                  decoration: BoxDecoration(color: AppColors.primary050, borderRadius: BorderRadius.circular(AppSpacing.radiusFull)),
-                  child: Text("#$tag", style: AppTextStyles.caption.copyWith(color: AppColors.primary700)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary800,
+                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(color: AppColors.primary700),
+                  ),
+                  child: Text(
+                    "#${tag.toUpperCase()}", 
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.accent500,
+                      fontWeight: FontWeight.w800,
+                    )
+                  ),
                 )).toList(),
               ),
             ],
-            const SizedBox(height: AppSpacing.xxxl),
+            
+            const SizedBox(height: 48),
           ],
         ),
       ),

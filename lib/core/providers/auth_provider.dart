@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_provider.dart';
+import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../features/auth/domain/entities/user_entity.dart';
 
 class AuthState {
   final Session? session;
@@ -38,9 +40,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     debugPrint('[KS:AUTH_STATE] session found — userId: ${session.user.id}');
     try {
       final profile = await supabase
-          .from('users')
+          .from('profiles')
           .select()
-          .eq('auth_id', session.user.id)
+          .eq('user_id', session.user.id)
           .maybeSingle();
       debugPrint('[KS:AUTH_STATE] hasProfile: ${profile != null}');
       return AuthState(session: session, hasProfile: profile != null);
@@ -66,3 +68,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
 final authStateProvider =
     AsyncNotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+
+final currentUserProvider = FutureProvider<UserEntity?>((ref) async {
+  final authStateAsync = ref.watch(authStateProvider);
+  final session = authStateAsync.valueOrNull?.session;
+  if (session == null) return null;
+  
+  return await ref.watch(authRepositoryProvider).getCurrentUser();
+});

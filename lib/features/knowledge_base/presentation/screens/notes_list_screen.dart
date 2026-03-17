@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -20,11 +21,21 @@ class NotesListScreen extends ConsumerStatefulWidget {
 
 class _NotesListScreenState extends ConsumerState<NotesListScreen> {
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(() {
+      setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -49,53 +60,99 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primary900,
-      appBar: const KsAppBar(title: "NOTES"),
+      appBar: KsAppBar(
+        title: "KNOWLEDGE BASE",
+        actions: [
+          IconButton(
+            icon: Icon(
+              state.showArchived ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.archive_solid,
+              color: state.showArchived ? AppColors.accent500 : AppColors.neutral500,
+              size: 22,
+            ),
+            onPressed: () => ref.read(notesListProvider.notifier).toggleArchived(),
+            tooltip: state.showArchived ? "Show Active" : "Show Archived",
+          ),
+        ],
+      ),
       body: Column(
         children: [
           const KsOfflineBanner(),
           
-          // Search Bar
+          // Search Bar - INDUSTRIAL COMMAND STYLE
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-            child: Focus(
-              onFocusChange: (hasFocus) => setState(() => _isSearchFocused = hasFocus),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary800,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: _isSearchFocused ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
-                    width: _isSearchFocused ? 2 : 1,
+            child: Column(
+              children: [
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary800,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: _isSearchFocused ? AppColors.accent500 : AppColors.primary700,
+                      width: _isSearchFocused ? 2 : 1,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: (q) {
+                      ref.read(notesListProvider.notifier).search(q);
+                      setState(() {});
+                    },
+                    style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
+                    cursorColor: AppColors.accent500,
+                    decoration: InputDecoration(
+                      hintText: "SEARCH TECHNICAL DATA...",
+                      hintStyle: AppTextStyles.caption.copyWith(color: AppColors.neutral600, letterSpacing: 1.0),
+                      prefixIcon: Icon(LineAwesomeIcons.search_solid, color: _isSearchFocused ? AppColors.accent500 : AppColors.neutral500, size: 20),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                ref.read(notesListProvider.notifier).search('');
+                                setState(() {});
+                              },
+                              child: const Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (q) {
-                    ref.read(notesListProvider.notifier).search(q);
-                    setState(() {});
-                  },
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
-                  cursorColor: AppColors.accent500,
-                  decoration: InputDecoration(
-                    hintText: "Search for a note...",
-                    hintStyle: AppTextStyles.body.copyWith(color: Colors.white.withValues(alpha: 0.2)),
-                    prefixIcon: const Icon(LineAwesomeIcons.search_solid, color: AppColors.neutral500, size: 20),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? GestureDetector(
-                            onTap: () {
-                              _searchController.clear();
-                              ref.read(notesListProvider.notifier).search('');
-                              setState(() {});
-                            },
-                            child: const Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
-                        : null,
-                    filled: true,
-                    fillColor: Colors.transparent, // Fixes white-out bug
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                const SizedBox(height: 12),
+                
+                // TACTICAL FILTER MODULE
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip(
+                        label: "ALL", 
+                        isSelected: state.filterCategory == null,
+                        onTap: () => ref.read(notesListProvider.notifier).filterByCategory(null),
+                      ),
+                      const SizedBox(width: 8),
+                      ...ServiceType.values.map((type) {
+                        final labels = {
+                          ServiceType.carLockProgramming: "CAR KEY",
+                          ServiceType.doorLockInstallation: "INSTALL",
+                          ServiceType.doorLockRepair: "REPAIR",
+                          ServiceType.smartLockInstallation: "SMART",
+                        };
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: _buildFilterChip(
+                            label: labels[type]!,
+                            isSelected: state.filterCategory == type,
+                            onTap: () => ref.read(notesListProvider.notifier).filterByCategory(type),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
           ),
           
@@ -103,19 +160,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
           
           Expanded(
             child: state.isLoading
-                ? ListView.separated(
-                    padding: const EdgeInsets.all(24.0),
-                    itemCount: 4,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, __) => Container(
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary800,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                      ),
-                    ),
-                  )
+                ? _buildLoadingState()
                 : state.displayed.isEmpty
                     ? _buildEmptyState(state.searchQuery)
                     : RefreshIndicator(
@@ -142,10 +187,28 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         onPressed: () => context.push(RouteNames.addNote),
         backgroundColor: AppColors.accent500,
         foregroundColor: AppColors.primary900,
-        elevation: 4,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 2, onTabTapped: _onTabTapped),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(24.0),
+      itemCount: 4,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, __) => Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: AppColors.primary700),
+        ),
+      ).animate(onPlay: (controller) => controller.repeat())
+       .shimmer(duration: 1200.ms, color: AppColors.primary700.withValues(alpha: 0.5)),
     );
   }
 
@@ -160,23 +223,49 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
             Icon(
               isSearching ? LineAwesomeIcons.search_minus_solid : LineAwesomeIcons.lightbulb, 
               size: 80, 
-              color: Colors.white.withValues(alpha: 0.05)
+              color: AppColors.primary800
             ),
             const SizedBox(height: 24),
             Text(
-              isSearching ? "NO RESULTS FOUND" : "NO NOTES YET", 
+              isSearching ? "NO MATCHING RECORDS" : "NO TECHNICAL NOTES", 
               textAlign: TextAlign.center,
               style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
             ),
             const SizedBox(height: 12),
             Text(
               isSearching 
-                ? "No matching notes found for \"$query\"." 
-                : "You haven't saved any notes yet.\nTap the + button to add your first tip.", 
+                ? "Search yielded zero results for \"$query\"." 
+                : "No specialized technical logs found.\nInitialize your first knowledge entry.", 
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, height: 1.5)
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({required String label, required bool isSelected, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.accent500 : AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: isSelected ? AppColors.accent500 : AppColors.primary700,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: isSelected ? AppColors.primary900 : AppColors.neutral400,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
         ),
       ),
     );

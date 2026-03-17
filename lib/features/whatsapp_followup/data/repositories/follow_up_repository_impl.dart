@@ -1,14 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/storage/hive_service.dart';
 import '../../domain/entities/follow_up_entity.dart';
 import '../../domain/repositories/follow_up_repository.dart';
 import '../datasources/follow_up_remote_datasource.dart';
+import '../datasources/follow_up_local_datasource.dart';
 
 class FollowUpRepositoryImpl implements FollowUpRepository {
   final FollowUpRemoteDatasource _remote;
   final SupabaseClient _supabase;
+  final FollowUpLocalDatasource _local;
 
-  FollowUpRepositoryImpl(this._remote, this._supabase);
+  FollowUpRepositoryImpl(this._remote, this._supabase, this._local);
 
   String get _userId => _supabase.auth.currentUser!.id;
 
@@ -39,20 +40,6 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
   // Task 4: Relational Safety - Orchestrated Job ID Swap in Follow-Ups
   @override
   Future<void> updateJobId(String oldJobId, String newJobId) async {
-    final box = HiveService.followUps;
-    final keysToUpdate = [];
-    
-    for (var key in box.keys) {
-      final map = Map<String, dynamic>.from(box.get(key) ?? {});
-      if (map['job_id'] == oldJobId) {
-        keysToUpdate.add(key);
-      }
-    }
-
-    for (var key in keysToUpdate) {
-      final map = Map<String, dynamic>.from(box.get(key) ?? {});
-      map['job_id'] = newJobId;
-      await box.put(key, map);
-    }
+    await _local.cascadeJobId(oldJobId, newJobId);
   }
 }

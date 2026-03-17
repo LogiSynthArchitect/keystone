@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -15,17 +16,15 @@ class LandingScreen extends StatelessWidget {
       backgroundColor: AppColors.primary900,
       body: Stack(
         children: [
-          // 01. THE VOID TEXTURE (With light lift for logo contrast)
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.8, -0.8), // Lift exactly behind the logo
-                radius: 1.5,
-                colors: [
-                  Color(0xFF1E3F7A), 
-                  AppColors.primary900,
-                ],
-              ),
+          // 01. THE INDUSTRIAL CANVAS
+          // Subtle grid pattern or texture could go here, but keeping it clean for now
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Icon(
+              LineAwesomeIcons.tools_solid,
+              size: 400,
+              color: AppColors.primary800.withValues(alpha: 0.3),
             ),
           ),
           
@@ -35,145 +34,133 @@ class LandingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 02. SIGNATURE (Sized and lifted for contrast)
-                  const KsLogo(size: 48, primaryColor: AppColors.white)
+                  // 02. LOGO ANCHOR
+                  const KsLogo(size: 56, primaryColor: AppColors.white)
                     .animate()
                     .fadeIn(duration: 800.ms)
                     .slideY(begin: -0.2, end: 0),
                   
                   const Spacer(flex: 2),
                   
-                  // 03. EYEBROW
+                  // 03. EYEBROW - INDUSTRIAL CAPTION
                   Text(
-                    'LOCKSMITH  M G M T.',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.accent400,
-                      letterSpacing: 4.0,
+                    'LOCKSMITH OPERATING SYSTEM',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.accent500,
+                      letterSpacing: 2.0,
                       fontWeight: FontWeight.w700,
                     ),
-                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
+                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.05, end: 0),
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   
-                  // 04. ASYMMETRIC DISPLAY (Scaled for mobile widths)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'KEY',
-                        style: AppTextStyles.display.copyWith(
-                          fontSize: 72,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.white,
-                          height: 0.85,
-                          letterSpacing: -2,
-                        ),
-                      ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.2, end: 0, curve: Curves.easeOutCubic),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 40.0),
-                        child: Text(
-                          'STONE',
-                          style: AppTextStyles.display.copyWith(
-                            fontSize: 72,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.accent500,
-                            height: 0.85,
-                            letterSpacing: -2,
-                          ),
-                        ).animate().fadeIn(delay: 700.ms).slideX(begin: 0.2, end: 0, curve: Curves.easeOutBack),
+                  // 04. ASYMMETRIC DISPLAY
+                  RichText(
+                    text: TextSpan(
+                      style: AppTextStyles.display.copyWith(
+                        fontSize: 64,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.white,
+                        height: 0.9,
+                        letterSpacing: -1,
                       ),
-                    ],
-                  ),
+                      children: const [
+                        TextSpan(text: 'KEY\n'),
+                        TextSpan(
+                          text: 'STONE',
+                          style: TextStyle(color: AppColors.accent500),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.1, end: 0),
                   
                   const SizedBox(height: 24),
                   
-                  // 05. SUPPORT
+                  // 05. SUPPORTING STATEMENT
                   Text(
-                    "Built for Ghana's professional locksmiths.",
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    "The professional backbone for independent locksmiths in Ghana.",
+                    style: AppTextStyles.h2.copyWith(
                       color: AppColors.neutral300,
                       fontWeight: FontWeight.w600,
                       height: 1.4,
                     ),
-                  ).animate().fadeIn(delay: 900.ms),
+                  ).animate().fadeIn(delay: 800.ms),
                   
                   const Spacer(flex: 3),
                   
-                  // 06. THE COMMAND SURFACE (Flexible Layout Fix)
+                  // 06. THE COMMAND SURFACE (Bottom Action Pattern)
                   Container(
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary700,
-                      borderRadius: BorderRadius.circular(4), 
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary800,
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
                       border: Border(
-                        top: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                        top: BorderSide(color: AppColors.primary700, width: 1),
+                        bottom: BorderSide(color: AppColors.primary700, width: 1),
+                        left: BorderSide(color: AppColors.primary700, width: 1),
+                        right: BorderSide(color: AppColors.primary700, width: 1),
                       ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black54,
-                          blurRadius: 40,
-                          offset: Offset(0, 20),
-                        ),
-                      ],
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () => context.push(RouteNames.phoneEntry),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 28.0),
+                          padding: const EdgeInsets.all(24.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      'BUILD YOUR BACKBONE',
-                                      style: AppTextStyles.h2.copyWith(
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.5,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  Text(
+                                    'INITIALIZE SYSTEM',
+                                    style: AppTextStyles.h2.copyWith(
+                                      color: AppColors.white,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    LineAwesomeIcons.angle_right_solid,
+                                    color: AppColors.accent500,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                height: 2,
+                                width: 40,
+                                color: AppColors.accent500,
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Already have an account?',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.neutral400,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward, color: AppColors.accent500),
-                                ],
-                              ),
-                              const SizedBox(height: 20),
-                              const Divider(color: AppColors.primary900, thickness: 1),
-                              const SizedBox(height: 20),
-                              GestureDetector(
-                                onTap: () => context.push(RouteNames.phoneEntry),
-                                child: RichText(
-                                  text: TextSpan(
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      color: AppColors.neutral300,
-                                      fontWeight: FontWeight.w600,
+                                  Text(
+                                    'SIGN IN',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.accent500,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
                                     ),
-                                    children: [
-                                      const TextSpan(text: 'Already have an account?  '),
-                                      TextSpan(
-                                        text: 'SIGN IN',
-                                        style: AppTextStyles.label.copyWith(
-                                          color: AppColors.accent500,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
                                   ),
-                                ),
+                                ],
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                  ).animate().fadeIn(delay: 1100.ms).slideY(begin: 0.1, end: 0),
+                  ).animate().fadeIn(delay: 1000.ms).slideY(begin: 0.1, end: 0),
                 ],
               ),
             ),

@@ -48,12 +48,16 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   riverpod_generator: ^2.4.3
   build_runner: ^2.4.9
   freezed: ^2.5.2
   json_serializable: ^6.8.0
   flutter_lints: ^4.0.0
   mocktail: ^1.0.3
+  plugin_platform_interface: ^2.1.8
+  url_launcher_platform_interface: ^2.3.2
 
 flutter:
   uses-material-design: true

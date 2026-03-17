@@ -99,58 +99,43 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.primary900,
-      body: Stack(
-        children: [
-          // Background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.8, -0.8),
-                radius: 1.5,
-                colors: [Color(0xFF1E3F7A), AppColors.primary900],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    _buildBackButton(),
+                    const SizedBox(height: 48),
+
+                    // Animated Step Content
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _step == 0 
+                          ? _buildNameStep(key: const ValueKey('step0')) 
+                          : _buildServicesStep(key: const ValueKey('step1')),
+                    ),
+
+                    // Error Banner
+                    if (errorMessage != null && errorMessage.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      KsBanner(message: errorMessage),
+                    ],
+                    
+                    const SizedBox(height: 48),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        _buildBackButton(),
-                        const SizedBox(height: 48),
-
-                        // Animated Step Content
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          child: _step == 0 
-                              ? _buildNameStep(key: const ValueKey('step0')) 
-                              : _buildServicesStep(key: const ValueKey('step1')),
-                        ),
-
-                        // Error Banner
-                        if (errorMessage != null && errorMessage.isNotEmpty) ...[
-                          const SizedBox(height: 24),
-                          KsBanner(message: errorMessage),
-                        ],
-                        
-                        const SizedBox(height: 48),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                // Bottom Bar (Hidden when keyboard is open)
-                if (!keyboardVisible) _buildBottomBar(authState.isLoading),
-              ],
-            ),
-          ),
-        ],
+            
+            // Bottom Bar (Hidden when keyboard is open)
+            if (!keyboardVisible) _buildBottomBar(authState.isLoading),
+          ],
+        ),
       ),
     );
   }
@@ -163,10 +148,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Container(
         width: 44,
         height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.primary700.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        decoration: const BoxDecoration(
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.all(Radius.circular(4)),
+          border: Border(
+            top: BorderSide(color: AppColors.primary700),
+            bottom: BorderSide(color: AppColors.primary700),
+            left: BorderSide(color: AppColors.primary700),
+            right: BorderSide(color: AppColors.primary700),
+          ),
         ),
         child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
       ),
@@ -189,7 +179,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: Container(
               height: 4,
               decoration: BoxDecoration(
-                color: _step == 1 ? AppColors.accent500 : Colors.white.withValues(alpha: 0.2),
+                color: _step == 1 ? AppColors.accent500 : AppColors.primary800,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -201,24 +191,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         key: key,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary700,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppColors.accent500.withValues(alpha: 0.2)),
-                ),
-                child: const Icon(LineAwesomeIcons.id_card_solid, size: 24, color: AppColors.accent500),
-              ),
-              const SizedBox(width: 16),
-              Text('YOUR NAME',
-                  style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-            ],
+          // INDUSTRIAL EYEBROW
+          Text(
+            'ONBOARDING PHASE 01',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.accent500,
+              letterSpacing: 2.0,
+              fontWeight: FontWeight.w700,
+            ),
           ).animate().fadeIn().slideX(begin: -0.1, end: 0),
+          
+          const SizedBox(height: 8),
+          
+          Text(
+            'IDENTIFY YOURSELF',
+            style: AppTextStyles.h1.copyWith(
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+            ),
+          ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+
           const SizedBox(height: 24),
-          Text('This will be visible on your public profile.',
+          Text('This name will be displayed on your professional profile.',
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
           const SizedBox(height: 32),
           _buildStepIndicator(),
@@ -230,24 +225,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               color: AppColors.primary800,
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color: _nameFocused ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
+                color: _nameFocused ? AppColors.accent500 : AppColors.primary700,
                 width: _nameFocused ? 2 : 1,
               ),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.4), offset: const Offset(0, 2), blurRadius: 4, spreadRadius: -1),
-              ],
             ),
             child: TextField(
               controller: _nameController,
               focusNode: _nameFocusNode,
               onChanged: _onNameChanged,
               textCapitalization: TextCapitalization.words,
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 18),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.white, 
+                fontWeight: FontWeight.w800, 
+                fontSize: 18,
+                letterSpacing: 1.0,
+              ),
               cursorColor: AppColors.accent500,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Jeremie Mensah',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.15)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                hintStyle: TextStyle(color: AppColors.neutral600),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -264,24 +261,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         key: key,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary700,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppColors.accent500.withValues(alpha: 0.2)),
-                ),
-                child: const Icon(LineAwesomeIcons.tools_solid, size: 24, color: AppColors.accent500),
-              ),
-              const SizedBox(width: 16),
-              Text('YOUR SERVICES',
-                  style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-            ],
+          // INDUSTRIAL EYEBROW
+          Text(
+            'ONBOARDING PHASE 02',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.accent500,
+              letterSpacing: 2.0,
+              fontWeight: FontWeight.w700,
+            ),
           ).animate().fadeIn().slideX(begin: 0.1, end: 0),
+          
+          const SizedBox(height: 8),
+          
+          Text(
+            'SELECT CAPABILITIES',
+            style: AppTextStyles.h1.copyWith(
+              color: AppColors.white,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+            ),
+          ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.1, end: 0),
+
           const SizedBox(height: 24),
-          Text('Select all the services you offer.',
+          Text('Identify the specialized services you provide.',
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
           const SizedBox(height: 32),
           _buildStepIndicator(),
@@ -302,7 +304,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: isSelected ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
+                      color: isSelected ? AppColors.accent500 : AppColors.primary700,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -327,7 +329,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           right: 12,
                           child: Text(
                             service.label,
-                            style: AppTextStyles.labelSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w800, height: 1.2),
+                            style: AppTextStyles.label.copyWith(
+                              color: Colors.white, 
+                              fontWeight: FontWeight.w800, 
+                              height: 1.2,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                         if (isSelected)
@@ -337,7 +344,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
-                              child: const Icon(Icons.check, size: 14, color: AppColors.primary900),
+                              child: const Icon(LineAwesomeIcons.check_solid, size: 12, color: AppColors.primary900),
                             ),
                           ),
                       ],
@@ -352,32 +359,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Widget _buildBottomBar(bool isLoading) => Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.primary700,
-          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        decoration: const BoxDecoration(
+          color: AppColors.primary800,
+          border: Border(top: BorderSide(color: AppColors.primary700)),
         ),
         padding: const EdgeInsets.all(24.0),
-        child: InkWell(
-          onTap: _canContinue && !isLoading ? _onContinue : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _step == 0 ? 'CONTINUE' : 'COMPLETE SETUP',
-                style: AppTextStyles.h2.copyWith(
-                  color: _canContinue ? AppColors.white : Colors.white.withValues(alpha: 0.3),
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2.0,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _canContinue && !isLoading ? _onContinue : null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _step == 0 ? 'CONTINUE' : 'COMPLETE SETUP',
+                  style: AppTextStyles.h2.copyWith(
+                    color: _canContinue ? AppColors.white : AppColors.neutral600,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.0,
+                  ),
                 ),
-              ),
-              if (isLoading)
-                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
-              else
-                Icon(
-                  Icons.arrow_forward,
-                  color: _canContinue ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
-                ),
-            ],
+                if (isLoading)
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                else
+                  Icon(
+                    LineAwesomeIcons.angle_right_solid,
+                    color: _canContinue ? AppColors.accent500 : AppColors.neutral700,
+                    size: 20,
+                  ),
+              ],
+            ),
           ),
         ),
       ).animate().fadeIn(delay: 400.ms);
