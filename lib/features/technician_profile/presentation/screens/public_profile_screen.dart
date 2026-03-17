@@ -43,13 +43,16 @@ class PublicProfileScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LineAwesomeIcons.user_slash_solid, size: 80, color: AppColors.primary800),
+              const Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 80, color: AppColors.error500),
               const SizedBox(height: 24),
-              Text("PROFILE NOT FOUND", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+              Text("SUPABASE ERROR", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
               const SizedBox(height: 12),
-              Text("This operator profile does not exist or is no longer public.", 
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(e.toString(), 
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(color: AppColors.error500, fontSize: 10, fontFamily: 'monospace')),
+              ),
             ],
           ),
         ),

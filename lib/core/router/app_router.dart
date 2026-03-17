@@ -33,8 +33,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: RouteNames.transition,
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      // 1. If we are still determining the initial auth state, stay on Transition
-      // 2. NEW: Even if data is ready, if we are on Transition, let the widget finish its reveal
+      final path = state.uri.path;
+      final isPublicProfile = path.startsWith('/p/');
+
+      // 1. PUBLIC PROFILE BYPASS
+      // If it is a public profile, we NEVER redirect, regardless of auth state.
+      if (isPublicProfile) return null;
+
+      // 2. If we are still determining the initial auth state, stay on Transition
       if (state.matchedLocation == RouteNames.transition) {
         if (authStateAsync.isLoading) return null;
         // The TransitionScreen widget will now decide when it is ready to move.
