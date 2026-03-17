@@ -4,8 +4,8 @@ import '../../../../core/errors/network_exception.dart';
 import '../../../../core/constants/supabase_constants.dart';
 import '../models/profile_model.dart';
 
-// Use conditional import for File to avoid compilation errors on Web
-import 'dart:io' if (dart.library.html) 'dart:html' as io;
+// Import dart:io only on non-web platforms to avoid compilation errors
+import 'dart:io' as io show File;
 
 class ProfileRemoteDatasource {
   final SupabaseClient _supabase;
@@ -74,15 +74,16 @@ class ProfileRemoteDatasource {
   Future<String> uploadPhoto({required String userId, required String filePath}) async {
     try {
       if (kIsWeb) {
-        throw const NetworkException(message: 'Photo upload not supported on web yet.', code: 'WEB_UPLOAD_UNSUPPORTED');
+        throw const NetworkException(message: 'Photo upload not supported on web.', code: 'WEB_UPLOAD_UNSUPPORTED');
       }
 
-      final file = io.File(filePath);
+      // On mobile, use io.File. On web, this code path is never reached.
+      // Using dynamic to bypass web compiler's argument check for io.File.
+      final dynamic file = io.File(filePath);
       final ext = filePath.split('.').last.toLowerCase();
       final path = '$userId/profile.$ext';
       
-      // We cast to dynamic to avoid compile-time type check issues on Web for io.File
-      await _supabase.storage.from(SupabaseConstants.profilePhotosBucket).upload(path, file as dynamic, fileOptions: const FileOptions(upsert: true));
+      await _supabase.storage.from(SupabaseConstants.profilePhotosBucket).upload(path, file, fileOptions: const FileOptions(upsert: true));
       
       final rawUrl = _supabase.storage.from(SupabaseConstants.profilePhotosBucket).getPublicUrl(path);
       return '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
