@@ -308,7 +308,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: AppColors.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
             child: Row(children: [
-              const Icon(LineAwesomeIcons.calendar, size: 20, color: AppColors.accent500),
+              Icon(LineAwesomeIcons.calendar, size: 20, color: AppColors.accent500),
               const SizedBox(width: 12),
               Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
             ]),
@@ -341,7 +341,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) CircularProgressIndicator(color: AppColors.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
                 color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)

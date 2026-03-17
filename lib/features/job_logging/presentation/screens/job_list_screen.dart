@@ -149,7 +149,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         foregroundColor: AppColors.primary900,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
+        child: Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 0, onTabTapped: _onTabTapped),
     );
@@ -179,7 +179,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(LineAwesomeIcons.database_solid, size: 80, color: AppColors.primary800),
+            Icon(LineAwesomeIcons.database_solid, size: 80, color: AppColors.primary800),
             const SizedBox(height: 24),
             Text(
               "NO RECORDS FOUND",

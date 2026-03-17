@@ -34,7 +34,7 @@ class CustomerDetailScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           IconButton(
-            icon: const Icon(LineAwesomeIcons.edit_solid, color: AppColors.accent500, size: 22),
+            icon: Icon(LineAwesomeIcons.edit_solid, color: AppColors.accent500, size: 22),
             onPressed: () {
               // Edit functionality could be added here
             },
@@ -104,7 +104,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                       letterSpacing: 2.0,
                     ),
                   ),
-                  const Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 24),
+                  Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 24),
                 ],
               ),
             ),
@@ -161,10 +161,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                 if (customer.location != null) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(LineAwesomeIcons.map_marker_solid, size: 12, color: AppColors.accent500),
+                      Icon(LineAwesomeIcons.map_marker_solid, size: 12, color: AppColors.accent500),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -250,8 +250,8 @@ class CustomerDetailScreen extends ConsumerWidget {
                 CurrencyFormatter.formatShort(job.amountCharged!),
                 style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()]),
               ),
-            const SizedBox(width: 16),
-            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
+            SizedBox(width: 16),
+            Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
           ],
         ),
       ),
@@ -278,7 +278,7 @@ class CustomerDetailScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const Icon(LineAwesomeIcons.history_solid, color: AppColors.primary700, size: 48),
+          Icon(LineAwesomeIcons.history_solid, color: AppColors.primary700, size: 48),
           const SizedBox(height: 24),
           Text(
             "NO SERVICE RECORDS",

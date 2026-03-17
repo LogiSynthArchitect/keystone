@@ -121,7 +121,7 @@ class LandingScreen extends StatelessWidget {
                                       letterSpacing: 1.5,
                                     ),
                                   ),
-                                  const Icon(
+                                  Icon(
                                     LineAwesomeIcons.angle_right_solid,
                                     color: AppColors.accent500,
                                     size: 20,

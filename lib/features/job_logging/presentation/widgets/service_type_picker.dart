@@ -68,7 +68,7 @@ class ServiceTypePicker extends StatelessWidget {
                         )
                       )
                     ),
-                    if (isSelected) const Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: AppColors.accent500),
+                    if (isSelected) Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: AppColors.accent500),
                   ],
                 ),
               ),

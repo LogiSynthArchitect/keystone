@@ -158,7 +158,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             right: BorderSide(color: AppColors.primary700),
           ),
         ),
-        child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
+        child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
       ),
     );
   }
@@ -343,8 +343,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             right: 8,
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
-                              child: const Icon(LineAwesomeIcons.check_solid, size: 12, color: AppColors.primary900),
+                              decoration: BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
+                              child: Icon(LineAwesomeIcons.check_solid, size: 12, color: AppColors.primary900),
                             ),
                           ),
                       ],
@@ -380,7 +380,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
                 if (isLoading)
-                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
                 else
                   Icon(
                     LineAwesomeIcons.angle_right_solid,

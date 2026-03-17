@@ -114,7 +114,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                                 ref.read(notesListProvider.notifier).search('');
                                 setState(() {});
                               },
-                              child: const Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
+                              child: Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
                           : null,
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -190,7 +190,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         foregroundColor: AppColors.primary900,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
+        child: Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 2, onTabTapped: _onTabTapped),
     );
