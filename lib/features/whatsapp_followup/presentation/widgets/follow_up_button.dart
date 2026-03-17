@@ -33,7 +33,7 @@ class FollowUpButton extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LineAwesomeIcons.check_circle, color: AppColors.success500),
+              Icon(LineAwesomeIcons.check_circle, color: AppColors.success500),
               const SizedBox(width: 8),
               Text(
                 "WHATSAPP OPENED", 
@@ -113,7 +113,7 @@ class FollowUpButton extends ConsumerWidget {
                   letterSpacing: 1.0,
                 ),
               ),
-              const Icon(LineAwesomeIcons.whatsapp, color: AppColors.primary900, size: 28),
+              Icon(LineAwesomeIcons.whatsapp, color: AppColors.primary900, size: 28),
             ],
           ),
         ),

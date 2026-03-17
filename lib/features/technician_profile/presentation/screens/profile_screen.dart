@@ -27,7 +27,7 @@ class ProfileScreen extends ConsumerWidget {
         showBack: false,
         actions: [
           IconButton(
-            icon: const Icon(LineAwesomeIcons.sign_out_alt_solid, color: AppColors.error500, size: 22),
+            icon: Icon(LineAwesomeIcons.sign_out_alt_solid, color: AppColors.error500, size: 22),
             onPressed: () => ref.read(authStateProvider.notifier).signOut(),
           ),
         ],
@@ -108,7 +108,7 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(LineAwesomeIcons.link_solid, color: AppColors.accent500, size: 20),
+                        Icon(LineAwesomeIcons.link_solid, color: AppColors.accent500, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -117,13 +117,13 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(LineAwesomeIcons.share_square_solid, color: AppColors.accent500, size: 20),
+                          icon: Icon(LineAwesomeIcons.share_square_solid, color: AppColors.accent500, size: 20),
                           onPressed: () => ref.read(profileProvider.notifier).shareProfile(),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
 
                   _buildSectionLabel("TERMINAL SETTINGS"),
                   _buildSettingsTile(LineAwesomeIcons.map_marker_solid, "REGION", "ACCRA, GHANA"),
@@ -152,7 +152,7 @@ class ProfileScreen extends ConsumerWidget {
                                   "CORRECTION REQUESTS",
                                   style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 1.0),
                                 ),
-                                const Icon(LineAwesomeIcons.clipboard_list_solid, color: AppColors.accent500, size: 24),
+                                Icon(LineAwesomeIcons.clipboard_list_solid, color: AppColors.accent500, size: 24),
                               ],
                             ),
                           ),
@@ -184,7 +184,7 @@ class ProfileScreen extends ConsumerWidget {
                                 "CONFIGURE PROFILE",
                                 style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 2.0),
                               ),
-                              const Icon(LineAwesomeIcons.cog_solid, color: AppColors.accent500, size: 24),
+                              Icon(LineAwesomeIcons.cog_solid, color: AppColors.accent500, size: 24),
                             ],
                           ),
                         ),

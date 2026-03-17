@@ -41,10 +41,10 @@ class KsSearchBar extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: AppTextStyles.caption.copyWith(color: AppColors.neutral600, letterSpacing: 1.0),
-          prefixIcon: const Icon(LineAwesomeIcons.search_solid, color: AppColors.neutral500, size: 20),
+          prefixIcon: Icon(LineAwesomeIcons.search_solid, color: AppColors.neutral500, size: 20),
           suffixIcon: onClear != null && controller?.text.isNotEmpty == true
               ? IconButton(
-                  icon: const Icon(LineAwesomeIcons.times_solid, size: 18, color: AppColors.neutral500),
+                  icon: Icon(LineAwesomeIcons.times_solid, size: 18, color: AppColors.neutral500),
                   onPressed: onClear,
                 )
               : null,

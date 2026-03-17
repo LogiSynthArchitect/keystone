@@ -42,7 +42,7 @@ class AdminRequestsScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(LineAwesomeIcons.check_circle, size: 64, color: AppColors.primary800),
+                      Icon(LineAwesomeIcons.check_circle, size: 64, color: AppColors.primary800),
                       const SizedBox(height: 16),
                       Text("NO PENDING REQUESTS", style: AppTextStyles.h2.copyWith(color: AppColors.neutral500)),
                     ],
@@ -184,11 +184,11 @@ class _RequestCard extends ConsumerWidget {
                 )).toList(),
                 onChanged: (val) => setState(() => selectedType = val!),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ListTile(
                 title: Text("JOB DATE", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                subtitle: Text(DateFormatter.short(selectedDate), style: const TextStyle(color: Colors.white)),
-                trailing: const Icon(LineAwesomeIcons.calendar, color: AppColors.accent500),
+                subtitle: Text(DateFormatter.short(selectedDate), style: TextStyle(color: Colors.white)),
+                trailing: Icon(LineAwesomeIcons.calendar, color: AppColors.accent500),
                 onTap: () async {
                   final date = await showDatePicker(
                     context: context,

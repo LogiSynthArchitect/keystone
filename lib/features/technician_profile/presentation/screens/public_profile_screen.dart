@@ -38,12 +38,12 @@ class PublicProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.primary900,
       body: state.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
+        loading: () => Center(child: CircularProgressIndicator(color: AppColors.accent500)),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 80, color: AppColors.error500),
+              Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 80, color: AppColors.error500),
               const SizedBox(height: 24),
               Text("SUPABASE ERROR", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
               const SizedBox(height: 12),
@@ -62,7 +62,7 @@ class PublicProfileScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(LineAwesomeIcons.user_slash_solid, size: 80, color: AppColors.primary800),
+                  Icon(LineAwesomeIcons.user_slash_solid, size: 80, color: AppColors.primary800),
                   const SizedBox(height: 24),
                   Text("PROFILE NOT FOUND", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 12),
@@ -131,10 +131,10 @@ class PublicProfileScreen extends ConsumerWidget {
                   ElevatedButton(
                     onPressed: () => _openWhatsApp(profile.whatsappNumber),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF25D366),
+                      backgroundColor: Color(0xFF25D366),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(LineAwesomeIcons.whatsapp, size: 24),
                       SizedBox(width: 12),
                       Text('CHAT ON WHATSAPP', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0)),

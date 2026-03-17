@@ -32,7 +32,7 @@ class NameStepView extends StatelessWidget {
             color: AppColors.primary700,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
+          child: Icon(
             LineAwesomeIcons.user_circle,
             color: Color(0xFFF9A825),
             size: 28,

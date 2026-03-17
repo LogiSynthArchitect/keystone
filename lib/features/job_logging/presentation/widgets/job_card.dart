@@ -13,7 +13,7 @@ class JobCard extends StatelessWidget {
   final CustomerEntity? customer; 
   final VoidCallback? onTap;
 
-  const JobCard({super.key, required this.job, this.customer, this.onTap});
+  JobCard({super.key, required this.job, this.customer, this.onTap});
 
   IconData _serviceIcon(ServiceType type) {
     switch (type) {
@@ -92,12 +92,12 @@ class JobCard extends StatelessWidget {
                           ),
                         ),
                       
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       
                       if (job.hasLocation) 
                         Row(
                           children: [
-                            const Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: AppColors.accent500),
+                            Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: AppColors.accent500),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -135,21 +135,21 @@ class JobCard extends StatelessWidget {
               Row(
                 children: [
                   if (job.followUpSent) 
-                    const _Badge(
+                    _Badge(
                       label: "WHATSAPP OPENED", 
                       color: AppColors.success500, 
                       icon: LineAwesomeIcons.check_circle_solid,
                     ),
                   
                   if (job.syncStatus == SyncStatus.pending) 
-                    const _Badge(
+                    _Badge(
                       label: "SAVING TO BACKBONE", 
                       color: AppColors.accent500, 
                       icon: LineAwesomeIcons.sync_solid,
                     ),
 
                   if (job.syncStatus == SyncStatus.failed)
-                    const _Badge(
+                    _Badge(
                       label: "SYNC FAILED", 
                       color: AppColors.error500, 
                       icon: LineAwesomeIcons.exclamation_circle_solid,

@@ -192,8 +192,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               bottom: 0, right: 0,
                               child: Container(
                                 padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
-                                child: const Icon(LineAwesomeIcons.camera_solid, size: 14, color: AppColors.primary900),
+                                decoration: BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
+                                child: Icon(LineAwesomeIcons.camera_solid, size: 14, color: AppColors.primary900),
                               ),
                             ),
                           ],
@@ -228,7 +228,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             ),
                             child: Row(children: [
                               Expanded(child: Text(_serviceLabel(type), style: AppTextStyles.body.copyWith(color: isSelected ? AppColors.white : AppColors.neutral400, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500))),
-                              if (isSelected) const Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: AppColors.accent500),
+                              if (isSelected) Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: AppColors.accent500),
                             ]),
                           ),
                         ),
@@ -325,7 +325,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
               ),
               if (isLoading)
-                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
               else
                 Icon(
                   LineAwesomeIcons.save_solid,

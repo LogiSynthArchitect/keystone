@@ -319,7 +319,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) CircularProgressIndicator(color: AppColors.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
                 color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)

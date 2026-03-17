@@ -145,7 +145,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: AppColors.primary700),
           ),
-          child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
+          child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
         ),
       );
 
@@ -242,7 +242,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                   ),
                 ),
                 if (isLoading)
-                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
                 else
                   Icon(
                     LineAwesomeIcons.angle_right_solid,
