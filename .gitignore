@@ -26,3 +26,10 @@ run.sh
 .vscode/launch.json
 run.sh
 .vscode/launch.json
+
+# Logs & Temp
+combined_output.txt
+server.log
+scripts/smart_server.py
+server_error.log
+

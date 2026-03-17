@@ -145,11 +145,12 @@ int get pendingCount => allJobs.where((j) => j.syncStatus == SyncStatus.pending)
 
 int get thisMonthEarnings {
   final now = DateTime.now();
-  final thisMonthJobs = allJobs.where((j) =>
-    j.jobDate.year == now.year &&
-    j.jobDate.month == now.month &&
-    j.amountCharged != null
-  );
+  final thisMonthJobs = allJobs.where((j) {
+    // Robust month/year comparison
+    return j.jobDate.year == now.year &&
+           j.jobDate.month == now.month &&
+           j.amountCharged != null;
+  });
 
   return thisMonthJobs.fold<int>(0, (sum, j) => sum + j.amountCharged!);
 }}

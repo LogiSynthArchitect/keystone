@@ -49,13 +49,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                            state.matchedLocation == RouteNames.otpVerify ||
                            state.matchedLocation == RouteNames.landing;
       
+      final isPublicProfile = state.matchedLocation.startsWith('/p/');
+      
       final isOnboarding = state.matchedLocation == RouteNames.onboarding;
 
       // 2. Unauthenticated Path
       if (!isLoggedIn) {
-        // If not logged in, we only allow landing/auth flow. 
-        // If they are on transition or any dashboard route, force them to Landing.
-        if (isInAuthFlow) return null;
+        // If not logged in, we only allow landing/auth flow OR public profiles.
+        if (isInAuthFlow || isPublicProfile) return null;
         return RouteNames.landing;
       }
 

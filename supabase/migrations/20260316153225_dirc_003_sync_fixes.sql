@@ -8,8 +8,8 @@ CREATE OR REPLACE FUNCTION "public"."batch_sync_jobs"("p_user_id" "uuid", "p_job
 DECLARE
   job_record JSONB;
   new_job_id UUID;
-  synced_jobs JSONB := '[]';
-  failed_jobs JSONB := '[]';
+  synced_jobs JSONB := '[]'::jsonb;
+  failed_jobs JSONB := '[]'::jsonb;
 BEGIN
   FOR job_record IN SELECT * FROM jsonb_array_elements(p_jobs)
   LOOP
@@ -50,8 +50,8 @@ CREATE OR REPLACE FUNCTION "public"."batch_sync_customers"("p_user_id" "uuid", "
 DECLARE
   customer_record JSONB;
   new_customer_id UUID;
-  synced_customers JSONB := '[]';
-  failed_customers JSONB := '[]';
+  synced_customers JSONB := '[]'::jsonb;
+  failed_customers JSONB := '[]'::jsonb;
 BEGIN
   FOR customer_record IN SELECT * FROM jsonb_array_elements(p_customers)
   LOOP

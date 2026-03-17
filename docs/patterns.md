@@ -101,3 +101,28 @@
   2. Increase letter spacing slightly for maximum readability in high-glare environments.
 **Result:** UI feels like an official ledger or physical receipt, increasing trust in the system.
 **Applies to:** Fintech or professional ledger applications.
+
+---
+
+## Pattern 10 — Global Theme Synchronization & Component Integrity
+**Context:** Scaling a "Dark Industrial" aesthetic across a Flutter codebase with legacy or third-party components.
+**Problem:** Hardcoding backgrounds in individual screens leaves global components (e.g., Dialogs, SearchBars, TextFields) with white/light defaults, causing "white-on-white" visibility issues.
+**Solution:**
+  1. Define a strict global `ThemeData` with `brightness: Brightness.dark` and `scaffoldBackgroundColor`.
+  2. Map all `InputDecorationTheme` and `CardTheme` to brand-compliant primary/secondary colors.
+  3. Update global `AppTextStyles` to default to white or high-contrast accent colors.
+  4. Use a shared `KsSearchBar` and `KsConfirmDialog` instead of generic Material variants to ensure 100% theme compliance.
+**Result:** Unified visual language with zero "bleeding" from default light-theme values.
+**Applies to:** Any project migrating from a default theme to a highly customized aesthetic.
+
+---
+
+## Pattern 11 — Data Integrity for Tactical Dashboards
+**Context:** Calculating real-time summaries (e.g., "THIS MONTH") from a local-first offline database.
+**Problem:** Default fetch limits in repositories (e.g., 25) can omit newer/older records from local calculations if the database grows beyond the limit.
+**Solution:**
+  1. Increase fetch limits for summary-critical data (e.g., 200+ for Jobs).
+  2. Implement robust date comparisons in state getters that account for timezone/parsing variations (e.g. YYYY-MM-DD vs UTC).
+  3. Use `CurrencyFormatter` consistently at the presentation layer to prevent "Pesewas vs GHS" multiplier display errors.
+**Result:** Reliable, "Battle-Ready" dashboard readouts that technicians can trust for financial planning.
+**Applies to:** Any offline-first app with financial or time-series dashboards.

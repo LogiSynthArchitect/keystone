@@ -595,6 +595,56 @@ BREAK 5: launchUrl mock argument mismatch
 - Monospace typography for numbers is a low-cost, high-impact way to build financial trust in a UI.
 - Supabase RLS requires explicit policies for Admins even if they have overarching roles in the `users` table.
 
-### Final Verification
-- **Total Tests:** 80 PASSING / 0 FAILING ✅
-- **Pilot Readiness:** 100% Ready for field launch.
+---
+
+## SESSION 15 — UI Compliance & Data Integrity Pass — 2026-03-17
+
+### What was built
+- **Theme Correction:** Overhauled `AppTheme` and `AppTextStyles` to strictly follow the "Dark Industrial" mandates. Replaced light-themed defaults with `AppColors.primary900` and `AppColors.white`.
+- **Component Industrialization:** Updated `KsSearchBar` and `KsConfirmDialog` to remove white backgrounds and light-themed text, resolving "white-on-white" visibility issues.
+- **Currency Standardization:** Standardized `CurrencyFormatter.formatShort` across all display layers (`JobCard`, `JobDetailScreen`, `CustomerDetailScreen`) to fix the 100x multiplier display bug.
+- **Dashboard Robustness:** Increased job fetching limits in Repository (200) and Local Datasource (500) to ensure accurate "THIS MONTH" earnings calculations.
+- **Profile Sync Fix:** Added explicit invalidation of `profileProvider` upon onboarding completion to eliminate the need for an app restart.
+- **Data Model Alignment:** Fixed camelCase/snake_case mismatch for `service_type` in `JobRepositoryImpl` to ensure consistency with `JobModel` and Supabase.
+
+### What broke and how it was fixed
+- **BREAK 1: Invisible Search Text**
+  - Cause: `AppTextStyles` defaulted to `neutral900` (dark) on a `primary900` (dark) background.
+  - Fix: Updated global text styles to default to `AppColors.white`.
+- **BREAK 2: "THIS MONTH" Dash**
+  - Cause: Fetch limits in the repository were too low (25), causing newer jobs to be omitted from the local earnings calculation if the database was large.
+  - Fix: Increased default fetch limits and improved the robust month/year comparison logic.
+- **BREAK 3: 350 GHS displayed as 35,000**
+  - Cause: Direct integer display of pesewas without dividing by 100 in `JobDetailScreen`.
+  - Fix: Routed all currency displays through `CurrencyFormatter.formatShort`.
+
+### Flutter analyze status
+No errors found ✅
+
+### What was learned
+1. Even if individual screens hardcode backgrounds, global `ThemeData` and `TextStyles` must be correctly configured to prevent "white-on-white" defaults in edge cases (e.g. Dialogs, SearchBars).
+2. For tactical terminals, default fetch limits should be high enough to cover at least a full month of active logging (e.g. 200+).
+3. Enum name conversions (camelCase to snake_case) must be perfectly synchronized between local storage and remote API layers.
+
+---
+
+## SESSION 16 — Profile Sharing & Public Link Resolution — 2026-03-17
+
+### What was built
+- **Link Construction Fix:** Corrected `ProfileNotifier.shareProfile` to generate full `https://keystone.app/p/slug` links instead of truncated strings.
+- **Router Transparency:** Updated `app_router.dart` to allow unauthenticated (public) access to the `/p/:slug` path, ensuring customers can view profiles without an account.
+- **Slug Resolution:** Fixed `ProfileRemoteDatasource.getPublicProfile` to query by the slug alone, removing the hardcoded domain prefix that caused "Profile Not Found" errors.
+- **Industrial Public Profile:** Overhauled `PublicProfileScreen` with the Dark Industrial theme, LineAwesomeIcons, and high-contrast typography.
+
+### What broke and how it was fixed
+- **BREAK 1: Public Profile 404**
+  - Cause: The router was redirecting unauthenticated users from `/p/slug` to the Landing page.
+  - Fix: Added `isPublicProfile` check to the router's redirect logic.
+- **BREAK 2: Broken Shared Link**
+  - Cause: `ProfileNotifier` was prepending `https://` to a string that only contained the slug, resulting in `https://slug`.
+  - Fix: Standardized the share URL format to `https://keystone.app/p/$slug`.
+
+### Flutter analyze status
+No errors found ✅
+
+

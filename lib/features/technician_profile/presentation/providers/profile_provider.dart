@@ -94,8 +94,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
   Future<void> shareProfile() async {
     if (state.profile == null) return;
+    final shareUrl = 'https://keystone.app/p/${state.profile!.profileUrl}';
     await Share.share(
-      'Check out my locksmith profile: https://${state.profile!.profileUrl}',
+      'Check out my locksmith profile: $shareUrl',
       subject: 'My Keystone Profile',
     );
     KsAnalytics.log(AnalyticsEvents.profileShared);
