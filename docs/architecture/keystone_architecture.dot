@@ -52,12 +52,12 @@ digraph KeystoneArchitecture {
 
     // 5. FEATURE: JOB LOGGING
     subgraph cluster_jobs {
-        label="Job Logging (Offline-First)";
+        label="Job Logging & Admin Controls";
         style=filled; fillcolor="#e8f5e9"; color="#a5d6a7";
-        job_ui [label="Log Job, Job List Screens"];
-        job_prov [label="Job Providers"];
-        job_uc [label="LogJob, Sync, Get UseCases"];
-        job_repo [label="Job Repository"];
+        job_ui [label="Log Job (3-Step Wizard)\nJob List, Admin Dashboard"];
+        job_prov [label="Job & Correction Providers"];
+        job_uc [label="LogJob, Sync, Get,\nRequest/Approve Correction"];
+        job_repo [label="Job & Correction\nRepositories"];
         job_local [label="Job Local DataSource"];
         job_ui -> job_prov -> job_uc -> job_repo;
         job_repo -> job_local [label="Save Offline"];
