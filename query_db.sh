@@ -15,7 +15,7 @@ if [ -z "$1" ]; then
 fi
 
 # Extract project ref from URL
-PROJECT_REF="DEV_REF_REMOVED"
+PROJECT_REF="PROD_REF_REMOVED"
 HOST="db.$PROJECT_REF.supabase.co"
 
 PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $HOST -p 5432 -U postgres -d postgres -c "$1"
