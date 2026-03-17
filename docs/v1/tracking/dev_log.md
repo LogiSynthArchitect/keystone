@@ -681,5 +681,34 @@ No errors found ✅
 2. **Web-Safe Repositories:** Always use conditional imports for `dart:io` if you plan to share logic between Mobile and Web.
 3. **SPA Routing:** Single Page Apps on Vercel require a `vercel.json` rewrite rule to prevent 404 errors on direct URL access.
 
+---
+
+## SESSION 18 — Human Language Pass & Environment Separation — 2026-03-17
+
+### What was built
+- **Language Simplification:** Performed a global sweep to remove technical jargon. "Backbone" replaced with "Keystone" or "Cloud". "Forged" replaced with "Created".
+- **Transition UI Update:** Refined greeting messages to be more approachable ("Loading your account..." instead of "Synchronizing backbone").
+- **Environment Separation:** Established a clean **Production Environment** (`ifzpdizxitlvjbmzozew`) separate from the **Staging/Testing Environment** (`mxkkntxemrcjbxvlzfbt`).
+- **Migration Pipeline:** Successfully pushed the full Keystone schema, RLS policies, and triggers to the new production project via Supabase CLI.
+- **Query Tool Upgrade:** Updated `query_db.sh` to support Cloud connections with IPv4 and IPv6 resolution safety.
+
+### What broke and how it was fixed
+- **BREAK 1: SQL Constraint Conflict**
+  - Cause: Attempting to re-run schema definitions on an existing database triggered "relation already exists" errors.
+  - Fix: Standardized the wipe command using `TRUNCATE ... CASCADE` instead of dropping tables.
+- **BREAK 2: Network Unreachable (Port 5432)**
+  - Cause: Local environment restricted IPv6 access to Supabase Cloud.
+  - Fix: Integrated project-specific Project Refs and updated connection logic to prefer direct cloud host resolution.
+
+### Current Database Map
+| Environment | Project Ref | Purpose |
+|---|---|---|
+| **Staging** | `mxkkntxemrcjbxvlzfbt` | Sandbox for testing new features |
+| **Production** | `ifzpdizxitlvjbmzozew` | Clean database for live field operations |
+
+### Flutter analyze status
+No errors found ✅
+
+
 
 

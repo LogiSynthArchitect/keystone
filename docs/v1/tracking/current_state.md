@@ -1,27 +1,33 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 17 2026
-### Session: 17 (WEB GATEWAY & TACTICAL UI OVERHAUL)
+### Session: 18 (HUMAN LANGUAGE PASS & ENVIRONMENT SEPARATION)
 
 ---
 
 ## Build Status
 - **flutter analyze:** 0 errors, 0 warnings ✅
 - **flutter test:** 80+ tests passing, zero failures ✅
-- **Supabase:** All migrations (including Admin RLS) applied and synced.
-- **Web Build:** Lightweight Gateway (main_web.dart) successfully deployed to Vercel. ✅
-- **Theme:** 100% Compliance with "Dark Industrial" Keystone Mandate. ✅
+- **Supabase:** All migrations applied to both Staging and Production. ✅
+- **Web Build:** Lightweight Gateway (main_web.dart) live on Vercel. ✅
+- **UI Aesthetic:** Circular Identity and Tactical Grid overhaul complete. ✅
 
 ---
 
 ## Core Feature Completion (All 100%)
-- **Tactical Terminal:** 3-step/2-step wizards implemented for all data entry. ✅
+- **Tactical Terminal:** Language simplified for human-friendly field use. ✅
+- **Environment:** Dedicated Staging (`mxkknt...`) and Production (`ifzpdi...`). ✅
 - **Offline Backbone:** Integrated Hive/Supabase sync with Global Badge. ✅
 - **Field Guidance:** Integrated "Field Hints" on all forms. ✅
 - **Admin Control:** In-app Correction Request & Admin Approval UI. ✅
 - **Tactical UI:** Dark Industrial theme, Receipt Typography, and Haptics. ✅
 - **Identity:** Verified public profile links & sharing (no more 404s). ✅
-- **Web Gateway:** Live public profiles with circular identity and capability grids. ✅
-- **Data Integrity:** Fixed currency multipliers and fetch limit accuracy. ✅
+- **Data Integrity:** Case-insensitive slug matching and high fetch limits. ✅
+
+---
+
+## Environment Registry
+- **Testing:** https://mxkkntxemrcjbxvlzfbt.supabase.co
+- **Production:** https://ifzpdizxitlvjbmzozew.supabase.co
 
 ---
 
@@ -32,13 +38,6 @@
 
 ---
 
-## Post-V1 Roadmap
-1. **Background Notifications (V2)**
-2. **Global Customer Deduplication (V2)**
-3. **Multi-User Audit Trails (V2)**
-
----
-
 ## Next Action
-**DEPLOY TO FIELD.**
+**VERIFY LOCALLY & DEPLOY FINAL APK.**
 All terminal systems are go.
