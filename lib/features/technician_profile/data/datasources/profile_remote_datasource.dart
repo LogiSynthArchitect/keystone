@@ -59,7 +59,8 @@ class ProfileRemoteDatasource {
 
   Future<ProfileModel?> getPublicProfile(String slug) async {
     try {
-      final data = await _supabase.from('profiles').select().eq('profile_url', slug).eq('is_public', true).maybeSingle();
+      final fullUrl = 'keystone.app/p/$slug';
+      final data = await _supabase.from('profiles').select().eq('profile_url', fullUrl).eq('is_public', true).maybeSingle();
       return data != null ? ProfileModel.fromJson(data) : null;
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not load profile.', code: 'PROFILE_FETCH_FAILED', cause: e);
