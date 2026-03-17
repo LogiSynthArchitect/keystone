@@ -7,7 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../providers/profile_provider.dart';
+import '../providers/public_profile_provider.dart';
 import '../../../../core/constants/app_enums.dart';
 
 class PublicProfileScreen extends ConsumerWidget {
