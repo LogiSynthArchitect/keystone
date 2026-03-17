@@ -89,6 +89,7 @@ Run this checklist for every screen. Mark PASS or FAIL for each item.
 | Add Note | Dark industrial | PASS |
 | Profile | Dark industrial | PASS |
 | Edit Profile | Dark industrial | PASS |
+| Admin Requests | Dark industrial | PASS |
 | Public Profile | Light theme — acceptable | Public facing only |
 
 ---

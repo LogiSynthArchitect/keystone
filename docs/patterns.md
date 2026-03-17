@@ -77,3 +77,27 @@
   4. Update local storage status to 'synced' upon success.
 **Result:** Zero latency for the user; guaranteed eventual consistency.
 **Applies to:** Any offline-capable Flutter app.
+
+---
+
+## Pattern 08 — Tactical Step-by-Step Wizards
+**Context:** High-density forms in specialized technical tools.
+**Problem:** Long single-page forms increase cognitive load and error rates in the field.
+**Pattern:**
+  1. Break input into logical "Logistics," "Entity," and "Financial" steps.
+  2. Implement a global "Step Indicator" (e.g., 01 / 03).
+  3. Toggle the bottom action bar between "NEXT" and "SAVE".
+  4. Use AnimatedSwitcher for high-performance visual transitions.
+**Result:** Higher data quality and reduced user fatigue.
+**Applies to:** Field-entry professional applications.
+
+---
+
+## Pattern 09 — Data Trust via Monospace Typography
+**Context:** Displaying financial or sensitive identification data (GHS, Phone Numbers).
+**Problem:** Standard proportional fonts make columns of numbers look "wavy" and less professional.
+**Pattern:**
+  1. Use `FontFeature.tabularFigures()` or a Monospace font family for all numeric data.
+  2. Increase letter spacing slightly for maximum readability in high-glare environments.
+**Result:** UI feels like an official ledger or physical receipt, increasing trust in the system.
+**Applies to:** Fintech or professional ledger applications.
