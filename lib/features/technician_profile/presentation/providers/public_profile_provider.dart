@@ -8,11 +8,11 @@ final publicProfileProvider = FutureProvider.family<ProfileEntity?, String>((ref
   final supabase = ref.watch(supabaseClientProvider);
   
   try {
-    final fullUrl = 'keystone.app/p/$slug';
+    // Search for the slug case-insensitively to be more user-friendly
     final data = await supabase
         .from('profiles')
         .select()
-        .eq('profile_url', fullUrl)
+        .ilike('profile_url', '%$slug')
         .eq('is_public', true)
         .maybeSingle();
         
