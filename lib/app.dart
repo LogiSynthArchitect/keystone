@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_colors.dart';
+import 'core/theme/app_text_styles.dart';
 
 class KeystoneApp extends ConsumerWidget {
   const KeystoneApp({super.key});
@@ -55,20 +58,27 @@ class _ErrorBoundaryState extends State<_ErrorBoundary> {
   @override
   Widget build(BuildContext context) {
     if (_hasError) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: AppColors.primary900,
         body: Center(
           child: Padding(
-            padding: EdgeInsets.all(32),
+            padding: const EdgeInsets.all(32),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error_outline, size: 48, color: Color(0xFF9E9E9E)),
-                SizedBox(height: 16),
-                Text('Something went wrong.',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                SizedBox(height: 8),
-                Text('Please restart the app.',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF757575))),
+                const Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 64, color: AppColors.error500),
+                const SizedBox(height: 24),
+                Text('SYSTEM ERROR DETECTED',
+                    style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 12),
+                Text('CRITICAL ARCHITECTURAL BREACH. REBOOT TERMINAL.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.body.copyWith(color: AppColors.neutral500, letterSpacing: 0.5)),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => setState(() => _hasError = false),
+                  child: const Text('RELOAD TERMINAL'),
+                ),
               ],
             ),
           ),

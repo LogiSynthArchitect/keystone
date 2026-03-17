@@ -219,7 +219,7 @@ class _SummaryStrip extends StatelessWidget {
         children: [
           _Stat(value: "$totalJobs", label: "TOTAL LOGS"),
           Container(width: 1, height: 40, color: AppColors.primary700),
-          _Stat(value: monthEarnings > 0 ? CurrencyFormatter.formatShort(monthEarnings) : "—", label: "THIS MONTH"),
+          _Stat(value: CurrencyFormatter.formatShort(monthEarnings), label: "THIS MONTH"),
         ],
       ),
     );

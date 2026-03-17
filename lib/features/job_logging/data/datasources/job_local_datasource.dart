@@ -10,12 +10,13 @@ class JobLocalDatasource {
   Future<void> saveJob(JobModel job) async {
     try {
       await _box.put(job.id, job.toJson().cast<String, dynamic>());
+      await _box.flush(); // Force immediate disk persistence
     } catch (e) {
       throw StorageException(message: 'Could not save job locally.', code: 'LOCAL_SAVE_FAILED', cause: e);
     }
   }
 
-  Future<List<JobModel>> getJobs({int limit = 100, int offset = 0}) async {
+  Future<List<JobModel>> getJobs({int limit = 500, int offset = 0}) async {
     try {
       // PERFORMANCE FIX: Use keys to selectively load models from memory
       final keys = _box.keys.toList().reversed.skip(offset).take(limit);

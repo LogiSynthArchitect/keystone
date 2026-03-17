@@ -5,6 +5,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/router/route_names.dart';
@@ -246,8 +247,8 @@ class CustomerDetailScreen extends ConsumerWidget {
             ),
             if (job.hasAmount)
               Text(
-                "GHS ${job.amountCharged?.toInt()}",
-                style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900),
+                CurrencyFormatter.formatShort(job.amountCharged!),
+                style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()]),
               ),
             const SizedBox(width: 16),
             const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),

@@ -24,7 +24,7 @@ class JobRepositoryImpl implements JobRepository {
   String get _userId => _supabase.auth.currentUser!.id;
 
   @override
-  Future<List<JobEntity>> getJobs({int limit = 25, int offset = 0, bool includeArchived = false}) async {
+  Future<List<JobEntity>> getJobs({int limit = 200, int offset = 0, bool includeArchived = false}) async {
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
@@ -185,7 +185,8 @@ class JobRepositoryImpl implements JobRepository {
 
   Map<String, dynamic> _jobEntityToJson(JobEntity job) => {
     'id': job.id, 'user_id': job.userId, 'customer_id': job.customerId,
-    'service_type': job.serviceType.name, 'job_date': job.jobDate.toIso8601String().split('T').first,
+    'service_type': job.serviceType.name.replaceAllMapped(RegExp(r'([A-Z])'), (match) => '_${match.group(1)!.toLowerCase()}'), 
+    'job_date': job.jobDate.toIso8601String().split('T').first,
     'location': job.location, 'latitude': job.latitude, 'longitude': job.longitude,
     'notes': job.notes, 'amount_charged': job.amountCharged,
     'follow_up_sent': job.followUpSent, 'follow_up_sent_at': job.followUpSentAt?.toIso8601String(),

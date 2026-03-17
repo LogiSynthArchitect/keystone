@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -35,91 +36,116 @@ class PublicProfileScreen extends ConsumerWidget {
     final state = ref.watch(publicProfileProvider(slug));
 
     return Scaffold(
-      backgroundColor: AppColors.neutral050,
+      backgroundColor: AppColors.primary900,
       body: state.when(
-        loading: () => const KsLoadingIndicator(fullScreen: true),
-        error: (e, _) => const KsEmptyState(
-          icon: Icons.person_off_outlined,
-          title: 'Profile not found',
-          subtitle: 'This profile does not exist or is no longer public.',
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(LineAwesomeIcons.user_slash_solid, size: 80, color: AppColors.primary800),
+              const SizedBox(height: 24),
+              Text("PROFILE NOT FOUND", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 12),
+              Text("This operator profile does not exist or is no longer public.", 
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
+            ],
+          ),
         ),
         data: (profile) {
           if (profile == null) {
-            return const KsEmptyState(
-              icon: Icons.person_off_outlined,
-              title: 'Profile not found',
-              subtitle: 'This profile does not exist or is no longer public.',
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(LineAwesomeIcons.user_slash_solid, size: 80, color: AppColors.primary800),
+                  const SizedBox(height: 24),
+                  Text("PROFILE NOT FOUND", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 12),
+                  Text("This operator profile does not exist or is no longer public.", 
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
+                ],
+              ),
             );
           }
           return SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.pagePadding),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: 48),
                   Center(
                     child: Column(children: [
-                      CircleAvatar(
-                        radius: 48,
-                        backgroundColor: AppColors.primary100,
-                        backgroundImage: profile.hasPhoto ? NetworkImage(profile.photoUrl!) : null,
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary800,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: AppColors.primary700, width: 2),
+                          image: profile.hasPhoto ? DecorationImage(image: NetworkImage(profile.photoUrl!), fit: BoxFit.cover) : null,
+                        ),
                         child: !profile.hasPhoto
-                            ? Text(profile.displayName[0].toUpperCase(),
-                                style: AppTextStyles.h1.copyWith(color: AppColors.primary700))
+                            ? Center(
+                                child: Text(profile.displayName[0].toUpperCase(),
+                                  style: AppTextStyles.h1.copyWith(color: AppColors.accent500, fontSize: 48, fontWeight: FontWeight.w900)))
                             : null,
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(profile.displayName, style: AppTextStyles.h2),
+                      const SizedBox(height: 24),
+                      Text(profile.displayName.toUpperCase(), style: AppTextStyles.h1.copyWith(letterSpacing: 1.0)),
                       if (profile.hasBio) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(profile.bio!,
-                            style: AppTextStyles.body.copyWith(color: AppColors.neutral600),
-                            textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(profile.bio!,
+                              style: AppTextStyles.body.copyWith(color: AppColors.neutral400, height: 1.5),
+                              textAlign: TextAlign.center),
+                        ),
                       ],
                     ]),
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  Text('Services', style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral500)),
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: 48),
+                  Text('TECHNICAL CAPABILITIES', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                  const SizedBox(height: 16),
                   Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: profile.services.map((s) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary050,
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-                        border: Border.all(color: AppColors.primary100),
+                        color: AppColors.primary800,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.primary700),
                       ),
-                      child: Text(_serviceLabel(s),
-                          style: AppTextStyles.caption.copyWith(color: AppColors.primary700)),
+                      child: Text(_serviceLabel(s).toUpperCase(),
+                          style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                     )).toList(),
                   ),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  GestureDetector(
-                    onTap: () => _openWhatsApp(profile.whatsappNumber),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF25D366),
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                      ),
-                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const Icon(Icons.chat, size: 18, color: AppColors.white),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text('Chat on WhatsApp',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
-                      ]),
+                  const SizedBox(height: 64),
+                  ElevatedButton(
+                    onPressed: () => _openWhatsApp(profile.whatsappNumber),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(LineAwesomeIcons.whatsapp, size: 24),
+                      SizedBox(width: 12),
+                      Text('CHAT ON WHATSAPP', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                    ]),
+                  ),
+                  const SizedBox(height: 64),
+                  Center(
+                    child: Opacity(
+                      opacity: 0.3,
+                      child: Text('POWERED BY KEYSTONE TERMINAL',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  Center(
-                    child: Text('Powered by Keystone',
-                        style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),

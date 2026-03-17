@@ -122,8 +122,9 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       );
       await _profileRepo.createProfile(profile);
       
-      // 3. Force refresh router state
+      // 3. Force refresh router and profile state
       await _ref.read(authStateProvider.notifier).refresh();
+      _ref.invalidate(profileProvider);
       
       state = state.copyWith(isLoading: false, hasProfile: true);
       return true;

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import 'ks_button.dart';
 
@@ -47,24 +46,25 @@ class KsConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.primary800,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        borderRadius: BorderRadius.circular(4),
+        side: const BorderSide(color: AppColors.primary700),
       ),
-      title: Text(title, style: AppTextStyles.h3),
+      title: Text(title.toUpperCase(), style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
       content: Text(message,
-          style: AppTextStyles.body.copyWith(color: AppColors.neutral600)),
+          style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
       actions: [
         KsButton(
-          label: cancelLabel,
+          label: cancelLabel.toUpperCase(),
           variant: KsButtonVariant.secondary,
           size: KsButtonSize.small,
           fullWidth: false,
           onPressed: () => Navigator.of(context).pop(false),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: 8),
         KsButton(
-          label: confirmLabel,
+          label: confirmLabel.toUpperCase(),
           variant: isDanger ? KsButtonVariant.danger : KsButtonVariant.primary,
           size: KsButtonSize.small,
           fullWidth: false,
@@ -74,9 +74,7 @@ class KsConfirmDialog extends StatelessWidget {
           },
         ),
       ],
-      actionsPadding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg,
-      ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
     );
   }
 }

@@ -1,89 +1,111 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 
 ThemeData buildAppTheme() {
-  return ThemeData(
+  final baseTheme = ThemeData(
     useMaterial3: true,
-    textTheme: GoogleFonts.interTextTheme(),
+    brightness: Brightness.dark,
+    fontFamily: 'BarlowSemiCondensed',
+  );
+
+  return baseTheme.copyWith(
+    scaffoldBackgroundColor: AppColors.primary900,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary700,
-      primary: AppColors.primary700,
-      onPrimary: AppColors.white,
-      secondary: AppColors.accent500,
-      onSecondary: AppColors.primary900,
+      seedColor: AppColors.accent500,
+      brightness: Brightness.dark,
+      primary: AppColors.accent500,
+      onPrimary: AppColors.primary900,
+      secondary: AppColors.primary700,
+      onSecondary: AppColors.white,
+      surface: AppColors.primary800,
+      onSurface: AppColors.white,
       error: AppColors.error500,
       onError: AppColors.white,
-      surface: AppColors.white,
-      onSurface: AppColors.neutral900,
     ),
-    scaffoldBackgroundColor: AppColors.neutral050,
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.primary700,
+      backgroundColor: AppColors.primary900,
       foregroundColor: AppColors.white,
       elevation: 0,
       centerTitle: false,
       toolbarHeight: AppSpacing.appBarHeight,
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: AppColors.white,
-      selectedItemColor: AppColors.primary700,
-      unselectedItemColor: AppColors.neutral400,
+      backgroundColor: AppColors.primary800,
+      selectedItemColor: AppColors.accent500,
+      unselectedItemColor: AppColors.neutral500,
       elevation: 0,
       type: BottomNavigationBarType.fixed,
     ),
     cardTheme: CardThemeData(
-      color: AppColors.white,
+      color: AppColors.primary800,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        side: const BorderSide(color: AppColors.neutral200),
+        borderRadius: BorderRadius.circular(4),
+        side: const BorderSide(color: AppColors.primary700),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.neutral100,
+      fillColor: AppColors.primary800,
       contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: 16,
+        vertical: 12,
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.neutral300),
+        borderRadius: BorderRadius.circular(4),
+        borderSide: const BorderSide(color: AppColors.primary700),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.neutral300),
+        borderRadius: BorderRadius.circular(4),
+        borderSide: const BorderSide(color: AppColors.primary700),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.primary600, width: 1.5),
+        borderRadius: BorderRadius.circular(4),
+        borderSide: const BorderSide(color: AppColors.accent500, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(4),
         borderSide: const BorderSide(color: AppColors.error500, width: 1.5),
       ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.error500, width: 1.5),
-      ),
+      hintStyle: const TextStyle(color: AppColors.neutral600),
+      labelStyle: const TextStyle(color: AppColors.neutral400),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary700,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppColors.accent500,
+        foregroundColor: AppColors.primary900,
         minimumSize: const Size.fromHeight(AppSpacing.buttonHeight),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+          borderRadius: BorderRadius.circular(4),
         ),
         elevation: 0,
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.5,
+        ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.accent500,
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+        ),
       ),
     ),
     dividerTheme: const DividerThemeData(
-      color: AppColors.neutral200,
+      color: AppColors.primary700,
       thickness: 1,
       space: 1,
     ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) => 
+        states.contains(WidgetState.selected) ? AppColors.accent500 : AppColors.neutral500),
+      trackColor: WidgetStateProperty.resolveWith((states) => 
+        states.contains(WidgetState.selected) ? AppColors.accent500.withValues(alpha: 0.3) : AppColors.primary700),
+    ),
   );
 }
+
