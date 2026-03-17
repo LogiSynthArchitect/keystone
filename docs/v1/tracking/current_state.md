@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 17 2026
-### Session: 16 (PROFILE SHARING & PUBLIC LINK RESOLUTION)
+### Session: 17 (WEB GATEWAY & TACTICAL UI OVERHAUL)
 
 ---
 
@@ -8,6 +8,7 @@
 - **flutter analyze:** 0 errors, 0 warnings ✅
 - **flutter test:** 80+ tests passing, zero failures ✅
 - **Supabase:** All migrations (including Admin RLS) applied and synced.
+- **Web Build:** Lightweight Gateway (main_web.dart) successfully deployed to Vercel. ✅
 - **Theme:** 100% Compliance with "Dark Industrial" Keystone Mandate. ✅
 
 ---
@@ -19,6 +20,7 @@
 - **Admin Control:** In-app Correction Request & Admin Approval UI. ✅
 - **Tactical UI:** Dark Industrial theme, Receipt Typography, and Haptics. ✅
 - **Identity:** Verified public profile links & sharing (no more 404s). ✅
+- **Web Gateway:** Live public profiles with circular identity and capability grids. ✅
 - **Data Integrity:** Fixed currency multipliers and fetch limit accuracy. ✅
 
 ---

@@ -647,4 +647,39 @@ No errors found ✅
 ### Flutter analyze status
 No errors found ✅
 
+---
+
+## SESSION 17 — Web Gateway & Tactical UI Overhaul — 2026-03-17
+
+### What was built
+- **Web Gateway Implementation:** Created `lib/main_web.dart`, a lightweight Flutter Web entry point that bypasses the full mobile app to avoid build errors and performance lag.
+- **Isolated Web Data:** Implemented `public_profile_provider.dart` to fetch profile data directly from Supabase REST API, removing dependencies on Hive, Analytics, and Mobile storage.
+- **Industrial UI Overhaul:** Redesigned the `PublicProfileScreen` with a high-end "Tactical Dossier" aesthetic:
+  - Perfectly circular profile identity with Gold (accent500) borders and drop shadows.
+  - Modular "Technical Capabilities" grid replacing the simple list format.
+  - Branded iconography for all services (Car Key, Smart Lock, etc.).
+  - Large call-to-action button: "INITIATE SECURE CHAT".
+- **Cloud Database Integration:** Upgraded environment to support live Cloud Supabase queries and fixed case-insensitive slug matching (ILIKE).
+- **Vercel Build Script:** Created `scripts/vercel_build.sh` to handle complex build logic and bypass Vercel's 256-character command limit.
+
+### What broke and how it was fixed
+- **BREAK 1: Compilation Error (dart:io)**
+  - Cause: The profile repository used `dart:io` for photo uploads, which is unsupported on the web.
+  - Fix: Implemented conditional imports (`import 'dart:io' if (dart.library.html)...`) and a `kIsWeb` guard.
+- **BREAK 2: Build Fail (const Icons)**
+  - Cause: `LineAwesomeIcons` are not constant expressions in the Flutter Web compiler.
+  - Fix: Performed a global refactor to remove `const` from all `LineAwesomeIcons` widgets and parent containers.
+- **BREAK 3: Routing Redirects**
+  - Cause: GoRouter was redirecting unauthenticated web users to the Landing page.
+  - Fix: Added a hard bypass in `app_router.dart` for any path starting with `/p/`.
+
+### Flutter analyze status
+No errors found ✅
+
+### What was learned
+1. **Lightweight Entry Points:** Creating a `main_web.dart` is the best way to host specific features (like public profiles) without carrying the weight of the whole mobile app.
+2. **Web-Safe Repositories:** Always use conditional imports for `dart:io` if you plan to share logic between Mobile and Web.
+3. **SPA Routing:** Single Page Apps on Vercel require a `vercel.json` rewrite rule to prevent 404 errors on direct URL access.
+
+
 
