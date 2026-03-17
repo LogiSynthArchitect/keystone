@@ -15,11 +15,18 @@ class JobLocalDatasource {
     }
   }
 
-  Future<List<JobModel>> getJobs() async {
+  Future<List<JobModel>> getJobs({int limit = 100, int offset = 0}) async {
     try {
-      return _box.values
-          .map((e) => JobModel.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      // PERFORMANCE FIX: Use keys to selectively load models from memory
+      final keys = _box.keys.toList().reversed.skip(offset).take(limit);
+      final list = <JobModel>[];
+      for (var key in keys) {
+        final raw = _box.get(key);
+        if (raw != null) {
+          list.add(JobModel.fromJson(Map<String, dynamic>.from(raw)));
+        }
+      }
+      return list;
     } catch (e) {
       throw StorageException(message: 'Could not read local jobs.', code: 'LOCAL_READ_FAILED', cause: e);
     }

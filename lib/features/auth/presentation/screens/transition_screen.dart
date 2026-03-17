@@ -17,27 +17,15 @@ class TransitionScreen extends ConsumerStatefulWidget {
 }
 
 class _TransitionScreenState extends ConsumerState<TransitionScreen> {
+  bool _isMinDelayPassed = false;
+
   @override
   void initState() {
     super.initState();
-    _startTransition();
-  }
-
-  void _startTransition() async {
-    // MANDATORY: 6-second total brand moment for the cinematic intro
-    await Future.delayed(const Duration(seconds: 6));
-    if (!mounted) return;
-
-    final authState = ref.read(authStateProvider).valueOrNull;
-
-    // Final routing decision after the 6s brand moment
-    if (authState == null || !authState.isAuthenticated) {
-      context.go(RouteNames.landing);
-    } else if (!authState.hasProfile) {
-      context.go(RouteNames.onboarding);
-    } else {
-      context.go(RouteNames.jobs);
-    }
+    // Ensure the branded reveal is seen for at least 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _isMinDelayPassed = true);
+    });
   }
 
   @override
@@ -46,6 +34,21 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
     final profile = ref.watch(profileProvider).profile;
     final authUiState = ref.watch(authNotifierProvider);
 
+    // Navigation logic: Move out once delay is passed AND data is ready
+    if (_isMinDelayPassed && !authStateAsync.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final state = authStateAsync.valueOrNull ?? const AuthState();
+        if (!state.isAuthenticated) {
+          context.go(RouteNames.landing);
+        } else if (!state.hasProfile) {
+          context.go(RouteNames.onboarding);
+        } else {
+          context.go(RouteNames.jobs);
+        }
+      });
+    }
+
     String greeting = "";
     String subtext = "";
     bool isIdentified = false;
@@ -53,21 +56,24 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
     authStateAsync.whenData((state) {
       if (state.isAuthenticated) {
         isIdentified = true;
-        // Check for Veteran status via Profile or Auth State
-        if ((state.hasProfile && profile != null) || (authUiState.hasProfile == true && profile != null)) {
-          // VETERAN: Recognition of existing backbone
+        // Check if they JUST came from onboarding (Forge) or are returning (Welcome)
+        final isJustForged = authUiState.hasProfile == true;
+        
+        if (isJustForged) {
+          greeting = "PROFILE FORGED";
+          subtext = "Establishing your workspace...";
+        } else if (state.hasProfile && profile != null) {
           greeting = "WELCOME BACK,\n${profile.displayName.toUpperCase()}";
           subtext = "Synchronizing backbone...";
         } else {
-          // RECRUIT: Acknowledgement of forging a new identity
-          greeting = "PROFILE FORGED";
-          subtext = "Establishing your workspace...";
+          greeting = "RECOGNIZING IDENTITY";
+          subtext = "Authenticating with backbone...";
         }
       }
     });
 
     return Scaffold(
-      backgroundColor: AppColors.primary900, // THE VOID: Fixed "Flashbang" background
+      backgroundColor: AppColors.primary900,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -82,7 +88,7 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
                       greeting,
                       textAlign: TextAlign.center,
                       style: AppTextStyles.h1.copyWith(
-                        color: AppColors.accent500, // Gold for high authority
+                        color: AppColors.accent500,
                         height: 1.1,
                         letterSpacing: 1.0,
                       ),
@@ -91,7 +97,7 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
                     Text(
                       subtext,
                       style: AppTextStyles.label.copyWith(
-                        color: AppColors.neutral400, // Lightened for dark background contrast
+                        color: AppColors.neutral400,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.2,
                       ),

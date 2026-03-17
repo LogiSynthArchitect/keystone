@@ -6,13 +6,18 @@ class KnowledgeNoteRemoteDatasource {
   final SupabaseClient _supabase;
   KnowledgeNoteRemoteDatasource(this._supabase);
 
-  Future<List<KnowledgeNoteModel>> getNotes({required String userId, int limit = 25, int offset = 0}) async {
+  Future<List<KnowledgeNoteModel>> getNotes({required String userId, int limit = 25, int offset = 0, bool includeArchived = false}) async {
     try {
-      final data = await _supabase
+      var query = _supabase
           .from('knowledge_notes')
           .select()
-          .eq('user_id', userId)
-          .eq('is_archived', false)
+          .eq('user_id', userId);
+      
+      if (!includeArchived) {
+        query = query.eq('is_archived', false);
+      }
+
+      final data = await query
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
       return (data as List).map((e) => KnowledgeNoteModel.fromJson(e)).toList();

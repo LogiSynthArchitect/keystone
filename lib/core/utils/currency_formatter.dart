@@ -1,15 +1,20 @@
 class CurrencyFormatter {
   CurrencyFormatter._();
 
-  static double? parse(String input) {
+  /// Parses a string into pesewas (int).
+  /// Multiplies the value by 100 to convert to int storage.
+  static int? parseToPesewas(String input) {
     if (input.isEmpty) return null;
-    // Task 3: Harden Regex to strip all but digits and dots
     final cleaned = input.replaceAll(RegExp(r'[^0-9.]'), '').trim();
     if (cleaned.isEmpty) return null;
-    return double.tryParse(cleaned);
+    final val = double.tryParse(cleaned);
+    if (val == null) return null;
+    return (val * 100).round();
   }
 
-  static String format(double amount) {
+  /// Formats pesewas (int) into GHS string with 2 decimals.
+  static String format(int pesewas) {
+    final amount = pesewas / 100.0;
     final formatted = amount.toStringAsFixed(2);
     final parts = formatted.split('.');
     final intPart = parts[0].replaceAllMapped(
@@ -19,7 +24,9 @@ class CurrencyFormatter {
     return 'GHS $intPart.${parts[1]}';
   }
 
-  static String formatShort(double amount) {
+  /// Formats pesewas (int) into GHS string without decimals.
+  static String formatShort(int pesewas) {
+    final amount = pesewas / 100.0;
     final formatted = amount.toStringAsFixed(0);
     final intPart = formatted.replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),

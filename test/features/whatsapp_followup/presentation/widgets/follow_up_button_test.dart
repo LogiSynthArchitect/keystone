@@ -1,7 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/core/constants/app_enums.dart';
 
 void main() {
   group('FollowUpButton widget', () {

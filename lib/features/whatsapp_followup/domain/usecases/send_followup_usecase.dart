@@ -4,12 +4,14 @@ import '../entities/follow_up_entity.dart';
 import '../repositories/follow_up_repository.dart';
 
 class SendFollowupParams {
+  final String userId;
   final String jobId;
   final String customerId;
   final String customerPhone;
   final String messageText;
 
   const SendFollowupParams({
+    required this.userId,
     required this.jobId,
     required this.customerId,
     required this.customerPhone,
@@ -40,7 +42,7 @@ class SendFollowupUsecase implements UseCase<FollowUpEntity, SendFollowupParams>
     final followUp = FollowUpEntity(
       id: '',
       jobId: params.jobId,
-      userId: '',
+      userId: params.userId,
       customerId: params.customerId,
       messageText: params.messageText,
       sentAt: now,

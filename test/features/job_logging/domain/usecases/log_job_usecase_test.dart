@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:keystone/features/job_logging/domain/usecases/log_job_usecase.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
+import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
 import 'package:keystone/core/constants/app_enums.dart';
 import 'package:keystone/core/errors/validation_exception.dart';
 import '../../../../helpers/mocks.dart';
@@ -15,11 +16,26 @@ void main() {
 
   late LogJobUsecase usecase;
   late MockJobRepository mockRepository;
+  late MockCustomerRepository mockCustomerRepository;
 
   setUp(() {
     mockRepository = MockJobRepository();
-    usecase = LogJobUsecase(mockRepository);
+    mockCustomerRepository = MockCustomerRepository();
+    usecase = LogJobUsecase(mockRepository, mockCustomerRepository);
+    when(() => mockCustomerRepository.getCustomerById(any())).thenAnswer((_) async => throw UnimplementedError('Mocked out by test unless needed'));
   });
+
+  // Adding a dummy customer entity for the tests
+  final dummyCustomer = CustomerEntity(
+    id: 'customer-123',
+    userId: 'user-123',
+    fullName: 'Test Customer',
+    phoneNumber: '+233541234567',
+    totalJobs: 0,
+    syncStatus: SyncStatus.synced,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
 
   final validParams = LogJobParams(
     userId: 'user-123',
@@ -27,7 +43,7 @@ void main() {
     serviceType: ServiceType.carLockProgramming,
     jobDate: DateTime.now(),
     notes: 'Test job',
-    amountCharged: 150.00,
+    amountCharged: 150,
   );
 
   final fakeJob = JobEntity(
@@ -44,6 +60,10 @@ void main() {
   );
 
   group('LogJobUsecase', () {
+    setUp(() {
+       when(() => mockCustomerRepository.getCustomerById(any())).thenAnswer((_) async => dummyCustomer);
+    });
+
     test('saves job successfully with valid data', () async {
       when(() => mockRepository.createJob(any()))
           .thenAnswer((_) async => fakeJob);
@@ -92,7 +112,7 @@ void main() {
         customerId: 'customer-123',
         serviceType: ServiceType.carLockProgramming,
         jobDate: DateTime.now(),
-        amountCharged: -50.00,
+        amountCharged: -50,
       );
 
       expect(

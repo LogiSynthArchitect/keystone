@@ -18,7 +18,7 @@ class JobModel {
   final double? latitude;
   final double? longitude;
   final String? notes;
-  final double? amountCharged;
+  final int? amountCharged;
   final bool followUpSent;
   final DateTime? followUpSentAt;
   final String syncStatus;
@@ -49,8 +49,8 @@ class JobModel {
 
   factory JobModel.fromJson(Map<String, dynamic> json) => JobModel(
     id: json['id'],
-    userId: json['user_id'],
-    customerId: json['customer_id'],
+    userId: json['userId'] ?? json['user_id'],
+    customerId: json['customerId'] ?? json['customer_id'],
     // FIX [JOB-001]: Compare against snake_case to match DB
     serviceType: ServiceType.values.firstWhere(
       (e) => e.name.toSnakeCase() == json['service_type'],
@@ -61,7 +61,7 @@ class JobModel {
     latitude: json['latitude']?.toDouble(),
     longitude: json['longitude']?.toDouble(),
     notes: json['notes'],
-    amountCharged: json['amount_charged']?.toDouble(),
+    amountCharged: json['amount_charged']?.toInt(),
     followUpSent: json['follow_up_sent'] ?? false,
     followUpSentAt: json['follow_up_sent_at'] != null ? DateTime.parse(json['follow_up_sent_at']) : null,
     syncStatus: json['sync_status'] ?? 'pending',
@@ -111,4 +111,44 @@ class JobModel {
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
   );
+
+  JobModel copyWith({
+    String? id,
+    String? userId,
+    String? customerId,
+    ServiceType? serviceType,
+    DateTime? jobDate,
+    String? location,
+    double? latitude,
+    double? longitude,
+    String? notes,
+    int? amountCharged,
+    bool? followUpSent,
+    DateTime? followUpSentAt,
+    String? syncStatus,
+    String? syncErrorMessage,
+    bool? isArchived,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return JobModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      customerId: customerId ?? this.customerId,
+      serviceType: serviceType ?? this.serviceType,
+      jobDate: jobDate ?? this.jobDate,
+      location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      notes: notes ?? this.notes,
+      amountCharged: amountCharged ?? this.amountCharged,
+      followUpSent: followUpSent ?? this.followUpSent,
+      followUpSentAt: followUpSentAt ?? this.followUpSentAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
+      isArchived: isArchived ?? this.isArchived,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

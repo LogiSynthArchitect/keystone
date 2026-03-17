@@ -10,7 +10,7 @@ class JobEntity {
   final double? latitude;
   final double? longitude;
   final String? notes;
-  final double? amountCharged;
+  final int? amountCharged;
   final bool followUpSent;
   final DateTime? followUpSentAt;
   final SyncStatus syncStatus;
@@ -56,7 +56,7 @@ class JobEntity {
     double? latitude,
     double? longitude,
     String? notes,
-    double? amountCharged,
+    int? amountCharged,
     bool? followUpSent,
     DateTime? followUpSentAt,
     SyncStatus? syncStatus,

@@ -22,6 +22,7 @@ class RouteNames {
   static String noteDetail(String id) => '/notes/$id';
   // Profile sub-routes
   static const String editProfile = '/profile/edit';
+  static const String adminRequests = '/admin/requests';
   // Public
   static String publicProfile(String slug) => '/p/$slug';
 }

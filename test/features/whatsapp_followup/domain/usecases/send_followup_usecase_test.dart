@@ -1,10 +1,8 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:keystone/features/whatsapp_followup/domain/usecases/send_followup_usecase.dart';
 import 'package:keystone/features/whatsapp_followup/domain/entities/follow_up_entity.dart';
-import 'package:keystone/core/errors/validation_exception.dart';
 import '../../../../helpers/mocks.dart';
 
 class FakeFollowUp extends Fake implements FollowUpEntity {}
@@ -35,7 +33,8 @@ void main() {
         .thenAnswer((_) async => true);
   });
 
-  final validParams = SendFollowupParams(
+  const validParams = SendFollowupParams(
+    userId: 'user-123',
     jobId: '550e8400-e29b-41d4-a716-446655440000',
     customerId: 'customer-123',
     customerPhone: '+233244123456',
@@ -86,7 +85,8 @@ void main() {
       when(() => mockRepository.getFollowUpByJobId(any()))
           .thenAnswer((_) async => null);
 
-      final localOnlyParams = SendFollowupParams(
+      const localOnlyParams = SendFollowupParams(
+        userId: 'user-123',
         jobId: 'local-temp-id-not-uuid',
         customerId: 'customer-123',
         customerPhone: '+233244123456',

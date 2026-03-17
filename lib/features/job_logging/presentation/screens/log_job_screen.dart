@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -9,6 +10,7 @@ import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../providers/job_providers.dart';
 import '../widgets/service_type_picker.dart';
 
@@ -21,6 +23,9 @@ class LogJobScreen extends ConsumerStatefulWidget {
 }
 
 class _LogJobScreenState extends ConsumerState<LogJobScreen> {
+  int _currentStep = 0;
+  final int _totalSteps = 3;
+
   ServiceType? _serviceType;
   String? _finalCustomerId;
 
@@ -30,14 +35,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   final _amountController   = TextEditingController();
   final _notesController    = TextEditingController();
 
-  final ValueNotifier<bool> _canSaveNotifier = ValueNotifier(false);
   DateTime _jobDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _customerController.addListener(_validateForm);
-    _phoneController.addListener(_validateForm);
     if (widget.preSelectedCustomerId != null) {
       _finalCustomerId = widget.preSelectedCustomerId;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -52,13 +54,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     }
   }
 
-  void _validateForm() {
-    final canSave = _serviceType != null &&
-        _customerController.text.trim().isNotEmpty &&
-        (widget.preSelectedCustomerId != null || _phoneController.text.trim().isNotEmpty);
-    if (_canSaveNotifier.value != canSave) _canSaveNotifier.value = canSave;
-  }
-
   @override
   void dispose() {
     _customerController.dispose();
@@ -66,15 +61,41 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     _locationController.dispose();
     _amountController.dispose();
     _notesController.dispose();
-    _canSaveNotifier.dispose();
     super.dispose();
   }
 
-  // Task 1: Check if form has data before allowing pop
   bool get _isDirty => _serviceType != null || 
                       _customerController.text.isNotEmpty || 
                       _amountController.text.isNotEmpty || 
                       _notesController.text.isNotEmpty;
+
+  bool get _canMoveForward {
+    switch (_currentStep) {
+      case 0: return _serviceType != null;
+      case 1: return _customerController.text.trim().isNotEmpty && (widget.preSelectedCustomerId != null || _phoneController.text.trim().isNotEmpty);
+      case 2: return true; 
+      default: return false;
+    }
+  }
+
+  void _nextStep() {
+    if (_currentStep < _totalSteps - 1) {
+      HapticFeedback.mediumImpact();
+      setState(() => _currentStep++);
+    } else {
+      _onSave();
+    }
+  }
+
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+    } else {
+      _confirmDiscard().then((ok) {
+        if (ok && mounted) Navigator.of(context).pop();
+      });
+    }
+  }
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
@@ -86,13 +107,14 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         content: Text('Your entered job details will be lost. Leave anyway?', style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('KEEP EDITING')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('DISCARD', style: TextStyle(color: AppColors.error500, fontWeight: FontWeight.bold))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('DISCARD', style: TextStyle(color: AppColors.error500, fontWeight: FontWeight.bold))),
         ],
       ),
     ) ?? false;
   }
 
   Future<void> _onSave() async {
+    HapticFeedback.heavyImpact();
     final amountText = _amountController.text.trim();
     final job = await ref.read(logJobProvider.notifier).save(
       serviceType: _serviceType!,
@@ -119,100 +141,235 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return PopScope(
-      canPop: false, // Always intercept to check _isDirty
-      onPopInvokedWithResult: (didPop, result) async {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (await _confirmDiscard()) {
-          if (context.mounted) Navigator.of(context).pop();
-        }
+        _previousStep();
       },
       child: Scaffold(
         backgroundColor: AppColors.primary900,
-        appBar: const KsAppBar(title: "ADD NEW JOB", showBack: true),
+        appBar: KsAppBar(
+          title: "ADD NEW JOB", 
+          showBack: true,
+          onBack: _previousStep,
+        ),
         body: Column(
           children: [
             const KsOfflineBanner(),
+            _buildStepIndicator(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("SELECT SERVICE", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 12),
-                    ServiceTypePicker(
-                      selected: _serviceType,
-                      onSelected: (t) { setState(() => _serviceType = t); _validateForm(); }
-                    ),
-                    const SizedBox(height: 32),
-                    _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null),
-                    if (widget.preSelectedCustomerId == null) ...[
-                      const SizedBox(height: 24),
-                      _buildDarkField(label: "Phone Number", hint: "024 123 4567", controller: _phoneController, type: TextInputType.phone),
-                    ],
-                    const SizedBox(height: 24),
-                    _buildDarkField(label: "Location", hint: "East Legon, Accra", controller: _locationController),
-                    const SizedBox(height: 24),
-                    _buildDarkField(label: "Amount (GHS)", hint: "350", controller: _amountController, type: TextInputType.number),
-                    const SizedBox(height: 24),
-                    _buildDarkField(label: "Notes", hint: "Specific hardware used...", controller: _notesController, maxLines: 3),
-                    const SizedBox(height: 24),
-                    Text("DATE", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(context: context, initialDate: _jobDate, firstDate: DateTime(2024), lastDate: DateTime.now());
-                        if (picked != null) setState(() => _jobDate = picked);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: AppColors.primary800, borderRadius: BorderRadius.circular(4)),
-                        child: Row(children: [
-                          const Icon(LineAwesomeIcons.calendar, size: 20, color: AppColors.accent500),
-                          const SizedBox(width: 12),
-                          Text(_jobDate.toIso8601String().split('T').first, style: AppTextStyles.bodyLarge.copyWith(color: Colors.white)),
-                        ]),
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                  ],
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: SingleChildScrollView(
+                  key: ValueKey<int>(_currentStep),
+                  padding: const EdgeInsets.all(24.0),
+                  child: _buildCurrentStep(),
                 ),
               ),
             ),
-            if (!keyboardVisible)
-              ValueListenableBuilder<bool>(
-                valueListenable: _canSaveNotifier,
-                builder: (context, canSave, _) => Container(
-                  width: double.infinity,
-                  color: AppColors.primary700,
-                  padding: const EdgeInsets.all(24.0),
-                  child: SafeArea(
-                    top: false,
-                    child: InkWell(
-                      onTap: canSave && !state.isLoading ? _onSave : null,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('SAVE JOB', style: AppTextStyles.h2.copyWith(color: canSave ? Colors.white : Colors.white.withValues(alpha: 0.3), fontWeight: FontWeight.w900)),
-                          if (state.isLoading) const CircularProgressIndicator(color: AppColors.accent500)
-                          else const Icon(LineAwesomeIcons.arrow_right_solid, color: AppColors.accent500),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            if (!keyboardVisible) _buildBottomAction(state.isLoading),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDarkField({required String label, required String hint, required TextEditingController controller, TextInputType type = TextInputType.text, int maxLines = 1, bool readOnly = false}) {
+  Widget _buildStepIndicator() {
+    final stepLabels = ["SERVICE", "ENTITY", "LOGISTICS"];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      decoration: const BoxDecoration(
+        color: AppColors.primary800,
+        border: Border(bottom: BorderSide(color: AppColors.primary700)),
+      ),
+      child: Row(
+        children: List.generate(_totalSteps, (index) {
+          final isActive = index == _currentStep;
+          final isCompleted = index < _currentStep;
+          return Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: isActive ? AppColors.accent500 : (isCompleted ? AppColors.accent500.withValues(alpha: 0.2) : AppColors.primary900),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: isActive ? AppColors.accent500 : AppColors.primary700),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "${index + 1}",
+                      style: AppTextStyles.caption.copyWith(
+                        color: isActive ? AppColors.primary900 : (isCompleted ? AppColors.accent500 : AppColors.neutral500),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+                if (isActive) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    stepLabels[index],
+                    style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                  ),
+                ],
+                if (index < _totalSteps - 1) 
+                  const Expanded(child: Divider(color: AppColors.primary700, indent: 8, endIndent: 8)),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildCurrentStep() {
+    switch (_currentStep) {
+      case 0: return _buildStep1();
+      case 1: return _buildStep2();
+      case 2: return _buildStep3();
+      default: return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("SELECT SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("Identify the core technical operation performed.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        const SizedBox(height: 32),
+        ServiceTypePicker(
+          selected: _serviceType,
+          onSelected: (t) => setState(() => _serviceType = t),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("CUSTOMER ENTITY", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("Verify whom this service record is attached to.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        const SizedBox(height: 32),
+        _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null),
+        if (widget.preSelectedCustomerId == null) ...[
+          const SizedBox(height: 24),
+          _buildDarkField(
+            label: "Phone Number", 
+            hint: "024 123 4567", 
+            controller: _phoneController, 
+            type: TextInputType.phone,
+            fieldHint: "Required for WhatsApp follow-ups.",
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStep3() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("JOB LOGISTICS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("Finalize location, pricing, and technical notes.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        const SizedBox(height: 32),
+        _buildDarkField(
+          label: "Location", 
+          hint: "East Legon, Accra", 
+          controller: _locationController,
+          fieldHint: "Include landmarks for return service.",
+        ),
+        const SizedBox(height: 24),
+        _buildDarkField(
+          label: "Amount (GHS)", 
+          hint: "350", 
+          controller: _amountController, 
+          type: TextInputType.number,
+          fieldHint: "Total charged (Hardware + Labor).",
+        ),
+        const SizedBox(height: 24),
+        _buildDarkField(label: "Notes", hint: "Specific hardware used...", controller: _notesController, maxLines: 3),
+        const SizedBox(height: 24),
+        Text("DATE", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(context: context, initialDate: _jobDate, firstDate: DateTime(2024), lastDate: DateTime.now());
+            if (picked != null) setState(() => _jobDate = picked);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: AppColors.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
+            child: Row(children: [
+              const Icon(LineAwesomeIcons.calendar, size: 20, color: AppColors.accent500),
+              const SizedBox(width: 12),
+              Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomAction(bool isLoading) {
+    final isLastStep = _currentStep == _totalSteps - 1;
+    final canGo = _canMoveForward;
+
+    return Container(
+      width: double.infinity,
+      color: AppColors.primary700,
+      padding: const EdgeInsets.all(24.0),
+      child: SafeArea(
+        top: false,
+        child: InkWell(
+          onTap: canGo && !isLoading ? _nextStep : null,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isLastStep ? 'SAVE JOB RECORD' : 'NEXT STEP', 
+                style: AppTextStyles.h2.copyWith(
+                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3), 
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                )
+              ),
+              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
+              else Icon(
+                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
+                color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDarkField({
+    required String label, 
+    required String hint, 
+    required TextEditingController controller, 
+    TextInputType type = TextInputType.text, 
+    int maxLines = 1, 
+    bool readOnly = false,
+    String? fieldHint,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
+        if (fieldHint != null) ...[
+          const SizedBox(height: 4),
+          Text(fieldHint, style: AppTextStyles.caption.copyWith(color: AppColors.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5)),
+        ],
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(color: AppColors.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
@@ -221,6 +378,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             keyboardType: type,
             maxLines: maxLines,
             readOnly: readOnly,
+            onChanged: (_) => setState(() {}),
             style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? AppColors.neutral500 : Colors.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
           ),

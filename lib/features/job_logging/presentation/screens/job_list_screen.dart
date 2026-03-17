@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -21,12 +22,16 @@ class JobListScreen extends ConsumerStatefulWidget {
 
 class _JobListScreenState extends ConsumerState<JobListScreen> {
   late final TextEditingController _searchController;
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchFocused = false;
 
   @override
   void initState() {
     super.initState();
-    // Task 1: Initialize controller with existing search state to prevent "Visual Amnesia"
     _searchController = TextEditingController(text: ref.read(jobListProvider).searchQuery);
+    _searchFocusNode.addListener(() {
+      setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+    });
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.listenManual(jobListProvider, (prev, next) {
@@ -40,6 +45,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -60,18 +66,32 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
       appBar: KsAppBar(
         title: "MY JOBS",
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(72),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) => ref.read(jobListProvider.notifier).setSearchQuery(val),
-              decoration: InputDecoration(
-                hintText: "Search jobs...",
-                prefixIcon: const Icon(LineAwesomeIcons.search_solid),
-                filled: true,
-                fillColor: AppColors.primary800,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary800,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: _isSearchFocused ? AppColors.accent500 : AppColors.primary700,
+                  width: _isSearchFocused ? 2 : 1,
+                ),
+              ),
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: (val) => ref.read(jobListProvider.notifier).setSearchQuery(val),
+                style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
+                cursorColor: AppColors.accent500,
+                decoration: InputDecoration(
+                  hintText: "SEARCH DATABASE...",
+                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.neutral600, letterSpacing: 1.0),
+                  prefixIcon: Icon(LineAwesomeIcons.search_solid, color: _isSearchFocused ? AppColors.accent500 : AppColors.neutral500, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           ),
@@ -82,19 +102,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
           const KsOfflineBanner(),
           Expanded(
             child: state.isLoading
-                ? ListView.separated(
-                    padding: const EdgeInsets.all(24.0),
-                    itemCount: 4,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (_, __) => Container(
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary800,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                      ),
-                    ),
-                  )
+                ? _buildLoadingState()
                 : state.filteredJobs.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
@@ -108,7 +116,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                               child: _SummaryStrip(
                                 totalJobs: state.totalJobs,
                                 monthEarnings: state.thisMonthEarnings
-                              )
+                              ).animate().fadeIn().slideY(begin: 0.1, end: 0)
                             ),
                             SliverPadding(
                               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
@@ -139,10 +147,28 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         onPressed: () => context.push(RouteNames.logJob),
         backgroundColor: AppColors.accent500,
         foregroundColor: AppColors.primary900,
-        elevation: 4,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 0, onTabTapped: _onTabTapped),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(24.0),
+      itemCount: 4,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (_, __) => Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: AppColors.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: AppColors.primary700),
+        ),
+      ).animate(onPlay: (controller) => controller.repeat())
+       .shimmer(duration: 1200.ms, color: AppColors.primary700.withValues(alpha: 0.5)),
     );
   }
 
@@ -153,15 +179,15 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(LineAwesomeIcons.folder_open_solid, size: 80, color: Colors.white.withValues(alpha: 0.05)),
+            const Icon(LineAwesomeIcons.database_solid, size: 80, color: AppColors.primary800),
             const SizedBox(height: 24),
             Text(
-              "NO JOBS YET",
+              "NO RECORDS FOUND",
               style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
             ),
             const SizedBox(height: 12),
             Text(
-              "You haven't logged any jobs.\nTap the + button to add your first job.",
+              "System database is currently empty.\nInitialize your first job log.",
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, height: 1.5)
             ),
@@ -174,7 +200,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
 
 class _SummaryStrip extends StatelessWidget {
   final int totalJobs;
-  final double monthEarnings;
+  final int monthEarnings;
 
   const _SummaryStrip({required this.totalJobs, required this.monthEarnings});
 
@@ -186,13 +212,13 @@ class _SummaryStrip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3), width: 1),
+        border: Border.all(color: AppColors.primary700, width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _Stat(value: "$totalJobs", label: "TOTAL JOBS"),
-          Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.1)),
+          _Stat(value: "$totalJobs", label: "TOTAL LOGS"),
+          Container(width: 1, height: 40, color: AppColors.primary700),
           _Stat(value: monthEarnings > 0 ? CurrencyFormatter.formatShort(monthEarnings) : "—", label: "THIS MONTH"),
         ],
       ),
@@ -210,9 +236,9 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+        Text(value, style: AppTextStyles.h1.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0)),
         const SizedBox(height: 4),
-        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
       ]
     );
   }

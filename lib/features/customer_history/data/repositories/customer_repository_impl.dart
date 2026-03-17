@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/network/connectivity_service.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
+import '../../../../core/constants/app_enums.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../datasources/customer_remote_datasource.dart';
@@ -24,7 +25,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
     if (await _connectivity.isConnected) {
       try {
         final models = await _remote.getCustomers(userId: _userId, limit: limit, offset: offset);
-        for (var m in models) await _local.saveCustomer(m);
+        for (var m in models) {
+          await _local.saveCustomer(m);
+        }
         return models.map((m) => m.toEntity()).toList();
       } catch (_) {}
     }
@@ -73,7 +76,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       location: customer.location,
       notes: customer.notes,
       totalJobs: 0,
-      syncStatus: 'pending',
+      syncStatus: SyncStatus.pending,
       createdAt: now,
       updatedAt: now,
     );
@@ -98,7 +101,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
           notes: remoteModel.notes,
           totalJobs: remoteModel.totalJobs,
           lastJobAt: remoteModel.lastJobAt,
-          syncStatus: 'synced',
+          syncStatus: SyncStatus.synced,
           createdAt: remoteModel.createdAt,
           updatedAt: remoteModel.updatedAt,
         );
@@ -128,7 +131,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       notes: customer.notes,
       totalJobs: existing?.totalJobs ?? 0,
       lastJobAt: existing?.lastJobAt,
-      syncStatus: 'pending',
+      syncStatus: SyncStatus.pending,
       createdAt: existing?.createdAt ?? DateTime.now().toIso8601String(),
       updatedAt: DateTime.now().toIso8601String(),
     );
@@ -153,7 +156,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
           notes: remoteModel.notes,
           totalJobs: remoteModel.totalJobs,
           lastJobAt: remoteModel.lastJobAt,
-          syncStatus: 'synced',
+          syncStatus: SyncStatus.synced,
           createdAt: remoteModel.createdAt,
           updatedAt: remoteModel.updatedAt,
         );
@@ -166,23 +169,20 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   Future<void> deleteCustomer(String id) async {
-    // Task 4: Standardize Deletion Sync - Local Always -> Remote Maybe
     try {
       final existing = await _local.getCustomer(id);
       if (existing == null) return;
 
-      // Purge local instantly for UI responsiveness
-      await _local.deleteCustomer(id);
+      // Mark as deleted locally (tombstone)
+      await _local.tombstoneCustomer(id);
 
       // Attempt remote delete if connected
       if (await _connectivity.isConnected) {
         try {
           await _remote.deleteCustomer(id);
-        } catch (_) {
-          // Swallow network error. If this was an offline delete, 
-          // a separate background sync worker would be needed to 
-          // reconcile 'deleted_at' for Customer entities.
-        }
+          // If remote success, we can hard delete locally
+          await _local.deleteCustomer(id);
+        } catch (_) {}
       }
     } catch (_) {}
   }
@@ -210,26 +210,56 @@ class CustomerRepositoryImpl implements CustomerRepository {
     if (!await _connectivity.isConnected) return;
 
     try {
-      final result = await _remote.batchSyncCustomers(_userId, pending.map((m) => m.toJson()).toList());
-      final syncedList = result['synced'] as List<dynamic>? ?? [];
+      // 1. Process deletions
+      final deletions = pending.where((c) => c.syncStatus == SyncStatus.deleted).toList();
+      for (final c in deletions) {
+        try {
+          await _remote.deleteCustomer(c.id);
+          await _local.deleteCustomer(c.id);
+        } catch (_) {}
+      }
 
+      // 2. Process upserts
+      final toUpserts = pending.where((c) => c.syncStatus == SyncStatus.pending).toList();
+      if (toUpserts.isEmpty) return;
+
+      final result = await _remote.batchSyncCustomers(_userId, toUpserts.map((m) => m.toJson()).toList());
+      final syncedList = result['synced'] as List<dynamic>? ?? [];
+      final failedList = result['failed'] as List<dynamic>? ?? [];
+
+      // 1. Process successful syncs
       for (final syncedItem in syncedList) {
         final localId = syncedItem['local_id'] as String;
         final serverId = syncedItem['server_id'] as String;
-        final syncStatus = syncedItem['sync_status'] as String;
+        final syncStatusStr = syncedItem['sync_status'] as String;
+        final syncStatus = SyncStatus.values.firstWhere((e) => e.name == syncStatusStr, orElse: () => SyncStatus.synced);
 
-        final originalCustomer = pending.firstWhere((c) => c.id == localId);
-        final updatedJson = originalCustomer.toJson();
-        updatedJson['id'] = serverId;
-        updatedJson['sync_status'] = syncStatus;
-        
-        final updatedModel = CustomerModel.fromJson(updatedJson);
+        final originalCustomer = toUpserts.firstWhere((c) => c.id == localId);
+        final updatedModel = originalCustomer.copyWith(
+          id: serverId,
+          syncStatus: syncStatus,
+        );
 
         if (localId != serverId) {
           await _jobLocal.cascadeCustomerId(localId, serverId);
           await _local.deleteCustomer(localId); 
         }
         await _local.saveCustomer(updatedModel);
+      }
+
+      // 2. Process failed syncs
+      for (final failedItem in failedList) {
+        final localId = failedItem['local_id'] as String;
+        final errorMessage = failedItem['error'] as String?;
+        final originalCustomer = toUpserts.where((c) => c.id == localId).firstOrNull;
+        
+        if (originalCustomer != null) {
+          final failedModel = originalCustomer.copyWith(
+            syncStatus: SyncStatus.failed,
+            syncErrorMessage: errorMessage ?? 'Server rejection',
+          );
+          await _local.saveCustomer(failedModel);
+        }
       }
     } catch (_) {}
   }

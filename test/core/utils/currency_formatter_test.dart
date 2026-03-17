@@ -2,41 +2,41 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:keystone/core/utils/currency_formatter.dart';
 
 void main() {
-  group('CurrencyFormatter.parse', () {
-    test('parses valid amount string to double', () {
-      expect(CurrencyFormatter.parse('150.00'), equals(150.00));
+  group('CurrencyFormatter.parseToPesewas', () {
+    test('parses valid amount string to pesewas (int)', () {
+      expect(CurrencyFormatter.parseToPesewas('150.00'), equals(15000));
     });
 
     test('strips commas before parsing', () {
-      expect(CurrencyFormatter.parse('1,500.00'), equals(1500.00));
+      expect(CurrencyFormatter.parseToPesewas('1,500.00'), equals(150000));
     });
 
     test('returns null for empty string', () {
-      expect(CurrencyFormatter.parse(''), isNull);
+      expect(CurrencyFormatter.parseToPesewas(''), isNull);
     });
 
     test('returns null for non-numeric string', () {
-      expect(CurrencyFormatter.parse('abc'), isNull);
+      expect(CurrencyFormatter.parseToPesewas('abc'), isNull);
     });
   });
 
   group('CurrencyFormatter.format', () {
-    test('formats amount with GHS prefix', () {
-      expect(CurrencyFormatter.format(150.00), startsWith('GHS'));
+    test('formats pesewas with GHS prefix', () {
+      expect(CurrencyFormatter.format(15000), startsWith('GHS'));
     });
 
-    test('formats amount with two decimal places', () {
-      expect(CurrencyFormatter.format(150.00), equals('GHS 150.00'));
+    test('formats pesewas with two decimal places', () {
+      expect(CurrencyFormatter.format(15000), equals('GHS 150.00'));
     });
 
     test('formats large amount with comma separator', () {
-      expect(CurrencyFormatter.format(1500.00), equals('GHS 1,500.00'));
+      expect(CurrencyFormatter.format(150000), equals('GHS 1,500.00'));
     });
   });
 
   group('CurrencyFormatter.formatShort', () {
-    test('formats amount without decimal places', () {
-      expect(CurrencyFormatter.formatShort(150.00), equals('GHS 150'));
+    test('formats pesewas without decimal places', () {
+      expect(CurrencyFormatter.formatShort(15000), equals('GHS 150'));
     });
   });
 }

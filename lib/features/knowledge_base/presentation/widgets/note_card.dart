@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -19,7 +20,7 @@ class NoteCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: AppColors.primary700),
         ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -27,10 +28,12 @@ class NoteCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                const Icon(LineAwesomeIcons.terminal_solid, size: 14, color: AppColors.accent500),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     note.title.toUpperCase(), 
-                    style: AppTextStyles.bodyMedium.copyWith(
+                    style: AppTextStyles.body.copyWith(
                       color: AppColors.white, 
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
@@ -43,16 +46,17 @@ class NoteCard extends StatelessWidget {
                 Text(
                   DateFormatter.short(note.createdAt).toUpperCase(), 
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.accent500, 
-                    fontWeight: FontWeight.w700
+                    color: AppColors.neutral500, 
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                   )
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               note.description, 
-              style: AppTextStyles.body.copyWith(color: AppColors.neutral400, height: 1.4), 
+              style: AppTextStyles.body.copyWith(color: AppColors.neutral400, height: 1.5, fontWeight: FontWeight.w500), 
               maxLines: 2, 
               overflow: TextOverflow.ellipsis
             ),
@@ -61,7 +65,7 @@ class NoteCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: note.tags.take(4).map((tag) => _TagChip(tag: tag)).toList(),
+                children: note.tags.take(3).map((tag) => _TagChip(tag: tag)).toList(),
               ),
             ],
           ],
@@ -80,16 +84,17 @@ class _TagChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.accent500.withValues(alpha: 0.05),
+        color: AppColors.primary900,
         borderRadius: BorderRadius.circular(2),
-        border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.primary700),
       ),
       child: Text(
-        "#${tag.toLowerCase()}", 
-        style: AppTextStyles.labelSmall.copyWith(
+        "#${tag.toUpperCase()}", 
+        style: AppTextStyles.caption.copyWith(
           color: AppColors.accent500, 
           fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
+          letterSpacing: 1.0,
+          fontSize: 9,
         )
       ),
     );

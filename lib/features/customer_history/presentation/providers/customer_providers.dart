@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
-import '../../../../core/network/connectivity_service.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/constants/app_enums.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
@@ -19,9 +19,6 @@ final customerLocalDatasourceProvider = Provider<CustomerLocalDatasource>(
 
 final customerRemoteDatasourceProvider = Provider<CustomerRemoteDatasource>(
   (ref) => CustomerRemoteDatasource(ref.watch(supabaseClientProvider)));
-
-final connectivityServiceProvider = Provider<ConnectivityService>(
-  (ref) => ConnectivityService());
 
 final customerRepositoryProvider = Provider<CustomerRepository>(
   (ref) => CustomerRepositoryImpl(
@@ -51,6 +48,7 @@ class CustomerListState {
   final bool isSearching;
   final String? errorMessage;
   final String searchQuery;
+  final String filterType; // 'all', 'recent', 'repeat'
 
   const CustomerListState({
     this.customers = const [],
@@ -59,9 +57,24 @@ class CustomerListState {
     this.isSearching = false,
     this.errorMessage,
     this.searchQuery = '',
+    this.filterType = 'all',
   });
 
-  List<CustomerEntity> get displayed => searchQuery.isEmpty ? customers : searchResults;
+  List<CustomerEntity> get displayed {
+    List<CustomerEntity> base = searchQuery.isEmpty ? customers : searchResults;
+    
+    if (filterType == 'recent') {
+      // Logic for recent: Created in last 7 days (mock logic for V1)
+      final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+      return base.where((c) => c.createdAt.isAfter(weekAgo)).toList();
+    }
+    
+    if (filterType == 'repeat') {
+      return base.where((c) => c.totalJobs > 1).toList();
+    }
+
+    return base;
+  }
 
   CustomerListState copyWith({
     List<CustomerEntity>? customers,
@@ -70,6 +83,7 @@ class CustomerListState {
     bool? isSearching,
     String? errorMessage,
     String? searchQuery,
+    String? filterType,
     bool clearError = false,
   }) => CustomerListState(
     customers: customers ?? this.customers,
@@ -78,6 +92,7 @@ class CustomerListState {
     isSearching: isSearching ?? this.isSearching,
     errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     searchQuery: searchQuery ?? this.searchQuery,
+    filterType: filterType ?? this.filterType,
   );
 }
 
@@ -89,11 +104,15 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final allCustomers = await _repository.getCustomers();
-      final activeCustomers = allCustomers.where((c) => c.syncStatus == SyncStatus.synced).toList();
-      state = state.copyWith(customers: activeCustomers, isLoading: false);
+      // For V1, we show all synced customers
+      state = state.copyWith(customers: allCustomers, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load customers.');
     }
+  }
+
+  void setFilter(String type) {
+    state = state.copyWith(filterType: type);
   }
 
   Future<void> search(String query) async {
@@ -105,8 +124,7 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
     state = state.copyWith(isSearching: true);
     try {
       final results = await _repository.searchCustomers(query);
-      final filteredResults = results.where((c) => c.syncStatus == SyncStatus.synced).toList();
-      state = state.copyWith(searchResults: filteredResults, isSearching: false);
+      state = state.copyWith(searchResults: results, isSearching: false);
     } catch (e) {
       state = state.copyWith(isSearching: false, searchResults: []);
     }

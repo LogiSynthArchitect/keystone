@@ -1,3 +1,4 @@
+import '../../../../core/constants/app_enums.dart';
 import '../../domain/entities/customer_entity.dart';
 
 class CustomerModel {
@@ -9,7 +10,8 @@ class CustomerModel {
   final String? notes;
   final int totalJobs;
   final String? lastJobAt;
-  final String syncStatus;
+  final SyncStatus syncStatus;
+  final String? syncErrorMessage;
   final String createdAt;
   final String updatedAt;
 
@@ -22,7 +24,8 @@ class CustomerModel {
     this.notes,
     required this.totalJobs,
     this.lastJobAt,
-    this.syncStatus = 'synced',
+    this.syncStatus = SyncStatus.synced,
+    this.syncErrorMessage,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,10 +39,18 @@ class CustomerModel {
         notes: json['notes'] as String?,
         totalJobs: (json['total_jobs'] as num).toInt(),
         lastJobAt: json['last_job_at'] as String?,
-        syncStatus: json['sync_status'] as String? ?? 'synced',
+        syncStatus: _parseSyncStatus(json['sync_status'] as String? ?? 'synced'),
+        syncErrorMessage: json['sync_error_message'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
+
+  static SyncStatus _parseSyncStatus(String value) {
+    return SyncStatus.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => SyncStatus.synced,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -50,7 +61,8 @@ class CustomerModel {
         'notes': notes,
         'total_jobs': totalJobs,
         'last_job_at': lastJobAt,
-        'sync_status': syncStatus,
+        'sync_status': syncStatus.name,
+        'sync_error_message': syncErrorMessage,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -64,7 +76,39 @@ class CustomerModel {
         notes: notes,
         totalJobs: totalJobs,
         lastJobAt: lastJobAt != null ? DateTime.parse(lastJobAt!) : null,
+        syncStatus: syncStatus,
+        syncErrorMessage: syncErrorMessage,
         createdAt: DateTime.parse(createdAt),
         updatedAt: DateTime.parse(updatedAt),
       );
+
+  CustomerModel copyWith({
+    String? id,
+    String? userId,
+    String? fullName,
+    String? phoneNumber,
+    String? location,
+    String? notes,
+    int? totalJobs,
+    String? lastJobAt,
+    SyncStatus? syncStatus,
+    String? syncErrorMessage,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return CustomerModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      fullName: fullName ?? this.fullName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      location: location ?? this.location,
+      notes: notes ?? this.notes,
+      totalJobs: totalJobs ?? this.totalJobs,
+      lastJobAt: lastJobAt ?? this.lastJobAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

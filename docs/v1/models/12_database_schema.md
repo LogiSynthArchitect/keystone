@@ -177,6 +177,21 @@ CREATE TABLE follow_ups (
 CREATE INDEX idx_follow_ups_job_id ON follow_ups(job_id);
 CREATE INDEX idx_follow_ups_user_id ON follow_ups(user_id);
 
+-- correction_requests
+CREATE TABLE correction_requests (
+  id            UUID          PRIMARY KEY DEFAULT uuid_generate_v4(),
+  job_id        UUID          NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  user_id       UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason        TEXT          NOT NULL,
+  status        TEXT          NOT NULL DEFAULT 'pending',
+  admin_notes   TEXT,
+  created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_correction_requests_status ON correction_requests(status);
+CREATE INDEX idx_correction_requests_user_id ON correction_requests(user_id);
+
 ---
 
 ## 12.4 Triggers
@@ -199,6 +214,8 @@ CREATE TRIGGER update_jobs_updated_at
   BEFORE UPDATE ON jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_knowledge_notes_updated_at
   BEFORE UPDATE ON knowledge_notes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_correction_requests_updated_at
+  BEFORE UPDATE ON correction_requests FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE OR REPLACE FUNCTION update_customer_job_stats()
 RETURNS TRIGGER AS $$
@@ -309,6 +326,8 @@ CREATE POLICY customers_insert_own ON customers
   FOR INSERT WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
 CREATE POLICY customers_update_own ON customers
   FOR UPDATE USING (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
+CREATE POLICY customers_admin_all ON customers
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE auth_id = auth.uid() AND role = 'admin'));
 
 -- jobs RLS
 CREATE POLICY jobs_select_own ON jobs
@@ -317,6 +336,8 @@ CREATE POLICY jobs_insert_own ON jobs
   FOR INSERT WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
 CREATE POLICY jobs_update_own ON jobs
   FOR UPDATE USING (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
+CREATE POLICY jobs_admin_all ON jobs
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE auth_id = auth.uid() AND role = 'admin'));
 
 -- knowledge_notes RLS
 CREATE POLICY notes_select_own ON knowledge_notes
@@ -331,6 +352,14 @@ CREATE POLICY followups_select_own ON follow_ups
   FOR SELECT USING (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
 CREATE POLICY followups_insert_own ON follow_ups
   FOR INSERT WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
+
+-- correction_requests RLS
+CREATE POLICY correction_requests_select_own ON correction_requests
+  FOR SELECT USING (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
+CREATE POLICY correction_requests_insert_own ON correction_requests
+  FOR INSERT WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_id = auth.uid()));
+CREATE POLICY correction_requests_admin_all ON correction_requests
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE auth_id = auth.uid() AND role = 'admin'));
 
 ---
 

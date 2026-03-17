@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
 import '../../data/datasources/follow_up_remote_datasource.dart';
+import '../../data/datasources/follow_up_local_datasource.dart';
 import '../../data/repositories/follow_up_repository_impl.dart';
 import '../../domain/entities/follow_up_entity.dart';
 import '../../domain/repositories/follow_up_repository.dart';
@@ -11,8 +12,15 @@ import '../../domain/usecases/build_followup_message_usecase.dart';
 final followUpRemoteDatasourceProvider = Provider<FollowUpRemoteDatasource>(
   (ref) => FollowUpRemoteDatasource(ref.watch(supabaseClientProvider)));
 
+final followUpLocalDatasourceProvider = Provider<FollowUpLocalDatasource>(
+  (ref) => FollowUpLocalDatasource());
+
 final followUpRepositoryProvider = Provider<FollowUpRepository>(
-  (ref) => FollowUpRepositoryImpl(ref.watch(followUpRemoteDatasourceProvider), ref.watch(supabaseClientProvider)));
+  (ref) => FollowUpRepositoryImpl(
+    ref.watch(followUpRemoteDatasourceProvider), 
+    ref.watch(supabaseClientProvider),
+    ref.watch(followUpLocalDatasourceProvider),
+  ));
 
 final sendFollowupUsecaseProvider = Provider<SendFollowupUsecase>(
   (ref) => SendFollowupUsecase(ref.watch(followUpRepositoryProvider)));
@@ -53,7 +61,8 @@ class FollowUpState {
 
 class FollowUpNotifier extends StateNotifier<FollowUpState> {
   final SendFollowupUsecase _sendFollowup;
-  FollowUpNotifier(this._sendFollowup) : super(const FollowUpState());
+  final String _userId;
+  FollowUpNotifier(this._sendFollowup, this._userId) : super(const FollowUpState());
 
   void buildPreview({
     required String customerName,
@@ -88,6 +97,7 @@ class FollowUpNotifier extends StateNotifier<FollowUpState> {
         profileUrl: profileUrl,
       );
       final followUp = await _sendFollowup(SendFollowupParams(
+        userId: _userId,
         jobId: jobId,
         customerId: customerId,
         customerPhone: customerPhone,
@@ -107,5 +117,6 @@ state = state.copyWith(isLoading: false, errorMessage: e.toString());
 final followUpProvider = StateNotifierProvider.family<FollowUpNotifier, FollowUpState, String>(
   (ref, jobId) => FollowUpNotifier(
     ref.watch(sendFollowupUsecaseProvider),
+    ref.watch(supabaseClientProvider).auth.currentUser?.id ?? '',
   ),
 );

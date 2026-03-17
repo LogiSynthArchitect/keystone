@@ -74,36 +74,29 @@ Run this checklist for every screen. Mark PASS or FAIL for each item.
 
 | Screen | Theme Applied | Compliance Status |
 |---|---|---|
-| Landing | Dark industrial | Check required |
-| Phone Entry | Dark industrial | Check required |
-| OTP Verify | Dark industrial | Check required |
-| Onboarding | Dark industrial | Check required |
-| Job List | Dark industrial | Check required |
-| Log Job | Dark industrial | Check required |
-| Job Detail | Dark industrial | Check required |
-| Customer List | Dark industrial | Check required |
-| Customer Detail | Dark industrial | Check required |
-| Add Customer | Dark industrial | Check required |
-| Notes List | Dark industrial | Check required |
-| Note Detail | Light theme — NON-COMPLIANT | Needs redesign |
-| Add Note | Dark industrial | Check required |
-| Profile | Dark industrial | Check required |
-| Edit Profile | Light theme — NON-COMPLIANT | Needs redesign |
+| Landing | Dark industrial | PASS |
+| Phone Entry | Dark industrial | PASS |
+| OTP Verify | Dark industrial | PASS |
+| Onboarding | Dark industrial | PASS |
+| Job List | Dark industrial | PASS |
+| Log Job | Dark industrial | PASS |
+| Job Detail | Dark industrial | PASS |
+| Customer List | Dark industrial | PASS |
+| Customer Detail | Dark industrial | PASS |
+| Add Customer | Dark industrial | PASS |
+| Notes List | Dark industrial | PASS |
+| Note Detail | Dark industrial | PASS |
+| Add Note | Dark industrial | PASS |
+| Profile | Dark industrial | PASS |
+| Edit Profile | Dark industrial | PASS |
 | Public Profile | Light theme — acceptable | Public facing only |
 
 ---
 
 ## Known Non-Compliance Issues
 
-### note_detail_screen.dart
-Uses AppColors.neutral050 background and light theme components.
-Must be redesigned to match dark industrial aesthetic.
-Reference: docs/v1/implementation/25_v1_polish.md — Note Detail Screen pending.
+None identified. All internal screens have been migrated to the Dark Industrial design system.
 
-### edit_profile_screen.dart
-Uses AppColors.neutral050 background and KsTextField light components.
-Must be redesigned to match dark industrial aesthetic.
-Reference: docs/v1/implementation/25_v1_polish.md — Edit Profile Screen pending.
 
 ---
 

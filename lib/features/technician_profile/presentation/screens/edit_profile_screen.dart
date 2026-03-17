@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
-import '../../../../core/widgets/ks_text_field.dart';
 import '../providers/profile_provider.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../../../../core/constants/app_enums.dart';
@@ -81,12 +81,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('You have unsaved changes. Leave anyway?'),
+        backgroundColor: AppColors.primary800,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        title: Text('DISCARD CHANGES?', style: AppTextStyles.h2.copyWith(color: AppColors.white)),
+        content: Text('You have unsaved changes. Leave anyway?', style: AppTextStyles.body.copyWith(color: AppColors.neutral300)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep editing')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: AppColors.neutral400))),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Discard', style: TextStyle(color: AppColors.error600))),
+              child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: AppColors.error500))),
         ],
       ),
     ) ?? false;
@@ -94,10 +96,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   String _serviceLabel(ServiceType type) {
     switch (type) {
-      case ServiceType.carLockProgramming:    return 'Car Key Programming';
-      case ServiceType.doorLockInstallation:  return 'Door Lock Installation';
-      case ServiceType.doorLockRepair:        return 'Door Lock Repair';
-      case ServiceType.smartLockInstallation: return 'Smart Lock Installation';
+      case ServiceType.carLockProgramming:    return 'CAR KEY PROGRAMMING';
+      case ServiceType.doorLockInstallation:  return 'DOOR LOCK INSTALLATION';
+      case ServiceType.doorLockRepair:        return 'DOOR LOCK REPAIR';
+      case ServiceType.smartLockInstallation: return 'SMART LOCK INSTALLATION';
     }
   }
 
@@ -118,17 +120,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _onSave() async {
     final profile = ref.read(profileProvider).profile!;
-    final updated = ProfileEntity(
-      id: profile.id,
-      userId: profile.userId,
+    final updated = profile.copyWith(
       displayName: _nameController.text.trim(),
       bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
       photoUrl: _pendingPhotoUrl ?? profile.photoUrl,
       services: _services,
       whatsappNumber: _whatsappController.text.trim(),
       isPublic: _isPublic,
-      profileUrl: profile.profileUrl,
-      createdAt: profile.createdAt,
       updatedAt: DateTime.now(),
     );
     final ok = await ref.read(profileProvider.notifier).update(updated);
@@ -157,8 +155,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (ok) nav.pop();
       },
       child: Scaffold(
-        backgroundColor: AppColors.neutral050,
-        appBar: const KsAppBar(title: 'Edit profile', showBack: true),
+        backgroundColor: AppColors.primary900,
+        appBar: const KsAppBar(title: 'EDIT PROFILE', showBack: true),
         body: Column(
           children: [
             const KsOfflineBanner(),
@@ -174,23 +172,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         onTap: _isUploadingPhoto ? null : _onPickPhoto,
                         child: Stack(
                           children: [
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: AppColors.primary100,
-                              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                            Container(
+                              width: 88,
+                              height: 88,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary800,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.primary700, width: 2),
+                                image: photoUrl != null ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover) : null,
+                              ),
                               child: photoUrl == null
-                                  ? Text(_nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : '?',
-                                      style: AppTextStyles.h1.copyWith(color: AppColors.primary700))
+                                  ? Center(child: Text(_nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : '?',
+                                      style: AppTextStyles.h1.copyWith(color: AppColors.white)))
                                   : null,
                             ),
                             if (_isUploadingPhoto)
-                              const Positioned.fill(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary700)),
+                              const Positioned.fill(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500)),
                             Positioned(
                               bottom: 0, right: 0,
                               child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: AppColors.primary700, shape: BoxShape.circle),
-                                child: const Icon(Icons.camera_alt, size: 14, color: AppColors.white),
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
+                                child: const Icon(LineAwesomeIcons.camera_solid, size: 14, color: AppColors.primary900),
                               ),
                             ),
                           ],
@@ -198,14 +201,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
-                    KsTextField(label: 'Display name', hint: 'Jeremie Kouassi', controller: _nameController, onChanged: (_) => setState(() {}), textInputAction: TextInputAction.next),
+                    
+                    _buildInputField(label: 'DISPLAY NAME', controller: _nameController, hint: 'e.g. JEREMIE MENSAH'),
                     const SizedBox(height: AppSpacing.lg),
-                    KsTextField(label: 'Bio', hint: 'Professional locksmith with 10 years experience...', type: KsTextFieldType.multiline, controller: _bioController, onChanged: (_) => setState(() {}), textInputAction: TextInputAction.next),
+                    _buildInputField(label: 'PROFESSIONAL BIO', controller: _bioController, hint: 'Describe your expertise...', isMultiline: true),
                     const SizedBox(height: AppSpacing.lg),
-                    KsTextField(label: 'WhatsApp number', hint: '0201234567', type: KsTextFieldType.phone, controller: _whatsappController, onChanged: (_) => setState(() {}), textInputAction: TextInputAction.done),
+                    _buildInputField(label: 'WHATSAPP NUMBER', controller: _whatsappController, hint: '024 412 3456', isPhone: true),
+                    
                     const SizedBox(height: AppSpacing.xl),
-                    Text('Services offered', style: AppTextStyles.captionMedium.copyWith(color: AppColors.neutral700)),
-                    const SizedBox(height: AppSpacing.sm),
+                    Text('OFFERED SERVICES', style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                    const SizedBox(height: AppSpacing.md),
                     ...ServiceType.values.map((type) {
                       final isSelected = _services.contains(type);
                       return Padding(
@@ -217,36 +222,120 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary050 : AppColors.white,
-                              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                              border: Border.all(color: isSelected ? AppColors.primary600 : AppColors.neutral200, width: isSelected ? 1.5 : 1.0),
+                              color: isSelected ? AppColors.primary800.withValues(alpha: 0.5) : AppColors.primary800,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: isSelected ? AppColors.accent500 : AppColors.primary700, width: 1.0),
                             ),
                             child: Row(children: [
-                              Expanded(child: Text(_serviceLabel(type), style: AppTextStyles.body.copyWith(color: isSelected ? AppColors.primary700 : AppColors.neutral900))),
-                              if (isSelected) const Icon(Icons.check_circle, size: 18, color: AppColors.primary700),
+                              Expanded(child: Text(_serviceLabel(type), style: AppTextStyles.body.copyWith(color: isSelected ? AppColors.white : AppColors.neutral400, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500))),
+                              if (isSelected) const Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: AppColors.accent500),
                             ]),
                           ),
                         ),
                       );
                     }),
                     const SizedBox(height: AppSpacing.lg),
-                    Row(children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Public profile', style: AppTextStyles.bodyMedium),
-                        Text('Allow customers to view your profile', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                      ])),
-                      Switch(value: _isPublic, onChanged: (v) => setState(() => _isPublic = v), activeThumbColor: AppColors.primary700),
-                    ]),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary800,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.primary700),
+                      ),
+                      child: Row(children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('PUBLIC PROFILE', style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text('ALLOW CUSTOMERS TO VIEW YOUR PROFILE', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                        ])),
+                        Switch(
+                          value: _isPublic, 
+                          onChanged: (v) => setState(() => _isPublic = v), 
+                          activeThumbColor: AppColors.accent500,
+                          activeTrackColor: AppColors.accent500.withValues(alpha: 0.3),
+                          inactiveThumbColor: AppColors.neutral500,
+                          inactiveTrackColor: AppColors.primary700,
+                        ),
+                      ]),
+                    ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    KsButton(label: 'Save changes', onPressed: _canSave && !state.isSaving && !_isUploadingPhoto ? _onSave : null, isLoading: state.isSaving),
-                    const SizedBox(height: AppSpacing.lg),
                   ],
                 ),
               ),
             ),
+            _buildBottomBar(state.isSaving),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildInputField({required String label, required TextEditingController controller, required String hint, bool isMultiline = false, bool isPhone = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.primary800,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: AppColors.primary700),
+          ),
+          child: TextField(
+            controller: controller,
+            maxLines: isMultiline ? 4 : 1,
+            keyboardType: isPhone ? TextInputType.phone : (isMultiline ? TextInputType.multiline : TextInputType.text),
+            style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w600),
+            cursorColor: AppColors.accent500,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral600),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: InputBorder.none,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomBar(bool isLoading) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.primary800,
+        border: Border(top: BorderSide(color: AppColors.primary700)),
+      ),
+      padding: const EdgeInsets.all(24.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _canSave && !isLoading && !_isUploadingPhoto ? _onSave : null,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'SAVE SYSTEM CHANGES',
+                style: AppTextStyles.h2.copyWith(
+                  color: _canSave ? AppColors.white : AppColors.neutral600,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.0,
+                ),
+              ),
+              if (isLoading)
+                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+              else
+                Icon(
+                  LineAwesomeIcons.save_solid,
+                  color: _canSave ? AppColors.accent500 : AppColors.neutral700,
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 400.ms);
   }
 }
