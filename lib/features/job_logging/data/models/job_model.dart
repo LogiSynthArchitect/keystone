@@ -61,7 +61,7 @@ class JobModel {
     latitude: json['latitude']?.toDouble(),
     longitude: json['longitude']?.toDouble(),
     notes: json['notes'],
-    amountCharged: json['amount_charged'] != null ? (json['amount_charged'] is int ? json['amount_charged'] : (json['amount_charged'] as double * 100).round()) : null,
+    amountCharged: json['amount_charged'] != null ? (num.parse(json['amount_charged'].toString()) * 100).round() : null,
     followUpSent: json['follow_up_sent'] ?? false,
     followUpSentAt: json['follow_up_sent_at'] != null ? DateTime.parse(json['follow_up_sent_at']) : null,
     syncStatus: json['sync_status'] ?? 'pending',
