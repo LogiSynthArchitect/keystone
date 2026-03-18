@@ -188,7 +188,7 @@ class JobRepositoryImpl implements JobRepository {
     'service_type': job.serviceType.name.replaceAllMapped(RegExp(r'([A-Z])'), (match) => '_${match.group(1)!.toLowerCase()}'), 
     'job_date': job.jobDate.toIso8601String().split('T').first,
     'location': job.location, 'latitude': job.latitude, 'longitude': job.longitude,
-    'notes': job.notes, 'amount_charged': job.amountCharged,
+    'notes': job.notes, 'amount_charged': job.amountCharged != null ? job.amountCharged! / 100.0 : null,
     'follow_up_sent': job.followUpSent, 'follow_up_sent_at': job.followUpSentAt?.toIso8601String(),
     'sync_status': job.syncStatus.name, 'sync_error_message': job.syncErrorMessage,
     'is_archived': job.isArchived, 'created_at': job.createdAt.toIso8601String(),
