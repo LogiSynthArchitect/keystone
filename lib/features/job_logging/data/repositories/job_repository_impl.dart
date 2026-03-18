@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/storage_exception.dart' as core_storage;
 import '../../../../core/errors/validation_exception.dart';
@@ -131,24 +132,46 @@ class JobRepositoryImpl implements JobRepository {
 
   @override
   Future<void> syncPendingJobs() async {
+    debugPrint('[KS:SYNC] syncPendingJobs START');
     final pending = await _local.getPendingJobs();
-    if (pending.isEmpty || !(await _connectivity.isConnected)) return;
+    debugPrint('[KS:SYNC] Pending jobs: ${pending.length}');
     
+    if (pending.isEmpty) return;
+    
+    final isOnline = await _connectivity.isConnected;
+    debugPrint('[KS:SYNC] Connectivity: $isOnline');
+
     final safeToSync = <JobModel>[];
     for (final job in pending) {
       final customer = await _customerLocal.getCustomer(job.customerId);
       if (customer == null) {
-        // Orphaned job linked to a deleted customer. Break the infinite loop by deleting it locally.
+        debugPrint('[KS:SYNC] Deleting orphaned job: ${job.id}');
         await _local.deleteJob(job.id);
       } else if (customer.syncStatus != SyncStatus.pending) {
         safeToSync.add(job);
+      } else {
+        debugPrint('[KS:SYNC] Job ${job.id} waiting for customer ${job.customerId} to sync');
       }
     }
+    
+    debugPrint('[KS:SYNC] Safe to sync: ${safeToSync.length}');
     if (safeToSync.isEmpty) return;
 
-    final result = await _remote.batchSync(_userId, safeToSync.map((m) => m.toJson()).toList());
+    try {
+      final payload = safeToSync.map((m) => _jobEntityToJson(m.toEntity())).toList();
+      debugPrint('[KS:SYNC] Sending payload: $payload');
+      
+      final result = await _remote.batchSync(_userId, payload);
+      debugPrint('[KS:SYNC] RPC Result: $result');
+
     final syncedList = result['synced'] as List<dynamic>? ?? [];
     final failedList = result['failed'] as List<dynamic>? ?? [];
+
+    if (failedList.isNotEmpty) {
+      for (var failure in failedList) {
+        debugPrint('[KS:SYNC] FAILURE DETAIL: ${failure['local_id']} -> ${failure['error']}');
+      }
+    }
 
     // 1. Process successful syncs
     for (final syncedItem in syncedList) {

@@ -184,13 +184,9 @@ class JobListNotifier extends StateNotifier<JobListState> {
   }
 
   Future<void> refresh() async {
-    final now = DateTime.now();
-    final shouldSync = _lastSyncTime == null || now.difference(_lastSyncTime!) > const Duration(minutes: 5);
-    if (shouldSync) {
-      await _ref.read(syncOfflineCustomersUsecaseProvider).call();
-      await _syncOffline();
-      _lastSyncTime = now;
-    }
+    // Force sync every time refresh is called to ensure UI reactivity
+    await _ref.read(syncOfflineCustomersUsecaseProvider).call();
+    await _syncOffline();
     await load();
   }
 
@@ -301,6 +297,14 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       ));
       
       _ref.read(customerListProvider.notifier).incrementJobCount(job.customerId);
+
+      // --- REACTIVITY UPGRADE ---
+      // 1. Add to the list immediately (shows as 'Pending')
+      _ref.read(jobListProvider.notifier).addJob(job);
+      
+      // 2. Trigger background sync immediately (will change 'Pending' to 'Synced'/'Failed' on completion)
+      // Note: We don't await this so the user isn't stuck on the loading screen.
+      _ref.read(jobListProvider.notifier).refresh();
 
       state = state.copyWith(isLoading: false, isSubmitting: false, saved: true);
       return job;
