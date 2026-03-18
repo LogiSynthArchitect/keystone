@@ -129,7 +129,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
     if (!mounted) return;
     if (job != null) {
-      ref.read(jobListProvider.notifier).addJob(job);
       context.pop();
       KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
     }
