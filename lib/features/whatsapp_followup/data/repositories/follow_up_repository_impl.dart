@@ -11,7 +11,11 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
 
   FollowUpRepositoryImpl(this._remote, this._supabase, this._local);
 
-  String get _userId => _supabase.auth.currentUser!.id;
+  String get _userId {
+    final id = _supabase.auth.currentUser?.id;
+    if (id == null) throw Exception('Authentication session expired. Please log in again.');
+    return id;
+  }
 
   @override
   Future<FollowUpEntity> createFollowUp(FollowUpEntity followUp) async {

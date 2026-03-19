@@ -161,7 +161,6 @@ class JobListNotifier extends StateNotifier<JobListState> {
   final GetJobsUsecase _getJobs;
   final SyncOfflineJobsUsecase _syncOffline;
   final ArchiveJobUsecase _archiveJob;
-  DateTime? _lastSyncTime;
   Timer? _debounce; // Task 1: Debounce Timer
 
   JobListNotifier(this._ref, this._getJobs, this._syncOffline, this._archiveJob) : super(const JobListState()) { load(); }
@@ -278,7 +277,8 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
     state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
 
     try {
-      final userId = _supabase.auth.currentUser!.id;
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) throw Exception('Authentication session expired. Please log in again.');
       int? finalAmount;
       if (amountChargedString != null && amountChargedString.trim().isNotEmpty) {
         finalAmount = CurrencyFormatter.parseToPesewas(amountChargedString);

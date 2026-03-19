@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/errors/storage_exception.dart' as core_storage;
 import 'package:uuid/uuid.dart';
 import '../../../../core/network/connectivity_service.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
@@ -18,7 +20,11 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   CustomerRepositoryImpl(this._remote, this._local, this._connectivity, this._supabase, this._jobLocal);
 
-  String get _userId => _supabase.auth.currentUser!.id;
+  String get _userId {
+    final id = _supabase.auth.currentUser?.id;
+    if (id == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
+    return id;
+  }
 
   @override
   Future<List<CustomerEntity>> getCustomers({int limit = 25, int offset = 0}) async {
@@ -29,7 +35,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
           await _local.saveCustomer(m);
         }
         return models.map((m) => m.toEntity()).toList();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote fetch failed, serving from cache: $e');
+      }
     }
     final localModels = await _local.getCustomers();
     return localModels.map((m) => m.toEntity()).toList();
@@ -43,11 +51,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
         final match = models.firstWhere((m) => m.id == id);
         await _local.saveCustomer(match);
         return match.toEntity();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote getById failed, falling back to local: $e');
+      }
     }
     final localModel = await _local.getCustomer(id);
     if (localModel != null) return localModel.toEntity();
-    throw Exception('Customer not found');
+    throw const core_storage.StorageException(message: 'Customer not found.', code: 'CUSTOMER_NOT_FOUND');
   }
 
   @override
@@ -58,7 +68,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
         final match = results.where((m) => m.phoneNumber == phoneNumber).firstOrNull;
         if (match != null) await _local.saveCustomer(match);
         return match?.toEntity();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote phone search failed, searching local: $e');
+      }
     }
     final localModels = await _local.getCustomers();
     final match = localModels.where((m) => m.phoneNumber == phoneNumber).firstOrNull;
@@ -113,7 +125,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
         await _local.saveCustomer(syncedModel);
         return syncedModel.toEntity();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote create failed, customer queued as pending: $e');
+      }
     }
     return localModel.toEntity();
   }
@@ -162,7 +176,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
         );
         await _local.saveCustomer(syncedModel);
         return syncedModel.toEntity();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote update failed, customer queued as pending: $e');
+      }
     }
     return pendingModel.toEntity();
   }
@@ -182,9 +198,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
           await _remote.deleteCustomer(id);
           // If remote success, we can hard delete locally
           await _local.deleteCustomer(id);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[KS:CUSTOMERS] Remote delete failed, tombstone kept for retry: $e');
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[KS:CUSTOMERS] deleteCustomer failed for id=$id: $e');
+    }
   }
 
   @override
@@ -193,7 +213,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
       try {
         final models = await _remote.searchCustomers(userId: _userId, query: query);
         return models.map((m) => m.toEntity()).toList();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote search failed, searching local: $e');
+      }
     }
     final localModels = await _local.getCustomers();
     final q = query.toLowerCase();
@@ -217,7 +239,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
         try {
           await _remote.deleteCustomer(c.id);
           await _local.deleteCustomer(c.id);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[KS:SYNC:CUSTOMERS] Remote deletion failed for ${c.id}: $e');
+        }
       }
 
       // 2. Process upserts

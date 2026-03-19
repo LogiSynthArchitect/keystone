@@ -23,8 +23,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
         await _local.saveProfile(model);
         return model.toEntity();
       }
-    } catch (_) {}
-    
+    } catch (e) {
+      debugPrint('[KS:PROFILE] Remote fetch failed, falling back to cache: $e');
+    }
+
     final local = await _local.getProfile();
     return local?.toEntity();
   }

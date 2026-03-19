@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -142,7 +143,9 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       await supabase.auth.signOut();
       await HiveService.clearAll();
       _ref.invalidate(authStateProvider);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[KS:AUTH] Logout error (proceeding anyway): $e');
+    }
     state = state.copyWith(isLoading: false);
   }
 }

@@ -5,7 +5,6 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/whatsapp_launcher.dart';
-import '../../../../core/constants/whatsapp_constants.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';

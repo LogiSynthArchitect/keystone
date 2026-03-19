@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
-import '../../../../core/constants/app_enums.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
 import '../../data/datasources/customer_local_datasource.dart';
@@ -205,7 +204,8 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
     state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
 
     try {
-      final userId = _supabase.auth.currentUser!.id;
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) throw Exception('Authentication session expired. Please log in again.');
       final customer = await _createCustomer(CreateCustomerParams(
         userId: userId,
         fullName: fullName,

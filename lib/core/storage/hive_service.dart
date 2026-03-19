@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class HiveService {
@@ -14,15 +15,15 @@ class HiveService {
     
     try {
       await _openBoxes();
-    } catch (e) {
-      // Task 3: Corruption Recovery - Wipe all boxes from disk and retry
-      // This prevents a hard crash on startup if Hive box files are corrupted.
+    } on HiveError catch (e) {
+      // Corruption Recovery: only wipe on confirmed Hive-level errors (not transient IO issues)
+      // to prevent data loss from non-corruption failures.
+      debugPrint('[KS:HIVE] HiveError on open — wiping corrupt boxes and retrying: $e');
       await Hive.deleteBoxFromDisk(jobsBox);
       await Hive.deleteBoxFromDisk(customersBox);
       await Hive.deleteBoxFromDisk(notesBox);
       await Hive.deleteBoxFromDisk(followUpsBox);
       await Hive.deleteBoxFromDisk(profileBox);
-      
       await _openBoxes();
     }
   }
