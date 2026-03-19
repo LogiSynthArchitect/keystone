@@ -9,6 +9,7 @@ class KnowledgeNoteLocalDatasource {
   Future<void> saveNote(KnowledgeNoteModel note) async {
     try {
       await _box.put(note.id, note.toJson().cast<String, dynamic>());
+      await _box.flush(); // Force immediate disk persistence
     } catch (e) {
       throw StorageException(
         message: 'Could not save note locally.',

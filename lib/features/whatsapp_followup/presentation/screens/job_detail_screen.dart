@@ -145,7 +145,11 @@ class JobDetailScreen extends ConsumerWidget {
               Navigator.pop(ctx);
               
               try {
-                final userId = ref.read(supabaseClientProvider).auth.currentUser!.id;
+                final userId = ref.read(supabaseClientProvider).auth.currentUser?.id;
+                if (userId == null) {
+                  if (context.mounted) KsSnackbar.show(context, message: "Session expired. Please log in again.", type: KsSnackbarType.error);
+                  return;
+                }
                 await ref.read(requestCorrectionUsecaseProvider).call(
                   RequestCorrectionParams(jobId: jobId, userId: userId, reason: reason)
                 );

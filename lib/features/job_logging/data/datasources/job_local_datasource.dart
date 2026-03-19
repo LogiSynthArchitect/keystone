@@ -7,6 +7,18 @@ class JobLocalDatasource {
   Box<Map> get _box => HiveService.jobs;
   Box<Map> get _followUpBox => HiveService.followUps;
 
+  Future<JobModel?> getJob(String id) async {
+    try {
+      final raw = _box.get(id);
+      if (raw != null) {
+        return JobModel.fromJson(Map<String, dynamic>.from(raw));
+      }
+      return null;
+    } catch (e) {
+      throw StorageException(message: 'Could not read local job by ID.', code: 'LOCAL_READ_FAILED', cause: e);
+    }
+  }
+
   Future<void> saveJob(JobModel job) async {
     try {
       await _box.put(job.id, job.toJson().cast<String, dynamic>());

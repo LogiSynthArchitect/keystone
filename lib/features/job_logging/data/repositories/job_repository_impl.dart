@@ -34,7 +34,14 @@ class JobRepositoryImpl implements JobRepository {
     if (isOnline) {
       try {
         final remoteModels = await _remote.getJobs(userId: _userId, limit: limit, offset: offset);
-        for (final m in remoteModels) { await _local.saveJob(m); }
+        for (final m in remoteModels) {
+          final existing = await _local.getJob(m.id);
+          // Don't overwrite a locally-pending archive with the remote stale state
+          if (existing != null && existing.isArchived && existing.syncStatus == SyncStatus.pending.name) {
+            continue;
+          }
+          await _local.saveJob(m);
+        }
       } catch (e) {
         debugPrint('[KS:JOBS] Remote fetch failed, serving from cache: $e');
       }
@@ -71,8 +78,7 @@ class JobRepositoryImpl implements JobRepository {
           return synced.toEntity();
         }
       } catch (e) {
-        final errorModel = JobModel.fromJson({...json, 'sync_status': 'failed', 'sync_error_message': e.toString()});
-        await _local.saveJob(errorModel);
+        debugPrint('[KS:JOBS] Remote create failed, job stays pending for retry: $e');
       }
     }
     return model.toEntity();

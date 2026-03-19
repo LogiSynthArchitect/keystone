@@ -11,6 +11,7 @@ import '../../domain/repositories/knowledge_note_repository.dart';
 import '../../domain/usecases/create_note_usecase.dart';
 import '../../domain/usecases/get_notes_usecase.dart';
 import '../../domain/usecases/archive_note_usecase.dart';
+import '../../domain/usecases/sync_pending_notes_usecase.dart';
 import '../../../../core/constants/app_enums.dart';
 
 final knowledgeNoteLocalDatasourceProvider = Provider<KnowledgeNoteLocalDatasource>(
@@ -34,6 +35,9 @@ final createNoteUsecaseProvider = Provider<CreateNoteUsecase>(
 
 final archiveNoteUsecaseProvider = Provider<ArchiveNoteUsecase>(
   (ref) => ArchiveNoteUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
+
+final syncPendingNotesUsecaseProvider = Provider<SyncPendingNotesUsecase>(
+  (ref) => SyncPendingNotesUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
 
 class NotesListState {
   final List<KnowledgeNoteEntity> notes;
@@ -133,7 +137,10 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
       state = state.copyWith(errorMessage: 'Could not archive note.');
     }
   }
-  Future<void> refresh() => load();
+  Future<void> refresh() async {
+    await _repository.syncPendingNotes();
+    await load();
+  }
 }
 
 final notesListProvider = StateNotifierProvider<NotesListNotifier, NotesListState>(
@@ -165,7 +172,11 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final note = await _createNote(CreateNoteParams(
-        userId: _supabase.auth.currentUser!.id,
+        userId: (() {
+          final userId = _supabase.auth.currentUser?.id;
+          if (userId == null) throw Exception('Authentication session expired. Please log in again.');
+          return userId;
+        })(),
         title: title,
         description: description,
         tags: tags,

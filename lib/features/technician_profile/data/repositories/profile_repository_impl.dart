@@ -13,7 +13,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
   ProfileRepositoryImpl(this._remote, this._local, this._supabase);
 
-  String get _authUserId => _supabase.auth.currentUser?.id ?? '';
+  String get _authUserId {
+    final id = _supabase.auth.currentUser?.id;
+    if (id == null) throw Exception('Authentication session expired. Please log in again.');
+    return id;
+  }
 
   @override
   Future<ProfileEntity?> getProfile() async {

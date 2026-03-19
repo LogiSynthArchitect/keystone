@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 19 2026
-### Session: 22 (RELIABILITY HARDENING)
+### Session: 25 (BUG FIX IMPLEMENTATION)
 
 ---
 
@@ -42,6 +42,20 @@
 
 ---
 
-## Next Action
-**VERIFY LOCALLY & DEPLOY FINAL APK.**
-All terminal systems are go. Reliability hardening complete — ready for pilot deployment.
+## Known Open Bugs (See `open_bugs.md` for full surgical specs)
+| ID      | Severity | Description                                                  | Status      |
+|---------|----------|--------------------------------------------------------------|-------------|
+| BUG-001 | High     | Failed remote job create → permanently stuck as `failed`     | ✅ Fixed    |
+| BUG-002 | Medium   | New customer missing from list after job log                 | ✅ Fixed    |
+| BUG-003 | Medium   | Keyboard dismissed / focus lost when typing "0"              | ✅ Fixed    |
+| BUG-004 | High     | Archived jobs reappear after next sync                       | ✅ Fixed    |
+| BUG-005 | Low      | `getCustomerById` throws `StateError` on missing record      | ✅ Fixed    |
+| BUG-006 | High     | `currentUser!` force unwrap in 3 places → crash on expiry   | ✅ Fixed    |
+| BUG-007 | High     | `archiveNote` no offline guard → note reappears after sync   | ✅ Fixed    |
+| BUG-008 | High     | SQL RPC `batch_sync_jobs` returns `local_id: null` → jobs stuck pending | ✅ Fixed |
+| BUG-009 | Medium   | `profile._authUserId` returns `''` not throw on null session | ✅ Fixed    |
+| BUG-010 | Medium   | Offline notes never re-synced (no `syncPendingNotes`)        | ✅ Fixed    |
+| BUG-011 | Low      | `getCustomerById` fetches 1000 customers to find one         | ✅ Fixed    |
+| BUG-012 | Low      | Missing `flush()` in customer and note datasources           | ✅ Fixed    |
+
+

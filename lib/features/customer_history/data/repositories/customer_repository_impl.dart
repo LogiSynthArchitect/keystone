@@ -47,16 +47,16 @@ class CustomerRepositoryImpl implements CustomerRepository {
   Future<CustomerEntity> getCustomerById(String id) async {
     if (await _connectivity.isConnected) {
       try {
-        final models = await _remote.getCustomers(userId: _userId, limit: 1000, offset: 0);
-        final match = models.firstWhere((m) => m.id == id);
-        await _local.saveCustomer(match);
-        return match.toEntity();
+        final model = await _remote.getCustomerById(id);
+        if (model == null) throw core_storage.StorageException(message: 'Customer not found remotely.', code: 'CUSTOMER_NOT_FOUND');
+        await _local.saveCustomer(model);
+        return model.toEntity();
       } catch (e) {
         debugPrint('[KS:CUSTOMERS] Remote getById failed, falling back to local: $e');
       }
     }
-    final localModel = await _local.getCustomer(id);
-    if (localModel != null) return localModel.toEntity();
+    var local = await _local.getCustomer(id);
+    if (local != null) return local.toEntity();
     throw const core_storage.StorageException(message: 'Customer not found.', code: 'CUSTOMER_NOT_FOUND');
   }
 
