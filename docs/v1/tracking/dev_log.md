@@ -1050,3 +1050,40 @@ Replaced all technical terms visible to users across every screen:
 
 ### Flutter analyze status
 0 issues ✅
+
+---
+
+## SESSION 28 — Critical Bug Fixes: FK Constraint & Keyboard Focus — 2026-03-19
+
+### What was built
+- Fixed BUG-023: Job create crashing with FK constraint violation `jobs_user_id_fkey`.
+- Fixed BUG-024: Keyboard unfocus / focus loss when typing "0" in amount field on Log Job screen.
+
+### Root Cause Analysis
+
+**BUG-023 — FK Constraint on Job Create**
+- `LogJobNotifier.save()` was passing `_supabase.auth.currentUser?.id` as `userId` to the job insert.
+- `auth.currentUser.id` is the **Auth UID** — a UUID from Supabase Auth.
+- But `jobs.user_id` has a FK to `public.users.id` — an **internal UUID** that is different from the auth UID.
+- `public.users` has two separate columns: `id` (internal, generated UUID) and `auth_id` (auth UID).
+- Fix: Replaced the direct supabase call with `_ref.read(currentUserProvider.future)` which returns `UserEntity`, then passed `user.id` (the internal UUID) as `userId`.
+- Removed the now-unused `_supabase` field and `SupabaseClient` import from `LogJobNotifier`.
+
+**BUG-024 — Keyboard Unfocus on Amount Field**
+- `log_job_screen.dart` had `_amountController.addListener(() => setState(() {}))` and `_notesController.addListener(() => setState(() {}))`.
+- These triggered full widget rebuilds on every keystroke, disrupting keyboard focus on Android.
+- Additionally, `FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))` used a `^` anchor in an allow-formatter. In `FilteringTextInputFormatter.allow`, the regex is applied to the full text string — the `^` anchor caused the formatter to replace/mutate text unexpectedly when typing "0", triggering a cursor/focus reset.
+- Fix: Removed both `addListener` calls (only needed for `_isDirty` which is checked lazily on back-press — no rebuild needed). Replaced the anchored regex with `FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))` — a simple character allowlist.
+
+### Files changed
+- `lib/features/job_logging/presentation/providers/job_providers.dart` — FK fix: use `currentUserProvider`, remove `_supabase` field
+- `lib/features/job_logging/presentation/screens/log_job_screen.dart` — keyboard fix: remove `addListener` setState, fix amount formatter
+- `docs/v1/tracking/current_state.md` — updated to Session 28, added BUG-023, BUG-024
+
+### What was learned
+1. **Auth UID ≠ Internal User ID.** Supabase Auth provides one UUID (`auth.users.id`); the app's `public.users` table generates its own internal UUID (`id`). Always use `currentUserProvider` (which calls `AuthRepository.getCurrentUser()`) to get the internal ID for FK-constrained inserts.
+2. **`FilteringTextInputFormatter.allow` with anchored regex is dangerous.** The `^` anchor causes the formatter to evaluate and potentially replace the full text string on every character, producing focus loss. Use character-class allowlists (`[\d.]`) instead.
+3. **Controller listeners for `_isDirty` don't need `setState`.** If the only use of a controller listener is a guard check that runs lazily (on back-press), there is no reason to trigger a full rebuild — the controller value can be read directly at the time of the check.
+
+### Flutter analyze status
+0 issues ✅

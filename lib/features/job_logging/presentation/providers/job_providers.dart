@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/errors/validation_exception.dart';
@@ -20,6 +19,7 @@ import '../../domain/usecases/archive_job_usecase.dart';
 import '../../domain/usecases/log_job_with_customer_usecase.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
+import '../../../../core/providers/auth_provider.dart';
 
 import '../../domain/entities/correction_request_entity.dart';
 import '../../domain/repositories/correction_request_repository.dart';
@@ -266,9 +266,8 @@ class LogJobState {
 class LogJobNotifier extends StateNotifier<LogJobState> {
   final Ref _ref;
   final LogJobWithCustomerUsecase _logJobWithCustomer;
-  final SupabaseClient _supabase;
 
-  LogJobNotifier(this._ref, this._logJobWithCustomer, this._supabase) : super(const LogJobState());
+  LogJobNotifier(this._ref, this._logJobWithCustomer) : super(const LogJobState());
 
   Future<JobEntity?> save({
     required ServiceType serviceType,
@@ -286,7 +285,8 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
     state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
 
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final user = await _ref.read(currentUserProvider.future);
+      final userId = user?.id;
       if (userId == null) throw Exception('Authentication session expired. Please log in again.');
       int? finalAmount;
       if (amountChargedString != null && amountChargedString.trim().isNotEmpty) {
@@ -328,4 +328,4 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
   }
 }
 
-final logJobProvider = StateNotifierProvider<LogJobNotifier, LogJobState>((ref) => LogJobNotifier(ref, ref.watch(logJobWithCustomerUsecaseProvider), ref.watch(supabaseClientProvider)));
+final logJobProvider = StateNotifierProvider<LogJobNotifier, LogJobState>((ref) => LogJobNotifier(ref, ref.watch(logJobWithCustomerUsecaseProvider)));
