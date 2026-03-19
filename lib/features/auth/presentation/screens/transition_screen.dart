@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -22,6 +23,14 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // 01. SEAMLESS HANDOVER
+    // Once this screen is painted, we remove the native splash
+    // The user's eye won't see a jump because KsLogoAnimated is in the same spot
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
+
     // Ensure the branded reveal is seen for at least 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _isMinDelayPassed = true);

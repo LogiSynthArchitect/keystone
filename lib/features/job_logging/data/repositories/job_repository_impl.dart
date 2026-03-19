@@ -164,45 +164,56 @@ class JobRepositoryImpl implements JobRepository {
       final result = await _remote.batchSync(_userId, payload);
       debugPrint('[KS:SYNC] RPC Result: $result');
 
-    final syncedList = result['synced'] as List<dynamic>? ?? [];
-    final failedList = result['failed'] as List<dynamic>? ?? [];
+      final syncedList = result['synced'] as List<dynamic>? ?? [];
+      final failedList = result['failed'] as List<dynamic>? ?? [];
 
-    if (failedList.isNotEmpty) {
-      for (var failure in failedList) {
-        debugPrint('[KS:SYNC] FAILURE DETAIL: ${failure['local_id']} -> ${failure['error']}');
+      if (failedList.isNotEmpty) {
+        for (var failure in failedList) {
+          debugPrint('[KS:SYNC] FAILURE DETAIL: ${failure['local_id']} -> ${failure['error']}');
+        }
       }
-    }
 
-    // 1. Process successful syncs
-    for (final syncedItem in syncedList) {
-      final localId = syncedItem['local_id'] as String;
-      final serverId = syncedItem['server_id'] as String;
-      final originalJob = safeToSync.firstWhere((j) => j.id == localId);
-      final updatedJson = originalJob.toJson();
-      updatedJson['id'] = serverId;
-      updatedJson['sync_status'] = syncedItem['sync_status'] as String;
-      
-      await _local.saveJob(JobModel.fromJson(updatedJson));
+      // 1. Process successful syncs
+      for (final syncedItem in syncedList) {
+        final localId = syncedItem['local_id'] as String?;
+        if (localId == null) continue;
+        
+        final serverId = syncedItem['server_id'] as String?;
+        final originalJob = safeToSync.where((j) => j.id == localId).firstOrNull;
+        if (originalJob == null || serverId == null) continue;
 
-      if (localId != serverId) {
-        await _followUpRepo.updateJobId(localId, serverId);
-        await _local.deleteJob(localId);
+        final updatedJson = originalJob.toJson();
+        updatedJson['id'] = serverId;
+        updatedJson['sync_status'] = syncedItem['sync_status'] as String? ?? 'synced';
+        
+        await _local.saveJob(JobModel.fromJson(updatedJson));
+
+        if (localId != serverId) {
+          await _followUpRepo.updateJobId(localId, serverId);
+          await _local.deleteJob(localId);
+        }
       }
-    }
 
-    // 2. Process failed syncs
-    for (final failedItem in failedList) {
-      final localId = failedItem['local_id'] as String;
-      final errorMessage = failedItem['error'] as String?;
-      final originalJob = safeToSync.where((j) => j.id == localId).firstOrNull;
-      
-      if (originalJob != null) {
-        final failedModel = originalJob.copyWith(
-          syncStatus: SyncStatus.failed.name,
-          syncErrorMessage: errorMessage ?? 'Server rejection',
-        );
-        await _local.saveJob(failedModel);
+      // 2. Process failed syncs
+      for (final failedItem in failedList) {
+        final localId = failedItem['local_id'] as String?;
+        if (localId == null) continue;
+
+        final errorMessage = failedItem['error'] as String?;
+        final originalJob = safeToSync.where((j) => j.id == localId).firstOrNull;
+        
+        if (originalJob != null) {
+          final failedModel = originalJob.copyWith(
+            syncStatus: SyncStatus.failed.name,
+            syncErrorMessage: errorMessage ?? 'Server rejection',
+          );
+          await _local.saveJob(failedModel);
+        }
       }
+    } catch (e) {
+      debugPrint('[KS:SYNC] FATAL ERROR (Network/Auth): $e');
+      // DO NOT mark as failed here. 
+      // Keeping them as 'pending' allows the next sync attempt (on refresh) to try again.
     }
   }
 

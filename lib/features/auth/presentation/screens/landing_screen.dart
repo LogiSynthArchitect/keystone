@@ -113,15 +113,14 @@ class LandingScreen extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'INITIALIZE SYSTEM',
-                                    style: AppTextStyles.h2.copyWith(
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  Icon(
+                                 Text(
+                                   'GET STARTED',
+                                   style: AppTextStyles.h2.copyWith(
+                                     color: AppColors.white,
+                                     fontWeight: FontWeight.w700,
+                                     letterSpacing: 1.5,
+                                   ),
+                                 ),                                  Icon(
                                     LineAwesomeIcons.angle_right_solid,
                                     color: AppColors.accent500,
                                     size: 20,

@@ -132,27 +132,44 @@ class JobCard extends StatelessWidget {
               const SizedBox(height: 16),
               const Divider(color: AppColors.primary700, height: 1),
               const SizedBox(height: 12),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (job.followUpSent) 
-                    _Badge(
-                      label: "WHATSAPP OPENED", 
-                      color: AppColors.success500, 
-                      icon: LineAwesomeIcons.check_circle_solid,
-                    ),
-                  
-                  if (job.syncStatus == SyncStatus.pending) 
-                    _Badge(
-                      label: "SYNCING TO CLOUD", 
-                      color: AppColors.accent500, 
-                      icon: LineAwesomeIcons.sync_solid,
-                    ),
+                  Row(
+                    children: [
+                      if (job.followUpSent) 
+                        _Badge(
+                          label: "WHATSAPP OPENED", 
+                          color: AppColors.success500, 
+                          icon: LineAwesomeIcons.check_circle_solid,
+                        ),
+                      
+                      if (job.syncStatus == SyncStatus.pending) 
+                        _Badge(
+                          label: "SYNCING TO CLOUD", 
+                          color: AppColors.accent500, 
+                          icon: LineAwesomeIcons.sync_solid,
+                        ),
 
-                  if (job.syncStatus == SyncStatus.failed)
-                    _Badge(
-                      label: "SYNC FAILED", 
-                      color: AppColors.error500, 
-                      icon: LineAwesomeIcons.exclamation_circle_solid,
+                      if (job.syncStatus == SyncStatus.failed)
+                        _Badge(
+                          label: "SYNC FAILED", 
+                          color: AppColors.error500, 
+                          icon: LineAwesomeIcons.exclamation_circle_solid,
+                        ),
+                    ],
+                  ),
+                  if (job.syncStatus == SyncStatus.failed && job.syncErrorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        job.syncErrorMessage!.toUpperCase(),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.error500,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                 ],
               ),

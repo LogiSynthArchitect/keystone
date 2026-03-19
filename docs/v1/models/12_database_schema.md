@@ -371,25 +371,27 @@ RETURNS JSONB AS $$
 DECLARE
   customer_record JSONB;
   new_customer_id UUID;
-  synced_customers JSONB := '[]';
-  failed_customers JSONB := '[]';
+  synced_customers JSONB := '[]'::jsonb;
+  failed_customers JSONB := '[]'::jsonb;
 BEGIN
   FOR customer_record IN SELECT * FROM jsonb_array_elements(p_customers)
   LOOP
     BEGIN
-      INSERT INTO customers (id, user_id, full_name, phone_number, location, notes)
+      INSERT INTO customers (id, user_id, full_name, phone_number, location, notes, deleted_at)
       VALUES (
         (customer_record->>'id')::UUID,
         p_user_id,
         customer_record->>'full_name',
         customer_record->>'phone_number',
         customer_record->>'location',
-        customer_record->>'notes'
+        customer_record->>'notes',
+        (customer_record->>'deleted_at')::TIMESTAMPTZ
       )
-      ON CONFLICT (user_id, phone_number) DO UPDATE SET
+      ON CONFLICT (id) DO UPDATE SET
         full_name = EXCLUDED.full_name,
         location = COALESCE(EXCLUDED.location, customers.location),
         notes = COALESCE(EXCLUDED.notes, customers.notes),
+        deleted_at = EXCLUDED.deleted_at,
         updated_at = NOW()
       RETURNING id INTO new_customer_id;
       
@@ -408,8 +410,8 @@ RETURNS JSONB AS $$
 DECLARE
   job_record JSONB;
   new_job_id UUID;
-  synced_jobs JSONB := '[]';
-  failed_jobs JSONB := '[]';
+  synced_jobs JSONB := '[]'::jsonb;
+  failed_jobs JSONB := '[]'::jsonb;
 BEGIN
   FOR job_record IN SELECT * FROM jsonb_array_elements(p_jobs)
   LOOP
@@ -427,6 +429,9 @@ BEGIN
         'synced'
       )
       ON CONFLICT (id) DO UPDATE SET
+        location = EXCLUDED.location,
+        notes = EXCLUDED.notes,
+        amount_charged = EXCLUDED.amount_charged,
         sync_status = EXCLUDED.sync_status,
         updated_at = NOW()
       RETURNING id INTO new_job_id;
