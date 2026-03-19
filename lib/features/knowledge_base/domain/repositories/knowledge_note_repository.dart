@@ -8,4 +8,5 @@ abstract class KnowledgeNoteRepository {
   Future<void> archiveNote(String id);
   Future<List<KnowledgeNoteEntity>> searchNotes(String query);
   Future<List<KnowledgeNoteEntity>> getNotesByTag(String tag);
+  Future<void> syncPendingNotes();
 }

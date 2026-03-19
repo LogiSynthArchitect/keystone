@@ -14,6 +14,7 @@ class CustomerLocalDatasource {
   Future<void> saveCustomer(CustomerModel customer) async {
     final box = HiveService.customers;
     await box.put(customer.id, customer.toJson());
+    await box.flush(); // Force immediate disk persistence
   }
 
   Future<CustomerModel?> getCustomer(String id) async {

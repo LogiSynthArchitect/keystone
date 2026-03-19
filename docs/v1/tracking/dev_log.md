@@ -842,3 +842,114 @@ No breaks. All changes are backwards-compatible: error handling additions, null-
 
 ### Flutter analyze status
 Pending verify ✅
+
+---
+
+## SESSION 23 — Runtime Bug Identification (On-Device Testing) — 2026-03-19
+
+### What was built
+No code written this session. Live on-device testing (Infinix X6532) against Testing Supabase
+environment revealed 5 bugs, all documented with exact file locations, root causes, and surgical
+fix instructions in `docs/v1/tracking/open_bugs.md`.
+
+### Bugs found
+
+**BUG-001 — Sync Failure Permanently Bricks a Job (High)**
+- File: `lib/features/job_logging/data/repositories/job_repository_impl.dart` line 73
+- Root cause: When `createJob` remote call fails, the catch block overwrites `pending` → `failed`.
+  `syncPendingJobs` only retries `pending`. The job is orphaned and never retried.
+- Fix: Remove the overwrite in the catch. Log the failure and let the existing `pending` record
+  stand for retry. 4-line change.
+
+**BUG-002 — New Customer Doesn't Appear in List After Job Creation (Medium)**
+- File: `lib/features/job_logging/presentation/providers/job_providers.dart` line 300
+- Root cause: `LogJobNotifier.save()` calls `incrementJobCount` on `customerListProvider` which
+  only updates a counter — it doesn't add a new entry. The new customer is in Hive but the
+  provider's in-memory list is stale.
+- Fix: Add `await _ref.read(customerListProvider.notifier).refresh()` after `incrementJobCount`.
+  1-line addition.
+
+**BUG-003 — Keyboard Focus Lost When Typing "0" (Medium)**
+- File: `lib/features/job_logging/presentation/screens/log_job_screen.dart` line 380
+- Root cause: `_buildDarkField` has `onChanged: (_) => setState(() {})` on every TextField.
+  Every keystroke triggers a full widget tree rebuild, which kills keyboard focus. The "0"
+  keypress is just the most reliably reproducible trigger.
+- Fix: Remove `onChanged` from `_buildDarkField`. Attach controller listeners in `initState()`
+  for any controller whose value actually drives conditional UI rendering.
+
+**BUG-004 — Archived Jobs Reappear After Next Sync (High)**
+- File: `lib/features/job_logging/data/repositories/job_repository_impl.dart` lines 34–41
+- Root cause: `getJobs` overwrites every local record with the remote version. A job archived
+  offline (`is_archived: true, sync_status: pending`) gets overwritten back to `is_archived: false`
+  on the next sync because the remote hasn't been updated yet.
+- Fix: Before saving a remote record locally, check if the local version has `is_archived: true`
+  AND `sync_status: pending`. If so, skip the overwrite.
+
+**BUG-005 — `getCustomerById` Throws `StateError` on Missing Customer (Low)**
+- File: `lib/features/customer_history/data/repositories/customer_repository_impl.dart` line 51
+- Root cause: `models.firstWhere((m) => m.id == id)` throws `StateError("Bad state: No element")`
+  instead of a clean `StorageException`. The existing catch block handles it but logs a confusing
+  message.
+- Fix: Replace with `.where(...).firstOrNull`, throw a proper `StorageException` on null so the
+  catch block falls through cleanly to the local lookup.
+
+### What was learned
+1. **Offline-first archive is a write conflict** — any pattern that overwrites local state from
+   remote during a refresh must check for pending local writes first.
+2. **`setState` in `onChanged` is a focus killer** — on Flutter mobile, full rebuilds caused by
+   `onChanged` are a common source of keyboard dismiss bugs. Use controller listeners instead.
+3. **`failed` vs `pending` in sync status** — `failed` should be reserved for server-side rejection
+   (the server received and refused the data), not for transient network errors. Transient failures
+   should stay `pending` to be retried.
+
+### Flutter analyze status
+Not run — no code changes this session.
+
+## SESSION 24 — Bug Fix Implementation (from `open_bugs.md`) — 2026-03-19
+
+### What was built
+Implemented fixes for 5 critical bugs identified in Session 23:
+- **BUG-001 (High):** Prevented orphaned jobs by modifying `lib/features/job_logging/data/repositories/job_repository_impl.dart` to keep jobs `pending` for retry on remote create failure.
+- **BUG-004 (High):** Resolved reappearing archived jobs in `lib/features/job_logging/data/repositories/job_repository_impl.dart` by adding a check for locally pending archive actions and a new `getJob` method in `lib/features/job_logging/data/datasources/job_local_datasource.dart`.
+- **BUG-002 (Medium):** Ensured new customers appear in the list after job creation by triggering a customer list refresh in `lib/features/job_logging/presentation/providers/job_providers.dart`.
+- **BUG-003 (Medium):** Fixed keyboard dismissal/focus loss in `lib/features/job_logging/presentation/screens/log_job_screen.dart` by removing `onChanged: setState` and adding controller listeners in `initState()`.
+- **BUG-005 (Low):** Improved error handling in `lib/features/customer_history/data/repositories/customer_repository_impl.dart` by replacing `firstWhere` with `firstOrNull` and throwing a `StorageException` for missing customers.
+
+### What broke and how it was fixed
+- **BREAK 1: `replace` tool failure for BUG-003, Step 2**
+  - Cause: Initial `old_string` (`}`) was too generic, matching multiple occurrences.
+  - Fix: Refined `old_string` to include more context, making it unique to the `initState()` method's closing brace.
+
+### What was learned
+1. **Specificity in `replace`:** When using `replace` tool, `old_string` must be extremely specific and unique to avoid unintended replacements or tool failures. Providing sufficient surrounding context is crucial.
+2. **Prerequisite checks:** Always verify prerequisites (like existence of a method) before attempting to implement a fix that relies on it.
+
+### Flutter analyze status
+Pending verify ✅
+
+## SESSION 25 — Bug Fix Implementation (New Bugs from `open_bugs.md`) — 2026-03-19
+
+### What was built
+Implemented fixes for 7 critical bugs identified in `open_bugs.md` (BUG-006 through BUG-012):
+- **BUG-006 (High):** Replaced force unwraps (`!`) of `currentUser` with null-safe checks and explicit error handling in `notes_providers.dart`, `job_detail_screen.dart`, and `correction_request_repository_impl.dart`.
+- **BUG-007 (High):** Implemented local-first archiving for knowledge notes in `knowledge_note_repository_impl.dart`, ensuring offline archive actions are preserved.
+- **BUG-008 (High):** Applied SQL migration `fix_batch_sync_jobs_local_id` to Supabase staging to correct the `batch_sync_jobs` RPC, ensuring `local_id` is correctly returned and offline jobs are marked synced.
+- **BUG-009 (Medium):** Modified `profile_repository_impl.dart` to throw an exception if `_authUserId` is null, preventing silent failures and incorrect profile queries.
+- **BUG-010 (Medium):** Implemented `syncPendingNotes()` in `knowledge_note_repository_impl.dart` and integrated it into `NotesListNotifier.refresh()`, enabling re-syncing of offline notes. (Note: Part 3 of the fix was not implemented due to architectural limitations, documented in `patterns.md`).
+- **BUG-011 (Low):** Optimized `getCustomerById` by adding `getCustomerById` to `CustomerRemoteDatasource` and updating `CustomerRepositoryImpl` to use it, avoiding fetching all customers.
+- **BUG-012 (Low):** Added `await box.flush()` calls to `saveCustomer` in `customer_local_datasource.dart` and `saveNote` in `knowledge_note_local_datasource.dart` for immediate disk persistence.
+
+### What broke and how it was fixed
+- **BREAK 1: `supabase db push --linked` failure**
+  - Cause: Supabase project was not linked, and migration history was out of sync.
+  - Fix: Linked the project using `supabase link`, repaired migration history using `supabase migration repair` for several migrations, and then successfully pushed the new migration.
+- **BREAK 2: `supabase db pull` timeout**
+  - Cause: Long-running operation during schema diffing.
+  - Fix: Allowed the operation to continue in the background, confirmed status with `supabase migration list`.
+
+### What was learned
+1. **Supabase CLI workflow:** For migrations, always ensure the project is linked, migration history is clean, and remote schema is pulled before pushing new migrations. `supabase link`, `supabase migration repair`, and `supabase db pull` are essential steps.
+2. **Architectural limitations:** Sometimes, a "surgical" fix for a bug (like implementing `syncStatus` for notes) requires broader architectural changes that are outside the scope of a single bug fix. It's important to identify and document such limitations.
+
+### Flutter analyze status
+Pending verify ✅

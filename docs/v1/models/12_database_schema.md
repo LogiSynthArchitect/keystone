@@ -410,8 +410,8 @@ RETURNS JSONB AS $$
 DECLARE
   job_record JSONB;
   new_job_id UUID;
-  synced_jobs JSONB := '[]'::jsonb;
-  failed_jobs JSONB := '[]'::jsonb;
+  synced_jobs JSONB := '[]';
+  failed_jobs JSONB := '[]';
 BEGIN
   FOR job_record IN SELECT * FROM jsonb_array_elements(p_jobs)
   LOOP
@@ -429,14 +429,16 @@ BEGIN
         'synced'
       )
       ON CONFLICT (id) DO UPDATE SET
-        location = EXCLUDED.location,
-        notes = EXCLUDED.notes,
-        amount_charged = EXCLUDED.amount_charged,
         sync_status = EXCLUDED.sync_status,
         updated_at = NOW()
       RETURNING id INTO new_job_id;
-      
-      synced_jobs := synced_jobs || jsonb_build_object('local_id', job_record->>'id', 'server_id', new_job_id, 'sync_status', 'synced');
+
+      -- FIX: was job_record->>'local_id' (always NULL). Now uses 'id' which is what Flutter sends.
+      synced_jobs := synced_jobs || jsonb_build_object(
+        'local_id', job_record->>'id',
+        'server_id', new_job_id,
+        'sync_status', 'synced'
+      );
     EXCEPTION WHEN OTHERS THEN
       failed_jobs := failed_jobs || jsonb_build_object('local_id', job_record->>'id', 'error', SQLERRM);
     END;

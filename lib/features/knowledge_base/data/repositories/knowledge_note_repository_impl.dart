@@ -119,10 +119,42 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<void> archiveNote(String id) async {
-    await _remote.archiveNote(id);
+    // 1. Update locally first (offline-first guarantee)
     final localNotes = await _local.getNotes();
     final note = localNotes.where((n) => n.id == id).firstOrNull;
     if (note != null) await _local.saveNote(note.copyWith(isArchived: true));
+
+    // 2. Attempt remote (best-effort, no retry mechanism yet)
+    try {
+      await _remote.archiveNote(id);
+    } catch (e) {
+      debugPrint('[KS:NOTES] Remote archiveNote failed, local state preserved: $e');
+    }
+  }
+
+  @override
+  Future<void> syncPendingNotes() async {
+    final pending = await _local.getPendingNotes();
+    if (pending.isEmpty) return;
+    for (final note in pending) {
+      try {
+        final serviceTypeDb = note.serviceType != null
+            ? _serviceTypeToDb(note.serviceType!)
+            : null;
+        final remoteModel = await _remote.createNote({
+          'user_id': _userId,
+          'title': note.title,
+          'description': note.description,
+          'tags': note.tags,
+          'photo_url': note.photoUrl,
+          'service_type': serviceTypeDb,
+          'is_archived': false,
+        });
+        await _local.saveNote(remoteModel);
+      } catch (e) {
+        debugPrint('[KS:NOTES] syncPendingNotes failed for ${note.id}: $e');
+      }
+    }
   }
 
   @override

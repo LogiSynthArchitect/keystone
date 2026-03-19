@@ -22,10 +22,12 @@ class CorrectionRequestRepositoryImpl implements CorrectionRequestRepository {
 
   @override
   Future<List<CorrectionRequestEntity>> getMyRequests() async {
+    final uid = _supabase.auth.currentUser?.id;
+    if (uid == null) throw Exception('Authentication session expired.');
     final data = await _supabase
         .from('correction_requests')
         .select()
-        .eq('user_id', _supabase.auth.currentUser!.id)
+        .eq('user_id', uid)
         .order('created_at', ascending: false);
         
     return (data as List).map((json) => CorrectionRequestModel.fromJson(json).toEntity()).toList();

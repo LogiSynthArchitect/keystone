@@ -298,6 +298,7 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       ));
       
       _ref.read(customerListProvider.notifier).incrementJobCount(job.customerId);
+      await _ref.read(customerListProvider.notifier).refresh();
 
       // --- REACTIVITY UPGRADE ---
       // 1. Add to the list immediately (shows as 'Pending')

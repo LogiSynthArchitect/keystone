@@ -171,3 +171,83 @@
   2. In the app's first real screen (e.g., `TransitionScreen`), place the logo in the **exact same pixel coordinates** as the native splash.
   3. Call `FlutterNativeSplash.remove()` inside `addPostFrameCallback` in the first screen's `initState`.
 **Result:** A professional "Optical Illusion" where the static native logo appears to come to life and animate seamlessly.
+
+---
+
+## Pattern 16 — Offline-First Write Conflict Resolution
+**Context:** Local-first applications where local state can diverge from remote state (e.g., archiving an item offline).
+**Problem:** A refresh from a remote source can overwrite a pending local action, effectively undoing user intent (e.g., an archived job reappearing).
+**Solution:** Before overwriting a local record with a remote version, check for pending local actions (e.g., `isArchived: true` AND `syncStatus: pending`). If such a pending action exists, skip the remote overwrite to preserve local user intent.
+**Applies to:** Any offline-first application with user-initiated actions that sync to a remote.
+
+---
+
+## Pattern 17 — Preventing Keyboard Dismissal on setState
+**Context:** Flutter mobile applications with `TextField` widgets that dynamically update UI.
+**Problem:** Using `onChanged: (_) => setState(() {})` directly on a `TextField` causes a full widget tree rebuild on every keystroke, leading to loss of `TextField` focus and keyboard dismissal.
+**Solution:** Remove `onChanged: (_) => setState(() {})` from `TextField`s. Instead, attach listeners to `TextEditingController`s within `initState()`. Only trigger `setState()` in these listeners for specific visual updates that depend on the controller's value.
+**Applies to:** Flutter mobile applications with interactive forms and `TextField`s.
+
+---
+
+## Pattern 18 — Sync Status Semantics: 'Pending' vs 'Failed'
+**Context:** Offline-first synchronization logic where local data is pushed to a remote server.
+**Problem:** Overwriting local data with a `failed` status prematurely for transient network errors can prevent subsequent retries, leading to orphaned records.
+**Solution:** Reserve the `failed` sync status exclusively for explicit server-side rejections (e.g., validation errors). For transient issues like network timeouts, keep the local record as `pending` so that the background sync mechanism can retry the operation.
+**Applies to:** Offline-first synchronization engines with retry mechanisms.
+
+---
+
+## Pattern 19 — Specificity in Code Replacement
+**Context:** Automated code modification using string replacement tools.
+**Problem:** Using overly generic "old strings" in replacement operations can lead to unintended modifications or tool failures due to multiple matches.
+**Solution:** Always craft `old_string` values that are highly specific and include enough surrounding context (e.g., multiple lines of code, unique identifiers) to guarantee a single, unambiguous match.
+**Applies to:** Any automated code modification or refactoring process.
+
+---
+
+## Pattern 20 — Prerequisite Verification in Automated Tasks
+**Context:** Implementing a task that depends on specific conditions or existing code elements.
+**Problem:** Proceeding with an implementation without verifying prerequisites can lead to errors, wasted effort, and broken code.
+**Solution:** Before making changes, explicitly verify all dependencies and conditions (e.g., checking for the existence of a method, a variable, or a class). If a prerequisite is missing, implement it first.
+**Applies to:** Any complex automated task or step-by-step implementation.
+
+---
+
+## Pattern 21 — Defensive Programming: Null-Safe Auth Checks
+**Context:** Authenticated operations in Flutter apps using Supabase (or similar) where auth sessions can expire.
+**Problem:** Force unwrapping `currentUser!.id` can lead to crashes if the authentication session is null or expired.
+**Solution:** Always use null-safe checks (`currentUser?.id`) and handle the null case explicitly, either by throwing an appropriate exception (`StorageException`, `Exception`) or by displaying a user-friendly message (e.g., `KsSnackbar`). This prevents app crashes and provides better user feedback.
+**Applies to:** Any Flutter application performing authenticated operations.
+
+---
+
+## Pattern 22 — Client-Server Identifier Reconciliation in Sync
+**Context:** Offline-first applications synchronizing local data to a remote backend via RPC.
+**Problem:** The remote RPC function might use a different identifier internally (e.g., `id`) than what the client expects for reconciliation (`local_id`), leading to skipped sync status updates.
+**Solution:** Ensure the RPC function explicitly maps the client's local identifier (e.g., the `id` field sent from Flutter) to a `local_id` in its response, allowing the client to correctly update the local `sync_status`.
+**Applies to:** Offline-first synchronization systems using remote procedure calls.
+
+---
+
+## Pattern 23 — Explicit Pending Item Synchronization
+**Context:** Offline-first applications with "pending" items (e.g., notes created offline) that need to be pushed to a remote server.
+**Problem:** Simply calling `load()` or `refresh()` may only fetch data from the remote, potentially ignoring or overwriting locally pending items.
+**Solution:** Implement an explicit `syncPendingItems()` method in the repository. Call this method *before* refreshing the main data list (`load()`) to ensure local changes are pushed to the server first.
+**Applies to:** Offline-first applications with local data that requires background synchronization.
+
+---
+
+## Pattern 24 — Performance Optimization: Targeted Data Fetching
+**Context:** Retrieving single records from a remote database.
+**Problem:** Fetching all records and then filtering client-side (e.g., `getCustomers(limit: 1000)` followed by `.firstWhere`) is inefficient and wasteful for large datasets.
+**Solution:** Implement remote datasource methods that leverage database-level filtering for single-record lookups (e.g., `maybeSingle()`, `.eq('id', id)` in Supabase) to minimize network payload and processing.
+**Applies to:** Applications interacting with remote databases, especially with large datasets.
+
+---
+
+## Pattern 25 — Data Integrity: Forced Local Persistence
+**Context:** Local storage solutions (e.g., Hive) that buffer writes to disk.
+**Problem:** In scenarios like hard app crashes or device restarts, buffered writes might not be flushed to disk, leading to data loss for recently saved items.
+**Solution:** For critical data, explicitly call `await box.flush();` after `box.put()` operations to force immediate disk persistence, ensuring data integrity even in unforeseen circumstances.
+**Applies to:** Applications using local storage where data integrity is paramount.

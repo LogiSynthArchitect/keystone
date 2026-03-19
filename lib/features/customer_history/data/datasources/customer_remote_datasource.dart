@@ -23,6 +23,16 @@ class CustomerRemoteDatasource {
     }
   }
 
+  Future<CustomerModel?> getCustomerById(String id) async {
+    final data = await _supabase
+        .from('customers')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
+    if (data == null) return null;
+    return CustomerModel.fromJson(data);
+  }
+
   Future<CustomerModel> createCustomer(Map<String, dynamic> json) async {
     try {
       final data = await _supabase.from('customers').insert(json).select().single();

@@ -52,6 +52,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         }
       });
     }
+    _amountController.addListener(() => setState(() {}));
+    _notesController.addListener(() => setState(() {}));
   }
 
   @override
@@ -377,7 +379,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             keyboardType: type,
             maxLines: maxLines,
             readOnly: readOnly,
-            onChanged: (_) => setState(() {}),
             style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? AppColors.neutral500 : Colors.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
           ),
