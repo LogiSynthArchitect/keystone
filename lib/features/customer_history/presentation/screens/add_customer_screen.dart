@@ -26,6 +26,15 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   final _notesController    = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(() => setState(() {}));
+    _phoneController.addListener(() => setState(() {}));
+    _locationController.addListener(() => setState(() {}));
+    _notesController.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -95,9 +104,18 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
 
   Future<void> _onSave() async {
     HapticFeedback.heavyImpact();
+
+    final phone = _phoneController.text.trim();
+    if (phone.length != 10 || !phone.startsWith('0')) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsSnackbarType.error);
+      }
+      return;
+    }
+
     final customer = await ref.read(addCustomerProvider.notifier).save(
       fullName: _nameController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
+      phoneNumber: phone,
       location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
@@ -220,7 +238,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         _buildDarkField(
           label: "Full Name", 
           hint: "Kwame Mensah", 
-          controller: _nameController, 
+          controller: _nameController,
+          maxLength: 100,
         ),
         const SizedBox(height: 24),
         _buildDarkField(
@@ -229,6 +248,10 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           type: TextInputType.phone, 
           controller: _phoneController, 
           fieldHint: "Required for automated follow-up messages.",
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
         ),
       ],
     );
@@ -247,6 +270,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           hint: "East Legon, Accra", 
           controller: _locationController,
           fieldHint: "Used for navigating to return sites.",
+          maxLength: 255,
         ),
         const SizedBox(height: 24),
         _buildDarkField(
@@ -255,6 +279,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           maxLines: 3, 
           controller: _notesController,
           fieldHint: "Long-term observations about this entity.",
+          maxLength: 1000,
         ),
       ],
     );
@@ -283,7 +308,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
                 color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)
@@ -302,6 +327,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     TextInputType type = TextInputType.text, 
     int maxLines = 1,
     String? fieldHint,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +349,10 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             controller: controller,
             keyboardType: type,
             maxLines: maxLines,
-            onChanged: (_) => setState(() {}),
+            inputFormatters: inputFormatters,
+            maxLength: maxLength,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
             cursorColor: AppColors.accent500,
             decoration: InputDecoration(

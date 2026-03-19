@@ -52,9 +52,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'services': profile.services.map((s) => _serviceTypeToString(s)).toList(),
       'whatsapp_number': profile.whatsappNumber,
       'is_public': profile.isPublic,
-      'profile_url': profile.profileUrl.contains('keystone.app/p/') 
-          ? profile.profileUrl 
-          : 'keystone.app/p/${profile.profileUrl}',
+      'profile_url': profile.profileUrl.contains('/')
+          ? profile.profileUrl.split('/').last
+          : profile.profileUrl,
     });
     await _local.saveProfile(model);
     return model.toEntity();

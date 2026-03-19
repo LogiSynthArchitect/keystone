@@ -30,6 +30,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   @override
   void initState() {
     super.initState();
+    _titleController.addListener(() => setState(() {}));
+    _descriptionController.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(addNoteProvider.notifier).reset();
     });
@@ -221,23 +223,25 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("TECHNICAL LOG", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("YOUR NOTE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Document the core technical findings and solutions.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Write down the problem and how you fixed it.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(
           label: "Note Title", 
           hint: "e.g. Rekeying Kwikset Deadbolt", 
           controller: _titleController, 
-          fieldHint: "Concise summary of the technical problem.",
+          fieldHint: "A short title helps you find this note later.",
+          maxLength: 200,
         ),
         const SizedBox(height: 24),
         _buildDarkField(
-          label: "Technical Description", 
+          label: "Description",
           hint: "Step by step notes, tips, what worked...", 
           maxLines: 5, 
           controller: _descriptionController,
-          fieldHint: "Detailed instructions for future retrieval.",
+          fieldHint: "Write your full notes here — steps, tips, what worked.",
+          // No maxLength for Description as it's 'text' (no limit) in DB
         ),
       ],
     );
@@ -247,9 +251,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("SYSTEM INDEXING", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("ORGANISE YOUR NOTE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Categorize this note for rapid technical retrieval.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Add tags and a category to find this note easily later.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
         Text("TAGS", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
         const SizedBox(height: 8),
@@ -318,7 +322,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
                 color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)
@@ -336,6 +340,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     required TextEditingController controller, 
     int maxLines = 1,
     String? fieldHint,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,7 +360,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
           child: TextField(
             controller: controller,
             maxLines: maxLines,
-            onChanged: (_) => setState(() {}),
+            maxLength: maxLength,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
             cursorColor: AppColors.accent500,
             decoration: InputDecoration(

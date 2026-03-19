@@ -99,12 +99,11 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                     focusNode: _searchFocusNode,
                     onChanged: (q) {
                       ref.read(notesListProvider.notifier).search(q);
-                      setState(() {});
                     },
                     style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
                     cursorColor: AppColors.accent500,
                     decoration: InputDecoration(
-                      hintText: "SEARCH TECHNICAL DATA...",
+                      hintText: "Search your notes...",
                       hintStyle: AppTextStyles.caption.copyWith(color: AppColors.neutral600, letterSpacing: 1.0),
                       prefixIcon: Icon(LineAwesomeIcons.search_solid, color: _isSearchFocused ? AppColors.accent500 : AppColors.neutral500, size: 20),
                       suffixIcon: _searchController.text.isNotEmpty
@@ -112,9 +111,8 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                               onTap: () {
                                 _searchController.clear();
                                 ref.read(notesListProvider.notifier).search('');
-                                setState(() {});
                               },
-                              child: Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
+                              child: const Icon(LineAwesomeIcons.times_solid, color: AppColors.neutral500, size: 20))
                           : null,
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -190,7 +188,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         foregroundColor: AppColors.primary900,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        child: Icon(LineAwesomeIcons.plus_solid, size: 28),
+        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 2, onTabTapped: _onTabTapped),
     );
@@ -228,7 +226,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              isSearching ? "NO MATCHING RECORDS" : "NO TECHNICAL NOTES", 
+              isSearching ? "NO RESULTS FOUND" : "NO NOTES YET",
               textAlign: TextAlign.center,
               style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
             ),
@@ -236,7 +234,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
             Text(
               isSearching 
                 ? "Search yielded zero results for \"$query\"." 
-                : "No specialized technical logs found.\nInitialize your first knowledge entry.", 
+                : "No notes created yet.\nTap + below to write your first note.",
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, height: 1.5)
             ),

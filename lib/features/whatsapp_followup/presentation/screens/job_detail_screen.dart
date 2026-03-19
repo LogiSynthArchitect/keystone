@@ -33,7 +33,7 @@ class JobDetailScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           IconButton(
-            icon: Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
+            icon: const Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
@@ -211,11 +211,11 @@ class JobDetailScreen extends ConsumerWidget {
                     style: AppTextStyles.caption.copyWith(color: isLocked ? AppColors.neutral500 : AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
                   if (isLocked) ...[
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LineAwesomeIcons.lock_solid, size: 10, color: AppColors.neutral500),
+                        const Icon(LineAwesomeIcons.lock_solid, size: 10, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text("SYSTEM LOCKED", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
                       ],
@@ -304,12 +304,12 @@ class JobDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(customer?.fullName.toUpperCase() ?? "UNKNOWN ENTITY", style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(customer?.phoneNumber ?? "NO CONTACT", style: AppTextStyles.caption.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-            Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
           ],
         ),
       ),
@@ -330,7 +330,7 @@ class JobDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LineAwesomeIcons.terminal_solid, size: 14, color: AppColors.accent500),
+              const Icon(LineAwesomeIcons.terminal_solid, size: 14, color: AppColors.accent500),
               const SizedBox(width: 8),
               Text("LOG ENTRY", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
             ],

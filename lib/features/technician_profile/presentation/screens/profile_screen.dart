@@ -9,6 +9,7 @@ import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -23,11 +24,11 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.primary900,
       appBar: KsAppBar(
-        title: "OPERATOR PROFILE",
+        title: "MY PROFILE",
         showBack: false,
         actions: [
           IconButton(
-            icon: Icon(LineAwesomeIcons.sign_out_alt_solid, color: AppColors.error500, size: 22),
+            icon: const Icon(LineAwesomeIcons.sign_out_alt_solid, color: AppColors.error500, size: 22),
             onPressed: () => ref.read(authStateProvider.notifier).signOut(),
           ),
         ],
@@ -54,9 +55,9 @@ class ProfileScreen extends ConsumerWidget {
                           height: 80,
                           decoration: BoxDecoration(
                             color: AppColors.primary900,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: AppColors.primary700, width: 2),
-                            image: (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty) 
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.accent500, width: 2),
+                            image: (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty)
                                 ? DecorationImage(image: NetworkImage(profile.photoUrl!), fit: BoxFit.cover)
                                 : null,
                           ),
@@ -69,7 +70,7 @@ class ProfileScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(profile?.displayName.toUpperCase() ?? "UNKNOWN OPERATOR", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                              Text(profile?.displayName.toUpperCase() ?? "SET UP YOUR PROFILE", style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
@@ -81,14 +82,14 @@ class ProfileScreen extends ConsumerWidget {
                                       border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
                                     ),
                                     child: Text(
-                                      "V1 PILOT OPERATOR", 
+                                      "PILOT USER",
                                       style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1.0)
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text(profile?.whatsappNumber ?? "NO REGISTERED CONTACT", style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+                              Text(profile?.whatsappNumber ?? "No phone number added", style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),
@@ -97,7 +98,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  _buildSectionLabel("SYSTEM ACCESS LINK"),
+                  _buildSectionLabel("YOUR PROFILE LINK"),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -108,24 +109,24 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(LineAwesomeIcons.link_solid, color: AppColors.accent500, size: 20),
+                        const Icon(LineAwesomeIcons.link_solid, color: AppColors.accent500, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            "keystone.app/p/${profile?.profileUrl ?? ''}",
+                            "${AppConstants.profileBaseUrl}/${profile?.profileUrl ?? ''}",
                             style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(LineAwesomeIcons.share_square_solid, color: AppColors.accent500, size: 20),
+                          icon: const Icon(LineAwesomeIcons.share_square_solid, color: AppColors.accent500, size: 20),
                           onPressed: () => ref.read(profileProvider.notifier).shareProfile(),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                  _buildSectionLabel("TERMINAL SETTINGS"),
+                  _buildSectionLabel("APP SETTINGS"),
                   _buildSettingsTile(LineAwesomeIcons.map_marker_solid, "REGION", "ACCRA, GHANA"),
                   _buildSettingsTile(LineAwesomeIcons.language_solid, "LANGUAGE", "ENGLISH (UK)"),
                   
@@ -152,7 +153,7 @@ class ProfileScreen extends ConsumerWidget {
                                   "CORRECTION REQUESTS",
                                   style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 1.0),
                                 ),
-                                Icon(LineAwesomeIcons.clipboard_list_solid, color: AppColors.accent500, size: 24),
+                                const Icon(LineAwesomeIcons.clipboard_list_solid, color: AppColors.accent500, size: 24),
                               ],
                             ),
                           ),
@@ -181,10 +182,10 @@ class ProfileScreen extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "CONFIGURE PROFILE",
+                                "EDIT MY PROFILE",
                                 style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 2.0),
                               ),
-                              Icon(LineAwesomeIcons.cog_solid, color: AppColors.accent500, size: 24),
+                              const Icon(LineAwesomeIcons.cog_solid, color: AppColors.accent500, size: 24),
                             ],
                           ),
                         ),

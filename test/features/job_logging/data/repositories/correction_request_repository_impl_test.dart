@@ -11,11 +11,9 @@ class MockPostgrestTransformBuilder extends Mock implements PostgrestTransformBu
 void main() {
   late CorrectionRequestRepositoryImpl repository;
   late MockSupabaseClient mockSupabase;
-  late MockSupabaseQueryBuilder mockQueryBuilder;
 
   setUp(() {
     mockSupabase = MockSupabaseClient();
-    mockQueryBuilder = MockSupabaseQueryBuilder();
     repository = CorrectionRequestRepositoryImpl(mockSupabase);
   });
 

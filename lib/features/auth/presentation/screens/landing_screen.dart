@@ -120,7 +120,7 @@ class LandingScreen extends StatelessWidget {
                                      fontWeight: FontWeight.w700,
                                      letterSpacing: 1.5,
                                    ),
-                                 ),                                  Icon(
+                                 ),                                  const Icon(
                                     LineAwesomeIcons.angle_right_solid,
                                     color: AppColors.accent500,
                                     size: 20,

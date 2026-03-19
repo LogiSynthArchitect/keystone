@@ -40,7 +40,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       leading: showBack
           ? IconButton(
-              icon: Icon(LineAwesomeIcons.angle_left_solid, size: 20),
+              icon: const Icon(LineAwesomeIcons.angle_left_solid, size: 20),
               onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           : null,
@@ -58,7 +58,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(LineAwesomeIcons.sync_solid, size: 12, color: AppColors.primary900),
+                  const Icon(LineAwesomeIcons.sync_solid, size: 12, color: AppColors.primary900),
                   const SizedBox(width: 4),
                   Text(
                     '$pendingCount PENDING',

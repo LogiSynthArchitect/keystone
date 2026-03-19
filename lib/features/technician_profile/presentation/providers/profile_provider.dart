@@ -13,6 +13,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
 import '../../domain/usecases/update_profile_usecase.dart';
 import '../../domain/usecases/share_profile_usecase.dart';
+import '../../../../core/constants/app_constants.dart';
 
 final profileRemoteDatasourceProvider = Provider<ProfileRemoteDatasource>(
   (ref) => ProfileRemoteDatasource(ref.watch(supabaseClientProvider)));
@@ -94,7 +95,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
   Future<void> shareProfile() async {
     if (state.profile == null) return;
-    final shareUrl = 'https://keystone.app/p/${state.profile!.profileUrl}';
+    final shareUrl = '${AppConstants.profileBaseUrl}/${state.profile!.profileUrl}';
     await Share.share(
       'Check out my locksmith profile: $shareUrl',
       subject: 'My Keystone Profile',

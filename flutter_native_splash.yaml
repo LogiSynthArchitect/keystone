@@ -1,8 +1,12 @@
 flutter_native_splash:
+  # Background color only — the logo is the XML vector drawable
+  # managed manually in android/app/src/main/res/drawable-v21/launch_background.xml
+  # DO NOT add an `image:` field here pointing to the XML — flutter_native_splash
+  # only handles raster PNG images and will silently revert to PNG if given an XML path.
   color: "#0A1628"
-  image: android/app/src/main/res/drawable/ic_keystone_splash_logo.xml
   fullscreen: true
   android_12:
     color: "#0A1628"
-    image: android/app/src/main/res/drawable/ic_keystone_splash_logo.xml
+    # Android 12 icon is set manually in values-v31/styles.xml and values-night-v31/styles.xml
+    # referencing @drawable/ic_keystone_splash_logo (the XML vector).
   web: false

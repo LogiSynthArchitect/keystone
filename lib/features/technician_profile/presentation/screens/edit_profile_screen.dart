@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,6 +35,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String _originalWhatsapp = '';
   List<ServiceType> _originalServices = [];
   bool _originalIsPublic = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(() => setState(() {}));
+    _bioController.addListener(() => setState(() {}));
+    _whatsappController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -119,13 +128,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _onSave() async {
+    final whatsapp = _whatsappController.text.trim();
+    if (whatsapp.length != 10 || !whatsapp.startsWith('0')) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana WhatsApp number starting with 0", type: KsSnackbarType.error);
+      }
+      return;
+    }
+
     final profile = ref.read(profileProvider).profile!;
     final updated = profile.copyWith(
       displayName: _nameController.text.trim(),
       bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
       photoUrl: _pendingPhotoUrl ?? profile.photoUrl,
       services: _services,
-      whatsappNumber: _whatsappController.text.trim(),
+      whatsappNumber: whatsapp,
       isPublic: _isPublic,
       updatedAt: DateTime.now(),
     );
@@ -192,8 +209,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               bottom: 0, right: 0,
                               child: Container(
                                 padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
-                                child: Icon(LineAwesomeIcons.camera_solid, size: 14, color: AppColors.primary900),
+                                decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
+                                child: const Icon(LineAwesomeIcons.camera_solid, size: 14, color: AppColors.primary900),
                               ),
                             ),
                           ],
@@ -202,11 +219,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     
-                    _buildInputField(label: 'DISPLAY NAME', controller: _nameController, hint: 'e.g. JEREMIE MENSAH'),
+                    _buildInputField(label: 'DISPLAY NAME', controller: _nameController, hint: 'e.g. JEREMIE MENSAH', maxLength: 100),
                     const SizedBox(height: AppSpacing.lg),
-                    _buildInputField(label: 'PROFESSIONAL BIO', controller: _bioController, hint: 'Describe your expertise...', isMultiline: true),
+                    _buildInputField(label: 'PROFESSIONAL BIO', controller: _bioController, hint: 'Describe your expertise...', isMultiline: true, maxLength: 300),
                     const SizedBox(height: AppSpacing.lg),
-                    _buildInputField(label: 'WHATSAPP NUMBER', controller: _whatsappController, hint: '024 412 3456', isPhone: true),
+                    _buildInputField(label: 'WHATSAPP NUMBER', controller: _whatsappController, hint: '024 412 3456', isPhone: true,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                    ),
                     
                     const SizedBox(height: AppSpacing.xl),
                     Text('OFFERED SERVICES', style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
@@ -228,7 +250,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             ),
                             child: Row(children: [
                               Expanded(child: Text(_serviceLabel(type), style: AppTextStyles.body.copyWith(color: isSelected ? AppColors.white : AppColors.neutral400, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500))),
-                              if (isSelected) Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: AppColors.accent500),
+                              if (isSelected) const Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: AppColors.accent500),
                             ]),
                           ),
                         ),
@@ -270,7 +292,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildInputField({required String label, required TextEditingController controller, required String hint, bool isMultiline = false, bool isPhone = false}) {
+  Widget _buildInputField({required String label, required TextEditingController controller, required String hint, bool isMultiline = false, bool isPhone = false, List<TextInputFormatter>? inputFormatters, int? maxLength}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -286,6 +308,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             controller: controller,
             maxLines: isMultiline ? 4 : 1,
             keyboardType: isPhone ? TextInputType.phone : (isMultiline ? TextInputType.multiline : TextInputType.text),
+            inputFormatters: inputFormatters,
+            maxLength: maxLength,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w600),
             cursorColor: AppColors.accent500,
             decoration: InputDecoration(
@@ -294,7 +320,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: InputBorder.none,
             ),
-            onChanged: (_) => setState(() {}),
           ),
         ),
       ],
@@ -317,7 +342,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'SAVE SYSTEM CHANGES',
+                'SAVE CHANGES',
                 style: AppTextStyles.h2.copyWith(
                   color: _canSave ? AppColors.white : AppColors.neutral600,
                   fontWeight: FontWeight.w800,
@@ -325,7 +350,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
               ),
               if (isLoading)
-                SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
               else
                 Icon(
                   LineAwesomeIcons.save_solid,

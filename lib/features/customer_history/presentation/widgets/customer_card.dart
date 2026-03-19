@@ -79,10 +79,10 @@ class CustomerCard extends StatelessWidget {
                     )
                   ),
                   if (customer.lastJobAt != null) ...[
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(LineAwesomeIcons.history_solid, size: 10, color: AppColors.neutral500),
+                        const Icon(LineAwesomeIcons.history_solid, size: 10, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text(
                           "LAST RECORD: ${DateFormatter.relative(customer.lastJobAt!).toUpperCase()}", 
@@ -94,8 +94,8 @@ class CustomerCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: 8),
-            Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
+            const SizedBox(width: 8),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
           ],
         ),
       ),
