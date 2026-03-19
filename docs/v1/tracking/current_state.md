@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 19 2026
-### Session: 27 (POLISH, LANGUAGE AUDIT & WEB OVERHAUL)
+### Session: 28 (CRITICAL BUG FIXES — FK CONSTRAINT & KEYBOARD FOCUS)
 
 ---
 
@@ -72,3 +72,5 @@
 | BUG-020 | Medium   | Splash screen using PNG despite XML vector being present                 | ✅ Fixed    |
 | BUG-021 | Low      | Share URL used `keystone.app` domain (non-existent) instead of Vercel   | ✅ Fixed    |
 | BUG-022 | Low      | Dead edit button in customer detail screen (empty onPressed)             | ✅ Fixed    |
+| BUG-023 | High     | Job create FK constraint: auth UID passed instead of internal `users.id` | ✅ Fixed    |
+| BUG-024 | Medium   | Amount field formatter with `^` anchor caused keyboard unfocus on "0"   | ✅ Fixed    |

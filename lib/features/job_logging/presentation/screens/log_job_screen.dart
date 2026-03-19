@@ -52,8 +52,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         }
       });
     }
-    _amountController.addListener(() => setState(() {}));
-    _notesController.addListener(() => setState(() {}));
   }
 
   @override
@@ -318,10 +316,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           label: "Amount (GHS)", 
           hint: "350", 
           controller: _amountController, 
-          type: TextInputType.number,
+          type: TextInputType.text,
           fieldHint: "Total charged (Hardware + Labor).",
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+            FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
           ],
         ),
         const SizedBox(height: 24),
