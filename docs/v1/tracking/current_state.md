@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 19 2026
-### Session: 25 (BUG FIX IMPLEMENTATION)
+### Session: 26 (INPUT/UX AUDIT)
 
 ---
 
@@ -57,5 +57,19 @@
 | BUG-010 | Medium   | Offline notes never re-synced (no `syncPendingNotes`)        | ✅ Fixed    |
 | BUG-011 | Low      | `getCustomerById` fetches 1000 customers to find one         | ✅ Fixed    |
 | BUG-012 | Low      | Missing `flush()` in customer and note datasources           | ✅ Fixed    |
+| BUG-013 | High     | `onChanged: setState` keyboard focus loss on 3 more screens  | Open        |
+| BUG-014 | High     | Phone fields missing Ghana format + 10-digit limit           | Open        |
+| BUG-015 | Medium   | No sync status indicator — background sync invisible to user  | Open        |
+| BUG-016 | Medium   | No `maxLength` on form fields — DB constraint errors on sync  | Open        |
+| BUG-017 | Medium   | Amount field accepts negatives and invalid input             | Open        |
+| BUG-018 | Low      | Search fields call Riverpod + setState redundantly           | Open        |
 
+---
 
+## Next Action
+Fix in this order:
+1. **BUG-013 + BUG-014** (High) — keyboard focus + phone validation, same 3 screens, fix together
+2. **BUG-017** (Medium) — amount field formatter, 1 screen, ~5 lines
+3. **BUG-016** (Medium) — add `maxLength` to all form fields (mechanical, all screens)
+4. **BUG-015** (Medium) — sync indicator in job list UI
+5. **BUG-018** (Low) — remove redundant `setState` from 3 search fields

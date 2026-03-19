@@ -1,9 +1,9 @@
 # OPEN BUGS — KEYSTONE V1
 ### Last Updated: March 19 2026
-### ALL BUGS CLOSED — Sessions 24 & 25
+### Session 26 Update: Input/UX audit added BUG-013 through BUG-018
 
-All 12 bugs identified across Sessions 23–25 have been implemented and verified.
-Zero open issues. Zero `flutter analyze` errors.
+BUG-001 through BUG-012 all closed (Sessions 24 & 25).
+BUG-013 through BUG-018 are new — found in full input/form audit (Session 26).
 
 ---
 
@@ -643,6 +643,318 @@ Future<void> saveNote(KnowledgeNoteModel note) async {
 | BUG-010 | `knowledge_note_repository_impl.dart` line 64 | Medium   | ✅ Fixed | No `syncPendingNotes()` — offline notes lost on next remote fetch|
 | BUG-011 | `customer_repository_impl.dart` line 50       | Low      | ✅ Fixed | `getCustomerById` fetches all 1000 customers to find one         |
 | BUG-012 | `customer_local_datasource.dart` + notes ds   | Low      | ✅ Fixed | Missing `flush()` — customers/notes not force-persisted to disk  |
+
+---
+
+---
+
+## BUG-013 — `onChanged: setState` Keyboard Focus Loss on 3 More Screens
+**Severity:** High — same root cause as BUG-003, affects customer, notes and profile forms
+**Status:** Open
+
+### Files
+1. `lib/features/customer_history/presentation/screens/add_customer_screen.dart` — `_buildDarkField` line ~325
+2. `lib/features/knowledge_base/presentation/screens/add_note_screen.dart` — `_buildDarkField` line ~358
+3. `lib/features/technician_profile/presentation/screens/edit_profile_screen.dart` — `_buildInputField` line ~297
+
+### Root Cause
+BUG-003 fixed `log_job_screen.dart` but the same `onChanged: (_) => setState(() {})` pattern
+exists in three other screens that have their own `_buildDarkField` or `_buildInputField` helpers.
+Every keystroke triggers a full rebuild → keyboard collapses, user loses focus, has to tap the
+field again to continue typing. Confirmed worst when typing "0".
+
+### Fix (same pattern as BUG-003 fix)
+For each screen:
+
+**Step 1** — Remove `onChanged: (_) => setState(() {})` from the `_buildDarkField` /
+`_buildInputField` helper method.
+
+**Step 2** — In each screen's `initState()`, add a listener to every controller whose value
+drives a visual change (e.g. Save button enabled state, character count, conditional error):
+
+```dart
+// add_customer_screen.dart initState:
+_nameController.addListener(() => setState(() {}));
+_phoneController.addListener(() => setState(() {}));
+_locationController.addListener(() => setState(() {}));
+_notesController.addListener(() => setState(() {}));
+
+// add_note_screen.dart initState:
+_titleController.addListener(() => setState(() {}));
+_descriptionController.addListener(() => setState(() {}));
+
+// edit_profile_screen.dart initState:
+_nameController.addListener(() => setState(() {}));
+_bioController.addListener(() => setState(() {}));
+_whatsappController.addListener(() => setState(() {}));
+```
+
+**Step 3** — Remove listeners in `dispose()`:
+```dart
+_nameController.removeListener(() => setState(() {}));
+// ... same for each
+```
+Or simply call `_nameController.dispose()` in dispose (Dart auto-removes listeners on dispose).
+
+### Test Verification
+1. Open Add Customer screen. Tap phone field. Type "0553".
+2. Expected: keyboard stays open, cursor stays in field after every keystroke.
+3. Before fix: focus drops after "0", user must tap field again.
+
+---
+
+## BUG-014 — Phone Fields Missing Ghana Format Enforcement on 3 Screens
+**Severity:** High — invalid phone numbers stored, WhatsApp links break silently
+**Status:** Open
+
+### Files
+1. `lib/features/customer_history/presentation/screens/add_customer_screen.dart` — phone field
+2. `lib/features/job_logging/presentation/screens/log_job_screen.dart` — new customer phone field
+3. `lib/features/technician_profile/presentation/screens/edit_profile_screen.dart` — WhatsApp field
+
+### Root Cause
+These three phone fields have `keyboardType: TextInputType.phone` but no `inputFormatters`
+and no format validation. A user can type "+233-024 123 4567", "abc", or "123" and it will be
+accepted and saved. The WhatsApp launcher builds a URL from the raw phone string — if the format
+is wrong, WhatsApp opens but shows "invalid number". The correct pattern already exists in
+`phone_entry_screen.dart` (lines 177–179) but was not applied to these three screens.
+
+### Correct Pattern (from `phone_entry_screen.dart`)
+```dart
+keyboardType: TextInputType.phone,
+inputFormatters: [
+  FilteringTextInputFormatter.digitsOnly,
+  LengthLimitingTextInputFormatter(10),
+],
+```
+
+And validate before save:
+```dart
+// Ghana numbers: 10 digits, starts with 0
+final phone = _phoneController.text.trim();
+if (phone.length != 10 || !phone.startsWith('0')) {
+  // show error: "Enter a valid 10-digit Ghana number starting with 0"
+  return;
+}
+```
+
+### Apply To
+- `add_customer_screen.dart`: phone field + validation before calling `notifier.save()`
+- `log_job_screen.dart`: new customer phone field + validation in Step 1
+- `edit_profile_screen.dart`: WhatsApp number field + validation before `notifier.save()`
+
+### Test Verification
+1. Open Add Customer. Tap phone field. Try typing letters — keyboard shows digits only.
+2. Try typing 11 digits — stops at 10.
+3. Enter "0553891956". Tap Save. Succeeds.
+4. Enter "553891956" (9 digits, no leading 0). Tap Save. Shows error: invalid format.
+
+---
+
+## BUG-015 — No Visual Sync Status Indicator (Auto-Sync is Invisible)
+**Severity:** Medium — user has no feedback that background sync is happening or pending
+**Status:** Open
+
+### Files
+- `lib/features/job_logging/presentation/screens/job_list_screen.dart`
+- `lib/features/job_logging/presentation/providers/job_providers.dart` — `pendingCount` getter exists but unused in UI
+
+### Root Cause
+`JobListState.pendingCount` (job_providers.dart) counts jobs with `sync_status == pending`.
+This number is calculated but never displayed anywhere. The user has no way to know:
+- That a sync is happening in the background
+- That X jobs are waiting to sync to Supabase
+- When the last sync completed successfully
+
+The `isLoading` spinner only shows during initial load — not during background sync
+(`refresh()` → `syncPendingJobs()` runs silently).
+
+### Fix
+Add a small sync status chip at the top of the job list. Two states:
+
+**State A — pending jobs exist:**
+```dart
+// Show inside job list header, near the job count
+if (state.pendingCount > 0)
+  Row(children: [
+    Icon(Icons.sync, size: 14, color: AppColors.accent500),
+    SizedBox(width: 4),
+    Text(
+      '${state.pendingCount} pending sync',
+      style: AppTextStyles.label.copyWith(color: AppColors.accent500),
+    ),
+  ]),
+```
+
+**State B — all synced:**
+```dart
+// When pendingCount == 0 and not loading, show a brief "All synced ✓"
+// or just show nothing (clean UI)
+```
+
+Also add a `isSyncing` bool to `JobListState` and set it to `true` during `refresh()` calls,
+`false` when done. Show a small pulsing dot or spinner while syncing.
+
+### Test Verification
+1. Create a job while offline.
+2. Navigate to job list.
+3. Expected: "1 pending sync" indicator visible near job count.
+4. Re-enable network, pull to refresh.
+5. Expected: indicator disappears once sync completes.
+
+---
+
+## BUG-016 — Text Fields Missing `maxLength` — Unbounded Input on All Forms
+**Severity:** Medium — users can paste arbitrarily long text, crashes DB constraints
+**Status:** Open
+
+### Root Cause
+The database enforces field length limits via `CHECK` constraints and `varchar(N)` columns.
+But the app has no client-side `maxLength` on most fields. A user who pastes a 5000-character
+paragraph into the Notes field will get a Supabase error on sync — with no feedback on why.
+The DB column sizes are the authoritative limits; the app should enforce them client-side first.
+
+### Fields and Their DB Limits (from schema)
+
+| Screen | Field | DB Limit | Current maxLength in app |
+|--------|-------|----------|--------------------------|
+| Add Customer | Name | varchar(100) | None |
+| Add Customer | Location | varchar(255) | None |
+| Add Customer | Notes | varchar(1000) | None |
+| Log Job | Customer Name | varchar(100) | None |
+| Log Job | Location | varchar(255) | None |
+| Log Job | Notes | varchar(2000) | None |
+| Edit Profile | Display Name | varchar(100) | None |
+| Edit Profile | Bio | varchar(300) | None |
+| Add Note | Title | varchar(200) | None |
+| Add Note | Description | text (no limit) | None |
+| Follow-up Message | Message | varchar(1000) | None |
+| Correction Request | Reason | text (no limit) | None |
+
+### Fix
+Add `maxLength` to each `TextField` matching the DB column size:
+```dart
+// Example for customer name field:
+TextField(
+  controller: _nameController,
+  maxLength: 100,                   // matches varchar(100) in DB
+  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+  // ... rest of decoration
+)
+```
+
+Set `buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null`
+if you don't want the character counter visible in the UI (keeps the dark aesthetic clean).
+
+### Test Verification
+1. Open Add Customer. Paste a 500-character string into the Name field.
+2. Expected: input stops at 100 characters. No DB error on save.
+
+---
+
+## BUG-017 — Amount Field Accepts Negative Numbers and Invalid Input
+**Severity:** Medium — negative amounts could be stored; no client-side guard
+**Status:** Open
+
+### File
+`lib/features/job_logging/presentation/screens/log_job_screen.dart` — amount field (~line 291)
+
+### Root Cause
+The amount field uses `keyboardType: TextInputType.number` but has no `inputFormatters`.
+The DB has `CHECK (amount_charged >= 0)` which would reject negatives at the server — but
+the error is caught silently during sync and logged only to console. The user would see the
+job saved locally but the amount never syncing correctly.
+
+`KsTextField` widget already has a correct amount formatter:
+`RegExp(r'^\d+\.?\d{0,2}')` — but the job log screen uses its own `_buildDarkField`
+helper which doesn't apply it.
+
+### Fix
+Add `inputFormatters` to the amount field:
+```dart
+// In the amount _buildDarkField call, add formatters:
+inputFormatters: [
+  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+],
+```
+This allows digits and up to 2 decimal places, and prevents `-`, `+`, `e`, letters.
+
+Also add validation before save:
+```dart
+final amount = double.tryParse(amountController.text.trim());
+if (amount != null && amount <= 0) {
+  // show: "Amount must be greater than 0"
+  return;
+}
+```
+
+### Test Verification
+1. Open Log Job. Tap amount field. Try typing "-50" — the `-` is rejected.
+2. Try typing "35.999" — stops at "35.99" (2 decimal places).
+3. Enter "350". Save. Job saved with GHS 350.
+
+---
+
+## BUG-018 — Search Fields Double-Update State (Riverpod + setState Both Called)
+**Severity:** Low — performance issue, causes unnecessary rebuilds on search
+**Status:** Open
+
+### Files
+1. `lib/features/job_logging/presentation/screens/job_list_screen.dart` — search field `onChanged`
+2. `lib/features/customer_history/presentation/screens/customer_list_screen.dart` — search `onChanged`
+3. `lib/features/knowledge_base/presentation/screens/notes_list_screen.dart` — search `onChanged`
+
+### Root Cause
+Each search field's `onChanged` calls both the Riverpod notifier AND `setState(() {})`.
+Riverpod already triggers a rebuild when the provider state changes. The `setState` is
+redundant and causes a second rebuild on every keystroke. On slower devices this is
+noticeable as a stutter during typing in the search bar.
+
+### Fix
+Remove the `setState(() {})` call from each search field's `onChanged`. The Riverpod
+provider rebuild is sufficient:
+
+```dart
+// BEFORE (job_list_screen.dart):
+onChanged: (val) {
+  ref.read(jobListProvider.notifier).setSearchQuery(val);
+  setState(() {}); // ← REMOVE THIS
+},
+
+// AFTER:
+onChanged: (val) {
+  ref.read(jobListProvider.notifier).setSearchQuery(val);
+},
+```
+Apply same change to customer list and notes list search fields.
+
+### Test Verification
+1. Open Job List. Search for any term. Typing should feel smooth with no stutter.
+
+---
+
+## Updated Summary Table
+
+| ID      | File(s)                                          | Severity | Status   | Root Cause                                                     |
+|---------|--------------------------------------------------|----------|----------|----------------------------------------------------------------|
+| BUG-001 | `job_repository_impl.dart` line 73               | High     | ✅ Fixed | Failed remote create overwrites `pending` with `failed`        |
+| BUG-002 | `job_providers.dart` line 300                    | Medium   | ✅ Fixed | `customerListProvider` not refreshed after new customer create |
+| BUG-003 | `log_job_screen.dart` line 380                   | Medium   | ✅ Fixed | `onChanged: setState` full rebuild kills keyboard focus        |
+| BUG-004 | `job_repository_impl.dart` lines 34–41           | High     | ✅ Fixed | Remote fetch overwrites pending-archive local state            |
+| BUG-005 | `customer_repository_impl.dart` line 51          | Low      | ✅ Fixed | `firstWhere` throws `StateError` instead of clean exception    |
+| BUG-006 | 3 files                                          | High     | ✅ Fixed | `currentUser!` force unwrap crashes on session expiry          |
+| BUG-007 | `knowledge_note_repository_impl.dart` line 121   | High     | ✅ Fixed | `archiveNote` no offline guard — note reappears after sync     |
+| BUG-008 | SQL RPC `batch_sync_jobs`                        | High     | ✅ Fixed | Already correct in live DB                                     |
+| BUG-009 | `profile_repository_impl.dart` line 16           | Medium   | ✅ Fixed | `_authUserId` returns `''` instead of throwing                 |
+| BUG-010 | `knowledge_note_repository_impl.dart` line 64    | Medium   | ✅ Fixed | No `syncPendingNotes()` — offline notes lost on remote fetch   |
+| BUG-011 | `customer_repository_impl.dart` line 50          | Low      | ✅ Fixed | `getCustomerById` fetches 1000 customers to find one           |
+| BUG-012 | `customer_local_datasource.dart` + notes ds      | Low      | ✅ Fixed | Missing `flush()` in customer and note datasources             |
+| BUG-013 | `add_customer_screen.dart`, `add_note_screen.dart`, `edit_profile_screen.dart` | High | Open | `onChanged: setState` kills keyboard focus on 3 more screens |
+| BUG-014 | `add_customer_screen.dart`, `log_job_screen.dart`, `edit_profile_screen.dart` | High | Open | Phone fields missing Ghana format + 10-digit limit             |
+| BUG-015 | `job_list_screen.dart`                           | Medium   | Open     | No sync status indicator — background sync is invisible        |
+| BUG-016 | All form screens                                 | Medium   | Open     | No `maxLength` — unbounded input crashes DB constraints        |
+| BUG-017 | `log_job_screen.dart` amount field               | Medium   | Open     | Amount field accepts negatives and non-numeric input           |
+| BUG-018 | 3 list screens (search fields)                   | Low      | Open     | Search `onChanged` calls Riverpod + `setState` redundantly     |
 
 ---
 
