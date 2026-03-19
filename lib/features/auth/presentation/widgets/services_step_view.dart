@@ -34,7 +34,7 @@ class ServicesStepView extends StatelessWidget {
             color: AppColors.primary700,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(LineAwesomeIcons.tools_solid, color: Color(0xFFF9A825), size: 26),
+          child: const Icon(LineAwesomeIcons.tools_solid, color: Color(0xFFF9A825), size: 26),
         ),
         const SizedBox(height: 16),
         const Text(

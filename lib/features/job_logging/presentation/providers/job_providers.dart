@@ -105,6 +105,7 @@ class JobListState {
   final bool isLoading;
   final String? errorMessage;
   final String searchQuery;
+  final bool isSyncing;
   
   const JobListState({
     this.activeJobs = const [], 
@@ -112,6 +113,7 @@ class JobListState {
     this.isLoading = false, 
     this.errorMessage,
     this.searchQuery = '',
+    this.isSyncing = false,
   });
 
   List<JobEntity> get filteredJobs {
@@ -130,6 +132,7 @@ class JobListState {
     bool? isLoading, 
     String? errorMessage,
     String? searchQuery,
+    bool? isSyncing,
     bool clearError = false
   }) {
     return JobListState(
@@ -138,6 +141,7 @@ class JobListState {
       isLoading: isLoading ?? this.isLoading, 
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       searchQuery: searchQuery ?? this.searchQuery,
+      isSyncing: isSyncing ?? this.isSyncing,
     );
   }
 int get totalJobs => activeJobs.length;
@@ -184,10 +188,15 @@ class JobListNotifier extends StateNotifier<JobListState> {
   }
 
   Future<void> refresh() async {
-    // Force sync every time refresh is called to ensure UI reactivity
-    await _ref.read(syncOfflineCustomersUsecaseProvider).call();
-    await _syncOffline();
-    await load();
+    state = state.copyWith(isSyncing: true);
+    try {
+      // Force sync every time refresh is called to ensure UI reactivity
+      await _ref.read(syncOfflineCustomersUsecaseProvider).call();
+      await _syncOffline();
+      await load();
+    } finally {
+      state = state.copyWith(isSyncing: false);
+    }
   }
 
   Future<void> archive(String id) async {

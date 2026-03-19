@@ -251,3 +251,35 @@
 **Problem:** In scenarios like hard app crashes or device restarts, buffered writes might not be flushed to disk, leading to data loss for recently saved items.
 **Solution:** For critical data, explicitly call `await box.flush();` after `box.put()` operations to force immediate disk persistence, ensuring data integrity even in unforeseen circumstances.
 **Applies to:** Applications using local storage where data integrity is paramount.
+
+---
+
+## Pattern 26 — Client-Side Input Validation and Formatting
+**Context:** User input forms where data integrity and consistency are crucial, especially for fields with specific formats or constraints (e.g., phone numbers, monetary values).
+**Problem:** Allowing free-form input without client-side validation can lead to invalid data being stored, database constraint errors on sync, and poor user experience.
+**Solution:**
+  1. Use `inputFormatters` (e.g., `FilteringTextInputFormatter`, `LengthLimitingTextInputFormatter`) on `TextField`s to guide user input to the correct format and length.
+  2. Implement explicit validation checks (e.g., `startsWith('0')`, `length != 10`, `double.tryParse()`, `amount <= 0`) before saving data.
+  3. Provide immediate visual feedback (e.g., `KsSnackbar`) for validation errors.
+**Applies to:** Any form with structured data input.
+
+---
+
+## Pattern 27 — UI Feedback for Background Processes
+**Context:** Applications with background synchronization or long-running operations.
+**Problem:** Invisible background processes can leave users guessing whether an action is complete or if data is being updated, leading to uncertainty or repeated actions.
+**Solution:**
+  1. Introduce UI indicators (e.g., `isSyncing` flag in a state provider) to show when a background process is active.
+  2. Display subtle visual cues (e.g., pulsing icons, spinners, chips with text like "pending sync") that provide real-time feedback on the status of these operations.
+**Applies to:** Any application with asynchronous background tasks affecting data.
+
+---
+
+## Pattern 28 — Performance Optimization: Avoiding Redundant Rebuilds
+**Context:** Flutter applications using state management solutions (e.g., Riverpod, Provider) alongside `StatefulWidget`s.
+**Problem:** Calling `setState(() {})` unnecessarily within `onChanged` callbacks or `onTap` handlers of `TextField`s or other widgets that are already managed by a state provider can cause redundant widget tree rebuilds, leading to performance issues and UI glitches (e.g., keyboard dismissal).
+**Solution:**
+  1. When using a state management solution, let the provider handle state changes and subsequent rebuilds.
+  2. Remove explicit `setState(() {})` calls from `onChanged` or `onTap` if the primary state update is already handled by a provider.
+  3. For local UI state changes not managed by a provider, ensure `setState(() {})` calls are minimal and targeted.
+**Applies to:** Any Flutter application using state management and `StatefulWidget`s.

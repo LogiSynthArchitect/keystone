@@ -13,7 +13,7 @@ class JobCard extends StatelessWidget {
   final CustomerEntity? customer; 
   final VoidCallback? onTap;
 
-  JobCard({super.key, required this.job, this.customer, this.onTap});
+  const JobCard({super.key, required this.job, this.customer, this.onTap});
 
   IconData _serviceIcon(ServiceType type) {
     switch (type) {
@@ -92,12 +92,12 @@ class JobCard extends StatelessWidget {
                           ),
                         ),
                       
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       
                       if (job.hasLocation) 
                         Row(
                           children: [
-                            Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: AppColors.accent500),
+                            const Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: AppColors.accent500),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -138,23 +138,23 @@ class JobCard extends StatelessWidget {
                   Row(
                     children: [
                       if (job.followUpSent) 
-                        _Badge(
+                        const _Badge(
                           label: "WHATSAPP OPENED", 
                           color: AppColors.success500, 
                           icon: LineAwesomeIcons.check_circle_solid,
                         ),
                       
-                      if (job.syncStatus == SyncStatus.pending) 
-                        _Badge(
-                          label: "SYNCING TO CLOUD", 
-                          color: AppColors.accent500, 
+                      if (job.syncStatus == SyncStatus.pending)
+                        const _Badge(
+                          label: "UPLOADING...",
+                          color: AppColors.accent500,
                           icon: LineAwesomeIcons.sync_solid,
                         ),
 
                       if (job.syncStatus == SyncStatus.failed)
-                        _Badge(
-                          label: "SYNC FAILED", 
-                          color: AppColors.error500, 
+                        const _Badge(
+                          label: "UPLOAD FAILED",
+                          color: AppColors.error500,
                           icon: LineAwesomeIcons.exclamation_circle_solid,
                         ),
                     ],

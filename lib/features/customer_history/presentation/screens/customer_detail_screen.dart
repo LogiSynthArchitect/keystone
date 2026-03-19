@@ -29,17 +29,9 @@ class CustomerDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.primary900,
-      appBar: KsAppBar(
-        title: "CUSTOMER DOSSIER", 
+      appBar: const KsAppBar(
+        title: "CUSTOMER DETAILS",
         showBack: true,
-        actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.edit_solid, color: AppColors.accent500, size: 22),
-            onPressed: () {
-              // Edit functionality could be added here
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -47,7 +39,7 @@ class CustomerDetailScreen extends ConsumerWidget {
           Expanded(
             child: customerAsync.when(
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
-              error: (err, _) => Center(child: Text("ERROR LOADING DOSSIER", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
+              error: (err, _) => Center(child: Text("Could not load customer. Please go back and try again.", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
               data: (customer) {
                 if (customer == null) return Center(child: Text("CUSTOMER NOT FOUND", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)));
                 
@@ -56,14 +48,14 @@ class CustomerDetailScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader("PROFILE SUMMARY"),
+                      _buildSectionHeader("CUSTOMER INFO"),
                       _buildProfileModule(customer),
                       const SizedBox(height: 24),
                       
                       _buildStatsRow(customer, customerJobs.length),
                       const SizedBox(height: 32),
                       
-                      _buildSectionHeader("SERVICE LEDGER"),
+                      _buildSectionHeader("PAST JOBS"),
                       if (customerJobs.isEmpty)
                         _buildEmptyLedger()
                       else
@@ -104,7 +96,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                       letterSpacing: 2.0,
                     ),
                   ),
-                  Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 24),
+                  const Icon(LineAwesomeIcons.plus_circle_solid, color: AppColors.accent500, size: 24),
                 ],
               ),
             ),
@@ -161,10 +153,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                 if (customer.location != null) ...[
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(LineAwesomeIcons.map_marker_solid, size: 12, color: AppColors.accent500),
+                      const Icon(LineAwesomeIcons.map_marker_solid, size: 12, color: AppColors.accent500),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -250,8 +242,8 @@ class CustomerDetailScreen extends ConsumerWidget {
                 CurrencyFormatter.formatShort(job.amountCharged!),
                 style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()]),
               ),
-            SizedBox(width: 16),
-            Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
+            const SizedBox(width: 16),
+            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
           ],
         ),
       ),
@@ -278,7 +270,7 @@ class CustomerDetailScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          Icon(LineAwesomeIcons.history_solid, color: AppColors.primary700, size: 48),
+          const Icon(LineAwesomeIcons.history_solid, color: AppColors.primary700, size: 48),
           const SizedBox(height: 24),
           Text(
             "NO SERVICE RECORDS",

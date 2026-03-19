@@ -48,7 +48,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
     if (await _connectivity.isConnected) {
       try {
         final model = await _remote.getCustomerById(id);
-        if (model == null) throw core_storage.StorageException(message: 'Customer not found remotely.', code: 'CUSTOMER_NOT_FOUND');
+        if (model == null) throw const core_storage.StorageException(message: 'Customer not found remotely.', code: 'CUSTOMER_NOT_FOUND');
         await _local.saveCustomer(model);
         return model.toEntity();
       } catch (e) {

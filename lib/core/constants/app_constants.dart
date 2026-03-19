@@ -13,4 +13,7 @@ class AppConstants {
 
   static const String appName    = String.fromEnvironment('APP_NAME', defaultValue: 'Keystone (Dev)');
   static const String appVersion = '1.0.0';
+
+  static const String webBaseUrl = 'https://keystone-inky-five.vercel.app';
+  static const String profileBaseUrl = '$webBaseUrl/p';
 }

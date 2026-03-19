@@ -86,7 +86,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                 style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
                 cursorColor: AppColors.accent500,
                 decoration: InputDecoration(
-                  hintText: "SEARCH DATABASE...",
+                  hintText: "Search your jobs...",
                   hintStyle: AppTextStyles.caption.copyWith(color: AppColors.neutral600, letterSpacing: 1.0),
                   prefixIcon: Icon(LineAwesomeIcons.search_solid, color: _isSearchFocused ? AppColors.accent500 : AppColors.neutral500, size: 20),
                   border: InputBorder.none,
@@ -102,7 +102,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
           const KsOfflineBanner(),
           Expanded(
             child: state.isLoading
-                ? _buildLoadingState()
+                ? _buildLoadingState
                 : state.filteredJobs.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
@@ -115,7 +115,9 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                             SliverToBoxAdapter(
                               child: _SummaryStrip(
                                 totalJobs: state.totalJobs,
-                                monthEarnings: state.thisMonthEarnings
+                                monthEarnings: state.thisMonthEarnings,
+                                pendingCount: state.pendingCount,
+                                isSyncing: state.isSyncing,
                               ).animate().fadeIn().slideY(begin: 0.1, end: 0)
                             ),
                             SliverPadding(
@@ -149,13 +151,15 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         foregroundColor: AppColors.primary900,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        child: Icon(LineAwesomeIcons.plus_solid, size: 28),
+        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
       bottomNavigationBar: KsBottomNav(currentIndex: 0, onTabTapped: _onTabTapped),
     );
   }
 
-  Widget _buildLoadingState() {
+
+
+  Widget get _buildLoadingState {
     return ListView.separated(
       padding: const EdgeInsets.all(24.0),
       itemCount: 4,
@@ -167,8 +171,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: AppColors.primary700),
         ),
-      ).animate(onPlay: (controller) => controller.repeat())
-       .shimmer(duration: 1200.ms, color: AppColors.primary700.withValues(alpha: 0.5)),
+      ),
     );
   }
 
@@ -179,15 +182,15 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(LineAwesomeIcons.database_solid, size: 80, color: AppColors.primary800),
+            const Icon(LineAwesomeIcons.database_solid, size: 80, color: AppColors.primary800),
             const SizedBox(height: 24),
             Text(
-              "NO RECORDS FOUND",
+              "NO JOBS YET",
               style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
             ),
             const SizedBox(height: 12),
             Text(
-              "System database is currently empty.\nInitialize your first job log.",
+              "You haven't logged any jobs yet.\nTap + below to log your first job.",
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, height: 1.5)
             ),
@@ -201,8 +204,10 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
 class _SummaryStrip extends StatelessWidget {
   final int totalJobs;
   final int monthEarnings;
+  final int pendingCount;
+  final bool isSyncing;
 
-  const _SummaryStrip({required this.totalJobs, required this.monthEarnings});
+  const _SummaryStrip({required this.totalJobs, required this.monthEarnings, required this.pendingCount, required this.isSyncing});
 
   @override
   Widget build(BuildContext context) {
@@ -214,12 +219,38 @@ class _SummaryStrip extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.primary700, width: 1),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column( // Changed to Column to stack Row and sync status
         children: [
-          _Stat(value: "$totalJobs", label: "TOTAL LOGS"),
-          Container(width: 1, height: 40, color: AppColors.primary700),
-          _Stat(value: CurrencyFormatter.formatShort(monthEarnings), label: "THIS MONTH"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _Stat(value: "$totalJobs", label: "TOTAL LOGS"),
+              Container(width: 1, height: 40, color: AppColors.primary700),
+              _Stat(value: CurrencyFormatter.formatShort(monthEarnings), label: "THIS MONTH"),
+            ],
+          ),
+          if (pendingCount > 0) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.sync, size: 14, color: AppColors.accent500),
+                const SizedBox(width: 4),
+                Text(
+                  '$pendingCount uploading...',
+                  style: AppTextStyles.label.copyWith(color: AppColors.accent500),
+                ),
+                if (isSyncing) ...[ // Pulsing dot or spinner when syncing
+                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500)
+                  ),
+                ],
+              ],
+            ),
+          ]
         ],
       ),
     );

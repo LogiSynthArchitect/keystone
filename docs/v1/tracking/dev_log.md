@@ -953,3 +953,100 @@ Implemented fixes for 7 critical bugs identified in `open_bugs.md` (BUG-006 thro
 
 ### Flutter analyze status
 Pending verify ✅
+
+## SESSION 26 — Bug Fix Implementation (New Bugs from `open_bugs.md`) — 2026-03-19
+
+### What was built
+Implemented fixes for 6 critical bugs identified in `open_bugs.md` (BUG-013 through BUG-018):
+- **BUG-013 (High):** Fixed keyboard focus loss in `add_customer_screen.dart`, `add_note_screen.dart`, and `edit_profile_screen.dart` by removing `onChanged: setState` and adding controller listeners in `initState()`.
+- **BUG-014 (High):** Enforced Ghana phone number format in `add_customer_screen.dart`, `log_job_screen.dart`, and `edit_profile_screen.dart` by adding `inputFormatters` and validation logic.
+- **BUG-015 (Medium):** Added visual sync status indicator to `job_list_screen.dart` by introducing an `isSyncing` flag and displaying a pulsing chip when pending jobs are syncing.
+- **BUG-016 (Medium):** Implemented client-side `maxLength` enforcement on text fields in `add_customer_screen.dart`, `log_job_screen.dart`, `edit_profile_screen.dart`, and `add_note_screen.dart` to match database constraints.
+- **BUG-017 (Medium):** Added input formatters and validation for the amount field in `log_job_screen.dart` to prevent negative or invalid numeric input.
+- **BUG-018 (Low):** Removed redundant `setState(() {})` calls from search fields `onChanged` and clear button `onTap` in `customer_list_screen.dart` and `notes_list_screen.dart` to optimize performance.
+
+### What broke and how it was fixed
+- **BREAK 1: `initState()` missing in `add_customer_screen.dart` and `edit_profile_screen.dart`**
+  - Cause: Attempted to replace an `initState()` method that was not explicitly present in the files.
+  - Fix: Added the `initState()` method explicitly with the required listeners.
+
+### What was learned
+1. **Explicit `initState()`:** Even if a class doesn't explicitly override `initState()`, it's sometimes necessary to add it to inject custom logic like controller listeners.
+2. **Thorough file review:** Always perform a thorough review of the file content before assuming the presence or absence of a method or specific code block.
+
+### Flutter analyze status
+0 issues ✅
+
+---
+
+## SESSION 27 — Polish, Language Audit, Web Overhaul & Splash Fix — 2026-03-19
+
+### What was built
+
+**1. flutter analyze — Zero Issues**
+- Fixed `invocation_of_non_function_expression`: `_buildLoadingState` was a getter called as a method in `job_list_screen.dart` — removed `this.` prefix and `()`.
+- Removed unused `mockQueryBuilder` variable in `correction_request_repository_impl_test.dart`.
+- Applied `dart fix --apply` across 29 files — 76 `prefer_const_constructors` fixes auto-applied.
+- Fixed `flutter_web_plugins` dependency: declared as `sdk: flutter` (not pub.dev) in `pubspec.yaml`.
+
+**2. Domain Fix — Profile Sharing URL**
+- All references to `keystone.app` (non-existent domain) updated to `keystone-inky-five.vercel.app`.
+- Added `AppConstants.webBaseUrl` and `AppConstants.profileBaseUrl` constants.
+- `profile_repository_impl.dart`: Now stores only the slug in the DB (not the full URL) — decouples domain from DB records.
+
+**3. Public Profile Web UI — Full Redesign**
+- Added `ConstrainedBox(maxWidth: 520)` — proper centered layout on desktop browsers.
+- Top `KEYSTONE` brand mark added above avatar.
+- Avatar section: badge pill `PROFESSIONAL LOCKSMITH · GHANA`, refined sizing.
+- Services grid: improved aspect ratio (1.6), multi-line labels, cleaner padding.
+- Phone number now shown as a tappable call button below the WhatsApp button.
+- Proper section labels, divider and footer.
+- Landing page `/` replaced from plain text to full branded gateway screen.
+
+**4. Full Language Audit — Technical Jargon Eliminated**
+Replaced all technical terms visible to users across every screen:
+- "SEARCH DATABASE..." → "Search your jobs..."
+- "NO RECORDS FOUND" / "NO CUSTOMER ENTITIES" / "NO TECHNICAL NOTES" → plain equivalents
+- "System database is currently empty. Initialize..." → plain actionable copy
+- "SYNCING TO CLOUD" → "UPLOADING...", "SYNC FAILED" → "UPLOAD FAILED"
+- "N pending sync" → "N uploading..."
+- "TECHNICAL LOG" → "YOUR NOTE", "SYSTEM INDEXING" → "ORGANISE YOUR NOTE"
+- "OPERATOR PROFILE" → "MY PROFILE", "SYSTEM ACCESS LINK" → "YOUR PROFILE LINK"
+- "TERMINAL SETTINGS" → "APP SETTINGS", "CONFIGURE PROFILE" → "EDIT MY PROFILE"
+- "SAVE SYSTEM CHANGES" → "SAVE CHANGES", "V1 PILOT OPERATOR" → "PILOT USER"
+- "CUSTOMER DOSSIER" → "CUSTOMER DETAILS", "PROFILE SUMMARY" → "CUSTOMER INFO", "SERVICE LEDGER" → "PAST JOBS"
+- Field hints rewritten throughout add_note_screen.dart
+
+**5. UX Fixes**
+- Removed dead edit button from `customer_detail_screen.dart` (empty `onPressed` — did nothing, no feedback to user).
+- Empty state messages updated across jobs, customers, notes to include actionable "Tap + below" guidance.
+
+**6. Profile Photo Shape Fix (BUG-019)**
+- `profile_screen.dart`: Photo container changed from `borderRadius: BorderRadius.circular(4)` (square) to `shape: BoxShape.circle` with accent border — now consistent with `edit_profile_screen.dart`.
+
+**7. Splash Screen Fix (BUG-020)**
+- Root cause: `flutter_native_splash` cannot process XML files in the `image:` field — it expects a raster PNG. Running `flutter_native_splash:create` silently left old PNG references in place. The XML vector existed but was never wired in.
+- Fixed `drawable-v21/launch_background.xml`: Uses `<shape>` for background, `android:drawable` on item for the vector — no bitmap.
+- Fixed `drawable/launch_background.xml`: Replaced `@drawable/background` PNG with `<shape>` solid color; keeps PNG splash as pre-API 21 fallback.
+- Fixed `values-v31/styles.xml`: `windowSplashScreenAnimatedIcon` → `@drawable/ic_keystone_splash_logo` (vector).
+- Fixed `values-night-v31/styles.xml`: Same fix for dark-mode Android 12.
+- Updated `flutter_native_splash.yaml`: Removed broken XML image path, added clear comments.
+
+**8. Web Performance Optimisation**
+- `web/index.html`: Branded HTML loading screen (lock icon + spinner) visible during Flutter initialization, fades out on `flutter-first-frame`. Added OG meta tags for WhatsApp link preview cards.
+- `web/manifest.json`: Updated branding to "Keystone Terminal", dark theme/background colors.
+- `vercel.json`: Added `Cache-Control` headers — JS, WASM, and assets served with 1-year immutable cache. `index.html` set to `no-cache`.
+
+### What broke and how it was fixed
+- **BREAK 1: `dart fix --apply` added `flutter_web_plugins: any` to pubspec.yaml**
+  - Cause: The `missing_dependency` lint auto-fix added it as a pub.dev dependency, but it is an internal Flutter SDK package.
+  - Fix: Removed the `any` entry and re-added as `flutter_web_plugins: sdk: flutter`.
+
+### What was learned
+1. **`flutter_native_splash` image: field requires PNG.** Passing an XML path silently fails. Vector splash screens must be wired manually into `launch_background.xml` and `styles.xml`.
+2. **`dart fix --apply` can introduce incorrect fixes.** The `missing_dependency` fix added `flutter_web_plugins: any` — always review `dart fix` output before accepting blindly.
+3. **DB should store slugs, not full URLs.** Storing the domain in `profile_url` couples the DB schema to deployment URLs. Storing just the slug and constructing the URL at runtime is correct.
+4. **`BoxShape.circle` vs `borderRadius`** — mutually exclusive in `BoxDecoration`. Using `borderRadius` on a photo container renders a square; `shape: BoxShape.circle` is required for round photos.
+
+### Flutter analyze status
+0 issues ✅

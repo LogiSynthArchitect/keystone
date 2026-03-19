@@ -39,7 +39,7 @@ class NoteDetailScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           IconButton(
-            icon: Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
+            icon: const Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
@@ -90,10 +90,10 @@ class NoteDetailScreen extends ConsumerWidget {
               note.title.toUpperCase(),
               style: AppTextStyles.h1.copyWith(color: AppColors.white, letterSpacing: 0.5),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(LineAwesomeIcons.calendar, size: 14, color: AppColors.neutral500),
+                const Icon(LineAwesomeIcons.calendar, size: 14, color: AppColors.neutral500),
                 const SizedBox(width: 6),
                 Text(
                   DateFormatter.display(note.createdAt).toUpperCase(), 

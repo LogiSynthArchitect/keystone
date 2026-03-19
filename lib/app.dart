@@ -66,7 +66,7 @@ class _ErrorBoundaryState extends State<_ErrorBoundary> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 64, color: AppColors.error500),
+                const Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 64, color: AppColors.error500),
                 const SizedBox(height: 24),
                 Text('SYSTEM ERROR DETECTED',
                     style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),

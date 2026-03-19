@@ -117,12 +117,33 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
   Future<void> _onSave() async {
     HapticFeedback.heavyImpact();
+
+    if (_finalCustomerId == null) { // Only validate if creating a new customer
+      final phone = _phoneController.text.trim();
+      if (phone.length != 10 || !phone.startsWith('0')) {
+        if (mounted) {
+          KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsSnackbarType.error);
+        }
+        return;
+      }
+    }
+
     final amountText = _amountController.text.trim();
+    if (amountText.isNotEmpty) {
+      final amount = double.tryParse(amountText);
+      if (amount == null || amount <= 0) {
+        if (mounted) {
+          KsSnackbar.show(context, message: "Amount must be a positive number", type: KsSnackbarType.error);
+        }
+        return;
+      }
+    }
+
     final job = await ref.read(logJobProvider.notifier).save(
       serviceType: _serviceType!,
       existingCustomerId: _finalCustomerId,
       newCustomerName: _finalCustomerId == null ? _customerController.text.trim() : null,
-      customerPhone: _finalCustomerId == null ? _phoneController.text.trim() : null,
+      customerPhone: _finalCustomerId == null ? _phoneController.text.trim() : null, // The validation already handles the case where it's null
       jobDate: _jobDate,
       location: _locationController.text.trim(),
       notes: _notesController.text.trim(),
@@ -258,7 +279,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         const SizedBox(height: 8),
         Text("Verify whom this service record is attached to.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
-        _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null),
+        _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null, maxLength: 100),
         if (widget.preSelectedCustomerId == null) ...[
           const SizedBox(height: 24),
           _buildDarkField(
@@ -267,6 +288,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             controller: _phoneController, 
             type: TextInputType.phone,
             fieldHint: "Required for WhatsApp follow-ups.",
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
           ),
         ],
       ],
@@ -286,6 +311,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           hint: "East Legon, Accra", 
           controller: _locationController,
           fieldHint: "Include landmarks for return service.",
+          maxLength: 255,
         ),
         const SizedBox(height: 24),
         _buildDarkField(
@@ -294,9 +320,12 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           controller: _amountController, 
           type: TextInputType.number,
           fieldHint: "Total charged (Hardware + Labor).",
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+          ],
         ),
         const SizedBox(height: 24),
-        _buildDarkField(label: "Notes", hint: "Specific hardware used...", controller: _notesController, maxLines: 3),
+        _buildDarkField(label: "Notes", hint: "Specific hardware used...", controller: _notesController, maxLines: 3, maxLength: 2000),
         const SizedBox(height: 24),
         Text("DATE", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
@@ -309,7 +338,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: AppColors.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
             child: Row(children: [
-              Icon(LineAwesomeIcons.calendar, size: 20, color: AppColors.accent500),
+              const Icon(LineAwesomeIcons.calendar, size: 20, color: AppColors.accent500),
               const SizedBox(width: 12),
               Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
             ]),
@@ -342,7 +371,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
                 color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)
@@ -362,6 +391,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     int maxLines = 1, 
     bool readOnly = false,
     String? fieldHint,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,6 +410,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             keyboardType: type,
             maxLines: maxLines,
             readOnly: readOnly,
+            inputFormatters: inputFormatters,
+            maxLength: maxLength,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? AppColors.neutral500 : Colors.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
           ),

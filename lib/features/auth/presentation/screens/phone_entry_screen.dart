@@ -136,7 +136,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
               right: BorderSide(color: AppColors.primary700),
             ),
           ),
-          child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
+          child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
         ),
       );
 
@@ -224,7 +224,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                   ),
                 ),
                 if (isLoading)
-                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
                 else
                   Icon(
                     LineAwesomeIcons.angle_right_solid,
