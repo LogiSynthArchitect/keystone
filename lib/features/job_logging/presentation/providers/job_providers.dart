@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/connectivity_provider.dart';
@@ -302,9 +303,11 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       // 1. Add to the list immediately (shows as 'Pending')
       _ref.read(jobListProvider.notifier).addJob(job);
       
-      // 2. Trigger background sync immediately (will change 'Pending' to 'Synced'/'Failed' on completion)
-      // Note: We don't await this so the user isn't stuck on the loading screen.
-      _ref.read(jobListProvider.notifier).refresh();
+      // 2. Trigger background sync and await it
+      await _ref.read(jobListProvider.notifier).refresh();
+
+      // 3. Tactile Feedback (GEMINI.md Mandate)
+      await HapticFeedback.mediumImpact();
 
       state = state.copyWith(isLoading: false, isSubmitting: false, saved: true);
       return job;

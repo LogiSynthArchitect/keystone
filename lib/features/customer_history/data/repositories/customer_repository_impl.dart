@@ -209,6 +209,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
     if (pending.isEmpty) return;
     if (!await _connectivity.isConnected) return;
 
+    final toUpserts = pending.where((c) => c.syncStatus == SyncStatus.pending).toList();
     try {
       // 1. Process deletions
       final deletions = pending.where((c) => c.syncStatus == SyncStatus.deleted).toList();
@@ -220,7 +221,6 @@ class CustomerRepositoryImpl implements CustomerRepository {
       }
 
       // 2. Process upserts
-      final toUpserts = pending.where((c) => c.syncStatus == SyncStatus.pending).toList();
       if (toUpserts.isEmpty) return;
 
       final result = await _remote.batchSyncCustomers(_userId, toUpserts.map((m) => m.toJson()).toList());
@@ -261,6 +261,15 @@ class CustomerRepositoryImpl implements CustomerRepository {
           await _local.saveCustomer(failedModel);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[KS:SYNC:CUSTOMERS] FATAL ERROR: $e');
+      for (final customer in toUpserts) {
+        final failedModel = customer.copyWith(
+          syncStatus: SyncStatus.failed,
+          syncErrorMessage: e.toString(),
+        );
+        await _local.saveCustomer(failedModel);
+      }
+    }
   }
 }

@@ -5,6 +5,11 @@ You are an expert engineer working on **Keystone**, a military-grade tactical te
 
 ---
 
+## 0. ENVIRONMENT SANCTITY (CRITICAL)
+*   **Production is Sanctified:** Unless a Directive explicitly specifies "PRODUCTION," all development, research, and testing MUST target the Staging URL (`mxkknt...`).
+*   **Zero-Production Policy:** Never apply migrations or destructive SQL to Production without a specific, double-verified Directive.
+*   **Flavor Verification:** All `run` or `build` commands MUST use `--flavor dev` for Staging or `--flavor prod` for Production.
+
 ## 1. THE "SEARCH-FIRST" PROTOCOL
 *   **Zero Assumption Policy:** Never assume a file exists or a variable is named a certain way. You MUST `grep_search` or `glob` before you speak or act.
 *   **Pattern Matching:** Before writing new code, find the "Keystone way" of doing it (e.g., how we handle Snackbars, how we use Riverpod).
@@ -29,7 +34,14 @@ You are responsible for keeping the "Blueprints" synced with the "Building." You
 
 ## 5. DATABASE & ADMIN
 *   **Admin Control:** Admins bypass RLS isolation via specialized `admin_all` policies to resolve technician errors.
-*   **Querying:** Use `./query_db.sh "YOUR SQL"` to verify data directly in the Docker container.
+*   **Querying:** Use `./query_db.sh "YOUR SQL" --staging` or `./query_db.sh "YOUR SQL" --prod`. Defaulting to `prod` is forbidden.
+*   **Migration Verification:** Every migration MUST be tested on the Staging environment before being proposed for Production.
+
+## 6. GLOBAL IMPACT ANALYSIS (PAUSE-AND-MAP)
+*   **The "Whole-System" Scan:** Before any file creation, modification, or deletion, you MUST perform a `grep_search` or `glob` to identify all downstream dependencies (e.g., related tests, shared providers, and feature-bridged modules).
+*   **Circular Dependency Prevention:** Every change must be verified against `shared_feature_providers.dart` to ensure feature isolation is maintained and no circular dependencies are introduced.
+*   **The Pre-Flight Declaration:** Before executing a `replace` or `write_file`, you must state the potential side effects and how you have mitigated them (e.g., "Updated provider X; verified features Y and Z for breaking changes").
+*   **Architectural DNA Verification:** You must confirm that your proposed change matches the established "Keystone Way" (e.g., check `docs/patterns.md`) before implementation.
 
 ---
 **FAILURE TO ADHERE TO THESE MANDATES IS AN ARCHITECTURAL BREACH.**

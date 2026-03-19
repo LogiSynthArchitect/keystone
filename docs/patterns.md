@@ -138,3 +138,36 @@
   3. Use the `--target lib/main_web.dart` flag during the Flutter Web build.
 **Result:** 10x faster build times, zero compilation errors from mobile dependencies, and a significantly smaller payload for web visitors.
 **Applies to:** Any Flutter project using a "Web Portal" or "Public Profile" strategy.
+
+---
+
+## Pattern 13 — Resilient Offline-First Synchronization
+**Context:** Mobile clients syncing local drafts to a remote SQL backend via RPC.
+**Problem:** A single fatal error (network timeout, auth expiry) in a batch sync shouldn't mark all jobs as "Failed". 
+**Solution:**
+  1. The Repository MUST only mark jobs as "Failed" if the server explicitly rejects them with an error message.
+  2. All other exceptions (connectivity, database locked) MUST keep the jobs in "Pending" status.
+  3. The RPC function MUST return a mapping of `local_id` to `server_id` to ensure the app can reconcile its local cache without data loss.
+**Result:** Higher user trust and less manual "Sign Failed" troubleshooting.
+
+---
+
+## Pattern 14 — Environment Sanctity & Mandate-Driven AI Safety
+**Context:** AI Agents and developers working on multi-environment projects (Staging/Prod).
+**Problem:** High risk of accidental data corruption or schema drift when working on production directly.
+**Solution:**
+  1. Mandate a "Staging-First" workflow in the system instructions (`GEMINI.md`).
+  2. Implement "Fail-Fast" tooling (e.g., `query_db.sh`) that requires explicit environment flags.
+  3. Require a "Global Impact Analysis" scan before any code changes to identify downstream side effects.
+**Result:** Proactive risk mitigation and 100% predictable deployment cycles.
+
+---
+
+## Pattern 15 — Seamless Splash Handover
+**Context:** Eliminating the "Flicker" between the native OS splash screen and the Flutter application.
+**Problem:** The OS splash is static, while the app often starts with a transition animation. A "jump" or "cut" occurs when the OS hides its logo and the app hasn't perfectly lined up its own.
+**Solution:**
+  1. Capture `WidgetsBinding` in `main.dart` and call `FlutterNativeSplash.preserve`.
+  2. In the app's first real screen (e.g., `TransitionScreen`), place the logo in the **exact same pixel coordinates** as the native splash.
+  3. Call `FlutterNativeSplash.remove()` inside `addPostFrameCallback` in the first screen's `initState`.
+**Result:** A professional "Optical Illusion" where the static native logo appears to come to life and animate seamlessly.

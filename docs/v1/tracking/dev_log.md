@@ -709,6 +709,69 @@ No errors found ✅
 ### Flutter analyze status
 No errors found ✅
 
+---
+
+## SESSION 19 — Sync Reactivity & Error Transparency — 2026-03-18
+
+### What was built
+- **Robust Sync Error Handling:** Updated \`JobRepositoryImpl.syncPendingJobs\` with a global try-catch block to ensure all pending jobs are marked as "Failed" with the specific error message if the RPC call itself crashes (e.g., network timeout).
+- **Improved Logging Reactivity:** Updated \`LogJobNotifier.save\` to \`await\` the \`refresh()\` (sync) call. This ensures the app doesn't show the "Saved" state until the sync attempt has completed, moving the job out of "Pending" immediately.
+- **Tactical Feedback:** Integrated \`HapticFeedback.mediumImpact()\` into the successful job logging flow per \`GEMINI.md\` mandates.
+- **Diagnostic UI:** Upgraded \`JobCard\` to display the specific \`syncErrorMessage\` when in a failed state, removing the "Sync fail" mystery for technicians.
+
+### What was learned
+1. **Unawaited Async in UI:** In offline-first apps, unawaited refreshes can lead to "UI lag" where data is saved locally but the "Pending" indicator feels stuck because the background process hasn't finished.
+2. **RPC Exceptions:** Supabase RPC calls can throw exceptions (e.g., connection lost) before returning the JSON result. These must be caught at the Repository level to keep the local database in sync with reality.
+
+---
+
+## SESSION 20 — Environment Sanctity & Tool Hardening — 2026-03-19
+
+### What was built
+- **Hardened Environment Sanctity:** Updated `GEMINI.md` with "SECTION 0: ENVIRONMENT SANCTITY" to mandate Staging as the default and require explicit flags for Production.
+- **Query Tool Refactor:** Completely rewrote `query_db.sh` to remove hardcoded Production IDs. The tool now **requires** either `--staging` or `--prod` to function, providing a "Safety Pin" against accidental data corruption.
+- **Mandate Synchronization:** Updated `GEMINI.md` Section 5 (Database & Admin) to align with the new flag-based query workflow.
+
+### What broke and how it was fixed
+- **BREAK 1: Hardcoded Production Risk**
+  - Cause: `query_db.sh` previously defaulted to the Production Project Ref (`ifzpdi...`).
+  - Fix: Refactored to use variables driven by the mandatory environment flag. If no flag is provided, the script exits with a usage error.
+
+### What was learned
+1. **The AI Safety Gap:** Documentation in `current_state.md` is good for humans, but "Foundational Mandates" in `GEMINI.md` are required to govern AI behavior effectively.
+2. **Fail-Fast Tooling:** Tools should never have "dangerous defaults." Forcing a choice (Staging vs. Prod) is the best way to prevent architectural breaches.
+
+### Current Database Map (Verified)
+| Environment | Project Ref | Mandate |
+|---|---|---|
+| **Staging** | `mxkkntxemrcjbxvlzfbt` | **DEFAULT** for all development/testing |
+| **Production** | `ifzpdizxitlvjbmzozew` | **RESTRICTED** — User Directive Required |
+
+---
+
+## SESSION 21 — UX Polish & Seamless Continuity — 2026-03-19
+
+### What was built
+- **Seamless Splash Handover:** Integrated `flutter_native_splash` preservation in `main.dart` and removal in `TransitionScreen`.
+- **Human Language Pass:** Replaced technical jargon "INITIALIZE SYSTEM" with "GET STARTED" on the Landing Screen.
+- **Architectural Documentation:** Added Pattern 15 (Seamless Splash Handover) to `patterns.md` to ensure this high-end effect is maintained in future builds.
+
+### What broke and how it was fixed
+- **BREAK 1: Visual Jump at Launch**
+  - Cause: The OS splash screen was hiding before the `TransitionScreen` animation had fully loaded.
+  - Fix: Mandated "Splash Preservation" in `main.dart` to hold the native logo until the app is ready to take over.
+
+### What was learned
+1. **The "Bait and Switch" Technique:** You can't animate the OS splash easily, but you can "hold" it until a matching app-level logo is ready to take over.
+2. **Technical Jargon in UI:** "Initialize" is for developers. "Get Started" is for users. Always prioritize the user's mental model over the system's.
+
+### Flutter analyze status
+No errors found ✅
+
+### Flutter analyze status
+No errors found ✅
+
+
 
 
 
