@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
 import '../../domain/repositories/knowledge_note_repository.dart';
@@ -12,7 +13,11 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   KnowledgeNoteRepositoryImpl(this._remote, this._local, this._supabase);
 
-  String get _userId => _supabase.auth.currentUser!.id;
+  String get _userId {
+    final id = _supabase.auth.currentUser?.id;
+    if (id == null) throw Exception('Authentication session expired. Please log in again.');
+    return id;
+  }
 
   String _serviceTypeToDb(String camelCase) {
     switch (camelCase) {
@@ -48,8 +53,11 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
       await _local.saveNote(model);
       return model.toEntity();
     } catch (e) {
+      debugPrint('[KS:NOTES] Remote getNoteById failed, falling back to local: $e');
       final localModels = await _local.getNotes();
-      return localModels.firstWhere((m) => m.id == id).toEntity();
+      final local = localModels.where((m) => m.id == id).firstOrNull;
+      if (local == null) throw Exception('Note not found (id=$id).');
+      return local.toEntity();
     }
   }
 
@@ -111,16 +119,10 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<void> archiveNote(String id) async {
-    try {
-      await _remote.archiveNote(id);
-      // Update local if remote succeeds
-      final localNotes = await _local.getNotes();
-      final note = localNotes.firstWhere((n) => n.id == id);
-      await _local.saveNote(note.copyWith(isArchived: true));
-    } catch (e) {
-      // In a real app, we might mark this for sync as well
-      rethrow;
-    }
+    await _remote.archiveNote(id);
+    final localNotes = await _local.getNotes();
+    final note = localNotes.where((n) => n.id == id).firstOrNull;
+    if (note != null) await _local.saveNote(note.copyWith(isArchived: true));
   }
 
   @override

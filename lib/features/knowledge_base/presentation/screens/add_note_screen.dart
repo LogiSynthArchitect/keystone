@@ -9,7 +9,6 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/constants/app_enums.dart';
-import '../../../../core/providers/shared_feature_providers.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
 

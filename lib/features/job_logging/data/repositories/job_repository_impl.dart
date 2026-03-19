@@ -22,7 +22,11 @@ class JobRepositoryImpl implements JobRepository {
 
   JobRepositoryImpl(this._remote, this._local, this._connectivity, this._supabase, this._customerLocal, this._followUpRepo);
 
-  String get _userId => _supabase.auth.currentUser!.id;
+  String get _userId {
+    final id = _supabase.auth.currentUser?.id;
+    if (id == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
+    return id;
+  }
 
   @override
   Future<List<JobEntity>> getJobs({int limit = 200, int offset = 0, bool includeArchived = false}) async {
@@ -31,7 +35,9 @@ class JobRepositoryImpl implements JobRepository {
       try {
         final remoteModels = await _remote.getJobs(userId: _userId, limit: limit, offset: offset);
         for (final m in remoteModels) { await _local.saveJob(m); }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:JOBS] Remote fetch failed, serving from cache: $e');
+      }
     }
     var local = await _local.getJobs(limit: limit, offset: offset);
     if (!includeArchived) local = local.where((j) => !j.isArchived).toList();
@@ -98,7 +104,9 @@ class JobRepositoryImpl implements JobRepository {
         final updated = await _remote.updateJob(job.id, json);
         await _local.saveJob(updated);
         return updated.toEntity();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[KS:JOBS] Remote update failed, queuing as pending: $e');
+      }
     }
     final model = JobModel.fromJson({...json, 'sync_status': 'pending'});
     await _local.saveJob(model);
@@ -121,7 +129,9 @@ class JobRepositoryImpl implements JobRepository {
         await _remote.updateJob(id, {'is_archived': true});
         await _local.updateSyncStatus(id, 'synced');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[KS:JOBS] archiveJob failed for id=$id: $e');
+    }
   }
 
   @override
@@ -159,7 +169,7 @@ class JobRepositoryImpl implements JobRepository {
 
     try {
       final payload = safeToSync.map((m) => _jobEntityToJson(m.toEntity())).toList();
-      debugPrint('[KS:SYNC] Sending payload: $payload');
+      debugPrint('[KS:SYNC] Sending ${payload.length} jobs for sync');
       
       final result = await _remote.batchSync(_userId, payload);
       debugPrint('[KS:SYNC] RPC Result: $result');

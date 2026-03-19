@@ -24,11 +24,9 @@ class CurrencyFormatter {
     return 'GHS $intPart.${parts[1]}';
   }
 
-  /// Formats pesewas (int) into GHS string without decimals.
+  /// Formats pesewas (int) into GHS string without decimals (truncates, does not round).
   static String formatShort(int pesewas) {
-    final amount = pesewas / 100.0;
-    final formatted = amount.toStringAsFixed(0);
-    final intPart = formatted.replaceAllMapped(
+    final intPart = (pesewas ~/ 100).toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (m) => '${m[1]},',
     );

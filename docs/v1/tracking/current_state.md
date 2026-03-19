@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 19 2026
-### Session: 21 (VISUAL INTEGRITY & CONTINUITY)
+### Session: 22 (RELIABILITY HARDENING)
 
 ---
 
@@ -25,6 +25,7 @@
 - **Tactical UI:** Dark Industrial theme, Receipt Typography, and Haptics. ✅
 - **Identity:** Verified public profile links & sharing (no more 404s). ✅
 - **Data Integrity:** Case-insensitive slug matching and high fetch limits. ✅
+- **Reliability Hardening:** Silent error swallowing eliminated, unsafe auth access guarded, Hive recovery narrowed, currency rounding fixed. ✅
 
 ---
 
@@ -37,10 +38,9 @@
 ## Pilot Provisioning
 - **Jeremie Kouassi:** Authorized (`053 589 1956`)
 - **Jean Mensah:** Authorized (`053 130 7502`)
-- **Bypass OTP:** Active (`123456`)
 
 ---
 
 ## Next Action
 **VERIFY LOCALLY & DEPLOY FINAL APK.**
-All terminal systems are go.
+All terminal systems are go. Reliability hardening complete — ready for pilot deployment.
