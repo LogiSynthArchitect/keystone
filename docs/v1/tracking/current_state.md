@@ -38,6 +38,7 @@
 ## Pilot Provisioning
 - **Jeremie Kouassi:** Authorized (`053 589 1956`)
 - **Jean Mensah:** Authorized (`053 130 7502`)
+- **Bypass OTP:** Active (`123456`) — intentional, SMS provider not yet wired up. Remove when Twilio/real SMS is live.
 
 ---
 
