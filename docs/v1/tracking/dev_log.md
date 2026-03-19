@@ -828,7 +828,7 @@ A comprehensive pass fixing all silent failure patterns, unsafe auth access, and
 - `customer_repository_impl.dart` — `throw Exception('Customer not found')` → `throw StorageException('CUSTOMER_NOT_FOUND')` for consistent domain exception handling
 
 **Docs updated:**
-- `current_state.md` — Session updated to 22, bypass OTP removed from pilot provisioning section, reliability hardening noted in feature completion list
+- `current_state.md` — Session updated to 22, bypass OTP restored with clarifying note (intentional — SMS provider not yet live), reliability hardening noted in feature completion list
 - `dev_log.md` — This entry
 
 ### What broke and how it was fixed
