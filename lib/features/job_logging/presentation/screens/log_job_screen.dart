@@ -52,8 +52,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         }
       });
     }
-    _amountController.addListener(() => setState(() {}));
-    _notesController.addListener(() => setState(() {}));
   }
 
   @override
@@ -294,6 +292,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             type: TextInputType.text,
             fieldHint: "Required for WhatsApp follow-ups.",
             isNumeric: true,
+            onChanged: (_) => setState(() {}),
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(10),
@@ -327,6 +326,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           type: TextInputType.text,
           fieldHint: "Total charged (Hardware + Labor).",
           isNumeric: true,
+          onChanged: (_) => setState(() {}),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
           ],
@@ -401,6 +401,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     String? fieldHint,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,6 +425,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             autocorrect: !isNumeric,
             enableSuggestions: !isNumeric,
+            onChanged: onChanged,
             style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? context.ksc.neutral500 : context.ksc.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: context.ksc.neutral500), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
           ),

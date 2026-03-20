@@ -28,10 +28,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController.addListener(() => setState(() {}));
-    _phoneController.addListener(() => setState(() {}));
-    _locationController.addListener(() => setState(() {}));
-    _notesController.addListener(() => setState(() {}));
   }
 
   @override
@@ -240,6 +236,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           hint: "Kwame Mensah",
           controller: _nameController,
           maxLength: 100,
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 24),
         _buildDarkField(
@@ -249,6 +246,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           controller: _phoneController,
           fieldHint: "Used to send WhatsApp follow-up messages.",
           isNumeric: true,
+          onChanged: (_) => setState(() {}),
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
@@ -331,6 +329,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
     bool isNumeric = false,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,6 +356,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             autocorrect: !isNumeric,
             enableSuggestions: !isNumeric,
+            onChanged: onChanged,
             style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
             cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
