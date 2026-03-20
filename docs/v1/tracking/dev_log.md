@@ -1192,3 +1192,45 @@ Replaced all technical terms visible to users across every screen:
 
 ### Flutter analyze status
 0 issues ✅
+
+---
+
+## SESSION 30 — Web Performance, CI/CD Pipeline & Language Polish — 2026-03-20
+
+### What was built
+
+**1. Web Performance Fixes**
+- `vercel.json`: Added explicit `no-cache` rule for `flutter_service_worker.js`. Previously it matched the generic `/(.*\.js)` rule and was cached immutably for 1 year — users had to clear local storage to see any new deployment. Now the service worker is re-fetched on every visit, and updates are visible instantly.
+- `pubspec.yaml`: Removed 8 unused font weight declarations — Thin (100), ExtraLight (200), Light (300), Regular (400) and all their italic variants. All text styles use w500–w900 only. Saves ~400–700KB from the initial bundle.
+
+**2. Vercel Build Pipeline**
+- Created `scripts/vercel_build.sh` to run the Flutter web build inside Vercel's build environment.
+- Added `buildCommand: "bash scripts/vercel_build.sh"` and `outputDirectory: "build/web"` to `vercel.json`.
+- Fixed build failure (exit 127): Vercel has no Flutter installed. Updated script to `git clone --depth 1 -b stable` Flutter stable into `/tmp/flutter`, export PATH, `flutter precache --web`, `flutter pub get`, then build.
+- Fixed second build failure (exit 64): `--web-renderer html` flag was removed in Flutter 3.22+. Removed the flag. Flutter now defaults to the skwasm renderer which is faster than the old HTML renderer.
+- Also scaffolded `.github/workflows/deploy.yml` as a fallback GitHub Actions CI/CD option (requires VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID secrets).
+
+**3. Language & UI Polish (continuation of Session 29)**
+- `ks_search_bar.dart`: hint text simplified from `'SEARCH DATABASE...'` to `'SEARCH...'`
+- `customer_list_screen.dart`: App bar title `"CUSTOMER DATABASE"` → `"CUSTOMERS"`
+- `log_job_screen.dart`: Service type label `"Identify the core technical operation performed."` → `"Select the type of service performed."`. Removed two stray `onChanged: (_) => setState(() {})` calls.
+- `add_note_screen.dart`: Step labels `["TECHNICAL", "INDEXING"]` → `["NOTE CONTENT", "TAGS"]`. Discard dialog: `"unsaved technical notes"` → `"unsaved notes"`.
+- `note_detail_screen.dart`: Section header `"TECHNICAL DOCUMENTATION"` → `"NOTE DETAILS"`. Archive dialog: `"This technical note"` → `"This note"`.
+- `ic_keystone_splash_logo.xml`: Minor vector path correction.
+
+### What broke and how it was fixed
+- **BREAK 1: Vercel exit 127 — `flutter: command not found`**
+  - Cause: Vercel's Ubuntu build environment has no Flutter installed.
+  - Fix: Script now clones Flutter stable from GitHub at build time and adds it to PATH.
+- **BREAK 2: Vercel exit 64 — `--web-renderer` option not found**
+  - Cause: Flutter removed the `--web-renderer` flag in version 3.22+.
+  - Fix: Removed the flag entirely. Default renderer (skwasm) is faster anyway.
+
+### What was learned
+1. **Flutter removed `--web-renderer` in 3.22+.** The new default is skwasm (WebAssembly-based), which is faster than the old CanvasKit. Do not pass `--web-renderer` in any build command targeting Flutter stable.
+2. **`flutter_service_worker.js` must be `no-cache`.** Vercel's generic JS rule caches all `.js` files immutably. The service worker must always be fetched fresh — if it's cached, users never see updates without clearing storage.
+3. **Vercel has no Flutter.** It does not run Dart or Flutter build tools. The build script must install Flutter from scratch at build time via `git clone --depth 1 -b stable`.
+4. **Unused font weights cost real bytes on web.** Flutter Web bundles all declared font files and the service worker caches them. Trimming unused weights (100–400) removes hundreds of KB from every user's first load.
+
+### Flutter analyze status
+0 issues ✅

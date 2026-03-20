@@ -331,3 +331,39 @@
 **Problem:** Using an anchored regex like `RegExp(r'^\d+\.?\d{0,2}')` in `allow()` causes the formatter to evaluate and potentially mutate the full string on every keystroke. The `^` anchor causes unexpected replacements when new characters are typed mid-string, producing cursor resets and keyboard focus loss.
 **Solution:** Use a simple character-class allowlist: `FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))`. This allows only digits and decimal points per character, without string-level evaluation. Validate the full format (e.g. positive number, max 2 decimals) at save time, not on every keystroke.
 **Applies to:** Any Flutter form with numeric decimal input fields.
+
+---
+
+## Pattern 35 — Flutter Web: `--web-renderer` Removed in 3.22+
+**Context:** Building Flutter Web for deployment (Vercel, Netlify, GitHub Pages).
+**Problem:** `--web-renderer html` (or `canvaskit`) was the recommended way to control Flutter's web rendering engine. As of Flutter 3.22, this flag was removed. Passing it causes a build failure with exit code 64: "Could not find an option named '--web-renderer'".
+**Solution:** Remove the flag entirely. Flutter's default renderer is now **skwasm** (a WebAssembly-based renderer that is faster and lighter than the old CanvasKit). No flag needed — just run `flutter build web --release`.
+**Applies to:** Any Flutter Web build script targeting Flutter 3.22+.
+
+---
+
+## Pattern 36 — Vercel Has No Flutter: Install It in the Build Script
+**Context:** Deploying a Flutter Web app via Vercel's native build pipeline.
+**Problem:** Vercel's build environment is a Node.js/Ubuntu container. It does not have Flutter installed. Any build script that calls `flutter` directly will exit with code 127 (command not found).
+**Solution:** Install Flutter at build time inside the script:
+  ```bash
+  git clone https://github.com/flutter/flutter.git --depth 1 -b stable /tmp/flutter
+  export PATH="$PATH:/tmp/flutter/bin"
+  flutter precache --web
+  flutter pub get
+  flutter build web --release
+  ```
+  Set `outputDirectory: "build/web"` in `vercel.json` so Vercel knows where to serve from.
+**Applies to:** Any Flutter Web project deploying to Vercel without a pre-built CI step.
+
+---
+
+## Pattern 37 — Service Worker Must Never Be Cached Immutably
+**Context:** Flutter Web deployed to Vercel (or any CDN with aggressive caching rules).
+**Problem:** A generic CDN rule like `Cache-Control: max-age=31536000, immutable` for all `.js` files will also match `flutter_service_worker.js`. This means the service worker is locked in the browser's cache for up to 1 year. When a new version is deployed, users never see it — they're stuck on the old cached version until they manually clear local storage.
+**Solution:** Add an explicit `no-cache` rule for `flutter_service_worker.js` that takes precedence over the generic JS rule:
+  ```json
+  { "source": "/flutter_service_worker.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ```
+  Place this rule before the generic `/(.*\.js)` rule in `vercel.json`. Also apply `no-cache` to `index.html` for the same reason.
+**Applies to:** Any Flutter Web app deployed to a CDN with immutable asset caching.

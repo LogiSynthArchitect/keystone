@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
 ### Last Updated: March 20 2026
-### Session: 29 (WEB OVERHAUL — LOGO, LIGHT THEME, LANGUAGE CLEANUP)
+### Session: 30 (WEB PERFORMANCE, CI/CD PIPELINE & LANGUAGE POLISH)
 
 ---
 
@@ -33,6 +33,8 @@
 - **Profile Photo:** Circular photo shape consistent across profile screen and edit screen. ✅
 - **Web UX:** Branded loading screen, OG meta tags, Vercel asset caching, proper manifest branding. ✅
 - **flutter analyze:** 0 issues after `dart fix --apply` and manual corrections. ✅
+- **Web Performance:** Service worker `no-cache` fix applied. 8 unused font weights removed (~400–700KB saved). Vercel build pipeline active via `scripts/vercel_build.sh`. ✅
+- **Language Polish:** All remaining technical jargon removed from mobile screens — "CUSTOMER DATABASE" → "CUSTOMERS", "TECHNICAL DOCUMENTATION" → "NOTE DETAILS", step labels humanised. ✅
 
 ---
 
