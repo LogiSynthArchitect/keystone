@@ -283,3 +283,51 @@
   2. Remove explicit `setState(() {})` calls from `onChanged` or `onTap` if the primary state update is already handled by a provider.
   3. For local UI state changes not managed by a provider, ensure `setState(() {})` calls are minimal and targeted.
 **Applies to:** Any Flutter application using state management and `StatefulWidget`s.
+
+---
+
+## Pattern 29 — IME Safety: onChanged vs addListener
+**Context:** Flutter TextField with StatefulWidget driving UI state from controller value.
+**Problem:** `controller.addListener(() => setState(() {}))` triggers full widget rebuilds out-of-band from the user-input pipeline. On Android 13+ with gesture navigation, this disrupts Flutter's IME connection, causing the keyboard to hide when typing (especially "0").
+**Solution:** Remove all `addListener(() => setState())`. Use `onChanged: (_) => setState(() {})` directly on the `TextField`. This fires within the input pipeline and never disrupts the IME. Only add `onChanged` to fields whose value actually drives UI state (e.g. enabling a button).
+**Applies to:** Any Flutter app targeting Android 13+ with StatefulWidget + TextEditingController.
+
+---
+
+## Pattern 30 — Provider Invalidation After Re-Login
+**Context:** Riverpod app where users can log out, reinstall, and log in again.
+**Problem:** Data providers cache their values in memory. After a fresh reinstall and new login, providers loaded during a previous empty session return stale empty data — making the app appear broken even though the user is authenticated.
+**Solution:** In the `verifyOtp()` or equivalent login-success handler, after refreshing the auth state, explicitly call `_ref.invalidate()` on every data provider: profile, jobs, customers, notes. This forces a fresh fetch with the new session.
+**Applies to:** Any Riverpod app with persistent auth and data providers.
+
+---
+
+## Pattern 31 — Async Init Race Condition: Retry in build()
+**Context:** A widget that initializes editable state from async data in `initState()`.
+**Problem:** `addPostFrameCallback` in `initState` fires once. If the async data (e.g. a Riverpod AsyncValue) is not yet resolved at that moment, init exits early and `isInitialized` stays false forever. The widget returns `SizedBox.shrink()` and never recovers.
+**Solution:** Add a retry path inside the `build()` method. In the `data()` callback of the AsyncValue, check if data is now available but `isInitialized` is still false — if so, schedule `addPostFrameCallback` to retry init. This guarantees the widget initializes as soon as data arrives, regardless of timing.
+**Applies to:** Any Flutter widget with async-dependent initialization logic.
+
+---
+
+## Pattern 32 — AppColors Scope: Theme-Time Only
+**Context:** Flutter app with a static `AppColors` class used for color constants.
+**Problem:** Using `AppColors.primaryXXX` inside widget `build()` methods or `State` classes causes a build error: "The getter 'AppColors' isn't defined for the type '_SomeState'". `AppColors` is not accessible in widget scope.
+**Solution:** `AppColors` is only valid inside `buildDarkAppTheme()` / `buildLightAppTheme()` in `app_theme.dart`. In all widget code, use `context.ksc.propertyName` (ThemeExtension accessed via BuildContext). Never reference `AppColors` outside theme files.
+**Applies to:** Any Flutter app using a static color class + ThemeExtension pattern.
+
+---
+
+## Pattern 33 — Composite SVG Logo from Multiple Files
+**Context:** A logo composed of multiple separate SVG files (e.g. block, keyhole, left arm, right arm) all sharing the same viewBox.
+**Problem:** Each SVG file is a separate asset. Using them as separate widgets requires layering (Stack) and exact sizing. Using one generic icon is wrong.
+**Solution:** Combine all SVG paths into a single composite SVG file. Since all files share the same `viewBox="0 0 210 297"`, simply merge all `<path>` elements into one `<svg>` tag. The result is a single asset that renders as the complete logo. Use `SvgPicture.asset(path, colorFilter: ColorFilter.mode(color, BlendMode.srcIn))` to tint it at runtime.
+**Applies to:** Any Flutter app with a multi-part SVG logo using flutter_svg.
+
+---
+
+## Pattern 34 — FilteringTextInputFormatter: Avoid Anchored Regex in allow()
+**Context:** TextField for numeric/decimal input using `FilteringTextInputFormatter.allow`.
+**Problem:** Using an anchored regex like `RegExp(r'^\d+\.?\d{0,2}')` in `allow()` causes the formatter to evaluate and potentially mutate the full string on every keystroke. The `^` anchor causes unexpected replacements when new characters are typed mid-string, producing cursor resets and keyboard focus loss.
+**Solution:** Use a simple character-class allowlist: `FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))`. This allows only digits and decimal points per character, without string-level evaluation. Validate the full format (e.g. positive number, max 2 decimals) at save time, not on every keystroke.
+**Applies to:** Any Flutter form with numeric decimal input fields.

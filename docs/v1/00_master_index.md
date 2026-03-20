@@ -1,10 +1,10 @@
 # KEYSTONE — MASTER DOCUMENT INDEX
 ### The single entry point for any AI or developer working on this project
-**Project:** Keystone — Locksmith Tactical Terminal
+**Project:** Keystone — Locksmith Job Management App
 **Market:** Ghana, West Africa
-**Users:** Jeremie and Jean (Pilot Operators)
-**Status:** V1 BATTLE-HARDENED ✅
-**Last Updated:** March 16, 2026
+**Users:** Jeremie and Jean (Pilot Users)
+**Status:** V1 COMPLETE — Session 29 ✅
+**Last Updated:** March 20, 2026
 
 ---
 
@@ -53,13 +53,16 @@
 - **Automated Tests:** 80 PASSING / 0 FAILING.
 - **Coverage:** Unit (Domain), Widget (Wizards), and Integration (Offline Sync).
 - **DIRC Status:** DIRC-004 PASS ✅.
+- **Open Bugs:** 0 (BUG-001 through BUG-031 all closed as of Session 29).
 
 ---
 
 ## 4. ARCHITECTURE OVERVIEW
 
-Keystone is an **Offline-First Tactical Terminal** built using Flutter and Clean Architecture. 
+Keystone is an **offline-first job management app** built using Flutter and Clean Architecture.
 - **State:** Riverpod.
 - **Storage:** Hive (Local) + Supabase (Remote).
-- **UI:** Dark Industrial, Monospace Receipt Typography, Haptic Feedback.
+- **Mobile UI:** Dark Industrial theme, monospace typography, haptic feedback.
+- **Web UI:** Light theme (public profile pages only) with actual Keystone SVG logo.
 - **Bridge:** Features are isolated and communicate only via `lib/core/providers/shared_feature_providers.dart`.
+- **Theme:** Full light/dark mode via KsColors ThemeExtension. Always use `context.ksc.*` in widget code.
