@@ -102,7 +102,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
           const KsOfflineBanner(),
           Expanded(
             child: state.isLoading
-                ? _buildLoadingState
+                ? _buildLoadingState()
                 : state.filteredJobs.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
@@ -157,7 +157,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
     );
   }
 
-  Widget get _buildLoadingState {
+  Widget _buildLoadingState() {
     return ListView.separated(
       padding: const EdgeInsets.all(24.0),
       itemCount: 4,
@@ -169,7 +169,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: context.ksc.primary700),
         ),
-      ),
+      ).animate(onPlay: (controller) => controller.repeat()),
     );
   }
 
