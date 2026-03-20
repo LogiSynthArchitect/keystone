@@ -124,7 +124,7 @@ class PublicProfileScreen extends ConsumerWidget {
                   color: context.ksc.accent500,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 16),
+                child: const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 16),
               ),
               const SizedBox(width: 10),
               Text(
@@ -138,7 +138,7 @@ class PublicProfileScreen extends ConsumerWidget {
               ),
               const Spacer(),
               Text(
-                'Professional Locksmith Tools',
+                'Locksmith Hub',
                 style: AppTextStyles.caption.copyWith(
                   color: context.ksc.neutral400,
                   fontWeight: FontWeight.w500,
@@ -213,7 +213,7 @@ class PublicProfileScreen extends ConsumerWidget {
               border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
             ),
             child: Text(
-              'Professional Locksmith · Ghana',
+              'Locksmith • Ghana',
               style: AppTextStyles.caption.copyWith(
                 color: context.ksc.accent500,
                 fontWeight: FontWeight.w700,
@@ -244,7 +244,7 @@ class PublicProfileScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionLabel(context, 'Services Offered'),
+        _sectionLabel(context, 'My Services'),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -358,10 +358,10 @@ class PublicProfileScreen extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.lock_outline_rounded, size: 12, color: context.ksc.neutral300),
+            Icon(Icons.vpn_key_rounded, size: 12, color: context.ksc.neutral300),
             const SizedBox(width: 6),
             Text(
-              'Powered by Keystone',
+              'Made with Keystone',
               style: AppTextStyles.caption.copyWith(
                 color: context.ksc.neutral300,
                 fontWeight: FontWeight.w600,
