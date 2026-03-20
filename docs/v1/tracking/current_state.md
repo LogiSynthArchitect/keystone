@@ -1,6 +1,6 @@
 # CURRENT STATE — KEYSTONE V1
-### Last Updated: March 19 2026
-### Session: 28 (CRITICAL BUG FIXES — FK CONSTRAINT & KEYBOARD FOCUS)
+### Last Updated: March 20 2026
+### Session: 29 (WEB OVERHAUL — LOGO, LIGHT THEME, LANGUAGE CLEANUP)
 
 ---
 
@@ -9,7 +9,10 @@
 - **flutter test:** 80+ tests passing, zero failures ✅
 - **Supabase:** All migrations and resilient RPC fixes applied to Staging & Production. ✅
 - **Web Build:** Profile web gateway live on Vercel (keystone-inky-five.vercel.app). ✅
-- **UI Aesthetic:** Circular Identity and Tactical Grid overhaul complete. ✅
+- **UI Aesthetic:** Full light/dark mode migration complete. Light palette active across all screens. ✅
+- **Web Redesign:** Public profile and gateway pages fully redesigned with light theme. ✅
+- **Keystone Logo:** Actual SVG logo (SvgPicture.asset) used in all web top bars, footer, and loading screen. ✅
+- **Language Audit:** All technical jargon removed from web-facing pages. No "terminal", "portal", "technician", "professional locksmith tools". ✅
 
 ---
 
@@ -74,3 +77,10 @@
 | BUG-022 | Low      | Dead edit button in customer detail screen (empty onPressed)             | ✅ Fixed    |
 | BUG-023 | High     | Job create FK constraint: auth UID passed instead of internal `users.id` | ✅ Fixed    |
 | BUG-024 | Medium   | Amount field formatter with `^` anchor caused keyboard unfocus on "0"   | ✅ Fixed    |
+| BUG-025 | High     | Light mode: white text on white/light backgrounds across multiple screens | ✅ Fixed    |
+| BUG-026 | High     | Re-install: stale provider cache returns empty data after fresh login     | ✅ Fixed    |
+| BUG-027 | Medium   | Communication status section blank due to race condition in init          | ✅ Fixed    |
+| BUG-028 | Low      | RenderFlex overflow on small screens in admin requests + follow-up button | ✅ Fixed    |
+| BUG-029 | Low      | Discard dialog buttons unstyled in log_job_screen vs other screens        | ✅ Fixed    |
+| BUG-030 | Medium   | Web loading screen: brand name white text on white background (invisible) | ✅ Fixed    |
+| BUG-031 | High     | job_list_screen: AppColors used in widget scope + missing () on method    | ✅ Fixed    |

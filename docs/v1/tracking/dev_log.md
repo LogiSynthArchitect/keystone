@@ -1087,3 +1087,108 @@ Replaced all technical terms visible to users across every screen:
 
 ### Flutter analyze status
 0 issues ✅
+
+---
+
+## SESSION 28B — Light Mode Migration, IME Fixes & UX Polish — 2026-03-19
+
+### What was built
+
+**1. Full Light/Dark Mode Migration (Option B — Full Semantic Token Migration)**
+- Created `KsColorsDark` and `KsColorsLight` palette variants inside `ks_colors.dart`.
+- Light palette mapping: `primary900` = `#F4F7FF` (page bg), `primary800` = `#FFFFFF` (card), `white` = `#0A1628` (dark text on light), accent unchanged.
+- Updated `app_theme.dart`: `buildLightAppTheme()` and `buildDarkAppTheme()` now register the respective `KsColors` extension.
+- Updated `app.dart`: wired `theme:`, `darkTheme:`, `themeMode:` via `themeModeProvider`.
+- Audited and replaced all hardcoded `Colors.white`, `Colors.white.withValues()`, and `Colors.black` with semantic `context.ksc.*` tokens across 20+ files.
+
+**2. Re-install Stale Cache Bug (BUG-026)**
+- After a fresh install and login, providers cached from a previous session returned empty data.
+- Fix: In `auth_notifier.dart` `verifyOtp()`, after `authStateProvider.refresh()`, explicitly invalidated `profileProvider`, `jobListProvider`, `customerListProvider`, `notesListProvider`.
+
+**3. IME Keyboard Focus Fixes (BUG-013, BUG-024 continuation)**
+- Root cause confirmed: `addListener(() => setState(() {}))` pattern triggers out-of-band rebuilds that disrupt Flutter's IME connection on Android 13+ gesture navigation.
+- Removed all `addListener` patterns from `add_customer_screen.dart`, `log_job_screen.dart`.
+- Replaced with `onChanged: (_) => setState(() {})` only on fields that drive UI state.
+- Added `autocorrect: false, enableSuggestions: false` to all numeric/phone fields.
+
+**4. Communication Status Blank (BUG-027)**
+- `FollowUpMessagePreview` stayed blank if customer data wasn't loaded when `initState` fired.
+- Fix: Added retry logic in `build()` — whenever `customer` data is available but `editState.isInitialized` is false, re-calls `initialize()` via `addPostFrameCallback`.
+
+**5. RenderFlex Overflow (BUG-028)**
+- `admin_requests_screen.dart`: Wrapped "JOB ID" Text in `Expanded`.
+- `follow_up_button.dart`: Wrapped "SEND WHATSAPP FOLLOW-UP" Text in `Expanded`.
+
+**6. Discard Dialog Font (BUG-029)**
+- `log_job_screen.dart`: Both dialog buttons now use `AppTextStyles.label` with proper colors (neutral400 / error500), consistent with all other discard dialogs in the app.
+
+**7. Message Preview Header Polish**
+- `follow_up_message_preview.dart`: Replaced text labels with WhatsApp icon + undo icon with tooltip.
+
+### Files changed
+- `lib/core/theme/ks_colors.dart`, `app_theme.dart`, `app.dart`
+- `lib/features/auth/presentation/providers/auth_notifier.dart`
+- `lib/features/job_logging/presentation/screens/log_job_screen.dart`
+- `lib/features/customer_history/presentation/screens/add_customer_screen.dart`
+- `lib/features/whatsapp_followup/presentation/widgets/follow_up_message_preview.dart`
+- `lib/features/whatsapp_followup/presentation/widgets/follow_up_button.dart`
+- `lib/features/job_logging/presentation/screens/admin_requests_screen.dart`
+- 15+ additional screens (light mode token audit)
+
+### What was learned
+1. **`addListener(() => setState(() {}))` disrupts IME on Android 13+.** Use `onChanged` callbacks instead — they execute within the user-input pipeline, not out-of-band.
+2. **Provider invalidation is required after re-login.** Riverpod providers retain cached values across auth sessions unless explicitly invalidated. Always invalidate data providers in `verifyOtp`.
+3. **Race conditions in async init need retry logic in `build()`.** `addPostFrameCallback` in `initState` runs once. If data isn't ready, the widget stays blank forever without a retry path.
+
+### Flutter analyze status
+0 issues ✅
+
+---
+
+## SESSION 29 — Web Overhaul: Logo, Light Theme, Language Cleanup — 2026-03-20
+
+### What was built
+
+**1. Web Public Profile — Light Theme Redesign**
+- `lib/main_web.dart`: Switched to `buildLightAppTheme()`. Rebuilt `_WebGatewayScreen` with persistent top bar (logo + wordmark), clean centered hero with Keystone logo icon, plain-English body copy, info box for profile link guidance.
+- `lib/features/technician_profile/presentation/screens/public_profile_screen.dart`: Complete redesign — persistent top bar, identity card with gold-accent avatar ring, service grid, WhatsApp + call buttons, footer with actual logo.
+
+**2. Actual Keystone SVG Logo — Everywhere**
+- Created `assets/logo/keystone_logo.svg` — composite of all 4 logo parts (keystone_block, keyhole, left_arm, right_arm).
+- Added `flutter_svg` (`SvgPicture.asset`) import to `main_web.dart` and `public_profile_screen.dart`.
+- Replaced every generic `Icons.lock_outline_rounded` and `Icons.vpn_key_rounded` with `SvgPicture.asset('assets/logo/keystone_logo.svg', colorFilter: ...)`.
+- `web/index.html`: Loading screen now uses the composite 4-path SVG instead of the Material lock icon.
+
+**3. Technical Language Audit — Web**
+- Removed "Terminal" from: `<title>`, meta description, OG `site_name`, `manifest.json` app name.
+- Removed "Portal" from loading screen sub-brand.
+- Replaced with plain English throughout:
+  - Brand sub-label: `FOR LOCKSMITHS`
+  - Gateway tagline: `Built for Locksmiths in Ghana`
+  - Info box: `Looking for a locksmith?` (not "technician")
+  - Profile page: `What I Do`, `Get in Touch`, `Made with Keystone`, `Locksmith · Ghana`
+  - Error states: `Something went wrong`, `This link is no longer active`
+- `manifest.json`: Updated `name`, `background_color`, `theme_color` to match light theme (`#F4F7FF`).
+- `Icons.person_outline_rounded` replaced with `LineAwesomeIcons.user_circle_solid`.
+
+**4. Build Error Fix — job_list_screen (BUG-031)**
+- `_buildLoadingState` was passed as a method reference (no `()`) instead of being called.
+- `AppColors.primary800/700` referenced directly inside widget scope — `AppColors` is only in scope in theme files.
+- Fix: Added `()`, replaced with `context.ksc.primary800/700`.
+
+### Files changed
+- `lib/main_web.dart`
+- `lib/features/technician_profile/presentation/screens/public_profile_screen.dart`
+- `lib/features/job_logging/presentation/screens/job_list_screen.dart`
+- `web/index.html`
+- `web/manifest.json`
+- `assets/logo/keystone_logo.svg` (new file)
+
+### What was learned
+1. **`flutter_svg` was already in `pubspec.yaml` (v2.2.4) and `assets/logo/` already declared.** No setup needed — just import and use `SvgPicture.asset`.
+2. **`colorFilter: ColorFilter.mode(color, BlendMode.srcIn)`** is the correct way to tint an SVG in flutter_svg — not the deprecated `color:` parameter.
+3. **`AppColors` (static class) is not accessible inside widget method scope.** It is only valid at theme-definition time. Widget code must always use `context.ksc.*` for color access.
+4. **Composite SVG logo**: All 4 logo SVG files share the same `viewBox="0 0 210 297"` — they can be combined into a single SVG file with all 4 `<path>` elements and render correctly as one logo.
+
+### Flutter analyze status
+0 issues ✅
