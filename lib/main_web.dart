@@ -83,7 +83,7 @@ class _WebGatewayScreen extends StatelessWidget {
                         color: context.ksc.accent500,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 16),
+                      child: const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 16),
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -139,7 +139,7 @@ class _WebGatewayScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Professional Locksmith Tools',
+                        'Locksmith Hub',
                         style: AppTextStyles.body.copyWith(
                           color: context.ksc.accent500,
                           fontWeight: FontWeight.w600,
@@ -150,7 +150,7 @@ class _WebGatewayScreen extends StatelessWidget {
                       Divider(color: context.ksc.primary700),
                       const SizedBox(height: 24),
                       Text(
-                        'Job management and customer tracking built for locksmiths in Ghana.',
+                        'Manage jobs and connect with customers.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body.copyWith(
                           color: context.ksc.neutral500,
