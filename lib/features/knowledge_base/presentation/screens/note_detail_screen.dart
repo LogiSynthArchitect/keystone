@@ -47,7 +47,7 @@ class NoteDetailScreen extends ConsumerWidget {
                   backgroundColor: context.ksc.primary800,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   title: Text("ARCHIVE NOTE?", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
-                  content: Text("This technical note will be moved to the archive.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral300)),
+                  content: Text("This note will be moved to the archive.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral300)),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -78,7 +78,7 @@ class NoteDetailScreen extends ConsumerWidget {
           children: [
             // INDUSTRIAL EYEBROW
             Text(
-              "TECHNICAL DOCUMENTATION",
+              "NOTE DETAILS",
               style: AppTextStyles.caption.copyWith(
                 color: context.ksc.accent500,
                 letterSpacing: 2.0,

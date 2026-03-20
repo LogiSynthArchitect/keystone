@@ -13,7 +13,7 @@ class KsSearchBar extends StatelessWidget {
 
   const KsSearchBar({
     super.key,
-    this.hint = 'SEARCH DATABASE...',
+    this.hint = 'SEARCH...',
     this.controller,
     this.onChanged,
     this.onClear,

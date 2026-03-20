@@ -236,7 +236,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           hint: "Kwame Mensah",
           controller: _nameController,
           maxLength: 100,
-          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 24),
         _buildDarkField(
@@ -246,7 +245,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           controller: _phoneController,
           fieldHint: "Used to send WhatsApp follow-up messages.",
           isNumeric: true,
-          onChanged: (_) => setState(() {}),
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
