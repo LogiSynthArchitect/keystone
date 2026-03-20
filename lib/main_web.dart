@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'core/constants/supabase_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_text_styles.dart';
@@ -83,7 +85,13 @@ class _WebGatewayScreen extends StatelessWidget {
                         color: context.ksc.accent500,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: SvgPicture.asset(
+                          'assets/logo/keystone_logo.svg',
+                          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Text(
@@ -126,7 +134,13 @@ class _WebGatewayScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: Icon(Icons.lock_outline_rounded, color: context.ksc.accent500, size: 38),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: SvgPicture.asset(
+                            'assets/logo/keystone_logo.svg',
+                            colorFilter: ColorFilter.mode(context.ksc.accent500, BlendMode.srcIn),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 28),
                       Text(
@@ -139,7 +153,7 @@ class _WebGatewayScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Locksmith Hub',
+                        'Built for Locksmiths in Ghana',
                         style: AppTextStyles.body.copyWith(
                           color: context.ksc.accent500,
                           fontWeight: FontWeight.w600,
@@ -150,7 +164,7 @@ class _WebGatewayScreen extends StatelessWidget {
                       Divider(color: context.ksc.primary700),
                       const SizedBox(height: 24),
                       Text(
-                        'Manage jobs and connect with customers.',
+                        'Manage your jobs and stay connected with your customers.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body.copyWith(
                           color: context.ksc.neutral500,
@@ -167,11 +181,11 @@ class _WebGatewayScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.person_outline_rounded, color: context.ksc.accent500, size: 20),
+                            Icon(LineAwesomeIcons.user_circle_solid, color: context.ksc.accent500, size: 20),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Looking for a technician\'s profile? Ask them to share their profile link with you.',
+                                'Looking for a locksmith? Ask them to share their profile link with you.',
                                 style: AppTextStyles.caption.copyWith(
                                   color: context.ksc.neutral500,
                                   height: 1.6,

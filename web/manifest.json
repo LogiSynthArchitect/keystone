@@ -1,11 +1,11 @@
 {
-    "name": "Keystone Terminal",
+    "name": "Keystone",
     "short_name": "Keystone",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0A0E1A",
-    "theme_color": "#0A0E1A",
-    "description": "Professional job management for locksmiths in Ghana.",
+    "background_color": "#F4F7FF",
+    "theme_color": "#F4F7FF",
+    "description": "Job management for locksmiths in Ghana.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

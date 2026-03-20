@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -57,8 +58,8 @@ class PublicProfileScreen extends ConsumerWidget {
                 context: context,
                 icon: LineAwesomeIcons.exclamation_triangle_solid,
                 iconColor: context.ksc.error500,
-                title: 'Connection Error',
-                subtitle: 'Could not load this profile. Please try again.',
+                title: 'Something went wrong',
+                subtitle: 'We could not load this profile. Please try again.',
               ),
               data: (profile) {
                 if (profile == null) {
@@ -67,7 +68,7 @@ class PublicProfileScreen extends ConsumerWidget {
                     icon: LineAwesomeIcons.user_slash_solid,
                     iconColor: context.ksc.neutral300,
                     title: 'Profile Not Found',
-                    subtitle: 'This profile link is inactive or no longer exists.',
+                    subtitle: 'This link is no longer active.',
                   );
                 }
 
@@ -124,7 +125,13 @@ class PublicProfileScreen extends ConsumerWidget {
                   color: context.ksc.accent500,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: SvgPicture.asset(
+                    'assets/logo/keystone_logo.svg',
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -138,7 +145,7 @@ class PublicProfileScreen extends ConsumerWidget {
               ),
               const Spacer(),
               Text(
-                'Locksmith Hub',
+                'Built for Locksmiths',
                 style: AppTextStyles.caption.copyWith(
                   color: context.ksc.neutral400,
                   fontWeight: FontWeight.w500,
@@ -213,7 +220,7 @@ class PublicProfileScreen extends ConsumerWidget {
               border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
             ),
             child: Text(
-              'Locksmith • Ghana',
+              'Locksmith · Ghana',
               style: AppTextStyles.caption.copyWith(
                 color: context.ksc.accent500,
                 fontWeight: FontWeight.w700,
@@ -244,7 +251,7 @@ class PublicProfileScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionLabel(context, 'My Services'),
+        _sectionLabel(context, 'What I Do'),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -281,7 +288,7 @@ class PublicProfileScreen extends ConsumerWidget {
                     _serviceLabel(service),
                     textAlign: TextAlign.center,
                     style: AppTextStyles.caption.copyWith(
-                      color: context.ksc.neutral600,
+                      color: context.ksc.neutral500,
                       fontWeight: FontWeight.w700,
                       fontSize: 11,
                       height: 1.4,
@@ -325,7 +332,7 @@ class PublicProfileScreen extends ConsumerWidget {
         OutlinedButton(
           onPressed: () => _callPhone(profile.whatsappNumber),
           style: OutlinedButton.styleFrom(
-            foregroundColor: context.ksc.neutral600,
+            foregroundColor: context.ksc.neutral500,
             side: BorderSide(color: context.ksc.primary700, width: 1.5),
             minimumSize: const Size.fromHeight(52),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -338,7 +345,7 @@ class PublicProfileScreen extends ConsumerWidget {
               Text(
                 profile.whatsappNumber,
                 style: AppTextStyles.body.copyWith(
-                  color: context.ksc.neutral600,
+                  color: context.ksc.neutral500,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
@@ -358,7 +365,12 @@ class PublicProfileScreen extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.vpn_key_rounded, size: 12, color: context.ksc.neutral300),
+            SvgPicture.asset(
+              'assets/logo/keystone_logo.svg',
+              colorFilter: ColorFilter.mode(context.ksc.neutral300, BlendMode.srcIn),
+              width: 12,
+              height: 12,
+            ),
             const SizedBox(width: 6),
             Text(
               'Made with Keystone',
