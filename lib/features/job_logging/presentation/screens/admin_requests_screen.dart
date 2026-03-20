@@ -86,9 +86,11 @@ class _RequestCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "JOB ID: ${request.jobId.substring(0, 8).toUpperCase()}",
-                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800),
+              Expanded(
+                child: Text(
+                  "JOB ID: ${request.jobId.substring(0, 8).toUpperCase()}",
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800),
+                ),
               ),
               Text(
                 DateFormatter.short(request.createdAt).toUpperCase(),
