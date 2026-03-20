@@ -170,7 +170,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   }
 
   Widget _buildStepIndicator() {
-    final stepLabels = ["IDENTITY", "CONTEXT"];
+    final stepLabels = ["CONTACT", "NOTES"];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       decoration: const BoxDecoration(
@@ -231,9 +231,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("CUSTOMER IDENTITY", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("CUSTOMER DETAILS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Primary contact information for the system database.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Contact details for the customer.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(
           label: "Full Name", 
@@ -245,9 +245,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         _buildDarkField(
           label: "Phone Number", 
           hint: "020 123 4567", 
-          type: TextInputType.phone, 
+          type: TextInputType.number,
           controller: _phoneController, 
-          fieldHint: "Required for automated follow-up messages.",
+          fieldHint: "Used to send WhatsApp follow-up messages.",
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
@@ -261,7 +261,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("SITUATIONAL CONTEXT", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("EXTRA NOTES", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Optional details to help locate or identify the customer.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
@@ -274,11 +274,11 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         ),
         const SizedBox(height: 24),
         _buildDarkField(
-          label: "Dossier Notes", 
-          hint: "Prefers calls, has 2 cars...", 
-          maxLines: 3, 
+          label: "Customer Notes",
+          hint: "Prefers calls, has 2 cars...",
+          maxLines: 3,
           controller: _notesController,
-          fieldHint: "Long-term observations about this entity.",
+          fieldHint: "Any useful details about this customer.",
           maxLength: 1000,
         ),
       ],

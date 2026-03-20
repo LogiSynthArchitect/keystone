@@ -10,8 +10,10 @@
             <solid android:color="#0A1628"/>
         </shape>
     </item>
-    <!-- Keystone vector logo centered -->
+    <!-- Keystone vector logo: explicit width/height so it is NOT stretched to fill screen -->
     <item
+        android:width="120dp"
+        android:height="170dp"
         android:gravity="center"
         android:drawable="@drawable/ic_keystone_splash_logo"/>
 </layer-list>

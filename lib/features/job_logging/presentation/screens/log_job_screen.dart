@@ -52,6 +52,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         }
       });
     }
+    _amountController.addListener(() => setState(() {}));
+    _notesController.addListener(() => setState(() {}));
   }
 
   @override
@@ -152,6 +154,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     if (job != null) {
       context.pop();
       KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
+    } else {
+      final error = ref.read(logJobProvider).errorMessage;
+      if (error != null && error.isNotEmpty) {
+        KsSnackbar.show(context, message: error, type: KsSnackbarType.error);
+      }
     }
   }
 
@@ -195,7 +202,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   Widget _buildStepIndicator() {
-    final stepLabels = ["SERVICE", "ENTITY", "LOGISTICS"];
+    final stepLabels = ["SERVICE", "CUSTOMER", "DETAILS"];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       decoration: const BoxDecoration(
@@ -273,9 +280,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("CUSTOMER ENTITY", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("CUSTOMER", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Verify whom this service record is attached to.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Who is this job for?", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null, maxLength: 100),
         if (widget.preSelectedCustomerId == null) ...[
@@ -283,8 +290,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           _buildDarkField(
             label: "Phone Number", 
             hint: "024 123 4567", 
-            controller: _phoneController, 
-            type: TextInputType.phone,
+            controller: _phoneController,
+            type: TextInputType.number,
             fieldHint: "Required for WhatsApp follow-ups.",
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
@@ -300,9 +307,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("JOB LOGISTICS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("JOB DETAILS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Finalize location, pricing, and technical notes.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Add location, amount charged, and any notes.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(
           label: "Location", 

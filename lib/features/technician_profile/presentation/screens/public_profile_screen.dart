@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../providers/public_profile_provider.dart';
 import '../../../../core/constants/app_enums.dart';
+import '../../../../core/widgets/ks_logo_animated.dart';
 
 class PublicProfileScreen extends ConsumerWidget {
   final String slug;
@@ -101,13 +102,19 @@ class PublicProfileScreen extends ConsumerWidget {
 
                       // --- TOP BRAND MARK ---
                       Center(
-                        child: Text('KEYSTONE',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.accent500,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 4.0,
-                            fontSize: 11,
-                          ),
+                        child: Column(
+                          children: [
+                            const KsLogoAnimated(size: 80, primaryColor: AppColors.white),
+                            const SizedBox(height: 12),
+                            Text('KEYSTONE',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.accent500,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 4.0,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -289,7 +296,7 @@ class PublicProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
                       Center(
                         child: Text(
-                          'POWERED BY KEYSTONE TERMINAL',
+                          'POWERED BY KEYSTONE',
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.primary700,
                             fontWeight: FontWeight.w900,

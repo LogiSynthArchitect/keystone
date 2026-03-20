@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/analytics/ks_analytics.dart';
 import '../../../../core/analytics/analytics_constants.dart';
 import '../../data/datasources/knowledge_note_local_datasource.dart';
@@ -25,6 +27,7 @@ final knowledgeNoteRepositoryProvider = Provider<KnowledgeNoteRepository>(
     ref.watch(knowledgeNoteRemoteDatasourceProvider),
     ref.watch(knowledgeNoteLocalDatasourceProvider),
     ref.watch(supabaseClientProvider),
+    ref.watch(connectivityServiceProvider),
   ));
 
 final getNotesUsecaseProvider = Provider<GetNotesUsecase>(
@@ -86,9 +89,18 @@ class NotesListState {
 }
 
 class NotesListNotifier extends StateNotifier<NotesListState> {
+  final Ref _ref;
   final GetNotesUsecase _getNotes;
   final KnowledgeNoteRepository _repository;
-  NotesListNotifier(this._getNotes, this._repository) : super(const NotesListState()) { load(); }
+  StreamSubscription<bool>? _connectivitySubscription;
+  bool _isRefreshing = false;
+
+  NotesListNotifier(this._ref, this._getNotes, this._repository) : super(const NotesListState()) {
+    load();
+    _connectivitySubscription = _ref.read(connectivityServiceProvider).onConnectivityChanged.listen((isOnline) {
+      if (isOnline) refresh();
+    });
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -129,6 +141,7 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
   void addNote(KnowledgeNoteEntity note) {
     state = state.copyWith(notes: [note, ...state.notes]);
   }
+
   Future<void> archiveNote(String id) async {
     try {
       await _repository.archiveNote(id);
@@ -137,14 +150,28 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
       state = state.copyWith(errorMessage: 'Could not archive note.');
     }
   }
+
   Future<void> refresh() async {
-    await _repository.syncPendingNotes();
-    await load();
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    try {
+      await _repository.syncPendingNotes();
+      await load();
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 }
 
 final notesListProvider = StateNotifierProvider<NotesListNotifier, NotesListState>(
   (ref) => NotesListNotifier(
+    ref,
     ref.watch(getNotesUsecaseProvider),
     ref.watch(knowledgeNoteRepositoryProvider),
   ));

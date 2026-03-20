@@ -8,6 +8,9 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDatasource _remote;
   AuthRepositoryImpl(this._remote);
 
+  // Cache the user profile so offline sessions can still resolve the current user.
+  UserEntity? _cachedUser;
+
   @override
   Future<void> requestOtp(String phoneNumber) =>
       _remote.requestOtp(phoneNumber);
@@ -19,14 +22,19 @@ class AuthRepositoryImpl implements AuthRepository {
   }) => _remote.verifyOtp(phoneNumber, token);
 
   @override
-  Future<void> signOut() => _remote.logout();
+  Future<void> signOut() async {
+    _cachedUser = null;
+    await _remote.logout();
+  }
 
   @override
   Future<UserEntity?> getCurrentUser() async {
     final authUser = supa.Supabase.instance.client.auth.currentUser;
     if (authUser == null) return null;
+    if (_cachedUser != null) return _cachedUser;
     final model = await _remote.getCurrentUser(authUser.id);
-    return model?.toEntity();
+    if (model != null) _cachedUser = model.toEntity();
+    return _cachedUser;
   }
 
   @override

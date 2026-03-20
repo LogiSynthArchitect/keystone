@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
@@ -96,14 +97,22 @@ class CustomerListState {
 }
 
 class CustomerListNotifier extends StateNotifier<CustomerListState> {
+  final Ref _ref;
   final CustomerRepository _repository;
-  CustomerListNotifier(this._repository) : super(const CustomerListState()) { load(); }
+  StreamSubscription<bool>? _connectivitySubscription;
+  bool _isRefreshing = false;
+
+  CustomerListNotifier(this._ref, this._repository) : super(const CustomerListState()) {
+    load();
+    _connectivitySubscription = _ref.read(connectivityServiceProvider).onConnectivityChanged.listen((isOnline) {
+      if (isOnline) refresh();
+    });
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final allCustomers = await _repository.getCustomers();
-      // For V1, we show all synced customers
       state = state.copyWith(customers: allCustomers, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load customers.');
@@ -143,11 +152,26 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
       ..sort((a, b) => a.fullName.compareTo(b.fullName));
     state = state.copyWith(customers: updated);
   }
-  Future<void> refresh() => load();
+  Future<void> refresh() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    try {
+      await _ref.read(syncOfflineCustomersUsecaseProvider).call();
+      await load();
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
 }
 
 final customerListProvider = StateNotifierProvider<CustomerListNotifier, CustomerListState>(
-  (ref) => CustomerListNotifier(ref.watch(customerRepositoryProvider)));
+  (ref) => CustomerListNotifier(ref, ref.watch(customerRepositoryProvider)));
 
 final customerDetailProvider = FutureProvider.family<CustomerEntity?, String>((ref, customerId) async {
   final repo = ref.watch(customerRepositoryProvider);

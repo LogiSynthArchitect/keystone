@@ -8,7 +8,7 @@
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <!-- Android 12 Splash Screen API -->
         <item name="android:windowSplashScreenBackground">#0A1628</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_keystone_splash_logo</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_keystone_splash_logo_a12</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>

@@ -146,14 +146,14 @@ class JobCard extends StatelessWidget {
                       
                       if (job.syncStatus == SyncStatus.pending)
                         const _Badge(
-                          label: "UPLOADING...",
+                          label: "SAVING...",
                           color: AppColors.accent500,
                           icon: LineAwesomeIcons.sync_solid,
                         ),
 
                       if (job.syncStatus == SyncStatus.failed)
                         const _Badge(
-                          label: "UPLOAD FAILED",
+                          label: "SAVE FAILED",
                           color: AppColors.error500,
                           icon: LineAwesomeIcons.exclamation_circle_solid,
                         ),
