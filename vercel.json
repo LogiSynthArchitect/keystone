@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "bash scripts/vercel_build.sh",
+  "outputDirectory": "build/web",
   "headers": [
     {
       "source": "/flutter.js",
