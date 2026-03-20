@@ -104,12 +104,14 @@ class FollowUpButton extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'SEND WHATSAPP FOLLOW-UP',
-                style: AppTextStyles.h2.copyWith(
-                  color: context.ksc.primary900,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
+              Expanded(
+                child: Text(
+                  'SEND WHATSAPP FOLLOW-UP',
+                  style: AppTextStyles.h2.copyWith(
+                    color: context.ksc.primary900,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
               Icon(LineAwesomeIcons.whatsapp, color: context.ksc.primary900, size: 28),

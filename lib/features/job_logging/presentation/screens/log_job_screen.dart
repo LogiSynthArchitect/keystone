@@ -293,6 +293,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             controller: _phoneController,
             type: TextInputType.text,
             fieldHint: "Required for WhatsApp follow-ups.",
+            isNumeric: true,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(10),
@@ -325,6 +326,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           controller: _amountController,
           type: TextInputType.text,
           fieldHint: "Total charged (Hardware + Labor).",
+          isNumeric: true,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
           ],
@@ -395,6 +397,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     TextInputType type = TextInputType.text,
     int maxLines = 1,
     bool readOnly = false,
+    bool isNumeric = false,
     String? fieldHint,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
@@ -419,6 +422,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+            autocorrect: !isNumeric,
+            enableSuggestions: !isNumeric,
             style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? context.ksc.neutral500 : context.ksc.white, fontWeight: FontWeight.bold),
             decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: context.ksc.neutral500), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
           ),
