@@ -96,7 +96,43 @@ Output: build/app/outputs/bundle/prodRelease/app-prod-release.aab
 
 ---
 
-## 21.5 V1 Distribution — Direct APK Install
+## 21.5 Web Deployment — Vercel (Public Profile Gateway)
+
+**Host:** Vercel (keystone-inky-five.vercel.app)
+**Entry point:** `lib/main_web.dart` (lightweight — no Hive, no mobile plugins)
+**Build file:** `scripts/vercel_build.sh`
+
+### How it works
+Vercel has no Flutter installed. The build script installs it at build time:
+1. `git clone --depth 1 -b stable https://github.com/flutter/flutter.git /tmp/flutter`
+2. `export PATH="$PATH:/tmp/flutter/bin"`
+3. `flutter precache --web`
+4. `flutter pub get`
+5. `flutter build web --release`
+
+Output directory: `build/web` (set in `vercel.json` as `outputDirectory`)
+
+### Build trigger
+Automatic on every push to `main` via Vercel's GitHub integration.
+`vercel.json` contains `buildCommand: "bash scripts/vercel_build.sh"`.
+
+### Renderer
+Flutter 3.22+ removed the `--web-renderer` flag. Default is now **skwasm** (WebAssembly-based).
+Do NOT pass `--web-renderer` — it will error with exit 64.
+
+### Caching rules (vercel.json)
+- `index.html` → `no-cache` (always fetched fresh)
+- `flutter_service_worker.js` → `no-cache` (must be fresh to deliver updates to users)
+- All other JS/WASM/assets → `max-age=31536000, immutable` (content-hashed, safe to cache forever)
+
+### GitHub Actions fallback
+`.github/workflows/deploy.yml` scaffolded as an alternative CI/CD path.
+Requires GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+Not currently active — Vercel native build is the primary pipeline.
+
+---
+
+## 21.6 V1 Distribution — Direct APK Install
 
 Method: send APK via WhatsApp or USB to Jeremie and Jean
 
@@ -113,7 +149,7 @@ V2: migrate to Play Store for automatic updates
 
 ---
 
-## 21.6 Supabase Production Setup Sequence
+## 21.7 Supabase Production Setup Sequence
 
 1. Create production project at supabase.com
 2. Run Document 12 schema in SQL editor (follow execution order in 12.8)
@@ -130,7 +166,7 @@ WHERE phone_number IN ('+233[jeremie_number]', '+233[jean_number]');
 
 ---
 
-## 21.7 Play Store Setup (V2 preparation)
+## 21.8 Play Store Setup (V2 preparation)
 
 Developer account: $25 one-time fee
 Required assets:
@@ -145,7 +181,7 @@ Category: Business / Price: Free
 
 ---
 
-## 21.8 Pre-Release Checklist
+## 21.9 Pre-Release Checklist
 
 Code:
 [ ] flutter test — all passing
@@ -183,7 +219,7 @@ Smoke test (physical device):
 
 ---
 
-## 21.9 Version Naming
+## 21.10 Version Naming
 
 MAJOR.MINOR.PATCH
 1.0.0 → versionCode 1  — initial release
