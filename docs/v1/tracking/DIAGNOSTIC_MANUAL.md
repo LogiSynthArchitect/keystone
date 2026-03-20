@@ -153,3 +153,59 @@
 - **Context:** mocktail throws invalid argument error on launchUrl stub
 - **Cause:** launchUrl requires exactly two positional arguments
 - **Remedy:** when(() => mockUrlLauncher.launchUrl(any(), any())).thenAnswer((_) async => true);
+
+---
+
+## VI. LIGHT MODE & THEME SYSTEM
+
+### White Text on White Background (Light Mode Visibility)
+- **Context:** After switching to light palette, text or icons become invisible.
+- **Cause:** Hardcoded `Colors.white` or `Colors.white.withValues()` used in widget code. In light mode, `primary800` = `#FFFFFF`, so white text on a white card renders invisible.
+- **Remedy:** Replace every hardcoded `Colors.white` / `Colors.black` with `context.ksc.white`, `context.ksc.neutral050`, or the appropriate semantic token. Never hardcode colors in widget code.
+
+### AppColors Used in Widget Scope — Build Error
+- **Context:** `The getter 'AppColors' isn't defined for the type '_SomeState'`
+- **Cause:** `AppColors` is a static class designed for use only inside `app_theme.dart` at theme-definition time. It is not accessible inside widget build methods.
+- **Remedy:** Replace `AppColors.primaryXXX` with `context.ksc.primaryXXX` everywhere inside widget code. `AppColors` is only valid in `buildDarkAppTheme()` / `buildLightAppTheme()`.
+
+---
+
+## VII. FLUTTER INPUT & KEYBOARD
+
+### addListener() → setState() Causes Keyboard Unfocus (Android 13+)
+- **Context:** Typing any character (especially "0") in a TextField causes the keyboard to dismiss.
+- **Cause:** `controller.addListener(() => setState(() {}))` triggers a full widget rebuild out-of-band from the user-input pipeline. On Android 13+ with gesture navigation, this disrupts the IME connection and hides the soft keyboard.
+- **Remedy:** Remove all `addListener(() => setState())` patterns. Replace with `onChanged: (_) => setState(() {})` directly on the `TextField` widget. The `onChanged` callback fires within the input pipeline and does not disrupt the IME.
+
+### FilteringTextInputFormatter.allow with Anchored Regex Causes Focus Loss
+- **Context:** Amount field with `FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))` causes keyboard dismissal when typing.
+- **Cause:** The `^` anchor in an allow-formatter causes the formatter to evaluate and mutate the full text string on every keystroke, producing unexpected cursor/focus resets.
+- **Remedy:** Use a character-class allowlist instead: `FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))`. No anchor needed.
+
+---
+
+## VIII. RIVERPOD STATE & AUTH
+
+### Re-install Returns Empty Data After Fresh Login
+- **Context:** App reinstalled, user logs in, all screens show empty data.
+- **Cause:** Riverpod providers retain cached values across Dart process sessions (in memory). After a fresh install and new login, the providers that loaded during a previous session (empty because not yet authenticated) are still cached.
+- **Remedy:** In `verifyOtp()`, after `authStateProvider.refresh()`, explicitly call `_ref.invalidate()` on all data providers: `profileProvider`, `jobListProvider`, `customerListProvider`, `notesListProvider`.
+
+### Async Init Race Condition — Widget Stays Blank
+- **Context:** A widget that initializes state in `initState()` via `addPostFrameCallback` stays blank until the user navigates away and back.
+- **Cause:** `addPostFrameCallback` fires once. If required async data (e.g. customer details from a provider) is not yet available at that moment, the init method exits early and `isInitialized` stays false forever. The widget returns `SizedBox.shrink()` and never retries.
+- **Remedy:** Add a retry path in the `build()` method itself. Inside the `data()` callback of an AsyncValue, if the data is now available but `isInitialized` is still false, schedule another `addPostFrameCallback` to retry initialization.
+
+---
+
+## IX. WEB & SVG
+
+### Keystone Logo Must Use SvgPicture.asset — Not Material/LineAwesome Icons
+- **Context:** Generic icons (lock, key) shown in web top bars instead of the Keystone logo.
+- **Cause:** Material `Icons.*` or `LineAwesomeIcons.*` were used as substitutes.
+- **Remedy:** Use `SvgPicture.asset('assets/logo/keystone_logo.svg', colorFilter: ColorFilter.mode(color, BlendMode.srcIn))`. `flutter_svg` v2.2.4 is already in `pubspec.yaml`. `assets/logo/` is already declared in `pubspec.yaml`. The composite logo SVG is at `assets/logo/keystone_logo.svg`.
+
+### Method Reference Without () Passed as Widget — Build Error
+- **Context:** `The argument type 'Object' can't be assigned to the parameter type 'Widget'`
+- **Cause:** A method like `_buildLoadingState` was referenced without parentheses, making it a method reference (Object) rather than calling it and returning a Widget.
+- **Remedy:** Add `()` — `_buildLoadingState()`.
