@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
@@ -58,27 +59,27 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.chat_bubble_outline, color: context.ksc.accent500, size: 16),
+                      Icon(LineAwesomeIcons.whatsapp, color: context.ksc.accent500, size: 16),
                       const SizedBox(width: 8),
                       Text(
-                        "EDIT MESSAGE PREVIEW",
+                        "MESSAGE PREVIEW",
                         style: AppTextStyles.labelSmall.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                       ),
                     ],
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      final message = WhatsAppConstants.buildFollowUpMessage(
-                        customerName: customer?.fullName ?? "Customer",
-                        technicianName: profileState.profile!.displayName,
-                        serviceType: widget.job.serviceType.name,
-                        profileUrl: profileState.profile!.profileUrl,
-                      );
-                      editState.controller.text = message;
-                    },
-                    child: Text(
-                      "RESTORE ORIGINAL",
-                      style: AppTextStyles.labelSmall.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700),
+                  Tooltip(
+                    message: "Restore original message",
+                    child: GestureDetector(
+                      onTap: () {
+                        final message = WhatsAppConstants.buildFollowUpMessage(
+                          customerName: customer?.fullName ?? "Customer",
+                          technicianName: profileState.profile!.displayName,
+                          serviceType: widget.job.serviceType.name,
+                          profileUrl: profileState.profile!.profileUrl,
+                        );
+                        editState.controller.text = message;
+                      },
+                      child: Icon(LineAwesomeIcons.undo_solid, color: context.ksc.neutral500, size: 18),
                     ),
                   ),
                 ],
