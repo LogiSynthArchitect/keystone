@@ -31,3 +31,7 @@ export 'package:keystone/features/job_logging/presentation/providers/job_provide
 // Technician Profile - Presentation Providers
 export 'package:keystone/features/technician_profile/presentation/providers/profile_provider.dart'
     show profileProvider, profileRepositoryProvider;
+
+// Knowledge Base - Presentation Providers
+export 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart'
+    show notesListProvider;

@@ -145,7 +145,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: context.ksc.primary700),
           ),
-          child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
+          child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: context.ksc.white),
         ),
       );
 

@@ -84,9 +84,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         backgroundColor: context.ksc.primary800,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          side: BorderSide(color: context.ksc.primary700),
         ),
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         content: Text('You have unsaved customer details. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
           TextButton(
@@ -231,7 +231,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("CUSTOMER DETAILS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("CUSTOMER DETAILS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Contact details for the customer.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -261,7 +261,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("EXTRA NOTES", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("EXTRA NOTES", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Optional details to help locate or identify the customer.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -303,7 +303,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
               Text(
                 isLastStep ? 'SAVE CUSTOMER RECORD' : 'NEXT STEP',
                 style: AppTextStyles.h2.copyWith(
-                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                  color: canGo ? context.ksc.white : context.ksc.neutral500,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 )
@@ -311,7 +311,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
               if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
-                color: canGo ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1)
+                color: canGo ? context.ksc.accent500 : context.ksc.primary700
               ),
             ],
           ),
@@ -343,7 +343,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           decoration: BoxDecoration(
             color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: context.ksc.primary700),
           ),
           child: TextField(
             controller: controller,
@@ -357,7 +357,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.15)),
+              hintStyle: TextStyle(color: context.ksc.neutral500),
               contentPadding: const EdgeInsets.all(16),
               border: InputBorder.none,
               filled: true,

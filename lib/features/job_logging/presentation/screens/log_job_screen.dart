@@ -105,7 +105,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.ksc.primary800,
-        title: Text('DISCARD DRAFT?', style: AppTextStyles.h3.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        title: Text('DISCARD DRAFT?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         content: Text('Your entered job details will be lost. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('KEEP EDITING')),
@@ -264,7 +264,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("SELECT SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("SELECT SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Identify the core technical operation performed.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -280,7 +280,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("CUSTOMER", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("CUSTOMER", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Who is this job for?", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -307,7 +307,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("JOB DETAILS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("JOB DETAILS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Add location, amount charged, and any notes.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -341,11 +341,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           },
           child: Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
+            decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
             child: Row(children: [
               Icon(LineAwesomeIcons.calendar, size: 20, color: context.ksc.accent500),
               const SizedBox(width: 12),
-              Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold)),
             ]),
           ),
         ),
@@ -371,7 +371,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               Text(
                 isLastStep ? 'SAVE JOB RECORD' : 'NEXT STEP',
                 style: AppTextStyles.h2.copyWith(
-                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                  color: canGo ? context.ksc.white : context.ksc.neutral500,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 )
@@ -379,7 +379,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
-                color: canGo ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1)
+                color: canGo ? context.ksc.accent500 : context.ksc.neutral600
               ),
             ],
           ),
@@ -409,7 +409,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         ],
         const SizedBox(height: 8),
         Container(
-          decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
+          decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
           child: TextField(
             controller: controller,
             keyboardType: type,
@@ -419,8 +419,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-            style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? context.ksc.neutral500 : Colors.white, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
+            style: AppTextStyles.bodyLarge.copyWith(color: readOnly ? context.ksc.neutral500 : context.ksc.white, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: context.ksc.neutral500), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
           ),
         ),
       ],

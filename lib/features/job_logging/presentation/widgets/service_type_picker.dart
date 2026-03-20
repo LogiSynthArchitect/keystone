@@ -48,7 +48,7 @@ class ServiceTypePicker extends StatelessWidget {
                 border: Border.all(
                   color: isSelected
                       ? context.ksc.accent500
-                      : Colors.white.withValues(alpha: enabled ? 0.1 : 0.05),
+                      : context.ksc.primary700,
                   width: isSelected ? 2.0 : 1.0
                 ),
               ),

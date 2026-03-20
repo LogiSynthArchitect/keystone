@@ -117,7 +117,7 @@ class _ServiceItem extends StatelessWidget {
                 left: 12,
                 child: Text(
                   data.label,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: context.ksc.white, fontWeight: FontWeight.bold),
                 ),
               ),
               if (isSelected)

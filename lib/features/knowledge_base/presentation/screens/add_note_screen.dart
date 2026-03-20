@@ -85,9 +85,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         backgroundColor: context.ksc.primary800,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          side: BorderSide(color: context.ksc.primary700),
         ),
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         content: Text('You have unsaved technical notes. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
           TextButton(
@@ -223,7 +223,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("YOUR NOTE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("YOUR NOTE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Write down the problem and how you fixed it.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -250,7 +250,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("ORGANISE YOUR NOTE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+        Text("ORGANISE YOUR NOTE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Add tags and a category to find this note easily later.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
@@ -279,7 +279,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                    color: isSelected ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1),
+                    color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -316,7 +316,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
               Text(
                 isLastStep ? 'SAVE KNOWLEDGE NOTE' : 'NEXT STEP',
                 style: AppTextStyles.h2.copyWith(
-                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                  color: canGo ? context.ksc.white : context.ksc.neutral500,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 )
@@ -324,7 +324,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
               if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
               else Icon(
                 isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
-                color: canGo ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1)
+                color: canGo ? context.ksc.accent500 : context.ksc.primary700
               ),
             ],
           ),
@@ -354,7 +354,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
           decoration: BoxDecoration(
             color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: context.ksc.primary700),
           ),
           child: TextField(
             controller: controller,
@@ -366,7 +366,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.15)),
+              hintStyle: TextStyle(color: context.ksc.neutral500),
               contentPadding: const EdgeInsets.all(16),
               border: InputBorder.none,
               filled: true,

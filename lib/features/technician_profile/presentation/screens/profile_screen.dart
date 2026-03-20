@@ -155,7 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   "CORRECTION REQUESTS",
-                                  style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+                                  style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 1.0),
                                 ),
                                 Icon(LineAwesomeIcons.clipboard_list_solid, color: context.ksc.accent500, size: 24),
                               ],

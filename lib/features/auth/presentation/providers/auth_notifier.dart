@@ -89,6 +89,13 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       await _verifyOtp(VerifyOtpParams(phoneNumber: phone, token: token));
       // Force refresh the router's auth state to check for existing profile
       await _ref.read(authStateProvider.notifier).refresh();
+      // Invalidate all data providers so they reload with the new session.
+      // Without this, providers initialised during the pre-login TransitionScreen
+      // keep their empty (no-session) state and never re-fetch user data.
+      _ref.invalidate(profileProvider);
+      _ref.invalidate(jobListProvider);
+      _ref.invalidate(customerListProvider);
+      _ref.invalidate(notesListProvider);
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
