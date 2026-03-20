@@ -291,7 +291,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             label: "Phone Number",
             hint: "024 123 4567",
             controller: _phoneController,
-            type: TextInputType.number,
+            type: TextInputType.text,
             fieldHint: "Required for WhatsApp follow-ups.",
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,

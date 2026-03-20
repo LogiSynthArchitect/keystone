@@ -83,8 +83,8 @@ class KsTextField extends StatelessWidget {
 
   TextInputType get _keyboardType {
     switch (type) {
-      case KsTextFieldType.phone:  return TextInputType.phone;
-      case KsTextFieldType.amount: return const TextInputType.numberWithOptions(decimal: true);
+      case KsTextFieldType.phone:  return TextInputType.text;
+      case KsTextFieldType.amount: return TextInputType.text;
       case KsTextFieldType.multiline: return TextInputType.multiline;
       default: return TextInputType.text;
     }

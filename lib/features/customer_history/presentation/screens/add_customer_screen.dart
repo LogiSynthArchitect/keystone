@@ -245,7 +245,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         _buildDarkField(
           label: "Phone Number",
           hint: "020 123 4567",
-          type: TextInputType.number,
+          type: TextInputType.text,
           controller: _phoneController,
           fieldHint: "Used to send WhatsApp follow-up messages.",
           inputFormatters: [
