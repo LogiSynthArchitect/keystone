@@ -1,7 +1,17 @@
 #!/bin/bash
 set -e
 
-echo "Building Keystone for web with HTML renderer..."
+echo "→ Installing Flutter (stable)..."
+git clone https://github.com/flutter/flutter.git --depth 1 -b stable /tmp/flutter
+export PATH="$PATH:/tmp/flutter/bin"
+
+echo "→ Pre-caching web tools..."
+flutter precache --web
+
+echo "→ Installing dependencies..."
+flutter pub get
+
+echo "→ Building for web (HTML renderer)..."
 flutter build web --web-renderer html --release
 
-echo "✓ Build complete. Service worker and fonts optimized."
+echo "✓ Build complete."
