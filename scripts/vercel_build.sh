@@ -11,7 +11,7 @@ flutter precache --web
 echo "→ Installing dependencies..."
 flutter pub get
 
-echo "→ Building for web (HTML renderer)..."
-flutter build web --web-renderer html --release
+echo "→ Building for web..."
+flutter build web --release
 
 echo "✓ Build complete."
