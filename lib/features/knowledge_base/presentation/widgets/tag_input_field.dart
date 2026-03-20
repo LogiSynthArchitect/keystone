@@ -44,7 +44,7 @@ class _TagInputFieldState extends State<TagInputField> {
           decoration: BoxDecoration(
             color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: context.ksc.primary700),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +71,7 @@ class _TagInputFieldState extends State<TagInputField> {
                 cursorColor: context.ksc.accent500,
                 decoration: InputDecoration(
                   hintText: "Add tag, press Enter",
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
+                  hintStyle: TextStyle(color: context.ksc.neutral500),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

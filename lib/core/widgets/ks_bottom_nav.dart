@@ -18,7 +18,7 @@ class KsBottomNav extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.ksc.primary900,
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        border: Border(top: BorderSide(color: context.ksc.primary700)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -45,7 +45,7 @@ class KsBottomNav extends StatelessWidget {
 
   Widget _buildNavItem(BuildContext context, int index, String label, IconData icon) {
     final isActive = currentIndex == index;
-    final color = isActive ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.3);
+    final color = isActive ? context.ksc.accent500 : context.ksc.neutral400;
 
     return Expanded(
       child: GestureDetector(

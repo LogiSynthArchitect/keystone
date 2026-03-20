@@ -42,7 +42,7 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
           decoration: BoxDecoration(
             color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: context.ksc.primary700),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,7 +82,7 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
                 controller: editState.controller,
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
-                style: AppTextStyles.body.copyWith(color: Colors.white, height: 1.6, fontStyle: FontStyle.italic),
+                style: AppTextStyles.body.copyWith(color: context.ksc.white, height: 1.6, fontStyle: FontStyle.italic),
                 cursorColor: context.ksc.accent500,
                 decoration: InputDecoration(
                   border: InputBorder.none,

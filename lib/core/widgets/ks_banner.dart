@@ -43,7 +43,7 @@ class KsBanner extends StatelessWidget {
             type == KsBannerType.alert
                 ? LineAwesomeIcons.exclamation_triangle_solid
                 : LineAwesomeIcons.info_circle_solid,
-            color: Colors.white,
+            color: context.ksc.white,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -55,7 +55,7 @@ class KsBanner extends StatelessWidget {
                 Text(
                   type == KsBannerType.alert ? 'SYSTEM ALERT' : 'NOTIFICATION',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: Colors.white,
+                    color: context.ksc.white,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
                     fontSize: 10,

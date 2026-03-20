@@ -79,7 +79,7 @@ class NameStepView extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           height: 64,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isFocused ? context.ksc.primary700 : const Color(0xFFEAEAEC),

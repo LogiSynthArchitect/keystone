@@ -99,7 +99,7 @@ class _RequestCard extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             request.reason,
-            style: AppTextStyles.body.copyWith(color: Colors.white, height: 1.5),
+            style: AppTextStyles.body.copyWith(color: context.ksc.white, height: 1.5),
           ),
           const SizedBox(height: 20),
           Row(
@@ -135,14 +135,14 @@ class _RequestCard extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.ksc.primary800,
-        title: Text("REJECT REQUEST", style: AppTextStyles.h2.copyWith(color: Colors.white)),
+        title: Text("REJECT REQUEST", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
         content: TextField(
           controller: controller,
           maxLines: 2,
-          style: AppTextStyles.body.copyWith(color: Colors.white),
+          style: AppTextStyles.body.copyWith(color: context.ksc.white),
           decoration: InputDecoration(
             hintText: "Reason for rejection...",
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
+            hintStyle: TextStyle(color: context.ksc.neutral500),
             filled: true,
             fillColor: context.ksc.primary900,
           ),
@@ -170,7 +170,7 @@ class _RequestCard extends ConsumerWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           backgroundColor: context.ksc.primary800,
-          title: Text("APPROVE & UPDATE", style: AppTextStyles.h2.copyWith(color: Colors.white)),
+          title: Text("APPROVE & UPDATE", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -180,14 +180,14 @@ class _RequestCard extends ConsumerWidget {
                 decoration: const InputDecoration(labelText: "SERVICE TYPE"),
                 items: ServiceType.values.map((t) => DropdownMenuItem(
                   value: t,
-                  child: Text(t.name.toUpperCase(), style: const TextStyle(color: Colors.white)),
+                  child: Text(t.name.toUpperCase(), style: TextStyle(color: context.ksc.white)),
                 )).toList(),
                 onChanged: (val) => setState(() => selectedType = val!),
               ),
               const SizedBox(height: 16),
               ListTile(
                 title: Text("JOB DATE", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
-                subtitle: Text(DateFormatter.short(selectedDate), style: const TextStyle(color: Colors.white)),
+                subtitle: Text(DateFormatter.short(selectedDate), style: TextStyle(color: context.ksc.white)),
                 trailing: Icon(LineAwesomeIcons.calendar, color: context.ksc.accent500),
                 onTap: () async {
                   final date = await showDatePicker(

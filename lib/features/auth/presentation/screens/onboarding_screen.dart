@@ -158,7 +158,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             right: BorderSide(color: context.ksc.primary700),
           ),
         ),
-        child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
+        child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: context.ksc.white),
       ),
     );
   }
@@ -330,7 +330,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           child: Text(
                             service.label,
                             style: AppTextStyles.label.copyWith(
-                              color: Colors.white,
+                              color: context.ksc.white,
                               fontWeight: FontWeight.w800,
                               height: 1.2,
                               fontSize: 14,

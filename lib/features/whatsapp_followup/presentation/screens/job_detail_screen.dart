@@ -40,7 +40,7 @@ class JobDetailScreen extends ConsumerWidget {
                 builder: (ctx) => AlertDialog(
                   backgroundColor: ctx.ksc.primary800,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  title: Text("ARCHIVE RECORD?", style: AppTextStyles.h2.copyWith(color: Colors.white)),
+                  title: Text("ARCHIVE RECORD?", style: AppTextStyles.h2.copyWith(color: ctx.ksc.white)),
                   content: Text("This job will be moved to history. It cannot be permanently deleted.", style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral400)),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
@@ -113,7 +113,7 @@ class JobDetailScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: ctx.ksc.primary800,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        title: Text("REQUEST CORRECTION", style: AppTextStyles.h2.copyWith(color: Colors.white)),
+        title: Text("REQUEST CORRECTION", style: AppTextStyles.h2.copyWith(color: ctx.ksc.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,10 +124,10 @@ class JobDetailScreen extends ConsumerWidget {
             TextField(
               controller: controller,
               maxLines: 3,
-              style: AppTextStyles.body.copyWith(color: Colors.white),
+              style: AppTextStyles.body.copyWith(color: ctx.ksc.white),
               decoration: InputDecoration(
                 hintText: "e.g. Changed service type to Smart Lock Installation...",
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
+                hintStyle: TextStyle(color: ctx.ksc.neutral500),
                 filled: true,
                 fillColor: ctx.ksc.primary900,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide.none),

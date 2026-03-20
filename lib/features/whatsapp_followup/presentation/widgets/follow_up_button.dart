@@ -48,7 +48,7 @@ class FollowUpButton extends ConsumerWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: context.ksc.accent500,
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+        border: Border(top: BorderSide(color: context.ksc.primary700)),
       ),
       padding: const EdgeInsets.all(24.0),
       child: SafeArea(
