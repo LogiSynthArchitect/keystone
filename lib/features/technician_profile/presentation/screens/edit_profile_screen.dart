@@ -313,7 +313,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: TextField(
             controller: controller,
             maxLines: isMultiline ? 4 : 1,
-            keyboardType: isPhone ? TextInputType.number : (isMultiline ? TextInputType.multiline : TextInputType.text),
+            keyboardType: isPhone ? TextInputType.text : (isMultiline ? TextInputType.multiline : TextInputType.text),
             inputFormatters: inputFormatters,
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,

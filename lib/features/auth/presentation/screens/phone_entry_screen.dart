@@ -173,7 +173,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                 controller: _controller,
                 focusNode: _focusNode,
                 onChanged: _onPhoneChanged,
-                keyboardType: TextInputType.phone,
+                keyboardType: TextInputType.text,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(10),
