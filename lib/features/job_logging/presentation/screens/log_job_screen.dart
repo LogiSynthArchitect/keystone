@@ -108,8 +108,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         title: Text('DISCARD DRAFT?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         content: Text('Your entered job details will be lost. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('KEEP EDITING')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('DISCARD', style: TextStyle(color: context.ksc.error500, fontWeight: FontWeight.bold))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.bold))),
         ],
       ),
     ) ?? false;
