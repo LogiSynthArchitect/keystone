@@ -248,6 +248,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           type: TextInputType.text,
           controller: _phoneController,
           fieldHint: "Used to send WhatsApp follow-up messages.",
+          isNumeric: true,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
@@ -329,6 +330,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     String? fieldHint,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
+    bool isNumeric = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,6 +355,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+            autocorrect: !isNumeric,
+            enableSuggestions: !isNumeric,
             style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
             cursorColor: context.ksc.accent500,
             decoration: InputDecoration(

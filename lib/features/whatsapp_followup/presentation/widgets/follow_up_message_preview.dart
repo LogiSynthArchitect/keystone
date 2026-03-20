@@ -35,6 +35,12 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (customer) {
+        // Retry initialization whenever customer data is available but not yet initialized
+        if (!editState.isInitialized) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) ref.read(editableFollowUpProvider(widget.job).notifier).initialize();
+          });
+        }
         if (profileState.profile == null || !editState.isInitialized) return const SizedBox.shrink();
 
         return Container(
