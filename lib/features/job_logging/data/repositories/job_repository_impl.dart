@@ -22,10 +22,17 @@ class JobRepositoryImpl implements JobRepository {
 
   JobRepositoryImpl(this._remote, this._local, this._connectivity, this._supabase, this._customerLocal, this._followUpRepo);
 
-  String get _userId {
-    final id = _supabase.auth.currentUser?.id;
-    if (id == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
-    return id;
+  // Cache the internal public.users.id to avoid a roundtrip on every operation.
+  // jobs.user_id FK references public.users.id (internal UUID), NOT auth.users.id (auth UID).
+  String? _cachedInternalUserId;
+
+  Future<String> _getInternalUserId() async {
+    if (_cachedInternalUserId != null) return _cachedInternalUserId!;
+    final authId = _supabase.auth.currentUser?.id;
+    if (authId == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
+    final result = await _supabase.from('users').select('id').eq('auth_id', authId).single();
+    _cachedInternalUserId = result['id'] as String;
+    return _cachedInternalUserId!;
   }
 
   @override
@@ -33,7 +40,7 @@ class JobRepositoryImpl implements JobRepository {
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
-        final remoteModels = await _remote.getJobs(userId: _userId, limit: limit, offset: offset);
+        final remoteModels = await _remote.getJobs(userId: await _getInternalUserId(), limit: limit, offset: offset);
         for (final m in remoteModels) {
           final existing = await _local.getJob(m.id);
           // Don't overwrite a locally-pending archive with the remote stale state
@@ -177,7 +184,7 @@ class JobRepositoryImpl implements JobRepository {
       final payload = safeToSync.map((m) => _jobEntityToJson(m.toEntity())).toList();
       debugPrint('[KS:SYNC] Sending ${payload.length} jobs for sync');
       
-      final result = await _remote.batchSync(_userId, payload);
+      final result = await _remote.batchSync(await _getInternalUserId(), payload);
       debugPrint('[KS:SYNC] RPC Result: $result');
 
       final syncedList = result['synced'] as List<dynamic>? ?? [];
