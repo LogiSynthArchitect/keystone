@@ -12,6 +12,6 @@ echo "→ Installing dependencies..."
 flutter pub get
 
 echo "→ Building for web..."
-flutter build web --release
+flutter build web --target lib/main_web.dart --release
 
 echo "✓ Build complete."
