@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 import '../providers/connectivity_provider.dart';
 
 class KsOfflineBanner extends ConsumerWidget {
@@ -17,7 +17,7 @@ class KsOfflineBanner extends ConsumerWidget {
           ? const SizedBox.shrink()
           : Container(
               width: double.infinity,
-              color: AppColors.neutral700,
+              color: context.ksc.neutral700,
               padding: const EdgeInsets.symmetric(
                 vertical: AppSpacing.sm,
                 horizontal: AppSpacing.lg,
@@ -25,11 +25,11 @@ class KsOfflineBanner extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.wifi_off, size: 14, color: AppColors.white),
+                  Icon(Icons.wifi_off, size: 14, color: context.ksc.white),
                   const SizedBox(width: AppSpacing.sm),
                   Text('Offline — changes will sync when connected',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.white,
+                        color: context.ksc.white,
                       )),
                 ],
               ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 
 enum KsBadgeVariant { success, warning, error, info, neutral }
 
@@ -25,40 +25,40 @@ class KsBadge extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: _backgroundColor,
+        color: _backgroundColor(context),
         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12, color: _textColor),
+            Icon(icon, size: 12, color: _textColor(context)),
             const SizedBox(width: 4),
           ],
           Text(label,
-              style: AppTextStyles.captionMedium.copyWith(color: _textColor)),
+              style: AppTextStyles.captionMedium.copyWith(color: _textColor(context))),
         ],
       ),
     );
   }
 
-  Color get _backgroundColor {
+  Color _backgroundColor(BuildContext context) {
     switch (variant) {
-      case KsBadgeVariant.success: return AppColors.success100;
-      case KsBadgeVariant.warning: return AppColors.warning100;
-      case KsBadgeVariant.error:   return AppColors.error100;
-      case KsBadgeVariant.info:    return AppColors.primary100;
-      case KsBadgeVariant.neutral: return AppColors.neutral100;
+      case KsBadgeVariant.success: return context.ksc.success100;
+      case KsBadgeVariant.warning: return context.ksc.warning100;
+      case KsBadgeVariant.error:   return context.ksc.error100;
+      case KsBadgeVariant.info:    return context.ksc.primary100;
+      case KsBadgeVariant.neutral: return context.ksc.neutral100;
     }
   }
 
-  Color get _textColor {
+  Color _textColor(BuildContext context) {
     switch (variant) {
-      case KsBadgeVariant.success: return AppColors.success600;
-      case KsBadgeVariant.warning: return AppColors.warning600;
-      case KsBadgeVariant.error:   return AppColors.error600;
-      case KsBadgeVariant.info:    return AppColors.primary600;
-      case KsBadgeVariant.neutral: return AppColors.neutral600;
+      case KsBadgeVariant.success: return context.ksc.success600;
+      case KsBadgeVariant.warning: return context.ksc.warning600;
+      case KsBadgeVariant.error:   return context.ksc.error600;
+      case KsBadgeVariant.info:    return context.ksc.primary600;
+      case KsBadgeVariant.neutral: return context.ksc.neutral600;
     }
   }
 }

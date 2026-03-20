@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
@@ -25,37 +25,37 @@ class NoteDetailScreen extends ConsumerWidget {
     final note = _findNote(state);
 
     if (note == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.primary900,
-        appBar: KsAppBar(title: "NOTE", showBack: true),
-        body: Center(child: Text("NOTE NOT FOUND", style: TextStyle(color: AppColors.neutral400))),
+      return Scaffold(
+        backgroundColor: context.ksc.primary900,
+        appBar: const KsAppBar(title: "NOTE", showBack: true),
+        body: Center(child: Text("NOTE NOT FOUND", style: TextStyle(color: context.ksc.neutral400))),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.primary900,
+      backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "NOTE DETAIL",
         showBack: true,
         actions: [
           IconButton(
-            icon: const Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
+            icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  backgroundColor: AppColors.primary800,
+                  backgroundColor: context.ksc.primary800,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  title: Text("ARCHIVE NOTE?", style: AppTextStyles.h2.copyWith(color: AppColors.white)),
-                  content: Text("This technical note will be moved to the archive.", style: AppTextStyles.body.copyWith(color: AppColors.neutral300)),
+                  title: Text("ARCHIVE NOTE?", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
+                  content: Text("This technical note will be moved to the archive.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral300)),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(ctx, false), 
-                      child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: AppColors.neutral400))
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(ctx, true), 
-                      child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: AppColors.error500))
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: context.ksc.error500))
                     ),
                   ],
                 ),
@@ -80,7 +80,7 @@ class NoteDetailScreen extends ConsumerWidget {
             Text(
               "TECHNICAL DOCUMENTATION",
               style: AppTextStyles.caption.copyWith(
-                color: AppColors.accent500,
+                color: context.ksc.accent500,
                 letterSpacing: 2.0,
                 fontWeight: FontWeight.w800,
               ),
@@ -88,30 +88,30 @@ class NoteDetailScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               note.title.toUpperCase(),
-              style: AppTextStyles.h1.copyWith(color: AppColors.white, letterSpacing: 0.5),
+              style: AppTextStyles.h1.copyWith(color: context.ksc.white, letterSpacing: 0.5),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(LineAwesomeIcons.calendar, size: 14, color: AppColors.neutral500),
+                Icon(LineAwesomeIcons.calendar, size: 14, color: context.ksc.neutral500),
                 const SizedBox(width: 6),
                 Text(
-                  DateFormatter.display(note.createdAt).toUpperCase(), 
-                  style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700)
+                  DateFormatter.display(note.createdAt).toUpperCase(),
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700)
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // CONTENT MODULE
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(AppSpacing.cardPadding),
               decoration: BoxDecoration(
-                color: AppColors.primary800,
+                color: context.ksc.primary800,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AppColors.primary700),
+                border: Border.all(color: context.ksc.primary700),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,16 +119,16 @@ class NoteDetailScreen extends ConsumerWidget {
                   Text(
                     "ANALYSIS & SOLUTION",
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.neutral500,
+                      color: context.ksc.neutral500,
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    note.description, 
+                    note.description,
                     style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.neutral100,
+                      color: context.ksc.neutral100,
                       height: 1.6,
                       fontWeight: FontWeight.w500,
                     )
@@ -136,13 +136,13 @@ class NoteDetailScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             if (note.hasTags) ...[
               const SizedBox(height: 32),
               Text(
-                "SYSTEM TAGS", 
+                "SYSTEM TAGS",
                 style: AppTextStyles.caption.copyWith(
-                  color: AppColors.neutral500,
+                  color: context.ksc.neutral500,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w800,
                 )
@@ -154,21 +154,21 @@ class NoteDetailScreen extends ConsumerWidget {
                 children: note.tags.map((tag) => Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary800,
+                    color: context.ksc.primary800,
                     borderRadius: BorderRadius.circular(2),
-                    border: Border.all(color: AppColors.primary700),
+                    border: Border.all(color: context.ksc.primary700),
                   ),
                   child: Text(
-                    "#${tag.toUpperCase()}", 
+                    "#${tag.toUpperCase()}",
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.accent500,
+                      color: context.ksc.accent500,
                       fontWeight: FontWeight.w800,
                     )
                   ),
                 )).toList(),
               ),
             ],
-            
+
             const SizedBox(height: 48),
           ],
         ),

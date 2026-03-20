@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/constants/app_enums.dart';
@@ -10,7 +10,7 @@ import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 
 class JobCard extends StatelessWidget {
   final JobEntity job;
-  final CustomerEntity? customer; 
+  final CustomerEntity? customer;
   final VoidCallback? onTap;
 
   const JobCard({super.key, required this.job, this.customer, this.onTap});
@@ -39,9 +39,9 @@ class JobCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.primary800,
+          color: context.ksc.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: AppColors.primary700),
+          border: Border.all(color: context.ksc.primary700),
         ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -49,14 +49,14 @@ class JobCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(_serviceIcon(job.serviceType), size: 18, color: AppColors.accent500),
+                Icon(_serviceIcon(job.serviceType), size: 18, color: context.ksc.accent500),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _serviceLabel(job.serviceType),
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.white, 
-                      fontWeight: FontWeight.w800, 
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 1.0,
                     ),
                   ),
@@ -64,16 +64,16 @@ class JobCard extends StatelessWidget {
                 Text(
                   DateFormatter.short(job.jobDate).toUpperCase(),
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.neutral400, 
+                    color: context.ksc.neutral400,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -82,30 +82,30 @@ class JobCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (customer != null) 
+                      if (customer != null)
                         Text(
-                          customer?.fullName.toUpperCase() ?? "DELETED CUSTOMER", 
+                          customer?.fullName.toUpperCase() ?? "DELETED CUSTOMER",
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.white, 
+                            color: context.ksc.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 18,
                           ),
                         ),
-                      
+
                       const SizedBox(height: 4),
-                      
-                      if (job.hasLocation) 
+
+                      if (job.hasLocation)
                         Row(
                           children: [
-                            const Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: AppColors.accent500),
+                            Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: context.ksc.accent500),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                job.location!.toUpperCase(), 
+                                job.location!.toUpperCase(),
                                 style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.neutral400,
+                                  color: context.ksc.neutral400,
                                   fontWeight: FontWeight.w600,
-                                ), 
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -114,12 +114,12 @@ class JobCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                
-                if (job.hasAmount) 
+
+                if (job.hasAmount)
                   Text(
-                    CurrencyFormatter.formatShort(job.amountCharged!), 
+                    CurrencyFormatter.formatShort(job.amountCharged!),
                     style: AppTextStyles.h1.copyWith(
-                      color: AppColors.white, 
+                      color: context.ksc.white,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                       fontFeatures: [const FontFeature.tabularFigures()],
@@ -127,34 +127,34 @@ class JobCard extends StatelessWidget {
                   ),
               ],
             ),
-            
+
             if (job.followUpSent || job.syncStatus != SyncStatus.synced) ...[
               const SizedBox(height: 16),
-              const Divider(color: AppColors.primary700, height: 1),
+              Divider(color: context.ksc.primary700, height: 1),
               const SizedBox(height: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      if (job.followUpSent) 
-                        const _Badge(
-                          label: "WHATSAPP OPENED", 
-                          color: AppColors.success500, 
+                      if (job.followUpSent)
+                        _Badge(
+                          label: "WHATSAPP OPENED",
+                          color: context.ksc.success500,
                           icon: LineAwesomeIcons.check_circle_solid,
                         ),
-                      
+
                       if (job.syncStatus == SyncStatus.pending)
-                        const _Badge(
+                        _Badge(
                           label: "SAVING...",
-                          color: AppColors.accent500,
+                          color: context.ksc.accent500,
                           icon: LineAwesomeIcons.sync_solid,
                         ),
 
                       if (job.syncStatus == SyncStatus.failed)
-                        const _Badge(
+                        _Badge(
                           label: "SAVE FAILED",
-                          color: AppColors.error500,
+                          color: context.ksc.error500,
                           icon: LineAwesomeIcons.exclamation_circle_solid,
                         ),
                     ],
@@ -165,7 +165,7 @@ class JobCard extends StatelessWidget {
                       child: Text(
                         job.syncErrorMessage!.toUpperCase(),
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.error500,
+                          color: context.ksc.error500,
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
                         ),
@@ -204,10 +204,10 @@ class _Badge extends StatelessWidget {
           Icon(icon, size: 10, color: color),
           const SizedBox(width: 6),
           Text(
-            label, 
+            label,
             style: AppTextStyles.caption.copyWith(
-              color: color, 
-              fontWeight: FontWeight.w800, 
+              color: color,
+              fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
               fontSize: 10,
             ),

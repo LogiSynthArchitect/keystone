@@ -7,8 +7,8 @@ import '../../../../core/router/route_names.dart';
 import 'package:pinput/pinput.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../providers/auth_notifier.dart';
 
@@ -69,7 +69,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     final errorMessage = authState.errorMessage;
 
     return Scaffold(
-      backgroundColor: AppColors.primary900,
+      backgroundColor: context.ksc.primary900,
       body: SafeArea(
         child: Column(
           children: [
@@ -80,88 +80,88 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    _buildBackButton(),
+                    _buildBackButton(context),
                     const SizedBox(height: 48),
 
                     // INDUSTRIAL EYEBROW
                     Text(
                       'AUTHORIZATION REQUIRED',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.accent500,
+                        color: context.ksc.accent500,
                         letterSpacing: 2.0,
                         fontWeight: FontWeight.w700,
                       ),
                     ).animate().fadeIn().slideX(begin: -0.1, end: 0),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     Text(
                       'VERIFY ACCESS CODE',
                       style: AppTextStyles.h1.copyWith(
-                        color: AppColors.white,
+                        color: context.ksc.white,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.0,
                       ),
                     ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
 
                     const SizedBox(height: 24),
-                    
+
                     Text(
                       'A 6-digit security code has been transmitted to $phone.',
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.neutral400,
+                        color: context.ksc.neutral400,
                         fontWeight: FontWeight.w600,
                       ),
                     ).animate().fadeIn(delay: 200.ms),
 
                     const SizedBox(height: 48),
-                    
+
                     if (errorMessage != null && errorMessage.isNotEmpty) ...[
                       KsBanner(message: errorMessage),
                       const SizedBox(height: 24),
                     ],
 
-                    _buildOtpInput(authState.isLoading),
+                    _buildOtpInput(context, authState.isLoading),
                     const SizedBox(height: 32),
-                    _buildResendRow(phone),
+                    _buildResendRow(context, phone),
                   ],
                 ),
               ),
             ),
-            if (!keyboardVisible) _buildBottomBar(authState.isLoading),
+            if (!keyboardVisible) _buildBottomBar(context, authState.isLoading),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBackButton() => GestureDetector(
+  Widget _buildBackButton(BuildContext context) => GestureDetector(
         onTap: () => context.pop(),
         child: Container(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.primary800,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: AppColors.primary700),
+            border: Border.all(color: context.ksc.primary700),
           ),
           child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
         ),
       );
 
-  Widget _buildOtpInput(bool isLoading) {
+  Widget _buildOtpInput(BuildContext context, bool isLoading) {
     final defaultTheme = PinTheme(
       width: 48,
       height: 64,
       textStyle: AppTextStyles.h2.copyWith(
-        color: AppColors.white,
+        color: context.ksc.white,
         fontWeight: FontWeight.w800,
         letterSpacing: 0,
       ),
       decoration: BoxDecoration(
-        color: AppColors.primary800,
+        color: context.ksc.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.primary700),
+        border: Border.all(color: context.ksc.primary700),
       ),
     );
 
@@ -173,7 +173,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
       defaultPinTheme: defaultTheme,
       focusedPinTheme: defaultTheme.copyWith(
         decoration: defaultTheme.decoration!.copyWith(
-          border: Border.all(color: AppColors.accent500, width: 2),
+          border: Border.all(color: context.ksc.accent500, width: 2),
         ),
       ),
       separatorBuilder: (index) => const SizedBox(width: 8),
@@ -185,12 +185,12 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildResendRow(String phone) => Row(
+  Widget _buildResendRow(BuildContext context, String phone) => Row(
         children: [
           Text(
             "Didn't receive the code?  ",
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.neutral400,
+              color: context.ksc.neutral400,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -198,7 +198,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
               ? Text(
                   'Wait 0:${_resendCooldown.toString().padLeft(2, '0')}',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.neutral500,
+                    color: context.ksc.neutral500,
                     fontWeight: FontWeight.w700,
                   ),
                 )
@@ -210,7 +210,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                   child: Text(
                     'RESEND',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.accent500,
+                      color: context.ksc.accent500,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
                     ),
@@ -219,11 +219,11 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
         ],
       ).animate().fadeIn(delay: 500.ms);
 
-  Widget _buildBottomBar(bool isLoading) => Container(
+  Widget _buildBottomBar(BuildContext context, bool isLoading) => Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          color: AppColors.primary800,
-          border: Border(top: BorderSide(color: AppColors.primary700)),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          border: Border(top: BorderSide(color: context.ksc.primary700)),
         ),
         padding: const EdgeInsets.all(24.0),
         child: Material(
@@ -236,17 +236,17 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                 Text(
                   'VERIFY ACCESS',
                   style: AppTextStyles.h2.copyWith(
-                    color: _canVerify ? AppColors.white : AppColors.neutral600,
+                    color: _canVerify ? context.ksc.white : context.ksc.neutral600,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2.0,
                   ),
                 ),
                 if (isLoading)
-                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500))
                 else
                   Icon(
                     LineAwesomeIcons.angle_right_solid,
-                    color: _canVerify ? AppColors.accent500 : AppColors.neutral700,
+                    color: _canVerify ? context.ksc.accent500 : context.ksc.neutral700,
                     size: 20,
                   ),
               ],

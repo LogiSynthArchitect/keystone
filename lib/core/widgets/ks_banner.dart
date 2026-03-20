@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 
 enum KsBannerType { alert, success, info }
 
@@ -21,13 +21,13 @@ class KsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Industrial Color Mapping
-    final Color bgColor = type == KsBannerType.alert 
+    final Color bgColor = type == KsBannerType.alert
         ? const Color(0xFF4A1010) // Deep Warning Red
-        : AppColors.primary700;
-        
-    final Color borderColor = type == KsBannerType.alert 
+        : context.ksc.primary700;
+
+    final Color borderColor = type == KsBannerType.alert
         ? const Color(0xFFE53935) // High-Intensity Safety Red
-        : AppColors.accent500;
+        : context.ksc.accent500;
 
     return Container(
       width: double.infinity,
@@ -40,8 +40,8 @@ class KsBanner extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            type == KsBannerType.alert 
-                ? LineAwesomeIcons.exclamation_triangle_solid 
+            type == KsBannerType.alert
+                ? LineAwesomeIcons.exclamation_triangle_solid
                 : LineAwesomeIcons.info_circle_solid,
             color: Colors.white,
             size: 20,

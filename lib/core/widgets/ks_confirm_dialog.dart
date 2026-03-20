@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 import 'ks_button.dart';
 
 class KsConfirmDialog extends StatelessWidget {
@@ -46,14 +46,14 @@ class KsConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: AppColors.primary800,
+      backgroundColor: context.ksc.primary800,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4),
-        side: const BorderSide(color: AppColors.primary700),
+        side: BorderSide(color: context.ksc.primary700),
       ),
-      title: Text(title.toUpperCase(), style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900)),
+      title: Text(title.toUpperCase(), style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
       content: Text(message,
-          style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+          style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
       actions: [
         KsButton(
           label: cancelLabel.toUpperCase(),

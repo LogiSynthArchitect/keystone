@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
@@ -32,7 +32,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
     _searchFocusNode.addListener(() {
       setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
     });
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.listenManual(jobListProvider, (prev, next) {
         if (next.errorMessage != null && mounted) {
@@ -62,7 +62,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(jobListProvider);
     return Scaffold(
-      backgroundColor: AppColors.primary900,
+      backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "MY JOBS",
         bottom: PreferredSize(
@@ -72,10 +72,10 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.primary800,
+                color: context.ksc.primary800,
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: _isSearchFocused ? AppColors.accent500 : AppColors.primary700,
+                  color: _isSearchFocused ? context.ksc.accent500 : context.ksc.primary700,
                   width: _isSearchFocused ? 2 : 1,
                 ),
               ),
@@ -83,12 +83,12 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                 controller: _searchController,
                 focusNode: _searchFocusNode,
                 onChanged: (val) => ref.read(jobListProvider.notifier).setSearchQuery(val),
-                style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
-                cursorColor: AppColors.accent500,
+                style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+                cursorColor: context.ksc.accent500,
                 decoration: InputDecoration(
                   hintText: "Search your jobs...",
-                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.neutral600, letterSpacing: 1.0),
-                  prefixIcon: Icon(LineAwesomeIcons.search_solid, color: _isSearchFocused ? AppColors.accent500 : AppColors.neutral500, size: 20),
+                  hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, letterSpacing: 1.0),
+                  prefixIcon: Icon(LineAwesomeIcons.search_solid, color: _isSearchFocused ? context.ksc.accent500 : context.ksc.neutral500, size: 20),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -107,8 +107,8 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                     ? _buildEmptyState()
                     : RefreshIndicator(
                         onRefresh: () => ref.read(jobListProvider.notifier).refresh(),
-                        color: AppColors.accent500,
-                        backgroundColor: AppColors.primary800,
+                        color: context.ksc.accent500,
+                        backgroundColor: context.ksc.primary800,
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [
@@ -147,8 +147,8 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(RouteNames.logJob),
-        backgroundColor: AppColors.accent500,
-        foregroundColor: AppColors.primary900,
+        backgroundColor: context.ksc.accent500,
+        foregroundColor: context.ksc.primary900,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
@@ -156,8 +156,6 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
       bottomNavigationBar: KsBottomNav(currentIndex: 0, onTabTapped: _onTabTapped),
     );
   }
-
-
 
   Widget get _buildLoadingState {
     return ListView.separated(
@@ -167,9 +165,9 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
       itemBuilder: (_, __) => Container(
         height: 100,
         decoration: BoxDecoration(
-          color: AppColors.primary800,
+          color: context.ksc.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: AppColors.primary700),
+          border: Border.all(color: context.ksc.primary700),
         ),
       ),
     );
@@ -182,17 +180,17 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(LineAwesomeIcons.database_solid, size: 80, color: AppColors.primary800),
+            Icon(LineAwesomeIcons.database_solid, size: 80, color: context.ksc.primary800),
             const SizedBox(height: 24),
             Text(
               "NO JOBS YET",
-              style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
+              style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)
             ),
             const SizedBox(height: 12),
             Text(
               "You haven't logged any jobs yet.\nTap + below to log your first job.",
               textAlign: TextAlign.center,
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, height: 1.5)
+              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, height: 1.5)
             ),
           ],
         ),
@@ -215,17 +213,17 @@ class _SummaryStrip extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
       decoration: BoxDecoration(
-        color: AppColors.primary800,
+        color: context.ksc.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.primary700, width: 1),
+        border: Border.all(color: context.ksc.primary700, width: 1),
       ),
-      child: Column( // Changed to Column to stack Row and sync status
+      child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _Stat(value: "$totalJobs", label: "TOTAL LOGS"),
-              Container(width: 1, height: 40, color: AppColors.primary700),
+              Container(width: 1, height: 40, color: context.ksc.primary700),
               _Stat(value: CurrencyFormatter.formatShort(monthEarnings), label: "THIS MONTH"),
             ],
           ),
@@ -234,18 +232,18 @@ class _SummaryStrip extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.sync, size: 14, color: AppColors.accent500),
+                Icon(Icons.sync, size: 14, color: context.ksc.accent500),
                 const SizedBox(width: 4),
                 Text(
                   '$pendingCount uploading...',
-                  style: AppTextStyles.label.copyWith(color: AppColors.accent500),
+                  style: AppTextStyles.label.copyWith(color: context.ksc.accent500),
                 ),
-                if (isSyncing) ...[ // Pulsing dot or spinner when syncing
+                if (isSyncing) ...[
                   const SizedBox(width: 8),
-                  const SizedBox(
+                  SizedBox(
                     width: 12,
                     height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500)
+                    child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500)
                   ),
                 ],
               ],
@@ -267,9 +265,9 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: AppTextStyles.h1.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0)),
+        Text(value, style: AppTextStyles.h1.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, letterSpacing: 0)),
         const SizedBox(height: 4),
-        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
       ]
     );
   }

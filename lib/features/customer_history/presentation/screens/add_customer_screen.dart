@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
@@ -81,21 +81,21 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.primary800,
+        backgroundColor: context.ksc.primary800,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
           side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
-        content: Text('You have unsaved customer details. Leave anyway?', style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        content: Text('You have unsaved customer details. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false), 
-            child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: AppColors.neutral400)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: AppColors.error500, fontWeight: FontWeight.bold)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -142,9 +142,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         _previousStep();
       },
       child: Scaffold(
-        backgroundColor: AppColors.primary900,
+        backgroundColor: context.ksc.primary900,
         appBar: KsAppBar(
-          title: "ADD NEW CUSTOMER", 
+          title: "ADD NEW CUSTOMER",
           showBack: true,
           onBack: _previousStep,
         ),
@@ -173,9 +173,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     final stepLabels = ["CONTACT", "NOTES"];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: const BoxDecoration(
-        color: AppColors.primary800,
-        border: Border(bottom: BorderSide(color: AppColors.primary700)),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        border: Border(bottom: BorderSide(color: context.ksc.primary700)),
       ),
       child: Row(
         children: List.generate(_totalSteps, (index) {
@@ -188,15 +188,15 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.accent500 : (isCompleted ? AppColors.accent500.withValues(alpha: 0.2) : AppColors.primary900),
+                    color: isActive ? context.ksc.accent500 : (isCompleted ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: isActive ? AppColors.accent500 : AppColors.primary700),
+                    border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
                   ),
                   child: Center(
                     child: Text(
                       "${index + 1}",
                       style: AppTextStyles.caption.copyWith(
-                        color: isActive ? AppColors.primary900 : (isCompleted ? AppColors.accent500 : AppColors.neutral500),
+                        color: isActive ? context.ksc.primary900 : (isCompleted ? context.ksc.accent500 : context.ksc.neutral500),
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -206,11 +206,11 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
                   const SizedBox(width: 8),
                   Text(
                     stepLabels[index],
-                    style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                   ),
                 ],
-                if (index < _totalSteps - 1) 
-                  const Expanded(child: Divider(color: AppColors.primary700, indent: 8, endIndent: 8)),
+                if (index < _totalSteps - 1)
+                  Expanded(child: Divider(color: context.ksc.primary700, indent: 8, endIndent: 8)),
               ],
             ),
           );
@@ -233,20 +233,20 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
       children: [
         Text("CUSTOMER DETAILS", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Contact details for the customer.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Contact details for the customer.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(
-          label: "Full Name", 
-          hint: "Kwame Mensah", 
+          label: "Full Name",
+          hint: "Kwame Mensah",
           controller: _nameController,
           maxLength: 100,
         ),
         const SizedBox(height: 24),
         _buildDarkField(
-          label: "Phone Number", 
-          hint: "020 123 4567", 
+          label: "Phone Number",
+          hint: "020 123 4567",
           type: TextInputType.number,
-          controller: _phoneController, 
+          controller: _phoneController,
           fieldHint: "Used to send WhatsApp follow-up messages.",
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
@@ -263,11 +263,11 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
       children: [
         Text("EXTRA NOTES", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Optional details to help locate or identify the customer.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Optional details to help locate or identify the customer.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(
-          label: "Primary Location", 
-          hint: "East Legon, Accra", 
+          label: "Primary Location",
+          hint: "East Legon, Accra",
           controller: _locationController,
           fieldHint: "Used for navigating to return sites.",
           maxLength: 255,
@@ -291,7 +291,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
 
     return Container(
       width: double.infinity,
-      color: AppColors.primary700,
+      color: context.ksc.primary700,
       padding: const EdgeInsets.all(24.0),
       child: SafeArea(
         top: false,
@@ -301,17 +301,17 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isLastStep ? 'SAVE CUSTOMER RECORD' : 'NEXT STEP', 
+                isLastStep ? 'SAVE CUSTOMER RECORD' : 'NEXT STEP',
                 style: AppTextStyles.h2.copyWith(
-                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3), 
+                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
               else Icon(
-                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
-                color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)
+                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
+                color: canGo ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1)
               ),
             ],
           ),
@@ -321,10 +321,10 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   }
 
   Widget _buildDarkField({
-    required String label, 
-    required String hint, 
-    required TextEditingController controller, 
-    TextInputType type = TextInputType.text, 
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    TextInputType type = TextInputType.text,
     int maxLines = 1,
     String? fieldHint,
     List<TextInputFormatter>? inputFormatters,
@@ -333,15 +333,15 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
         if (fieldHint != null) ...[
           const SizedBox(height: 4),
-          Text(fieldHint, style: AppTextStyles.caption.copyWith(color: AppColors.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5)),
+          Text(fieldHint, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5)),
         ],
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary800,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
@@ -353,8 +353,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-            style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
-            cursorColor: AppColors.accent500,
+            style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+            cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.15)),

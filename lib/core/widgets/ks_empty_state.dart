@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 import 'ks_button.dart';
 
 class KsEmptyState extends StatelessWidget {
@@ -28,15 +28,15 @@ class KsEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: AppColors.neutral300),
+            Icon(icon, size: 64, color: context.ksc.neutral300),
             const SizedBox(height: AppSpacing.lg),
             Text(title,
-                style: AppTextStyles.h3.copyWith(color: AppColors.neutral600),
+                style: AppTextStyles.h3.copyWith(color: context.ksc.neutral600),
                 textAlign: TextAlign.center),
             if (subtitle != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(subtitle!,
-                  style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                  style: AppTextStyles.body.copyWith(color: context.ksc.neutral500),
                   textAlign: TextAlign.center),
             ],
             if (actionLabel != null && onAction != null) ...[

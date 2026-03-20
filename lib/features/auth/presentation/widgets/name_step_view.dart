@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/ks_colors.dart';
 import 'onboarding_step_indicator.dart';
 
 class NameStepView extends StatelessWidget {
@@ -29,7 +29,7 @@ class NameStepView extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.primary700,
+            color: context.ksc.primary700,
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(
@@ -39,38 +39,38 @@ class NameStepView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'What should\nwe call you?',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
             fontSize: 38,
             fontWeight: FontWeight.w800,
-            color: AppColors.primary700,
+            color: context.ksc.primary700,
             letterSpacing: -0.5,
             height: 1.1,
           ),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Your name appears on your public profile.',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.neutral600,
+            color: context.ksc.neutral600,
             height: 1.5,
           ),
         ),
         const SizedBox(height: 36),
         const OnboardingStepIndicator(activeStep: 0),
         const SizedBox(height: 32),
-        const Text(
+        Text(
           'Full name',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: AppColors.neutral600,
+            color: context.ksc.neutral600,
             letterSpacing: 0.5,
           ),
         ),
@@ -82,7 +82,7 @@ class NameStepView extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isFocused ? AppColors.primary700 : const Color(0xFFEAEAEC),
+              color: isFocused ? context.ksc.primary700 : const Color(0xFFEAEAEC),
               width: isFocused ? 2 : 1,
             ),
           ),
@@ -93,11 +93,11 @@ class NameStepView extends StatelessWidget {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
             onSubmitted: isValid ? (_) => onSubmitted() : null,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'BarlowSemiCondensed',
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppColors.neutral900,
+              color: context.ksc.neutral900,
             ),
             decoration: InputDecoration(
               hintText: 'Jeremie Mensah',
@@ -106,7 +106,7 @@ class NameStepView extends StatelessWidget {
               suffixIcon: controller.text.isNotEmpty
                   ? Icon(
                       isValid ? LineAwesomeIcons.check_circle : LineAwesomeIcons.times_circle,
-                      color: isValid ? const Color(0xFFF9A825) : AppColors.neutral400,
+                      color: isValid ? const Color(0xFFF9A825) : context.ksc.neutral400,
                       size: 22,
                     )
                   : null,

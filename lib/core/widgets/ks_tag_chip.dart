@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 
 class KsTagChip extends StatelessWidget {
   final String tag;
@@ -17,19 +17,19 @@ class KsTagChip extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.primary050,
+        color: context.ksc.primary050,
         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-        border: Border.all(color: AppColors.primary100),
+        border: Border.all(color: context.ksc.primary100),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(tag, style: AppTextStyles.captionMedium.copyWith(color: AppColors.primary700)),
+          Text(tag, style: AppTextStyles.captionMedium.copyWith(color: context.ksc.primary700)),
           if (onRemove != null) ...[
             const SizedBox(width: 4),
             GestureDetector(
               onTap: onRemove,
-              child: const Icon(Icons.close, size: 14, color: AppColors.primary600),
+              child: Icon(Icons.close, size: 14, color: context.ksc.primary600),
             ),
           ],
         ],

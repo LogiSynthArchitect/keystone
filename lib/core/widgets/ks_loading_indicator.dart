@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/ks_colors.dart';
 
 class KsLoadingIndicator extends StatelessWidget {
   final bool fullScreen;
@@ -9,16 +9,16 @@ class KsLoadingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (fullScreen) {
-      return const Scaffold(
-        backgroundColor: AppColors.neutral050,
+      return Scaffold(
+        backgroundColor: context.ksc.neutral050,
         body: Center(child: CircularProgressIndicator(
-          color: AppColors.primary700,
+          color: context.ksc.primary700,
           strokeWidth: 2.5,
         )),
       );
     }
-    return const Center(child: CircularProgressIndicator(
-      color: AppColors.primary700,
+    return Center(child: CircularProgressIndicator(
+      color: context.ksc.primary700,
       strokeWidth: 2.5,
     ));
   }

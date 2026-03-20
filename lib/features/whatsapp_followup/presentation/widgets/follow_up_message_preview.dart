@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
@@ -40,7 +40,7 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.primary800,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
@@ -52,11 +52,11 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.chat_bubble_outline, color: AppColors.accent500, size: 16),
+                      Icon(Icons.chat_bubble_outline, color: context.ksc.accent500, size: 16),
                       const SizedBox(width: 8),
                       Text(
-                        "EDIT MESSAGE PREVIEW", 
-                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)
+                        "EDIT MESSAGE PREVIEW",
+                        style: AppTextStyles.labelSmall.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                       ),
                     ],
                   ),
@@ -72,7 +72,7 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
                     },
                     child: Text(
                       "RESTORE ORIGINAL",
-                      style: AppTextStyles.labelSmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700),
+                      style: AppTextStyles.labelSmall.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
@@ -83,11 +83,11 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
                 style: AppTextStyles.body.copyWith(color: Colors.white, height: 1.6, fontStyle: FontStyle.italic),
-                cursorColor: AppColors.accent500,
-                decoration: const InputDecoration(
+                cursorColor: context.ksc.accent500,
+                decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: "Type your custom message...",
-                  hintStyle: TextStyle(color: AppColors.neutral600),
+                  hintStyle: TextStyle(color: context.ksc.neutral600),
                 ),
               ),
             ],

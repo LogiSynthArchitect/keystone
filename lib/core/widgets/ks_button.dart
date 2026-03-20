@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 
 enum KsButtonVariant { primary, secondary, cta, ghost, danger }
 enum KsButtonSize { large, small }
@@ -38,85 +38,85 @@ class KsButton extends StatelessWidget {
     return SizedBox(
       width: fullWidth ? double.infinity : null,
       height: height,
-      child: _buildButton(isDisabled),
+      child: _buildButton(context, isDisabled),
     );
   }
 
-  Widget _buildButton(bool isDisabled) {
+  Widget _buildButton(BuildContext context, bool isDisabled) {
     switch (variant) {
       case KsButtonVariant.primary:
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isDisabled ? AppColors.neutral200 : AppColors.primary700,
-            foregroundColor: isDisabled ? AppColors.neutral500 : AppColors.white,
+            backgroundColor: isDisabled ? context.ksc.neutral200 : context.ksc.primary700,
+            foregroundColor: isDisabled ? context.ksc.neutral500 : context.ksc.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
             elevation: 0,
           ),
-          child: _buildChild(),
+          child: _buildChild(context),
         );
       case KsButtonVariant.secondary:
         return OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary700,
+            foregroundColor: context.ksc.primary700,
             side: BorderSide(
-              color: isDisabled ? AppColors.neutral300 : AppColors.primary700,
+              color: isDisabled ? context.ksc.neutral300 : context.ksc.primary700,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
           ),
-          child: _buildChild(),
+          child: _buildChild(context),
         );
       case KsButtonVariant.cta:
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.accent500,
-            foregroundColor: AppColors.primary900,
+            backgroundColor: context.ksc.accent500,
+            foregroundColor: context.ksc.primary900,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
             elevation: 0,
           ),
-          child: _buildChild(),
+          child: _buildChild(context),
         );
       case KsButtonVariant.ghost:
         return TextButton(
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary600,
+            foregroundColor: context.ksc.primary600,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
           ),
-          child: _buildChild(),
+          child: _buildChild(context),
         );
       case KsButtonVariant.danger:
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.error500,
-            foregroundColor: AppColors.white,
+            backgroundColor: context.ksc.error500,
+            foregroundColor: context.ksc.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
             elevation: 0,
           ),
-          child: _buildChild(),
+          child: _buildChild(context),
         );
     }
   }
 
-  Widget _buildChild() {
+  Widget _buildChild(BuildContext context) {
     if (isLoading) {
-      return const SizedBox(
+      return SizedBox(
         width: 20,
         height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white),
+        child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.white),
       );
     }
     final textStyle = size == KsButtonSize.large

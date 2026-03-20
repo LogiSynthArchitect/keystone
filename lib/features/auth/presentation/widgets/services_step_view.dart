@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/constants/app_enums.dart';
 import 'onboarding_step_indicator.dart';
 
@@ -31,31 +31,31 @@ class ServicesStepView extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.primary700,
+            color: context.ksc.primary700,
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(LineAwesomeIcons.tools_solid, color: Color(0xFFF9A825), size: 26),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'What services\ndo you offer?',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
             fontSize: 38,
             fontWeight: FontWeight.w800,
-            color: AppColors.primary700,
+            color: context.ksc.primary700,
             letterSpacing: -0.5,
             height: 1.1,
           ),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Select all that apply.',
           style: TextStyle(
             fontFamily: 'BarlowSemiCondensed',
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.neutral600,
+            color: context.ksc.neutral600,
           ),
         ),
         const SizedBox(height: 24),

@@ -9,6 +9,7 @@ class HiveService {
   static const String notesBox      = 'notes';
   static const String followUpsBox  = 'follow_ups';
   static const String profileBox    = 'profile';
+  static const String settingsBox   = 'settings';
 
   static Future<void> initialize() async {
     await Hive.initFlutter();
@@ -24,6 +25,7 @@ class HiveService {
       await Hive.deleteBoxFromDisk(notesBox);
       await Hive.deleteBoxFromDisk(followUpsBox);
       await Hive.deleteBoxFromDisk(profileBox);
+      await Hive.deleteBoxFromDisk(settingsBox);
       await _openBoxes();
     }
   }
@@ -35,6 +37,7 @@ class HiveService {
     await Hive.openBox<Map>(notesBox);
     await Hive.openBox<Map>(followUpsBox);
     await Hive.openBox<Map>(profileBox);
+    await Hive.openBox(settingsBox);
 
     // Compaction - physically deletes stale data rows on startup
     await jobs.compact();
@@ -55,4 +58,5 @@ class HiveService {
   static Box<Map> get notes      => Hive.box<Map>(notesBox);
   static Box<Map> get followUps => Hive.box<Map>(followUpsBox);
   static Box<Map> get profile   => Hive.box<Map>(profileBox);
+  static Box      get settings  => Hive.box(settingsBox);
 }
