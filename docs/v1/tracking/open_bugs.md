@@ -1,9 +1,11 @@
 # OPEN BUGS — KEYSTONE V1
-### Last Updated: March 19 2026
-### Session 26 Update: Input/UX audit added BUG-013 through BUG-018
+### Last Updated: March 20 2026
+### Session 29 Update: Added BUG-025 through BUG-031 (all closed)
 
 BUG-001 through BUG-012 all closed (Sessions 24 & 25).
-BUG-013 through BUG-018 are new — found in full input/form audit (Session 26).
+BUG-013 through BUG-024 all closed (Sessions 26–28).
+BUG-025 through BUG-031 all closed (Sessions 28B–29).
+No open bugs as of March 20 2026.
 
 ---
 
@@ -1027,3 +1029,111 @@ FROM follow_ups
 GROUP BY job_id
 HAVING COUNT(*) > 1;
 ```
+
+---
+
+## BUG-025 — Light Mode: White Text on White/Light Backgrounds
+**Severity:** High — text invisible in light mode
+**Status:** ✅ FIXED (Session 28B)
+
+### Root Cause
+When the light palette was applied, `primary800` became `#FFFFFF` (white). Several widgets used hardcoded `Colors.white` or `Colors.white.withValues()` for text/icons, which rendered white-on-white and became invisible.
+
+### Fix
+Full audit of 20+ files. All hardcoded `Colors.white`, `Colors.black`, and `Colors.white.withValues()` replaced with semantic `context.ksc.*` tokens (`context.ksc.white`, `context.ksc.neutral050`, etc.).
+
+---
+
+## BUG-026 — Re-install: Empty Data After Fresh Login
+**Severity:** High — app appears broken on first use after reinstall
+**Status:** ✅ FIXED (Session 28B)
+
+### File
+`lib/features/auth/presentation/providers/auth_notifier.dart` — `verifyOtp()` method
+
+### Root Cause
+Riverpod providers (`profileProvider`, `jobListProvider`, `customerListProvider`, `notesListProvider`) retained their cached values (empty or stale) from a previous session. After a fresh reinstall and new login, the providers were never invalidated, so they returned empty data even though the user was now authenticated.
+
+### Fix
+After `authStateProvider.refresh()` in `verifyOtp()`, explicitly call `_ref.invalidate()` on all four data providers to force a fresh fetch.
+
+---
+
+## BUG-027 — Communication Status Section Blank (Race Condition)
+**Severity:** Medium — feature invisible until user navigates away and back
+**Status:** ✅ FIXED (Session 28B)
+
+### File
+`lib/features/whatsapp_followup/presentation/widgets/follow_up_message_preview.dart`
+
+### Root Cause
+`EditableFollowUpProvider.initialize()` was called once in `initState` via `addPostFrameCallback`. If customer data wasn't loaded yet when that callback fired, `initialize()` would exit early and `isInitialized` would remain `false` forever. The widget returned `SizedBox.shrink()` for `!isInitialized`.
+
+### Fix
+Added retry logic in the `build()` method's `data()` callback: whenever customer data is present but `editState.isInitialized` is still false, schedule another `addPostFrameCallback` to retry initialization.
+
+---
+
+## BUG-028 — RenderFlex Overflow on Small Screens
+**Severity:** Low — visual glitch on narrow devices
+**Status:** ✅ FIXED (Session 28B)
+
+### Files
+- `lib/features/job_logging/presentation/screens/admin_requests_screen.dart`
+- `lib/features/whatsapp_followup/presentation/widgets/follow_up_button.dart`
+
+### Root Cause
+`Row` with `MainAxisAlignment.spaceBetween` contained two `Text` widgets with no `Expanded` wrapper. On devices with width ≤ 270px, both texts competed for space and caused a 0.626px overflow.
+
+### Fix
+Wrapped the first `Text` in `Expanded` in both locations.
+
+---
+
+## BUG-029 — Discard Dialog Buttons Unstyled in Log Job Screen
+**Severity:** Low — inconsistency vs other screens
+**Status:** ✅ FIXED (Session 28B)
+
+### File
+`lib/features/job_logging/presentation/screens/log_job_screen.dart`
+
+### Root Cause
+The discard dialog in `log_job_screen.dart` used plain `const Text('KEEP EDITING')` and `const Text('DISCARD')` with no styling. All other discard dialogs in the app (add_customer_screen, edit_note_screen, edit_profile_screen) used `AppTextStyles.label` with semantic colors.
+
+### Fix
+Both buttons now use `AppTextStyles.label.copyWith(color: ...)` — neutral400 for "KEEP EDITING", error500 bold for "DISCARD".
+
+---
+
+## BUG-030 — Web Loading Screen: Brand Name Invisible (White on White)
+**Severity:** Medium — brand name not visible during app load
+**Status:** ✅ FIXED (Session 29)
+
+### File
+`web/index.html`
+
+### Root Cause
+When the web theme was switched to light (`#F4F7FF` background), the CSS `.brand-name` color was still `#FFFFFF` (white). The result was white text on a near-white background — completely invisible.
+
+### Fix
+- `.brand-name` color: `#FFFFFF` → `#0A1628` (dark navy, readable on light background)
+- `.brand-sub` color: `#D4A853` → `#D4A017` (brighter gold for better visibility)
+- Sub-label text: `PORTAL` → `FOR LOCKSMITHS` (plain English)
+
+---
+
+## BUG-031 — job_list_screen Build Errors: AppColors Scope + Missing ()
+**Severity:** High — build failure, app would not compile
+**Status:** ✅ FIXED (Session 29)
+
+### File
+`lib/features/job_logging/presentation/screens/job_list_screen.dart`
+
+### Root Cause
+Two errors introduced during light mode migration:
+1. `_buildLoadingState` was referenced without parentheses — treated as a method object (`Object`), not a `Widget`.
+2. `AppColors.primary800` and `AppColors.primary700` were used inside `_buildLoadingState()` — a widget method. `AppColors` is a static class only valid at theme-definition time, not accessible in widget scope.
+
+### Fix
+1. Added `()` to `_buildLoadingState()` call.
+2. Replaced `AppColors.primary800/700` with `context.ksc.primary800/700`.
