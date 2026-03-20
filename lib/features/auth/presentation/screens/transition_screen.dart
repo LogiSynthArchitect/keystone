@@ -70,12 +70,12 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         
         if (isJustForged) {
           greeting = "PROFILE CREATED";
-          subtext = "Setting up your terminal...";
+          subtext = "Setting up your account...";
         } else if (state.hasProfile && profile != null) {
           greeting = "WELCOME BACK,\n${profile.displayName.toUpperCase()}";
           subtext = "Loading your account...";
         } else {
-          greeting = "IDENTIFYING...";
+          greeting = "VERIFYING...";
           subtext = "Connecting to Keystone...";
         }
       }

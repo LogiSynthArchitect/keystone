@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../core/network/connectivity_service.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
 import '../../domain/repositories/knowledge_note_repository.dart';
 import '../datasources/knowledge_note_local_datasource.dart';
@@ -10,8 +12,9 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
   final KnowledgeNoteRemoteDatasource _remote;
   final KnowledgeNoteLocalDatasource _local;
   final SupabaseClient _supabase;
+  final ConnectivityService _connectivity;
 
-  KnowledgeNoteRepositoryImpl(this._remote, this._local, this._supabase);
+  KnowledgeNoteRepositoryImpl(this._remote, this._local, this._supabase, this._connectivity);
 
   String get _userId {
     final id = _supabase.auth.currentUser?.id;
@@ -64,31 +67,39 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
   @override
   Future<KnowledgeNoteEntity> createNote(KnowledgeNoteEntity note) async {
     final serviceTypeDb = note.serviceType != null ? _serviceTypeToDb(note.serviceType!.name) : null;
-    
-    // Save locally first
+
+    // Generate a stable local UUID so we can clean it up after remote sync.
+    final localId = note.id.isNotEmpty ? note.id : const Uuid().v4();
     final localModel = KnowledgeNoteModel.fromEntity(note).copyWith(
+      id: localId,
       syncStatus: 'pending',
     );
     await _local.saveNote(localModel);
 
-    try {
-      final remoteModel = await _remote.createNote({
-        'user_id': _userId,
-        'title': note.title,
-        'description': note.description,
-        'tags': note.tags,
-        'photo_url': note.photoUrl,
-        'service_type': serviceTypeDb,
-        'is_archived': false,
-      });
-      
-      // Update local with remote data and 'synced' status
-      await _local.saveNote(remoteModel);
-      return remoteModel.toEntity();
-    } catch (e) {
-      // Stay pending
-      return localModel.toEntity();
+    final isOnline = await _connectivity.isConnected;
+    if (isOnline) {
+      try {
+        final remoteModel = await _remote.createNote({
+          'user_id': _userId,
+          'title': note.title,
+          'description': note.description,
+          'tags': note.tags,
+          'photo_url': note.photoUrl,
+          'service_type': serviceTypeDb,
+          'is_archived': false,
+        });
+        // Remove the local pending entry before saving the server version to
+        // prevent duplicates if the remote assigned a different UUID.
+        if (localId != remoteModel.id) {
+          await _local.deleteNote(localId);
+        }
+        await _local.saveNote(remoteModel);
+        return remoteModel.toEntity();
+      } catch (e) {
+        debugPrint('[KS:NOTES] Remote createNote failed, staying pending: $e');
+      }
     }
+    return localModel.toEntity();
   }
 
   @override
@@ -134,6 +145,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<void> syncPendingNotes() async {
+    if (!await _connectivity.isConnected) return;
     final pending = await _local.getPendingNotes();
     if (pending.isEmpty) return;
     for (final note in pending) {
@@ -150,6 +162,10 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
           'service_type': serviceTypeDb,
           'is_archived': false,
         });
+        // Delete the pending local entry and save the server version.
+        if (note.id != remoteModel.id) {
+          await _local.deleteNote(note.id);
+        }
         await _local.saveNote(remoteModel);
       } catch (e) {
         debugPrint('[KS:NOTES] syncPendingNotes failed for ${note.id}: $e');

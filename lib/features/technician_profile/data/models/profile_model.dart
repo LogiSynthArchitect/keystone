@@ -28,19 +28,26 @@ class ProfileModel {
     required this.updatedAt,
   });
 
-  factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
+  factory ProfileModel.fromJson(Map<String, dynamic> json) {
+    String whatsapp = json['whatsapp_number'] as String;
+    // Format to 0-prefix if it's +233 prefix
+    if (whatsapp.startsWith('+233')) {
+      whatsapp = '0${whatsapp.substring(4)}';
+    }
+    return ProfileModel(
         id: json['id'] as String,
         userId: json['user_id'] as String,
         displayName: json['display_name'] as String,
         bio: json['bio'] as String?,
         photoUrl: json['photo_url'] as String?,
         services: List<String>.from(json['services'] as List),
-        whatsappNumber: json['whatsapp_number'] as String,
+        whatsappNumber: whatsapp,
         isPublic: json['is_public'] as bool,
         profileUrl: json['profile_url'] as String,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,

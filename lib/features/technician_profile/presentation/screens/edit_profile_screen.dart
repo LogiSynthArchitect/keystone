@@ -56,12 +56,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (_initialized) return;
     _nameController.text = profile.displayName;
     _bioController.text = profile.bio ?? '';
-    _whatsappController.text = profile.whatsappNumber;
+    final raw = profile.whatsappNumber;
+    _whatsappController.text = raw.startsWith('+233') && raw.length == 13
+        ? '0${raw.substring(4)}'
+        : raw;
     _services = List.from(profile.services);
     _isPublic = profile.isPublic;
     _originalName = profile.displayName;
     _originalBio = profile.bio ?? '';
-    _originalWhatsapp = profile.whatsappNumber;
+    final rawOriginal = profile.whatsappNumber;
+    _originalWhatsapp = rawOriginal.startsWith('+233') && rawOriginal.length == 13
+        ? '0${rawOriginal.substring(4)}'
+        : rawOriginal;
     _originalServices = List.from(profile.services);
     _originalIsPublic = profile.isPublic;
     _initialized = true;
@@ -307,7 +313,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: TextField(
             controller: controller,
             maxLines: isMultiline ? 4 : 1,
-            keyboardType: isPhone ? TextInputType.phone : (isMultiline ? TextInputType.multiline : TextInputType.text),
+            keyboardType: isPhone ? TextInputType.number : (isMultiline ? TextInputType.multiline : TextInputType.text),
             inputFormatters: inputFormatters,
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,

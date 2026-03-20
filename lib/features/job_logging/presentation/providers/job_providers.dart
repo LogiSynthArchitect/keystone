@@ -165,9 +165,16 @@ class JobListNotifier extends StateNotifier<JobListState> {
   final GetJobsUsecase _getJobs;
   final SyncOfflineJobsUsecase _syncOffline;
   final ArchiveJobUsecase _archiveJob;
-  Timer? _debounce; // Task 1: Debounce Timer
+  Timer? _debounce;
+  StreamSubscription<bool>? _connectivitySubscription;
+  bool _isRefreshing = false;
 
-  JobListNotifier(this._ref, this._getJobs, this._syncOffline, this._archiveJob) : super(const JobListState()) { load(); }
+  JobListNotifier(this._ref, this._getJobs, this._syncOffline, this._archiveJob) : super(const JobListState()) {
+    load();
+    _connectivitySubscription = _ref.read(connectivityServiceProvider).onConnectivityChanged.listen((isOnline) {
+      if (isOnline) refresh();
+    });
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -188,13 +195,15 @@ class JobListNotifier extends StateNotifier<JobListState> {
   }
 
   Future<void> refresh() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
     state = state.copyWith(isSyncing: true);
     try {
-      // Force sync every time refresh is called to ensure UI reactivity
       await _ref.read(syncOfflineCustomersUsecaseProvider).call();
       await _syncOffline();
       await load();
     } finally {
+      _isRefreshing = false;
       state = state.copyWith(isSyncing: false);
     }
   }
@@ -239,6 +248,7 @@ class JobListNotifier extends StateNotifier<JobListState> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 }

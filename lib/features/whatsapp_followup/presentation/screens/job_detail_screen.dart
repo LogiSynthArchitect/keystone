@@ -62,7 +62,7 @@ class JobDetailScreen extends ConsumerWidget {
           Expanded(
             child: jobAsync.when(
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
-              error: (err, _) => Center(child: Text("ERROR LOADING JOB DOSSIER", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
+              error: (err, _) => Center(child: Text("COULD NOT LOAD JOB", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
               data: (job) {
                 if (job == null) return Center(child: Text("JOB RECORD NOT FOUND", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)));
 
@@ -73,16 +73,16 @@ class JobDetailScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader("SYSTEM ANALYSIS"),
+                      _buildSectionHeader("SERVICE"),
                       _buildServiceModule(context, ref, job, isLocked),
                       const SizedBox(height: 32),
 
-                      _buildSectionHeader("CUSTOMER ENTITY"),
+                      _buildSectionHeader("CUSTOMER"),
                       _buildCustomerModule(ref, job.customerId),
                       const SizedBox(height: 32),
 
                       if (job.notes != null && job.notes!.isNotEmpty) ...[
-                        _buildSectionHeader("TECHNICAL LOG"),
+                        _buildSectionHeader("NOTES"),
                         _buildNotesModule(job.notes!),
                         const SizedBox(height: 32),
                       ],
@@ -217,7 +217,7 @@ class JobDetailScreen extends ConsumerWidget {
                       children: [
                         const Icon(LineAwesomeIcons.lock_solid, size: 10, color: AppColors.neutral500),
                         const SizedBox(width: 4),
-                        Text("SYSTEM LOCKED", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                        Text("LOCKED", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -303,7 +303,7 @@ class JobDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(customer?.fullName.toUpperCase() ?? "UNKNOWN ENTITY", style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  Text(customer?.fullName.toUpperCase() ?? "UNKNOWN CUSTOMER", style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                   const SizedBox(height: 2),
                   Text(customer?.phoneNumber ?? "NO CONTACT", style: AppTextStyles.caption.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
                 ],
@@ -330,9 +330,9 @@ class JobDetailScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(LineAwesomeIcons.terminal_solid, size: 14, color: AppColors.accent500),
+              const Icon(LineAwesomeIcons.sticky_note_solid, size: 14, color: AppColors.accent500),
               const SizedBox(width: 8),
-              Text("LOG ENTRY", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+              Text("NOTES", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
             ],
           ),
           const SizedBox(height: 12),

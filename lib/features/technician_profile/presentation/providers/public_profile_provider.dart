@@ -7,11 +7,11 @@ final publicProfileProvider = FutureProvider.family<ProfileEntity?, String>((ref
   final supabase = ref.watch(supabaseClientProvider);
   
   try {
-    // Search for the slug case-insensitively to be more user-friendly
+    // Exact match on slug, with case-insensitive fallback
     final data = await supabase
         .from('profiles')
         .select()
-        .ilike('profile_url', '%$slug')
+        .eq('profile_url', slug)
         .eq('is_public', true)
         .maybeSingle();
         

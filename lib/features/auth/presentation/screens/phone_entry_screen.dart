@@ -84,7 +84,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                     const SizedBox(height: 8),
                     
                     Text(
-                      'ACCESS TERMINAL',
+                      'SIGN IN',
                       style: AppTextStyles.h1.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w800,
@@ -95,7 +95,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                     const SizedBox(height: 24),
                     
                     Text(
-                      'Provide your phone number to authorize this terminal.',
+                      'Enter your phone number to receive a one-time code.',
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: AppColors.neutral400,
                         fontWeight: FontWeight.w600,

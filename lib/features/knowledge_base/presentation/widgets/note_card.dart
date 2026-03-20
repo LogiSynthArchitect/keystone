@@ -28,7 +28,7 @@ class NoteCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(LineAwesomeIcons.terminal_solid, size: 14, color: AppColors.accent500),
+                const Icon(LineAwesomeIcons.sticky_note_solid, size: 14, color: AppColors.accent500),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
