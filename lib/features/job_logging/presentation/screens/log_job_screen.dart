@@ -264,7 +264,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       children: [
         Text("SELECT SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Identify the core technical operation performed.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+        Text("Select the type of service performed.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
         ServiceTypePicker(
           selected: _serviceType,
@@ -292,7 +292,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             type: TextInputType.text,
             fieldHint: "Required for WhatsApp follow-ups.",
             isNumeric: true,
-            onChanged: (_) => setState(() {}),
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(10),

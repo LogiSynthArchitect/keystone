@@ -88,7 +88,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
           side: BorderSide(color: context.ksc.primary700),
         ),
         title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        content: Text('You have unsaved technical notes. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+        content: Text('You have unsaved notes. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -162,7 +162,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   }
 
   Widget _buildStepIndicator() {
-    final stepLabels = ["TECHNICAL", "INDEXING"];
+    final stepLabels = ["NOTE CONTENT", "TAGS"];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       decoration: BoxDecoration(

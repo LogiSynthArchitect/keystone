@@ -60,7 +60,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
-      appBar: const KsAppBar(title: "CUSTOMER DATABASE"),
+      appBar: const KsAppBar(title: "CUSTOMERS"),
       body: Column(
         children: [
           const KsOfflineBanner(),
