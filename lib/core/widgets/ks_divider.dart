@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/ks_colors.dart';
 
 class KsDivider extends StatelessWidget {
   final double? indent;
@@ -11,7 +11,7 @@ class KsDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Divider(
-      color: AppColors.neutral200,
+      color: context.ksc.neutral200,
       thickness: 1,
       height: 1,
       indent: indent ?? AppSpacing.lg,

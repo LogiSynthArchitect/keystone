@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 
 enum KsAvatarSize { sm, md, lg, xl }
 
@@ -25,7 +25,7 @@ class KsAvatar extends StatelessWidget {
       height: diameter,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.primary100,
+        color: context.ksc.primary100,
         image: imageUrl != null
             ? DecorationImage(
                 image: NetworkImage(imageUrl!),
@@ -38,7 +38,7 @@ class KsAvatar extends StatelessWidget {
               child: Text(
                 initials ?? '?',
                 style: AppTextStyles.label.copyWith(
-                  color: AppColors.primary700,
+                  color: context.ksc.primary700,
                   fontSize: _fontSize,
                 ),
               ),

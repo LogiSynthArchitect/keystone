@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/ks_colors.dart';
 
 class OnboardingStepIndicator extends StatelessWidget {
   final int activeStep;
@@ -17,7 +17,7 @@ class OnboardingStepIndicator extends StatelessWidget {
           width: isActive ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary700 : const Color(0xFFCCCCCC),
+            color: isActive ? context.ksc.primary700 : const Color(0xFFCCCCCC),
             borderRadius: BorderRadius.circular(4),
           ),
         );

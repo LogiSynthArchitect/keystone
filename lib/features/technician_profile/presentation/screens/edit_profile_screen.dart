@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
@@ -96,14 +96,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.primary800,
+        backgroundColor: ctx.ksc.primary800,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h2.copyWith(color: AppColors.white)),
-        content: Text('You have unsaved changes. Leave anyway?', style: AppTextStyles.body.copyWith(color: AppColors.neutral300)),
+        title: Text('DISCARD CHANGES?', style: AppTextStyles.h2.copyWith(color: ctx.ksc.white)),
+        content: Text('You have unsaved changes. Leave anyway?', style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral300)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: AppColors.neutral400))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
-              child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: AppColors.error500))),
+              child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: ctx.ksc.error500))),
         ],
       ),
     ) ?? false;
@@ -178,7 +178,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (ok) nav.pop();
       },
       child: Scaffold(
-        backgroundColor: AppColors.primary900,
+        backgroundColor: context.ksc.primary900,
         appBar: const KsAppBar(title: 'EDIT PROFILE', showBack: true),
         body: Column(
           children: [
@@ -199,24 +199,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               width: 88,
                               height: 88,
                               decoration: BoxDecoration(
-                                color: AppColors.primary800,
+                                color: context.ksc.primary800,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.primary700, width: 2),
+                                border: Border.all(color: context.ksc.primary700, width: 2),
                                 image: photoUrl != null ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover) : null,
                               ),
                               child: photoUrl == null
                                   ? Center(child: Text(_nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : '?',
-                                      style: AppTextStyles.h1.copyWith(color: AppColors.white)))
+                                      style: AppTextStyles.h1.copyWith(color: context.ksc.white)))
                                   : null,
                             ),
                             if (_isUploadingPhoto)
-                              const Positioned.fill(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500)),
+                              Positioned.fill(child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500)),
                             Positioned(
                               bottom: 0, right: 0,
                               child: Container(
                                 padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
-                                child: const Icon(LineAwesomeIcons.camera_solid, size: 14, color: AppColors.primary900),
+                                decoration: BoxDecoration(color: context.ksc.accent500, shape: BoxShape.circle),
+                                child: Icon(LineAwesomeIcons.camera_solid, size: 14, color: context.ksc.primary900),
                               ),
                             ),
                           ],
@@ -224,7 +224,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
-                    
+
                     _buildInputField(label: 'DISPLAY NAME', controller: _nameController, hint: 'e.g. JEREMIE MENSAH', maxLength: 100),
                     const SizedBox(height: AppSpacing.lg),
                     _buildInputField(label: 'PROFESSIONAL BIO', controller: _bioController, hint: 'Describe your expertise...', isMultiline: true, maxLength: 300),
@@ -235,9 +235,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         LengthLimitingTextInputFormatter(10),
                       ],
                     ),
-                    
+
                     const SizedBox(height: AppSpacing.xl),
-                    Text('OFFERED SERVICES', style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                    Text('OFFERED SERVICES', style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
                     const SizedBox(height: AppSpacing.md),
                     ...ServiceType.values.map((type) {
                       final isSelected = _services.contains(type);
@@ -250,13 +250,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary800.withValues(alpha: 0.5) : AppColors.primary800,
+                              color: isSelected ? context.ksc.primary800.withValues(alpha: 0.5) : context.ksc.primary800,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: isSelected ? AppColors.accent500 : AppColors.primary700, width: 1.0),
+                              border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700, width: 1.0),
                             ),
                             child: Row(children: [
-                              Expanded(child: Text(_serviceLabel(type), style: AppTextStyles.body.copyWith(color: isSelected ? AppColors.white : AppColors.neutral400, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500))),
-                              if (isSelected) const Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: AppColors.accent500),
+                              Expanded(child: Text(_serviceLabel(type), style: AppTextStyles.body.copyWith(color: isSelected ? context.ksc.white : context.ksc.neutral400, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500))),
+                              if (isSelected) Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: context.ksc.accent500),
                             ]),
                           ),
                         ),
@@ -266,23 +266,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.primary800,
+                        color: context.ksc.primary800,
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: AppColors.primary700),
+                        border: Border.all(color: context.ksc.primary700),
                       ),
                       child: Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('PUBLIC PROFILE', style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
+                          Text('PUBLIC PROFILE', style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
-                          Text('ALLOW CUSTOMERS TO VIEW YOUR PROFILE', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                          Text('ALLOW CUSTOMERS TO VIEW YOUR PROFILE', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
                         ])),
                         Switch(
-                          value: _isPublic, 
-                          onChanged: (v) => setState(() => _isPublic = v), 
-                          activeThumbColor: AppColors.accent500,
-                          activeTrackColor: AppColors.accent500.withValues(alpha: 0.3),
-                          inactiveThumbColor: AppColors.neutral500,
-                          inactiveTrackColor: AppColors.primary700,
+                          value: _isPublic,
+                          onChanged: (v) => setState(() => _isPublic = v),
+                          activeThumbColor: context.ksc.accent500,
+                          activeTrackColor: context.ksc.accent500.withValues(alpha: 0.3),
+                          inactiveThumbColor: context.ksc.neutral500,
+                          inactiveTrackColor: context.ksc.primary700,
                         ),
                       ]),
                     ),
@@ -302,13 +302,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary800,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: AppColors.primary700),
+            border: Border.all(color: context.ksc.primary700),
           ),
           child: TextField(
             controller: controller,
@@ -318,11 +318,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-            style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w600),
-            cursorColor: AppColors.accent500,
+            style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
+            cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral600),
+              hintStyle: AppTextStyles.body.copyWith(color: context.ksc.neutral600),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: InputBorder.none,
             ),
@@ -335,9 +335,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget _buildBottomBar(bool isLoading) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.primary800,
-        border: Border(top: BorderSide(color: AppColors.primary700)),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        border: Border(top: BorderSide(color: context.ksc.primary700)),
       ),
       padding: const EdgeInsets.all(24.0),
       child: Material(
@@ -350,17 +350,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               Text(
                 'SAVE CHANGES',
                 style: AppTextStyles.h2.copyWith(
-                  color: _canSave ? AppColors.white : AppColors.neutral600,
+                  color: _canSave ? context.ksc.white : context.ksc.neutral600,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 2.0,
                 ),
               ),
               if (isLoading)
-                const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500))
               else
                 Icon(
                   LineAwesomeIcons.save_solid,
-                  color: _canSave ? AppColors.accent500 : AppColors.neutral700,
+                  color: _canSave ? context.ksc.accent500 : context.ksc.neutral700,
                   size: 20,
                 ),
             ],

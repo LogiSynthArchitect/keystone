@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/ks_colors.dart';
 
 class KsBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -17,7 +17,7 @@ class KsBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.primary900,
+        color: context.ksc.primary900,
         border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
         boxShadow: [
           BoxShadow(
@@ -32,10 +32,10 @@ class KsBottomNav extends StatelessWidget {
           height: 64,
           child: Row(
             children: [
-              _buildNavItem(0, 'JOBS', LineAwesomeIcons.briefcase_solid),
-              _buildNavItem(1, 'CUSTOMERS', LineAwesomeIcons.users_solid),
-              _buildNavItem(2, 'NOTES', LineAwesomeIcons.lightbulb_solid),
-              _buildNavItem(3, 'PROFILE', LineAwesomeIcons.user_circle_solid),
+              _buildNavItem(context, 0, 'JOBS', LineAwesomeIcons.briefcase_solid),
+              _buildNavItem(context, 1, 'CUSTOMERS', LineAwesomeIcons.users_solid),
+              _buildNavItem(context, 2, 'NOTES', LineAwesomeIcons.lightbulb_solid),
+              _buildNavItem(context, 3, 'PROFILE', LineAwesomeIcons.user_circle_solid),
             ],
           ),
         ),
@@ -43,9 +43,9 @@ class KsBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(int index, String label, IconData icon) {
+  Widget _buildNavItem(BuildContext context, int index, String label, IconData icon) {
     final isActive = currentIndex == index;
-    final color = isActive ? AppColors.accent500 : Colors.white.withValues(alpha: 0.3);
+    final color = isActive ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.3);
 
     return Expanded(
       child: GestureDetector(
@@ -55,11 +55,11 @@ class KsBottomNav extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               top: BorderSide(
-                color: isActive ? AppColors.accent500 : Colors.transparent,
-                width: 2, // The active circuit connection
+                color: isActive ? context.ksc.accent500 : Colors.transparent,
+                width: 2,
               ),
             ),
-            color: isActive ? AppColors.primary800.withValues(alpha: 0.3) : Colors.transparent,
+            color: isActive ? context.ksc.primary800.withValues(alpha: 0.3) : Colors.transparent,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/ks_colors.dart';
 
 class OnboardingBottomBar extends StatelessWidget {
   final int step;
@@ -18,7 +18,7 @@ class OnboardingBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: AppColors.primary700,
+      color: context.ksc.primary700,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
       child: SafeArea(
         top: false,
@@ -33,7 +33,7 @@ class OnboardingBottomBar extends StatelessWidget {
                 onPressed: isLoading ? null : onPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF9A825),
-                  foregroundColor: AppColors.primary700,
+                  foregroundColor: context.ksc.primary700,
                   disabledBackgroundColor: const Color(0xFFF9A825).withValues(alpha: 0.4),
                   elevation: 4,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

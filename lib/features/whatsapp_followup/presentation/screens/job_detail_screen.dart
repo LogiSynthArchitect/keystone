@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
@@ -27,24 +27,24 @@ class JobDetailScreen extends ConsumerWidget {
     final jobAsync = ref.watch(jobDetailProvider(jobId));
 
     return Scaffold(
-      backgroundColor: AppColors.primary900,
+      backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "JOB RECORD",
         showBack: true,
         actions: [
           IconButton(
-            icon: const Icon(LineAwesomeIcons.archive_solid, color: AppColors.neutral400, size: 22),
+            icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  backgroundColor: AppColors.primary800,
+                  backgroundColor: ctx.ksc.primary800,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   title: Text("ARCHIVE RECORD?", style: AppTextStyles.h2.copyWith(color: Colors.white)),
-                  content: Text("This job will be moved to history. It cannot be permanently deleted.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+                  content: Text("This job will be moved to history. It cannot be permanently deleted.", style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral400)),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: AppColors.neutral400))),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: AppColors.error500))),
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: ctx.ksc.error500))),
                   ],
                 ),
               );
@@ -61,10 +61,10 @@ class JobDetailScreen extends ConsumerWidget {
           const KsOfflineBanner(),
           Expanded(
             child: jobAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
-              error: (err, _) => Center(child: Text("COULD NOT LOAD JOB", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
+              loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
+              error: (err, _) => Center(child: Text("COULD NOT LOAD JOB", style: AppTextStyles.caption.copyWith(color: context.ksc.error500))),
               data: (job) {
-                if (job == null) return Center(child: Text("JOB RECORD NOT FOUND", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)));
+                if (job == null) return Center(child: Text("JOB RECORD NOT FOUND", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)));
 
                 final bool isLocked = DateTime.now().difference(job.createdAt).inHours >= 24;
 
@@ -73,21 +73,21 @@ class JobDetailScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader("SERVICE"),
+                      _buildSectionHeader(context, "SERVICE"),
                       _buildServiceModule(context, ref, job, isLocked),
                       const SizedBox(height: 32),
 
-                      _buildSectionHeader("CUSTOMER"),
-                      _buildCustomerModule(ref, job.customerId),
+                      _buildSectionHeader(context, "CUSTOMER"),
+                      _buildCustomerModule(context, ref, job.customerId),
                       const SizedBox(height: 32),
 
                       if (job.notes != null && job.notes!.isNotEmpty) ...[
-                        _buildSectionHeader("NOTES"),
-                        _buildNotesModule(job.notes!),
+                        _buildSectionHeader(context, "NOTES"),
+                        _buildNotesModule(context, job.notes!),
                         const SizedBox(height: 32),
                       ],
 
-                      _buildSectionHeader("COMMUNICATION STATUS"),
+                      _buildSectionHeader(context, "COMMUNICATION STATUS"),
                       FollowUpMessagePreview(job: job),
                       const SizedBox(height: 120),
                     ],
@@ -111,15 +111,15 @@ class JobDetailScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.primary800,
+        backgroundColor: ctx.ksc.primary800,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         title: Text("REQUEST CORRECTION", style: AppTextStyles.h2.copyWith(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Explain what needs to be changed and why. An admin will review your request.", 
-              style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+            Text("Explain what needs to be changed and why. An admin will review your request.",
+              style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral400)),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
@@ -129,21 +129,21 @@ class JobDetailScreen extends ConsumerWidget {
                 hintText: "e.g. Changed service type to Smart Lock Installation...",
                 hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
                 filled: true,
-                fillColor: AppColors.primary900,
+                fillColor: ctx.ksc.primary900,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide.none),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: AppColors.neutral400))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent500),
+            style: ElevatedButton.styleFrom(backgroundColor: ctx.ksc.accent500),
             onPressed: () async {
               if (controller.text.trim().isEmpty) return;
               final reason = controller.text.trim();
               Navigator.pop(ctx);
-              
+
               try {
                 final userId = ref.read(supabaseClientProvider).auth.currentUser?.id;
                 if (userId == null) {
@@ -161,20 +161,20 @@ class JobDetailScreen extends ConsumerWidget {
                   KsSnackbar.show(context, message: "Failed to submit request.", type: KsSnackbarType.error);
                 }
               }
-            }, 
-            child: Text("SUBMIT", style: AppTextStyles.label.copyWith(color: AppColors.primary900, fontWeight: FontWeight.w900))
+            },
+            child: Text("SUBMIT", style: AppTextStyles.label.copyWith(color: ctx.ksc.primary900, fontWeight: FontWeight.w900)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Text(
         title,
-        style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)
+        style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5),
       ),
     );
   }
@@ -185,9 +185,9 @@ class JobDetailScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary800,
+        color: context.ksc.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.primary700),
+        border: Border.all(color: context.ksc.primary700),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +199,7 @@ class JobDetailScreen extends ConsumerWidget {
               Expanded(
                 child: Text(
                   serviceLabel,
-                  style: AppTextStyles.h2.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                  style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                 ),
               ),
               const SizedBox(width: 16),
@@ -208,16 +208,16 @@ class JobDetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     DateFormatter.short(job.jobDate).toUpperCase(),
-                    style: AppTextStyles.caption.copyWith(color: isLocked ? AppColors.neutral500 : AppColors.accent500, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                    style: AppTextStyles.caption.copyWith(color: isLocked ? context.ksc.neutral500 : context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
                   if (isLocked) ...[
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(LineAwesomeIcons.lock_solid, size: 10, color: AppColors.neutral500),
+                        Icon(LineAwesomeIcons.lock_solid, size: 10, color: context.ksc.neutral500),
                         const SizedBox(width: 4),
-                        Text("LOCKED", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                        Text("LOCKED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -226,12 +226,12 @@ class JobDetailScreen extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.accent500.withValues(alpha: 0.5)),
+                          border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           "REQUEST CORRECTION",
-                          style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontSize: 8, fontWeight: FontWeight.w900),
+                          style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 8, fontWeight: FontWeight.w900),
                         ),
                       ),
                     ),
@@ -242,15 +242,15 @@ class JobDetailScreen extends ConsumerWidget {
           ),
           if (job.hasAmount) ...[
             const SizedBox(height: 20),
-            const Divider(color: AppColors.primary700, height: 1),
+            Divider(color: context.ksc.primary700, height: 1),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("TOTAL CHARGED", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                Text("TOTAL CHARGED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
                 Text(
                   CurrencyFormatter.formatShort(job.amountCharged!),
-                  style: AppTextStyles.h1.copyWith(color: AppColors.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()]),
+                  style: AppTextStyles.h1.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()]),
                 ),
               ],
             ),
@@ -269,17 +269,17 @@ class JobDetailScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildCustomerModule(WidgetRef ref, String customerId) {
+  Widget _buildCustomerModule(BuildContext context, WidgetRef ref, String customerId) {
     final customerAsync = ref.watch(customerDetailProvider(customerId));
     return customerAsync.when(
-      loading: () => Container(height: 80, color: AppColors.primary800).animate().shimmer(),
+      loading: () => Container(height: 80, color: context.ksc.primary800).animate().shimmer(),
       error: (_, __) => const SizedBox.shrink(),
       data: (customer) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.primary800,
+          color: context.ksc.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: AppColors.primary700),
+          border: Border.all(color: context.ksc.primary700),
         ),
         child: Row(
           children: [
@@ -287,14 +287,14 @@ class JobDetailScreen extends ConsumerWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.primary900,
+                color: context.ksc.primary900,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AppColors.primary700),
+                border: Border.all(color: context.ksc.primary700),
               ),
               child: Center(
                 child: Text(
-                  customer?.fullName[0].toUpperCase() ?? "?", 
-                  style: AppTextStyles.h2.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900)
+                  customer?.fullName[0].toUpperCase() ?? "?",
+                  style: AppTextStyles.h2.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900),
                 ),
               ),
             ),
@@ -303,42 +303,42 @@ class JobDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(customer?.fullName.toUpperCase() ?? "UNKNOWN CUSTOMER", style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  Text(customer?.fullName.toUpperCase() ?? "UNKNOWN CUSTOMER", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                   const SizedBox(height: 2),
-                  Text(customer?.phoneNumber ?? "NO CONTACT", style: AppTextStyles.caption.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+                  Text(customer?.phoneNumber ?? "NO CONTACT", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-            const Icon(LineAwesomeIcons.angle_right_solid, color: AppColors.primary700, size: 16),
+            Icon(LineAwesomeIcons.angle_right_solid, color: context.ksc.primary700, size: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNotesModule(String notes) {
+  Widget _buildNotesModule(BuildContext context, String notes) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary800,
+        color: context.ksc.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.primary700),
+        border: Border.all(color: context.ksc.primary700),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(LineAwesomeIcons.sticky_note_solid, size: 14, color: AppColors.accent500),
+              Icon(LineAwesomeIcons.sticky_note_solid, size: 14, color: context.ksc.accent500),
               const SizedBox(width: 8),
-              Text("NOTES", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+              Text("NOTES", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             notes,
-            style: AppTextStyles.body.copyWith(color: AppColors.neutral200, height: 1.6, fontWeight: FontWeight.w500),
+            style: AppTextStyles.body.copyWith(color: context.ksc.neutral200, height: 1.6, fontWeight: FontWeight.w500),
           ),
         ],
       ),

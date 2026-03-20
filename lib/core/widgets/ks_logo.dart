@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../theme/app_colors.dart';
+import '../theme/ks_colors.dart';
 
 class KsLogo extends StatelessWidget {
   final double size;
@@ -8,7 +8,7 @@ class KsLogo extends StatelessWidget {
   final Color? accentColor;
 
   const KsLogo({
-    super.key, 
+    super.key,
     this.size = 200,
     this.primaryColor,
     this.accentColor,
@@ -17,8 +17,8 @@ class KsLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Defaulting to Theme if not provided
-    final Color pColor = primaryColor ?? AppColors.primary900;
-    final Color aColor = accentColor ?? AppColors.accent500;
+    final Color pColor = primaryColor ?? context.ksc.primary900;
+    final Color aColor = accentColor ?? context.ksc.accent500;
 
     final navyFilter = ColorFilter.mode(pColor, BlendMode.srcIn);
     final goldFilter = ColorFilter.mode(aColor, BlendMode.srcIn);
@@ -27,7 +27,7 @@ class KsLogo extends StatelessWidget {
       width: size,
       height: size,
       child: Transform.scale(
-        scale: 1.15, 
+        scale: 1.15,
         child: Stack(
           alignment: Alignment.center,
           children: [

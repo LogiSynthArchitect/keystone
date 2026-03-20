@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 
 class TagInputField extends StatefulWidget {
   final List<String> tags;
@@ -42,7 +42,7 @@ class _TagInputFieldState extends State<TagInputField> {
           width: double.infinity,
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary800,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
@@ -67,8 +67,8 @@ class _TagInputFieldState extends State<TagInputField> {
               TextField(
                 controller: _controller,
                 onSubmitted: _addTag,
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white),
-                cursorColor: AppColors.accent500,
+                style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white),
+                cursorColor: context.ksc.accent500,
                 decoration: InputDecoration(
                   hintText: "Add tag, press Enter",
                   hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
@@ -76,7 +76,7 @@ class _TagInputFieldState extends State<TagInputField> {
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   filled: true,
-                  fillColor: Colors.transparent, // Fixes white-out bug for tags
+                  fillColor: Colors.transparent,
                 ),
               ),
             ],
@@ -98,9 +98,9 @@ class _TagChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(left: 10, right: 4, top: 4, bottom: 4),
       decoration: BoxDecoration(
-        color: AppColors.accent500.withValues(alpha: 0.1),
+        color: context.ksc.accent500.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(2),
-        border: Border.all(color: AppColors.accent500.withValues(alpha: 0.3)),
+        border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -108,7 +108,7 @@ class _TagChip extends StatelessWidget {
           Text(
             "#$label",
             style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.accent500,
+              color: context.ksc.accent500,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -118,7 +118,7 @@ class _TagChip extends StatelessWidget {
             child: Icon(
               Icons.close,
               size: 14,
-              color: AppColors.accent500.withValues(alpha: 0.6),
+              color: context.ksc.accent500.withValues(alpha: 0.6),
             ),
           ),
         ],

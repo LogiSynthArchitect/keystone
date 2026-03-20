@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/constants/app_enums.dart';
 
 class ServiceTypePicker extends StatelessWidget {
@@ -10,8 +10,8 @@ class ServiceTypePicker extends StatelessWidget {
   final bool enabled;
 
   const ServiceTypePicker({
-    super.key, 
-    required this.selected, 
+    super.key,
+    required this.selected,
     required this.onSelected,
     this.enabled = true,
   });
@@ -41,13 +41,13 @@ class ServiceTypePicker extends StatelessWidget {
               curve: Curves.easeInOut,
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
               decoration: BoxDecoration(
-                color: isSelected 
-                    ? AppColors.accent500.withValues(alpha: 0.1) 
-                    : enabled ? AppColors.primary800 : AppColors.primary900.withValues(alpha: 0.5),
+                color: isSelected
+                    ? context.ksc.accent500.withValues(alpha: 0.1)
+                    : enabled ? context.ksc.primary800 : context.ksc.primary900.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: isSelected 
-                      ? AppColors.accent500 
+                  color: isSelected
+                      ? context.ksc.accent500
                       : Colors.white.withValues(alpha: enabled ? 0.1 : 0.05),
                   width: isSelected ? 2.0 : 1.0
                 ),
@@ -56,19 +56,19 @@ class ServiceTypePicker extends StatelessWidget {
                 opacity: enabled ? 1.0 : 0.4,
                 child: Row(
                   children: [
-                    Icon(icon, size: 20, color: isSelected ? AppColors.accent500 : AppColors.neutral500),
+                    Icon(icon, size: 20, color: isSelected ? context.ksc.accent500 : context.ksc.neutral500),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
                         label,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isSelected ? AppColors.white : AppColors.neutral400,
+                          color: isSelected ? context.ksc.white : context.ksc.neutral400,
                           fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
                           letterSpacing: 0.5,
                         )
                       )
                     ),
-                    if (isSelected) const Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: AppColors.accent500),
+                    if (isSelected) Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: context.ksc.accent500),
                   ],
                 ),
               ),

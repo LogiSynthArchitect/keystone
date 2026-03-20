@@ -5,8 +5,8 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../providers/auth_notifier.dart';
@@ -57,7 +57,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _onContinue() async {
     ref.read(authNotifierProvider.notifier).clearError();
-    
+
     if (_step == 0) {
       if (!_isValidName) return;
       _nameFocusNode.unfocus();
@@ -98,7 +98,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final errorMessage = authState.errorMessage;
 
     return Scaffold(
-      backgroundColor: AppColors.primary900,
+      backgroundColor: context.ksc.primary900,
       body: SafeArea(
         child: Column(
           children: [
@@ -109,15 +109,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    _buildBackButton(),
+                    _buildBackButton(context),
                     const SizedBox(height: 48),
 
                     // Animated Step Content
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
-                      child: _step == 0 
-                          ? _buildNameStep(key: const ValueKey('step0')) 
-                          : _buildServicesStep(key: const ValueKey('step1')),
+                      child: _step == 0
+                          ? _buildNameStep(context, key: const ValueKey('step0'))
+                          : _buildServicesStep(context, key: const ValueKey('step1')),
                     ),
 
                     // Error Banner
@@ -125,37 +125,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       const SizedBox(height: 24),
                       KsBanner(message: errorMessage),
                     ],
-                    
+
                     const SizedBox(height: 48),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom Bar (Hidden when keyboard is open)
-            if (!keyboardVisible) _buildBottomBar(authState.isLoading),
+            if (!keyboardVisible) _buildBottomBar(context, authState.isLoading),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBackButton() {
+  Widget _buildBackButton(BuildContext context) {
     if (_step == 0) return const SizedBox(width: 44, height: 44);
-    
+
     return GestureDetector(
       onTap: () => setState(() => _step = 0),
       child: Container(
         width: 44,
         height: 44,
-        decoration: const BoxDecoration(
-          color: AppColors.primary800,
-          borderRadius: BorderRadius.all(Radius.circular(4)),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
           border: Border(
-            top: BorderSide(color: AppColors.primary700),
-            bottom: BorderSide(color: AppColors.primary700),
-            left: BorderSide(color: AppColors.primary700),
-            right: BorderSide(color: AppColors.primary700),
+            top: BorderSide(color: context.ksc.primary700),
+            bottom: BorderSide(color: context.ksc.primary700),
+            left: BorderSide(color: context.ksc.primary700),
+            right: BorderSide(color: context.ksc.primary700),
           ),
         ),
         child: const Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: Colors.white),
@@ -163,13 +163,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildStepIndicator() => Row(
+  Widget _buildStepIndicator(BuildContext context) => Row(
         children: [
           Expanded(
             child: Container(
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.accent500,
+                color: context.ksc.accent500,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -179,7 +179,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: Container(
               height: 4,
               decoration: BoxDecoration(
-                color: _step == 1 ? AppColors.accent500 : AppColors.primary800,
+                color: _step == 1 ? context.ksc.accent500 : context.ksc.primary800,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -187,7 +187,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       );
 
-  Widget _buildNameStep({Key? key}) => Column(
+  Widget _buildNameStep(BuildContext context, {Key? key}) => Column(
         key: key,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -195,18 +195,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text(
             'ONBOARDING PHASE 01',
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.accent500,
+              color: context.ksc.accent500,
               letterSpacing: 2.0,
               fontWeight: FontWeight.w700,
             ),
           ).animate().fadeIn().slideX(begin: -0.1, end: 0),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             'IDENTIFY YOURSELF',
             style: AppTextStyles.h1.copyWith(
-              color: AppColors.white,
+              color: context.ksc.white,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
             ),
@@ -214,18 +214,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           const SizedBox(height: 24),
           Text('This name will be displayed on your professional profile.',
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
           const SizedBox(height: 32),
-          _buildStepIndicator(),
+          _buildStepIndicator(context),
           const SizedBox(height: 48),
-          
+
           Container(
             height: 72,
             decoration: BoxDecoration(
-              color: AppColors.primary800,
+              color: context.ksc.primary800,
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color: _nameFocused ? AppColors.accent500 : AppColors.primary700,
+                color: _nameFocused ? context.ksc.accent500 : context.ksc.primary700,
                 width: _nameFocused ? 2 : 1,
               ),
             ),
@@ -235,16 +235,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               onChanged: _onNameChanged,
               textCapitalization: TextCapitalization.words,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.white, 
-                fontWeight: FontWeight.w800, 
+                color: context.ksc.white,
+                fontWeight: FontWeight.w800,
                 fontSize: 18,
                 letterSpacing: 1.0,
               ),
-              cursorColor: AppColors.accent500,
-              decoration: const InputDecoration(
+              cursorColor: context.ksc.accent500,
+              decoration: InputDecoration(
                 hintText: 'Jeremie Mensah',
-                hintStyle: TextStyle(color: AppColors.neutral600),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                hintStyle: TextStyle(color: context.ksc.neutral600),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -257,7 +257,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       );
 
-  Widget _buildServicesStep({Key? key}) => Column(
+  Widget _buildServicesStep(BuildContext context, {Key? key}) => Column(
         key: key,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -265,18 +265,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           Text(
             'ONBOARDING PHASE 02',
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.accent500,
+              color: context.ksc.accent500,
               letterSpacing: 2.0,
               fontWeight: FontWeight.w700,
             ),
           ).animate().fadeIn().slideX(begin: 0.1, end: 0),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             'SELECT CAPABILITIES',
             style: AppTextStyles.h1.copyWith(
-              color: AppColors.white,
+              color: context.ksc.white,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
             ),
@@ -284,9 +284,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
           const SizedBox(height: 24),
           Text('Identify the specialized services you provide.',
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral400, fontWeight: FontWeight.w600)),
+              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
           const SizedBox(height: 32),
-          _buildStepIndicator(),
+          _buildStepIndicator(context),
           const SizedBox(height: 48),
 
           GridView.count(
@@ -304,7 +304,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: isSelected ? AppColors.accent500 : AppColors.primary700,
+                      color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -330,8 +330,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           child: Text(
                             service.label,
                             style: AppTextStyles.label.copyWith(
-                              color: Colors.white, 
-                              fontWeight: FontWeight.w800, 
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
                               height: 1.2,
                               fontSize: 14,
                             ),
@@ -343,8 +343,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             right: 8,
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(color: AppColors.accent500, shape: BoxShape.circle),
-                              child: const Icon(LineAwesomeIcons.check_solid, size: 12, color: AppColors.primary900),
+                              decoration: BoxDecoration(color: context.ksc.accent500, shape: BoxShape.circle),
+                              child: Icon(LineAwesomeIcons.check_solid, size: 12, color: context.ksc.primary900),
                             ),
                           ),
                       ],
@@ -357,11 +357,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       );
 
-  Widget _buildBottomBar(bool isLoading) => Container(
+  Widget _buildBottomBar(BuildContext context, bool isLoading) => Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          color: AppColors.primary800,
-          border: Border(top: BorderSide(color: AppColors.primary700)),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          border: Border(top: BorderSide(color: context.ksc.primary700)),
         ),
         padding: const EdgeInsets.all(24.0),
         child: Material(
@@ -374,17 +374,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Text(
                   _step == 0 ? 'CONTINUE' : 'COMPLETE SETUP',
                   style: AppTextStyles.h2.copyWith(
-                    color: _canContinue ? AppColors.white : AppColors.neutral600,
+                    color: _canContinue ? context.ksc.white : context.ksc.neutral600,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2.0,
                   ),
                 ),
                 if (isLoading)
-                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent500))
+                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500))
                 else
                   Icon(
                     LineAwesomeIcons.angle_right_solid,
-                    color: _canContinue ? AppColors.accent500 : AppColors.neutral700,
+                    color: _canContinue ? context.ksc.accent500 : context.ksc.neutral700,
                     size: 20,
                   ),
               ],

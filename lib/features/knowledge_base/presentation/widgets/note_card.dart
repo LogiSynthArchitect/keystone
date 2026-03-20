@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
 
@@ -18,9 +18,9 @@ class NoteCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.primary800,
+          color: context.ksc.primary800,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: AppColors.primary700),
+          border: Border.all(color: context.ksc.primary700),
         ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -28,25 +28,25 @@ class NoteCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(LineAwesomeIcons.sticky_note_solid, size: 14, color: AppColors.accent500),
+                Icon(LineAwesomeIcons.sticky_note_solid, size: 14, color: context.ksc.accent500),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    note.title.toUpperCase(), 
+                    note.title.toUpperCase(),
                     style: AppTextStyles.body.copyWith(
-                      color: AppColors.white, 
+                      color: context.ksc.white,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
-                    ), 
-                    maxLines: 1, 
+                    ),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis
                   )
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  DateFormatter.short(note.createdAt).toUpperCase(), 
+                  DateFormatter.short(note.createdAt).toUpperCase(),
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.neutral500, 
+                    color: context.ksc.neutral500,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
                   )
@@ -55,9 +55,9 @@ class NoteCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              note.description, 
-              style: AppTextStyles.body.copyWith(color: AppColors.neutral400, height: 1.5, fontWeight: FontWeight.w500), 
-              maxLines: 2, 
+              note.description,
+              style: AppTextStyles.body.copyWith(color: context.ksc.neutral400, height: 1.5, fontWeight: FontWeight.w500),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis
             ),
             if (note.hasTags) ...[
@@ -84,14 +84,14 @@ class _TagChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.primary900,
+        color: context.ksc.primary900,
         borderRadius: BorderRadius.circular(2),
-        border: Border.all(color: AppColors.primary700),
+        border: Border.all(color: context.ksc.primary700),
       ),
       child: Text(
-        "#${tag.toUpperCase()}", 
+        "#${tag.toUpperCase()}",
         style: AppTextStyles.caption.copyWith(
-          color: AppColors.accent500, 
+          color: context.ksc.accent500,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.0,
           fontSize: 9,

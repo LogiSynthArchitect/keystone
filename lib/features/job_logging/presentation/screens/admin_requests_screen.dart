@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/constants/app_enums.dart';
@@ -20,31 +20,31 @@ class AdminRequestsScreen extends ConsumerWidget {
     final requestsAsync = ref.watch(adminRequestsProvider);
 
     return userAsync.when(
-      loading: () => const Scaffold(backgroundColor: AppColors.primary900, body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const Scaffold(backgroundColor: AppColors.primary900, body: Center(child: Text("AUTH ERROR"))),
+      loading: () => Scaffold(backgroundColor: context.ksc.primary900, body: const Center(child: CircularProgressIndicator())),
+      error: (_, __) => Scaffold(backgroundColor: context.ksc.primary900, body: const Center(child: Text("AUTH ERROR"))),
       data: (user) {
         if (user == null || !user.isAdmin) {
-          return const Scaffold(backgroundColor: AppColors.primary900, body: Center(child: Text("UNAUTHORIZED")));
+          return Scaffold(backgroundColor: context.ksc.primary900, body: const Center(child: Text("UNAUTHORIZED")));
         }
-        
+
         return Scaffold(
-          backgroundColor: AppColors.primary900,
+          backgroundColor: context.ksc.primary900,
           appBar: const KsAppBar(
             title: "PENDING CORRECTIONS",
             showBack: true,
           ),
           body: requestsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent500)),
-            error: (err, _) => Center(child: Text("ERROR LOADING REQUESTS", style: AppTextStyles.caption.copyWith(color: AppColors.error500))),
+            loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
+            error: (err, _) => Center(child: Text("ERROR LOADING REQUESTS", style: AppTextStyles.caption.copyWith(color: context.ksc.error500))),
             data: (requests) {
               if (requests.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(LineAwesomeIcons.check_circle, size: 64, color: AppColors.primary800),
+                      Icon(LineAwesomeIcons.check_circle, size: 64, color: context.ksc.primary800),
                       const SizedBox(height: 16),
-                      Text("NO PENDING REQUESTS", style: AppTextStyles.h2.copyWith(color: AppColors.neutral500)),
+                      Text("NO PENDING REQUESTS", style: AppTextStyles.h2.copyWith(color: context.ksc.neutral500)),
                     ],
                   ),
                 );
@@ -76,9 +76,9 @@ class _RequestCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary800,
+        color: context.ksc.primary800,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.primary700),
+        border: Border.all(color: context.ksc.primary700),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,11 +88,11 @@ class _RequestCard extends ConsumerWidget {
             children: [
               Text(
                 "JOB ID: ${request.jobId.substring(0, 8).toUpperCase()}",
-                style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800),
+                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800),
               ),
               Text(
                 DateFormatter.short(request.createdAt).toUpperCase(),
-                style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700),
+                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -107,8 +107,8 @@ class _RequestCard extends ConsumerWidget {
               Expanded(
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.error500),
-                    foregroundColor: AppColors.error500,
+                    side: BorderSide(color: context.ksc.error500),
+                    foregroundColor: context.ksc.error500,
                   ),
                   onPressed: () => _showRejectDialog(context, ref),
                   child: Text("REJECT", style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w900)),
@@ -117,9 +117,9 @@ class _RequestCard extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent500),
+                  style: ElevatedButton.styleFrom(backgroundColor: context.ksc.accent500),
                   onPressed: () => _showApproveDialog(context, ref),
-                  child: Text("APPROVE", style: AppTextStyles.label.copyWith(color: AppColors.primary900, fontWeight: FontWeight.w900)),
+                  child: Text("APPROVE", style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900)),
                 ),
               ),
             ],
@@ -134,7 +134,7 @@ class _RequestCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.primary800,
+        backgroundColor: context.ksc.primary800,
         title: Text("REJECT REQUEST", style: AppTextStyles.h2.copyWith(color: Colors.white)),
         content: TextField(
           controller: controller,
@@ -144,17 +144,17 @@ class _RequestCard extends ConsumerWidget {
             hintText: "Reason for rejection...",
             hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
             filled: true,
-            fillColor: AppColors.primary900,
+            fillColor: context.ksc.primary900,
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: AppColors.neutral400))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
           TextButton(
             onPressed: () async {
               await ref.read(adminRequestsActionProvider.notifier).reject(request.id, adminNotes: controller.text.trim());
               if (context.mounted) Navigator.pop(ctx);
             },
-            child: Text("REJECT", style: AppTextStyles.label.copyWith(color: AppColors.error500)),
+            child: Text("REJECT", style: AppTextStyles.label.copyWith(color: context.ksc.error500)),
           ),
         ],
       ),
@@ -169,14 +169,14 @@ class _RequestCard extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          backgroundColor: AppColors.primary800,
+          backgroundColor: context.ksc.primary800,
           title: Text("APPROVE & UPDATE", style: AppTextStyles.h2.copyWith(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<ServiceType>(
                 initialValue: selectedType,
-                dropdownColor: AppColors.primary800,
+                dropdownColor: context.ksc.primary800,
                 decoration: const InputDecoration(labelText: "SERVICE TYPE"),
                 items: ServiceType.values.map((t) => DropdownMenuItem(
                   value: t,
@@ -186,9 +186,9 @@ class _RequestCard extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               ListTile(
-                title: Text("JOB DATE", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                title: Text("JOB DATE", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
                 subtitle: Text(DateFormatter.short(selectedDate), style: const TextStyle(color: Colors.white)),
-                trailing: const Icon(LineAwesomeIcons.calendar, color: AppColors.accent500),
+                trailing: Icon(LineAwesomeIcons.calendar, color: context.ksc.accent500),
                 onTap: () async {
                   final date = await showDatePicker(
                     context: context,
@@ -202,7 +202,7 @@ class _RequestCard extends ConsumerWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: AppColors.neutral400))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
             TextButton(
               onPressed: () async {
                 await ref.read(adminRequestsActionProvider.notifier).approve(
@@ -215,7 +215,7 @@ class _RequestCard extends ConsumerWidget {
                 );
                 if (context.mounted) Navigator.pop(ctx);
               },
-              child: Text("APPROVE", style: AppTextStyles.label.copyWith(color: AppColors.accent500)),
+              child: Text("APPROVE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
             ),
           ],
         ),

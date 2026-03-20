@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/ks_colors.dart';
 
 enum KsCardVariant { elevated, outlined, flat }
 
@@ -28,11 +28,11 @@ class KsCard extends StatelessWidget {
     switch (variant) {
       case KsCardVariant.elevated:
         decoration = BoxDecoration(
-          color: backgroundColor ?? AppColors.white,
+          color: backgroundColor ?? context.ksc.white,
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           boxShadow: [
             BoxShadow(
-              color: AppColors.neutral900.withValues(alpha: 0.08),
+              color: context.ksc.neutral900.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -40,13 +40,13 @@ class KsCard extends StatelessWidget {
         );
       case KsCardVariant.outlined:
         decoration = BoxDecoration(
-          color: backgroundColor ?? AppColors.white,
+          color: backgroundColor ?? context.ksc.white,
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          border: Border.all(color: AppColors.neutral200),
+          border: Border.all(color: context.ksc.neutral200),
         );
       case KsCardVariant.flat:
         decoration = BoxDecoration(
-          color: backgroundColor ?? AppColors.neutral050,
+          color: backgroundColor ?? context.ksc.neutral050,
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         );
     }

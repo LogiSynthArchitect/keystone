@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
@@ -82,21 +82,21 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.primary800,
+        backgroundColor: context.ksc.primary800,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
           side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
-        content: Text('You have unsaved technical notes. Leave anyway?', style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        content: Text('You have unsaved technical notes. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false), 
-            child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: AppColors.neutral400)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: AppColors.error500, fontWeight: FontWeight.w900)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -134,9 +134,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         _previousStep();
       },
       child: Scaffold(
-        backgroundColor: AppColors.primary900,
+        backgroundColor: context.ksc.primary900,
         appBar: KsAppBar(
-          title: "ADD NEW NOTE", 
+          title: "ADD NEW NOTE",
           showBack: true,
           onBack: _previousStep,
         ),
@@ -165,9 +165,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     final stepLabels = ["TECHNICAL", "INDEXING"];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: const BoxDecoration(
-        color: AppColors.primary800,
-        border: Border(bottom: BorderSide(color: AppColors.primary700)),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        border: Border(bottom: BorderSide(color: context.ksc.primary700)),
       ),
       child: Row(
         children: List.generate(_totalSteps, (index) {
@@ -180,15 +180,15 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.accent500 : (isCompleted ? AppColors.accent500.withValues(alpha: 0.2) : AppColors.primary900),
+                    color: isActive ? context.ksc.accent500 : (isCompleted ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: isActive ? AppColors.accent500 : AppColors.primary700),
+                    border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
                   ),
                   child: Center(
                     child: Text(
                       "${index + 1}",
                       style: AppTextStyles.caption.copyWith(
-                        color: isActive ? AppColors.primary900 : (isCompleted ? AppColors.accent500 : AppColors.neutral500),
+                        color: isActive ? context.ksc.primary900 : (isCompleted ? context.ksc.accent500 : context.ksc.neutral500),
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -198,11 +198,11 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   const SizedBox(width: 8),
                   Text(
                     stepLabels[index],
-                    style: AppTextStyles.caption.copyWith(color: AppColors.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                   ),
                 ],
-                if (index < _totalSteps - 1) 
-                  const Expanded(child: Divider(color: AppColors.primary700, indent: 8, endIndent: 8)),
+                if (index < _totalSteps - 1)
+                  Expanded(child: Divider(color: context.ksc.primary700, indent: 8, endIndent: 8)),
               ],
             ),
           );
@@ -225,23 +225,22 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       children: [
         Text("YOUR NOTE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Write down the problem and how you fixed it.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Write down the problem and how you fixed it.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
         _buildDarkField(
-          label: "Note Title", 
-          hint: "e.g. Rekeying Kwikset Deadbolt", 
-          controller: _titleController, 
+          label: "Note Title",
+          hint: "e.g. Rekeying Kwikset Deadbolt",
+          controller: _titleController,
           fieldHint: "A short title helps you find this note later.",
           maxLength: 200,
         ),
         const SizedBox(height: 24),
         _buildDarkField(
           label: "Description",
-          hint: "Step by step notes, tips, what worked...", 
-          maxLines: 5, 
+          hint: "Step by step notes, tips, what worked...",
+          maxLines: 5,
           controller: _descriptionController,
           fieldHint: "Write your full notes here — steps, tips, what worked.",
-          // No maxLength for Description as it's 'text' (no limit) in DB
         ),
       ],
     );
@@ -253,13 +252,13 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       children: [
         Text("ORGANISE YOUR NOTE", style: AppTextStyles.h2.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Add tags and a category to find this note easily later.", style: AppTextStyles.body.copyWith(color: AppColors.neutral400)),
+        Text("Add tags and a category to find this note easily later.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
-        Text("TAGS", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        Text("TAGS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
         const SizedBox(height: 8),
         TagInputField(tags: _tags, onChanged: (tags) => setState(() => _tags = tags)),
         const SizedBox(height: 32),
-        Text("SERVICE CATEGORY (OPTIONAL)", style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        Text("SERVICE CATEGORY (OPTIONAL)", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -277,17 +276,17 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accent500.withValues(alpha: 0.1) : AppColors.primary800,
+                  color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                    color: isSelected ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1),
+                    color: isSelected ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Text(
-                  labels[type]!, 
+                  labels[type]!,
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: isSelected ? AppColors.accent500 : AppColors.neutral400,
+                    color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
                     fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
                   )
                 ),
@@ -305,7 +304,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
 
     return Container(
       width: double.infinity,
-      color: AppColors.primary700,
+      color: context.ksc.primary700,
       padding: const EdgeInsets.all(24.0),
       child: SafeArea(
         top: false,
@@ -315,17 +314,17 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isLastStep ? 'SAVE KNOWLEDGE NOTE' : 'NEXT STEP', 
+                isLastStep ? 'SAVE KNOWLEDGE NOTE' : 'NEXT STEP',
                 style: AppTextStyles.h2.copyWith(
-                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3), 
+                  color: canGo ? Colors.white : Colors.white.withValues(alpha: 0.3),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 )
               ),
-              if (isLoading) const CircularProgressIndicator(color: AppColors.accent500)
+              if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
               else Icon(
-                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, 
-                color: canGo ? AppColors.accent500 : Colors.white.withValues(alpha: 0.1)
+                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
+                color: canGo ? context.ksc.accent500 : Colors.white.withValues(alpha: 0.1)
               ),
             ],
           ),
@@ -335,9 +334,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   }
 
   Widget _buildDarkField({
-    required String label, 
-    required String hint, 
-    required TextEditingController controller, 
+    required String label,
+    required String hint,
+    required TextEditingController controller,
     int maxLines = 1,
     String? fieldHint,
     int? maxLength,
@@ -345,15 +344,15 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
         if (fieldHint != null) ...[
           const SizedBox(height: 4),
-          Text(fieldHint, style: AppTextStyles.caption.copyWith(color: AppColors.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5)),
+          Text(fieldHint, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5)),
         ],
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.primary800,
+            color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
@@ -363,8 +362,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-            style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white, fontWeight: FontWeight.w700),
-            cursorColor: AppColors.accent500,
+            style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+            cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.15)),

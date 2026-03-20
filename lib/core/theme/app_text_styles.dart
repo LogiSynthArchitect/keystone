@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
 class AppTextStyles {
   AppTextStyles._();
@@ -10,7 +9,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w800,
         letterSpacing: -0.5,
         height: 1.2,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get h1 => const TextStyle(
@@ -19,7 +18,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w900,
         letterSpacing: -0.3,
         height: 1.3,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get h2 => const TextStyle(
@@ -28,7 +27,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w800,
         letterSpacing: -0.2,
         height: 1.3,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get h3 => const TextStyle(
@@ -37,7 +36,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w700,
         letterSpacing: 0,
         height: 1.4,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get bodyLarge => const TextStyle(
@@ -46,7 +45,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
         height: 1.5,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get body => const TextStyle(
@@ -55,7 +54,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
         height: 1.5,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get bodyMedium => const TextStyle(
@@ -64,7 +63,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
         height: 1.5,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
       );
 
   static TextStyle get caption => const TextStyle(
@@ -73,7 +72,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
         height: 1.4,
-        color: AppColors.neutral400,
+        color: Color(0xFF9E9E9E), // neutral400
       );
 
   static TextStyle get captionMedium => const TextStyle(
@@ -82,7 +81,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w700,
         letterSpacing: 0.5,
         height: 1.4,
-        color: AppColors.neutral500,
+        color: Color(0xFF737373), // neutral500
       );
 
   static TextStyle get label => const TextStyle(
@@ -91,7 +90,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w700,
         letterSpacing: 1.0,
         height: 1.2,
-        color: AppColors.accent500,
+        color: Color(0xFFD4A017), // accent500
       );
 
   static TextStyle get labelSmall => const TextStyle(
@@ -100,7 +99,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w800,
         letterSpacing: 1.0,
         height: 1.2,
-        color: AppColors.accent500,
+        color: Color(0xFFD4A017), // accent500
       );
 
   static TextStyle get amount => const TextStyle(
@@ -109,7 +108,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w900,
         letterSpacing: -0.2,
         height: 1.2,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
         fontFeatures: [FontFeature.tabularFigures()],
       );
 
@@ -119,7 +118,7 @@ class AppTextStyles {
         fontWeight: FontWeight.w800,
         letterSpacing: 0,
         height: 1.2,
-        color: AppColors.white,
+        color: Color(0xFFFFFFFF), // white
         fontFeatures: [FontFeature.tabularFigures()],
       );
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_spacing.dart';
+import '../theme/ks_colors.dart';
 
 enum KsTextFieldType { text, phone, amount, multiline, search }
 
@@ -60,17 +60,17 @@ class KsTextField extends StatelessWidget {
           style: AppTextStyles.body,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
+            hintStyle: AppTextStyles.body.copyWith(color: context.ksc.neutral400),
             errorText: errorText,
             helperText: helperText,
             prefixText: type == KsTextFieldType.amount ? 'GHS ' : null,
             prefixIcon: type == KsTextFieldType.phone
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                    child: Text('+233', style: TextStyle(color: AppColors.neutral700)),
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: Text('+233', style: TextStyle(color: context.ksc.neutral700)),
                   )
                 : type == KsTextFieldType.search
-                    ? const Icon(Icons.search, color: AppColors.neutral400)
+                    ? Icon(Icons.search, color: context.ksc.neutral400)
                     : null,
             prefixIconConstraints: type == KsTextFieldType.phone
                 ? const BoxConstraints(minWidth: 0, minHeight: 0)

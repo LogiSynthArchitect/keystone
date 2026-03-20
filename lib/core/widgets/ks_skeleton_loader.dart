@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/ks_colors.dart';
 
 class KsSkeletonLoader extends StatefulWidget {
   final double width;
@@ -47,7 +47,7 @@ class _KsSkeletonLoaderState extends State<KsSkeletonLoader>
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: AppColors.neutral200,
+          color: context.ksc.neutral200,
           borderRadius: BorderRadius.circular(widget.borderRadius),
         ),
       ),
