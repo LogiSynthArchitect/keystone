@@ -42,6 +42,13 @@ GEMINI.md
 # Internal dev tools
 query_db.sh
 
+# Supabase CLI temp files (contain project refs and connection URLs)
+supabase/.temp/
+supabase/supabase/.temp/
+
+# Internal content tracking
+CONTENT_CALENDAR.md
+
 # Stray files
 location,
 notes,
