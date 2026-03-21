@@ -12,6 +12,8 @@ echo "→ Installing dependencies..."
 flutter pub get
 
 echo "→ Building for web..."
-flutter build web --target lib/main_web.dart --release
+flutter build web --target lib/main_web.dart --release \
+  --dart-define=SUPABASE_URL=$SUPABASE_URL \
+  --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
 echo "✓ Build complete."

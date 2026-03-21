@@ -11,7 +11,7 @@ final publicProfileProvider = FutureProvider.family<ProfileEntity?, String>((ref
     final data = await supabase
         .from('profiles')
         .select()
-        .eq('profile_url', slug)
+        .ilike('profile_url', '%$slug')
         .eq('is_public', true)
         .maybeSingle();
         
