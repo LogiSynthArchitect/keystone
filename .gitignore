@@ -38,6 +38,7 @@ docs/v1/tracking/
 docs/v1/dirc/
 docs/dirc_log.md
 GEMINI.md
+AGENTS.md
 
 # Internal dev tools
 query_db.sh
