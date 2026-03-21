@@ -116,10 +116,10 @@ Jobs and notes are written to Hive immediately, then synced to Supabase via RPC.
 - **Presentation:** Screens, providers, widgets
 
 ### Environment Separation
-- **Staging:** `mxkkntxemrcjbxvlzfbt.supabase.co` (default for development)
-- **Production:** `ifzpdizxitlvjbmzozew.supabase.co` (restricted, requires flags)
+- **Staging:** Default for local development
+- **Production:** Restricted access, requires explicit environment flag
 
-Tools default to staging to prevent accidental production changes.
+This separation prevents accidental production changes. Any change to production data requires an intentional, documented action.
 
 ---
 
@@ -189,8 +189,8 @@ See `PUBLIC_ROADMAP.md` for the full V2 vision.
 Complete V1 specification in `docs/v1/`:
 - **Systems:** Architecture, navigation, state machines
 - **Implementation:** Deployment, design system, component inventory
-- **Tracking:** Session logs, bug archives, current state, lessons learned
 - **Models:** Domain model, database schema, API contracts, validation rules
+- **Problem:** Market research, user personas, core hypothesis
 
 Start with `docs/v1/00_master_index.md`.
 
@@ -198,38 +198,38 @@ Start with `docs/v1/00_master_index.md`.
 
 ## Contributing
 
-This is a snapshot of V1 development. For V2 and beyond:
-1. Check `docs/patterns.md` for lessons that apply to your changes
-2. Update docs alongside code (see `docs/v1/tracking/DOC_UPDATE_GUIDE.md`)
+See `CONTRIBUTING.md` for full guidelines. Quick summary:
+1. Read `docs/patterns.md` before making changes
+2. Follow clean architecture (domain / data / presentation)
 3. Run `flutter analyze` and `flutter test` before committing
+4. Docs must be updated alongside code
 
 ---
 
 ## License
 
-[Add your license here — MIT, GPL, Proprietary, etc.]
+MIT License — See LICENSE file for details.
 
 ---
 
 ## Author
 
-Built by [Your Name/Team] for locksmiths in Accra, Ghana.
+Built by LogiSynthArchitect for locksmiths in Accra, Ghana.
 
-**Pilot Users:** 2 active technicians logging jobs daily.
+**Pilot Users:** 2 active technicians logging jobs daily in the field.
 
-**Status:** Actively maintained. V2 planned with Play Store launch.
+**Status:** V1 actively maintained. V2 in development (Play Store launch planned).
 
 ---
 
 ## Links
 
-- **Web Profile (Live):** https://keystone-inky-five.vercel.app
-- **Supabase Dashboard:** [Your project URL]
-- **GitHub:** [This repository]
-- **LinkedIn:** [Your profile — post about the journey!]
+- **Live Web Profile:** https://keystone-inky-five.vercel.app
+- **GitHub:** https://github.com/LogiSynthArchitect/keystone
+- **LinkedIn:** Follow the build journey on LinkedIn
 
 ---
 
-## Questions?
+## Questions or Issues?
 
-See `docs/v1/tracking/DIAGNOSTIC_MANUAL.md` for common issues and fixes.
+Open an issue on GitHub. For architecture questions, start with `docs/v1/systems/` and `docs/patterns.md`.

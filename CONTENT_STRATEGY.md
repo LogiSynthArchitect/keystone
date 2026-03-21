@@ -90,7 +90,7 @@ V1 lesson: Ship small, learn fast, iterate with real users.
 ### The Hard Lines
 
 **❌ Never share:**
-- User phone numbers (Jeremie: +233531307502 ← private)
+- User phone numbers (never share — keep in private records only)
 - Real customer names or details
 - Business metrics (revenue, pricing, margins)
 - Real Supabase project credentials (even public project IDs are borderline)
