@@ -47,14 +47,16 @@ lib/
   main_web.dart      # Web entry point (public profile only)
 
 docs/
-  v1/                # Complete V1 specification & decisions
-    implementation/  # Build guides, tech specs
-    tracking/        # Session logs, bugs, current state
-    systems/         # Architecture, routing, state
-    design/          # UI/UX system, design tokens
+  v1/                # V1 specification, architecture, lessons
+    systems/         # Architecture decisions
+    implementation/  # Tech specs, design system
+    models/          # Domain model, database schema
+    problem/         # Problem statement, market research
+    testing/         # Testing strategy
+  patterns.md        # 37 reusable patterns from this project
 
 scripts/
-  vercel_build.sh    # Web build with Flutter install
+  vercel_build.sh    # Web build automation
 ```
 
 ---
@@ -162,24 +164,23 @@ flutter test
 
 ## Deployment
 
-### Mobile (Android APK)
-Build with `--flavor prod --release` and `--dart-define` for production Supabase credentials. Send directly to users via WhatsApp or USB.
+**Mobile:** APK builds can be run locally with credentials via `--dart-define`. V2 will publish to Google Play Store.
 
-V2 plan: Publish to Google Play Store.
+**Web:** Public profile deployed on Vercel. Updates automatically on code push.
 
-### Web (Vercel)
-Automatic deployment on push to `main`. GitHub Actions builds Flutter web with production credentials, deploys to Vercel.
-
-See `docs/v1/implementation/21_deployment_strategy.md` for full runbook.
+See `docs/v1/implementation/21_deployment_strategy.md` for technical details.
 
 ---
 
-## Known Limitations (V1)
+## What's Next (V2 Roadmap)
 
-- SMS OTP via Twilio not wired (using bypass code `123456`)
-- Keyboard unfocus on "0" on some devices (deferred to V2)
-- Analytics scaffolded but not active
-- Admin panel basic (no UI for role assignment, uses SQL)
+- **Google Play Store** — Wider distribution for Android users
+- **SMS OTP** — Secure verification for new users
+- **Analytics** — Track feature usage and growth insights
+- **Admin Dashboard** — Role management and job oversight UI
+- **Multi-language** — Support for local languages beyond English
+
+See `PUBLIC_ROADMAP.md` for the full V2 vision.
 
 ---
 
