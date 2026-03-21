@@ -33,3 +33,16 @@ server.log
 scripts/smart_server.py
 server_error.log
 
+# Internal documentation (not for public)
+docs/v1/tracking/
+docs/v1/dirc/
+docs/dirc_log.md
+GEMINI.md
+
+# Internal dev tools
+query_db.sh
+
+# Stray files
+location,
+notes,
+
