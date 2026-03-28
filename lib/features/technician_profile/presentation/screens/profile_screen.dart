@@ -60,13 +60,27 @@ class ProfileScreen extends ConsumerWidget {
                             color: context.ksc.primary900,
                             shape: BoxShape.circle,
                             border: Border.all(color: context.ksc.accent500, width: 2),
-                            image: (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty)
-                                ? DecorationImage(image: NetworkImage(profile.photoUrl!), fit: BoxFit.cover)
-                                : null,
                           ),
-                          child: (profile?.photoUrl == null || profile!.photoUrl!.isEmpty)
-                              ? Center(child: Text(profile?.displayName[0].toUpperCase() ?? "?", style: AppTextStyles.h1.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)))
-                              : null,
+                          child: (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty)
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(40),
+                                  child: Image.network(
+                                    profile.photoUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => _buildInitialsPlaceholder(context, profile.displayName),
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                            : null,
+                                        color: context.ksc.accent500,
+                                        strokeWidth: 2,
+                                      ));
+                                    },
+                                  ),
+                                )
+                              : _buildInitialsPlaceholder(context, profile?.displayName ?? "?"),
                         ),
                         const SizedBox(width: 24),
                         Expanded(
@@ -211,6 +225,15 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildInitialsPlaceholder(BuildContext context, String name) {
+    return Center(
+      child: Text(
+        name.isEmpty ? "?" : name[0].toUpperCase(),
+        style: AppTextStyles.h1.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+
   Widget _buildThemeToggleTile(BuildContext context, bool isDark, VoidCallback onToggle) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -228,7 +251,7 @@ class ProfileScreen extends ConsumerWidget {
           const Spacer(),
           Text(isDark ? "DARK" : "LIGHT", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
           const SizedBox(width: 12),
-          Switch(value: !isDark, onChanged: (_) => onToggle()),
+          Switch(value: isDark, onChanged: (_) => onToggle()),
         ],
       ),
     );
