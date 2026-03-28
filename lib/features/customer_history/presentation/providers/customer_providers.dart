@@ -126,10 +126,10 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
   Future<void> search(String query) async {
     state = state.copyWith(searchQuery: query);
     if (query.trim().isEmpty) {
-      state = state.copyWith(searchResults: [], isSearching: false);
+      state = state.copyWith(searchResults: [], isSearching: false, searchQuery: '');
       return;
     }
-    state = state.copyWith(isSearching: true);
+    state = state.copyWith(isSearching: true, clearError: true);
     try {
       final results = await _repository.searchCustomers(query);
       state = state.copyWith(searchResults: results, isSearching: false);
