@@ -50,14 +50,22 @@ class LogJobWithCustomerUsecase {
         finalCustomerId = params.existingCustomerId!;
       } else if (params.newCustomerName != null && params.customerPhone != null) {
         final normalized = PhoneFormatter.normalize(params.customerPhone!);
-        final customer = await _createCustomer(CreateCustomerParams(
-          userId: params.userId,
-          fullName: params.newCustomerName!,
-          phoneNumber: normalized,
-          location: params.location,
-        ));
-        finalCustomerId = customer.id;
-        createdCustomerId = customer.id;
+        
+        // Check if customer already exists by phone to prevent duplicates
+        final existing = await _customerRepo.getCustomerByPhone(normalized);
+        
+        if (existing != null) {
+          finalCustomerId = existing.id;
+        } else {
+          final customer = await _createCustomer(CreateCustomerParams(
+            userId: params.userId,
+            fullName: params.newCustomerName!,
+            phoneNumber: normalized,
+            location: params.location,
+          ));
+          finalCustomerId = customer.id;
+          createdCustomerId = customer.id;
+        }
       } else {
         throw const ValidationException(
           message: 'Customer identification missing.',
