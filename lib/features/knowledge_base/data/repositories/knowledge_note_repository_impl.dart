@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import 'package:uuid/uuid.dart';
 import '../../../../core/network/connectivity_service.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
@@ -7,6 +7,7 @@ import '../../domain/repositories/knowledge_note_repository.dart';
 import '../datasources/knowledge_note_local_datasource.dart';
 import '../datasources/knowledge_note_remote_datasource.dart';
 import '../models/knowledge_note_model.dart';
+import '../../../../core/errors/auth_exception.dart';
 
 class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
   final KnowledgeNoteRemoteDatasource _remote;
@@ -18,7 +19,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   String get _userId {
     final id = _supabase.auth.currentUser?.id;
-    if (id == null) throw Exception('Authentication session expired. Please log in again.');
+    if (id == null) throw const AuthException(message: 'Authentication session expired. Please log in again.', code: 'SESSION_EXPIRED');
     return id;
   }
 
@@ -162,7 +163,11 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
           'service_type': serviceTypeDb,
           'is_archived': false,
         });
-        // Delete the pending local entry and save the server version.
+        // Step 1: Mark local copy as synced BEFORE deleting it.
+        // If delete/save below fails, the note won't appear in the next getPendingNotes() —
+        // preventing a duplicate from being created on the server.
+        await _local.saveNote(note.copyWith(syncStatus: 'synced'));
+        // Step 2: Replace local entry with the server copy (real server ID).
         if (note.id != remoteModel.id) {
           await _local.deleteNote(note.id);
         }

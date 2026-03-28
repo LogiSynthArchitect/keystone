@@ -175,9 +175,8 @@ final customerListProvider = StateNotifierProvider<CustomerListNotifier, Custome
 
 final customerDetailProvider = FutureProvider.family<CustomerEntity?, String>((ref, customerId) async {
   final repo = ref.watch(customerRepositoryProvider);
-  final customers = await repo.getCustomers();
   try {
-    return customers.firstWhere((c) => c.id == customerId);
+    return await repo.getCustomerById(customerId);
   } catch (_) {
     return null;
   }

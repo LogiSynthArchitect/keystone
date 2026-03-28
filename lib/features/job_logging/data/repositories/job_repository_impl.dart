@@ -25,13 +25,20 @@ class JobRepositoryImpl implements JobRepository {
   // Cache the internal public.users.id to avoid a roundtrip on every operation.
   // jobs.user_id FK references public.users.id (internal UUID), NOT auth.users.id (auth UID).
   String? _cachedInternalUserId;
+  String? _cachedAuthId; // tracks which auth session the cached internal ID belongs to
 
   Future<String> _getInternalUserId() async {
-    if (_cachedInternalUserId != null) return _cachedInternalUserId!;
     final authId = _supabase.auth.currentUser?.id;
     if (authId == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
+    // Invalidate cache if the auth session has changed (e.g. different user logged in).
+    if (_cachedInternalUserId != null && _cachedAuthId != authId) {
+      _cachedInternalUserId = null;
+      _cachedAuthId = null;
+    }
+    if (_cachedInternalUserId != null) return _cachedInternalUserId!;
     final result = await _supabase.from('users').select('id').eq('auth_id', authId).single();
     _cachedInternalUserId = result['id'] as String;
+    _cachedAuthId = authId;
     return _cachedInternalUserId!;
   }
 
@@ -170,10 +177,12 @@ class JobRepositoryImpl implements JobRepository {
       if (customer == null) {
         debugPrint('[KS:SYNC] Deleting orphaned job: ${job.id}');
         await _local.deleteJob(job.id);
-      } else if (customer.syncStatus != SyncStatus.pending) {
+      } else if (customer.syncStatus == SyncStatus.synced) {
+        // Only sync jobs whose customer is confirmed on the server.
+        // pending = not sent yet, failed = send failed — neither is safe to use as FK.
         safeToSync.add(job);
       } else {
-        debugPrint('[KS:SYNC] Job ${job.id} waiting for customer ${job.customerId} to sync');
+        debugPrint('[KS:SYNC] Job ${job.id} waiting — customer ${job.customerId} status: ${customer.syncStatus}');
       }
     }
     

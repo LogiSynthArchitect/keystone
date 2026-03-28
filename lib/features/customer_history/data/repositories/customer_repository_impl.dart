@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:collection/collection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/storage_exception.dart' as core_storage;
 import 'package:uuid/uuid.dart';
@@ -253,12 +254,16 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
       // 1. Process successful syncs
       for (final syncedItem in syncedList) {
-        final localId = syncedItem['local_id'] as String;
-        final serverId = syncedItem['server_id'] as String;
-        final syncStatusStr = syncedItem['sync_status'] as String;
+        final localId = syncedItem['local_id'] as String?;
+        if (localId == null) continue;
+        final serverId = syncedItem['server_id'] as String?;
+        if (serverId == null) continue;
+        final syncStatusStr = syncedItem['sync_status'] as String? ?? 'synced';
         final syncStatus = SyncStatus.values.firstWhere((e) => e.name == syncStatusStr, orElse: () => SyncStatus.synced);
 
-        final originalCustomer = toUpserts.firstWhere((c) => c.id == localId);
+        final originalCustomer = toUpserts.firstWhereOrNull((c) => c.id == localId);
+        if (originalCustomer == null) continue;
+
         final updatedModel = originalCustomer.copyWith(
           id: serverId,
           syncStatus: syncStatus,
@@ -266,7 +271,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
         if (localId != serverId) {
           await _jobLocal.cascadeCustomerId(localId, serverId);
-          await _local.deleteCustomer(localId); 
+          await _local.deleteCustomer(localId);
         }
         await _local.saveCustomer(updatedModel);
       }

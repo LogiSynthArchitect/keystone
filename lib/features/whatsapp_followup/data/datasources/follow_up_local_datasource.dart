@@ -25,4 +25,22 @@ class FollowUpLocalDatasource {
       );
     }
   }
+
+  Future<void> saveFollowUp(Map<String, dynamic> data) async {
+    try {
+      await _box.put(data['job_id'] as String, data);
+    } catch (e) {
+      throw StorageException(
+        message: 'Could not save follow-up locally.',
+        code: 'FOLLOWUP_SAVE_FAILED',
+        cause: e,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>?> getFollowUpByJobId(String jobId) async {
+    final data = _box.get(jobId);
+    if (data == null) return null;
+    return Map<String, dynamic>.from(data);
+  }
 }
