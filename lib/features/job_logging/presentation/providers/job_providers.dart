@@ -279,6 +279,8 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
 
   LogJobNotifier(this._ref, this._logJobWithCustomer) : super(const LogJobState());
 
+  void reset() => state = const LogJobState();
+
   Future<JobEntity?> save({
     required ServiceType serviceType,
     String? existingCustomerId,
