@@ -8,6 +8,13 @@ class WhatsAppLauncher {
     required String phoneNumber,
     required String message,
   }) async {
+    // Phone must be in international format (e.g. +233241234567).
+    // All customer phones are normalized by PhoneFormatter.normalize() on creation.
+    // We strip the leading '+' because wa.me expects digits only (e.g. wa.me/233241234567).
+    assert(
+      phoneNumber.startsWith('+'),
+      'WhatsAppLauncher.openChat: phone must be in international format (starts with +). Got: $phoneNumber',
+    );
     final cleanPhone = phoneNumber.replaceAll('+', '');
     final url = Uri.parse(
       'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}',
@@ -18,7 +25,6 @@ class WhatsAppLauncher {
       return true;
     }
 
-    // Task 1 fix: Prevent silent failure to protect state integrity
     throw const NetworkException(
       message: 'WhatsApp is not installed on this device.',
       code: 'WHATSAPP_NOT_INSTALLED',

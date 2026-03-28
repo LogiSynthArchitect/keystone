@@ -1,7 +1,8 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import '../../domain/entities/correction_request_entity.dart';
 import '../../domain/repositories/correction_request_repository.dart';
 import '../models/correction_request_model.dart';
+import '../../../../core/errors/auth_exception.dart';
 
 class CorrectionRequestRepositoryImpl implements CorrectionRequestRepository {
   final SupabaseClient _supabase;
@@ -23,7 +24,7 @@ class CorrectionRequestRepositoryImpl implements CorrectionRequestRepository {
   @override
   Future<List<CorrectionRequestEntity>> getMyRequests() async {
     final uid = _supabase.auth.currentUser?.id;
-    if (uid == null) throw Exception('Authentication session expired.');
+    if (uid == null) throw const AuthException(message: 'Authentication session expired. Please log in again.', code: 'SESSION_EXPIRED');
     final data = await _supabase
         .from('correction_requests')
         .select()
