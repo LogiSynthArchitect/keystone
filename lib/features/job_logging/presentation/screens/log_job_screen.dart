@@ -11,6 +11,7 @@ import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../providers/job_providers.dart';
 import '../widgets/service_type_picker.dart';
 
@@ -40,15 +41,19 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.preSelectedCustomerId != null) {
-      _finalCustomerId = widget.preSelectedCustomerId;
+    final preSelectedId = widget.preSelectedCustomerId;
+    if (preSelectedId != null) {
+      _finalCustomerId = preSelectedId;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final customer = await ref.read(customerDetailProvider(widget.preSelectedCustomerId!).future);
-        if (customer != null) {
+        try {
+          final repo = ref.read(customerRepositoryProvider);
+          final customer = await repo.getCustomerById(preSelectedId);
           setState(() {
             _customerController.text = customer.fullName;
             if (customer.location != null) _locationController.text = customer.location!;
           });
+        } catch (e) {
+          debugPrint('[KS:LOG_JOB] Fast-prefill failed: $e');
         }
       });
     }
@@ -70,9 +75,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       _notesController.text.isNotEmpty;
 
   bool get _canMoveForward {
+    final hasCustomer = _finalCustomerId != null;
     switch (_currentStep) {
       case 0: return _serviceType != null;
-      case 1: return _customerController.text.trim().isNotEmpty && (widget.preSelectedCustomerId != null || _phoneController.text.trim().isNotEmpty);
+      case 1: return _customerController.text.trim().isNotEmpty && (hasCustomer || _phoneController.text.trim().isNotEmpty);
       case 2: return true;
       default: return false;
     }
@@ -141,7 +147,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       serviceType: _serviceType!,
       existingCustomerId: _finalCustomerId,
       newCustomerName: _finalCustomerId == null ? _customerController.text.trim() : null,
-      customerPhone: _finalCustomerId == null ? _phoneController.text.trim() : null,
+      customerPhone: _finalCustomerId == null ? PhoneFormatter.normalize(_phoneController.text.trim()) : null,
       jobDate: _jobDate,
       location: _locationController.text.trim(),
       notes: _notesController.text.trim(),
@@ -150,6 +156,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
     if (!mounted) return;
     if (job != null) {
+      ref.read(logJobProvider.notifier).reset();
       context.pop();
       KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
     } else {
