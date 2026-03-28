@@ -372,7 +372,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               Text(
                 isLastStep ? 'SAVE JOB RECORD' : 'NEXT STEP',
                 style: AppTextStyles.h2.copyWith(
-                  color: canGo ? context.ksc.white : context.ksc.neutral500,
+                  color: canGo ? context.ksc.white : context.ksc.neutral500.withValues(alpha: 0.3),
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 )

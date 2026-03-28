@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_provider.dart';
+import '../storage/hive_service.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/auth/domain/entities/user_entity.dart';
 
@@ -48,6 +49,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       return AuthState(session: session, hasProfile: profile != null);
     } catch (e) {
       debugPrint('[KS:AUTH_STATE] profile check ERROR — $e');
+      final cachedProfile = HiveService.profile.get('current_profile');
+      if (cachedProfile != null) {
+        debugPrint('[KS:AUTH_STATE] profile found in cache — returning hasProfile: true');
+        return AuthState(session: session, hasProfile: true);
+      }
       return AuthState(session: session, hasProfile: false);
     }
   }
