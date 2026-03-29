@@ -104,6 +104,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
   Future<String?> uploadPhoto(String filePath) async {
     debugPrint('[KS:PROFILE] uploadPhoto called');
+    state = state.copyWith(clearError: true);
     try {
       final url = await _repository.uploadPhoto(filePath);
       debugPrint('[KS:PROFILE] uploadPhoto SUCCESS — url: $url');

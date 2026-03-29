@@ -50,7 +50,13 @@ class JobDetailScreen extends ConsumerWidget {
               );
               if (confirmed == true) {
                 await ref.read(jobListProvider.notifier).archive(jobId);
-                if (context.mounted) Navigator.pop(context);
+                if (!context.mounted) return;
+                final error = ref.read(jobListProvider).errorMessage;
+                if (error != null && error.isNotEmpty) {
+                  KsSnackbar.show(context, message: error, type: KsSnackbarType.error);
+                } else {
+                  Navigator.pop(context);
+                }
               }
             },
           ),
@@ -166,7 +172,7 @@ class JobDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
