@@ -18,6 +18,8 @@ class RouteNames {
   // Customer sub-routes
   static const String addCustomer = '/customers/new';
   static String customerDetail(String id) => '/customers/$id';
+  static String editCustomer(String id) => '/customers/$id/edit';
+  static String customerKeyCodes(String id) => '/customers/$id/keycodes';
   // Note sub-routes
   static const String addNote     = '/notes/new';
   static String noteDetail(String id) => '/notes/$id';
