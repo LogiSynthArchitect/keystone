@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/profile_entity.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
 import 'package:keystone/features/technician_profile/data/datasources/profile_local_datasource.dart';
@@ -49,7 +48,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'display_name': profile.displayName,
       'bio': profile.bio,
       'photo_url': profile.photoUrl,
-      'services': profile.services.map((s) => _serviceTypeToString(s)).toList(),
+      'services': profile.services,
       'whatsapp_number': profile.whatsappNumber,
       'is_public': profile.isPublic,
       'profile_url': profile.profileUrl.contains('/')
@@ -67,7 +66,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'display_name': profile.displayName,
       'bio': profile.bio,
       'photo_url': profile.photoUrl,
-      'services': profile.services.map((s) => _serviceTypeToString(s)).toList(),
+      'services': profile.services,
       'whatsapp_number': profile.whatsappNumber,
       'is_public': profile.isPublic,
     });
@@ -84,13 +83,4 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<String> uploadPhoto(String filePath) =>
       _remote.uploadPhoto(userId: _authUserId, filePath: filePath);
-
-  static String _serviceTypeToString(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return 'car_lock_programming';
-      case ServiceType.doorLockInstallation:  return 'door_lock_installation';
-      case ServiceType.doorLockRepair:        return 'door_lock_repair';
-      case ServiceType.smartLockInstallation: return 'smart_lock_installation';
-    }
-  }
 }

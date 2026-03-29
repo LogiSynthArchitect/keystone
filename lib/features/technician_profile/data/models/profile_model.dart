@@ -1,5 +1,4 @@
 import '../../domain/entities/profile_entity.dart';
-import '../../../../core/constants/app_enums.dart';
 
 class ProfileModel {
   final String id;
@@ -40,9 +39,9 @@ class ProfileModel {
         displayName: json['display_name'] as String,
         bio: json['bio'] as String?,
         photoUrl: json['photo_url'] as String?,
-        services: List<String>.from(json['services'] as List),
+        services: List<String>.from(json['services'] as List? ?? []),
         whatsappNumber: whatsapp,
-        isPublic: json['is_public'] as bool,
+        isPublic: json['is_public'] as bool? ?? true,
         profileUrl: json['profile_url'] as String,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
@@ -69,21 +68,11 @@ class ProfileModel {
         displayName: displayName,
         bio: bio,
         photoUrl: photoUrl,
-        services: services.map(_parseServiceType).toList(),
+        services: services,
         whatsappNumber: whatsappNumber,
         isPublic: isPublic,
         profileUrl: profileUrl,
         createdAt: DateTime.parse(createdAt),
         updatedAt: DateTime.parse(updatedAt),
       );
-
-  static ServiceType _parseServiceType(String value) {
-    switch (value) {
-      case 'car_lock_programming':    return ServiceType.carLockProgramming;
-      case 'door_lock_installation':  return ServiceType.doorLockInstallation;
-      case 'door_lock_repair':        return ServiceType.doorLockRepair;
-      case 'smart_lock_installation': return ServiceType.smartLockInstallation;
-      default:                        return ServiceType.doorLockRepair;
-    }
-  }
 }

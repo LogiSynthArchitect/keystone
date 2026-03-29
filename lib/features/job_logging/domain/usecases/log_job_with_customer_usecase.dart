@@ -1,4 +1,3 @@
-import '../../../../core/constants/app_enums.dart';
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../customer_history/domain/repositories/customer_repository.dart';
@@ -8,7 +7,7 @@ import 'log_job_usecase.dart';
 
 class LogJobWithCustomerParams {
   final String userId;
-  final ServiceType serviceType;
+  final String serviceType;
   final DateTime jobDate;
   final String? existingCustomerId;
   final String? newCustomerName;

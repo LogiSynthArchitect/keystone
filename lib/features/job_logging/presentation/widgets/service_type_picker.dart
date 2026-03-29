@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/constants/app_enums.dart';
 
 class ServiceTypePicker extends StatelessWidget {
-  final ServiceType? selected;
-  final ValueChanged<ServiceType> onSelected;
+  final String? selected;
+  final ValueChanged<String> onSelected;
   final bool enabled;
 
   const ServiceTypePicker({
@@ -19,10 +18,10 @@ class ServiceTypePicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = [
-      (ServiceType.carLockProgramming,    "Car Key Programming",    LineAwesomeIcons.car_solid),
-      (ServiceType.doorLockInstallation,  "Door Lock Installation", LineAwesomeIcons.door_closed_solid),
-      (ServiceType.doorLockRepair,        "Door Lock Repair",       LineAwesomeIcons.tools_solid),
-      (ServiceType.smartLockInstallation, "Smart Lock Installation",LineAwesomeIcons.lock_solid),
+      ('car_lock_programming',    "Car Key Programming",    LineAwesomeIcons.car_solid),
+      ('door_lock_installation',  "Door Lock Installation", LineAwesomeIcons.door_closed_solid),
+      ('door_lock_repair',        "Door Lock Repair",       LineAwesomeIcons.tools_solid),
+      ('smart_lock_installation', "Smart Lock Installation",LineAwesomeIcons.lock_solid),
     ];
 
     return Column(

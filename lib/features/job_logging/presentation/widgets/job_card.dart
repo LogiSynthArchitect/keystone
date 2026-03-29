@@ -15,22 +15,18 @@ class JobCard extends StatelessWidget {
 
   const JobCard({super.key, required this.job, this.customer, this.onTap});
 
-  IconData _serviceIcon(ServiceType type) {
+  IconData _serviceIcon(String type) {
     switch (type) {
-      case ServiceType.carLockProgramming:    return LineAwesomeIcons.car_solid;
-      case ServiceType.doorLockInstallation:  return LineAwesomeIcons.door_closed_solid;
-      case ServiceType.doorLockRepair:        return LineAwesomeIcons.tools_solid;
-      case ServiceType.smartLockInstallation: return LineAwesomeIcons.lock_solid;
+      case 'car_lock_programming':    return LineAwesomeIcons.car_solid;
+      case 'door_lock_installation':  return LineAwesomeIcons.door_closed_solid;
+      case 'door_lock_repair':        return LineAwesomeIcons.tools_solid;
+      case 'smart_lock_installation': return LineAwesomeIcons.lock_solid;
+      default:                        return LineAwesomeIcons.tools_solid;
     }
   }
 
-  String _serviceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return "CAR KEY PROGRAMMING";
-      case ServiceType.doorLockInstallation:  return "DOOR LOCK INSTALLATION";
-      case ServiceType.doorLockRepair:        return "DOOR LOCK REPAIR";
-      case ServiceType.smartLockInstallation: return "SMART LOCK INSTALLATION";
-    }
+  String _serviceLabel(String type) {
+    return type.replaceAll('_', ' ').toUpperCase();
   }
 
   @override

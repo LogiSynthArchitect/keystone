@@ -2,7 +2,6 @@ import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/usecases/use_case.dart';
 import '../entities/knowledge_note_entity.dart';
 import '../repositories/knowledge_note_repository.dart';
-import '../../../../core/constants/app_enums.dart';
 
 class CreateNoteParams {
   final String userId;
@@ -10,7 +9,7 @@ class CreateNoteParams {
   final String description;
   final List<String> tags;
   final String? photoUrl;
-  final ServiceType? serviceType;
+  final String? serviceType;
 
   const CreateNoteParams({
     required this.userId,

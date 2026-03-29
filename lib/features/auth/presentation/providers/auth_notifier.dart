@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/storage/hive_service.dart';
 import 'package:keystone/features/technician_profile/domain/entities/profile_entity.dart';
@@ -110,7 +109,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     }
   }
 
-  Future<bool> completeOnboarding({required String name, required List<ServiceType> services}) async {
+  Future<bool> completeOnboarding({required String name, required List<String> services}) async {
     final phone = state.phoneNumber;
     if (phone == null) return false;
     state = state.copyWith(isLoading: true, clearError: true);

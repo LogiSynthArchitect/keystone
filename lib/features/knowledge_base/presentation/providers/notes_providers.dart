@@ -14,7 +14,6 @@ import '../../domain/usecases/create_note_usecase.dart';
 import '../../domain/usecases/get_notes_usecase.dart';
 import '../../domain/usecases/archive_note_usecase.dart';
 import '../../domain/usecases/sync_pending_notes_usecase.dart';
-import '../../../../core/constants/app_enums.dart';
 
 final knowledgeNoteLocalDatasourceProvider = Provider<KnowledgeNoteLocalDatasource>(
   (ref) => KnowledgeNoteLocalDatasource());
@@ -49,7 +48,7 @@ class NotesListState {
   final String? errorMessage;
   final String searchQuery;
   final bool showArchived;
-  final ServiceType? filterCategory;
+  final String? filterCategory;
 
   const NotesListState({
     this.notes = const [],
@@ -74,7 +73,7 @@ class NotesListState {
     String? errorMessage,
     String? searchQuery,
     bool? showArchived,
-    ServiceType? filterCategory,
+    String? filterCategory,
     bool clearError = false,
     bool clearFilter = false,
   }) => NotesListState(
@@ -117,7 +116,7 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
     await load();
   }
 
-  void filterByCategory(ServiceType? category) {
+  void filterByCategory(String? category) {
     if (category == null) {
       state = state.copyWith(clearFilter: true);
     } else {
@@ -194,7 +193,7 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
     required String title,
     required String description,
     required List<String> tags,
-    ServiceType? serviceType,
+    String? serviceType,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {

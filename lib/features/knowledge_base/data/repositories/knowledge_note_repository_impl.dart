@@ -23,16 +23,6 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
     return id;
   }
 
-  String _serviceTypeToDb(String camelCase) {
-    switch (camelCase) {
-      case 'carLockProgramming':    return 'car_lock_programming';
-      case 'doorLockInstallation':  return 'door_lock_installation';
-      case 'doorLockRepair':        return 'door_lock_repair';
-      case 'smartLockInstallation': return 'smart_lock_installation';
-      default:                      return camelCase;
-    }
-  }
-
   @override
   Future<List<KnowledgeNoteEntity>> getNotes({int limit = 25, int offset = 0, bool includeArchived = false}) async {
     try {
@@ -67,8 +57,6 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<KnowledgeNoteEntity> createNote(KnowledgeNoteEntity note) async {
-    final serviceTypeDb = note.serviceType != null ? _serviceTypeToDb(note.serviceType!.name) : null;
-
     // Generate a stable local UUID so we can clean it up after remote sync.
     final localId = note.id.isNotEmpty ? note.id : const Uuid().v4();
     final localModel = KnowledgeNoteModel.fromEntity(note).copyWith(
@@ -86,7 +74,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
           'description': note.description,
           'tags': note.tags,
           'photo_url': note.photoUrl,
-          'service_type': serviceTypeDb,
+          'service_type': note.serviceType,
           'is_archived': false,
         });
         // Remove the local pending entry before saving the server version to
@@ -105,8 +93,6 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<KnowledgeNoteEntity> updateNote(KnowledgeNoteEntity note) async {
-    final serviceTypeDb = note.serviceType != null ? _serviceTypeToDb(note.serviceType!.name) : null;
-    
     // Update local first
     final localModel = KnowledgeNoteModel.fromEntity(note).copyWith(
       syncStatus: 'pending',
@@ -119,7 +105,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
         'description': note.description,
         'tags': note.tags,
         'photo_url': note.photoUrl,
-        'service_type': serviceTypeDb,
+        'service_type': note.serviceType,
       });
       
       await _local.saveNote(remoteModel);
@@ -151,16 +137,13 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
     if (pending.isEmpty) return;
     for (final note in pending) {
       try {
-        final serviceTypeDb = note.serviceType != null
-            ? _serviceTypeToDb(note.serviceType!)
-            : null;
         final remoteModel = await _remote.createNote({
           'user_id': _userId,
           'title': note.title,
           'description': note.description,
           'tags': note.tags,
           'photo_url': note.photoUrl,
-          'service_type': serviceTypeDb,
+          'service_type': note.serviceType,
           'is_archived': false,
         });
         // Step 1: Mark local copy as synced BEFORE deleting it.

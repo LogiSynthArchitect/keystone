@@ -6,7 +6,6 @@ import 'package:keystone/features/customer_history/domain/repositories/customer_
 import 'package:keystone/features/job_logging/domain/usecases/log_job_usecase.dart';
 import 'package:keystone/features/job_logging/domain/repositories/job_repository.dart';
 import 'package:keystone/core/errors/validation_exception.dart';
-import 'package:keystone/core/constants/app_enums.dart';
 
 class MockCustomerRepository extends Mock implements CustomerRepository {}
 class MockJobRepository extends Mock implements JobRepository {}
@@ -99,7 +98,7 @@ void main() {
       final params = LogJobParams(
         userId: 'user123',
         customerId: 'non-existent-id',
-        serviceType: ServiceType.smartLockInstallation,
+        serviceType: 'smart_lock_installation',
         jobDate: DateTime.now(),
       );
 

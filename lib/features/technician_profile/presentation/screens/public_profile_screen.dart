@@ -6,27 +6,22 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../providers/public_profile_provider.dart';
-import '../../../../core/constants/app_enums.dart';
 
 class PublicProfileScreen extends ConsumerWidget {
   final String slug;
   const PublicProfileScreen({super.key, required this.slug});
 
-  String _serviceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return 'Car Key\nProgramming';
-      case ServiceType.doorLockInstallation:  return 'Door Lock\nInstallation';
-      case ServiceType.doorLockRepair:        return 'Door Lock\nRepair';
-      case ServiceType.smartLockInstallation: return 'Smart Lock\nSetup';
-    }
+  String _serviceLabel(String type) {
+    return type.replaceAll('_', ' ').toUpperCase();
   }
 
-  IconData _getServiceIcon(ServiceType type) {
+  IconData _getServiceIcon(String type) {
     switch (type) {
-      case ServiceType.carLockProgramming:    return LineAwesomeIcons.car_solid;
-      case ServiceType.doorLockInstallation:  return LineAwesomeIcons.door_open_solid;
-      case ServiceType.doorLockRepair:        return LineAwesomeIcons.tools_solid;
-      case ServiceType.smartLockInstallation: return LineAwesomeIcons.fingerprint_solid;
+      case 'car_lock_programming':    return LineAwesomeIcons.car_solid;
+      case 'door_lock_installation':  return LineAwesomeIcons.door_open_solid;
+      case 'door_lock_repair':        return LineAwesomeIcons.tools_solid;
+      case 'smart_lock_installation': return LineAwesomeIcons.fingerprint_solid;
+      default:                        return LineAwesomeIcons.tools_solid;
     }
   }
 

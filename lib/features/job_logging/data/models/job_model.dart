@@ -1,18 +1,11 @@
 import '../../../../core/constants/app_enums.dart';
 import '../../domain/entities/job_entity.dart';
 
-// Helper extension for snake_case conversion to match Supabase enums
-extension on String {
-  String toSnakeCase() {
-    return replaceAllMapped(RegExp(r'([A-Z])'), (match) => '_${match.group(1)!.toLowerCase()}');
-  }
-}
-
 class JobModel {
   final String id;
   final String userId;
   final String customerId;
-  final ServiceType serviceType;
+  final String serviceType;
   final DateTime jobDate;
   final String? location;
   final double? latitude;
@@ -24,6 +17,14 @@ class JobModel {
   final String syncStatus;
   final String? syncErrorMessage;
   final bool isArchived;
+  final String status;
+  final String paymentStatus;
+  final String? paymentMethod;
+  final double? quotedPrice;
+  final String? hardwareBrand;
+  final String? hardwareKeyway;
+  final bool isDeleted;
+  final DateTime? deletedAt;
   final String createdAt;
   final String updatedAt;
 
@@ -43,19 +44,23 @@ class JobModel {
     required this.syncStatus,
     this.syncErrorMessage,
     required this.isArchived,
+    this.status = 'in_progress',
+    this.paymentStatus = 'unpaid',
+    this.paymentMethod,
+    this.quotedPrice,
+    this.hardwareBrand,
+    this.hardwareKeyway,
+    this.isDeleted = false,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) => JobModel(
     id: json['id'],
-    userId: json['userId'] ?? json['user_id'],
-    customerId: json['customerId'] ?? json['customer_id'],
-    // FIX [JOB-001]: Compare against snake_case to match DB
-    serviceType: ServiceType.values.firstWhere(
-      (e) => e.name.toSnakeCase() == json['service_type'],
-      orElse: () => ServiceType.values.first,
-    ),
+    userId: json['user_id'] ?? json['userId'],
+    customerId: json['customer_id'] ?? json['customerId'],
+    serviceType: json['service_type'] as String? ?? 'car_lock_programming',
     jobDate: DateTime.parse(json['job_date']),
     location: json['location'],
     latitude: json['latitude']?.toDouble(),
@@ -67,6 +72,14 @@ class JobModel {
     syncStatus: json['sync_status'] ?? 'pending',
     syncErrorMessage: json['sync_error_message'],
     isArchived: json['is_archived'] ?? false,
+    status: json['status'] as String? ?? 'in_progress',
+    paymentStatus: json['payment_status'] as String? ?? 'unpaid',
+    paymentMethod: json['payment_method'] as String?,
+    quotedPrice: json['quoted_price'] != null ? (num.parse(json['quoted_price'].toString()) * 100).round().toDouble() : null,
+    hardwareBrand: json['hardware_brand'] as String?,
+    hardwareKeyway: json['hardware_keyway'] as String?,
+    isDeleted: json['is_deleted'] as bool? ?? false,
+    deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
     createdAt: json['created_at'],
     updatedAt: json['updated_at'],
   );
@@ -75,8 +88,7 @@ class JobModel {
     'id': id,
     'user_id': userId,
     'customer_id': customerId,
-    // FIX [JOB-001]: Convert to snake_case for Supabase compatibility
-    'service_type': serviceType.name.toSnakeCase(),
+    'service_type': serviceType,
     'job_date': jobDate.toIso8601String().split('T').first,
     'location': location,
     'latitude': latitude,
@@ -88,6 +100,14 @@ class JobModel {
     'sync_status': syncStatus,
     'sync_error_message': syncErrorMessage,
     'is_archived': isArchived,
+    'status': status,
+    'payment_status': paymentStatus,
+    'payment_method': paymentMethod,
+    'quoted_price': quotedPrice != null ? quotedPrice! / 100.0 : null,
+    'hardware_brand': hardwareBrand,
+    'hardware_keyway': hardwareKeyway,
+    'is_deleted': isDeleted,
+    'deleted_at': deletedAt?.toIso8601String(),
     'created_at': createdAt,
     'updated_at': updatedAt,
   };
@@ -108,6 +128,14 @@ class JobModel {
     syncStatus: SyncStatus.values.firstWhere((e) => e.name == syncStatus),
     syncErrorMessage: syncErrorMessage,
     isArchived: isArchived,
+    status: status,
+    paymentStatus: paymentStatus,
+    paymentMethod: paymentMethod,
+    quotedPrice: quotedPrice,
+    hardwareBrand: hardwareBrand,
+    hardwareKeyway: hardwareKeyway,
+    isDeleted: isDeleted,
+    deletedAt: deletedAt,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
   );
@@ -116,7 +144,7 @@ class JobModel {
     String? id,
     String? userId,
     String? customerId,
-    ServiceType? serviceType,
+    String? serviceType,
     DateTime? jobDate,
     String? location,
     double? latitude,
@@ -128,6 +156,14 @@ class JobModel {
     String? syncStatus,
     String? syncErrorMessage,
     bool? isArchived,
+    String? status,
+    String? paymentStatus,
+    String? paymentMethod,
+    double? quotedPrice,
+    String? hardwareBrand,
+    String? hardwareKeyway,
+    bool? isDeleted,
+    DateTime? deletedAt,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -147,6 +183,14 @@ class JobModel {
       syncStatus: syncStatus ?? this.syncStatus,
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
       isArchived: isArchived ?? this.isArchived,
+      status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      quotedPrice: quotedPrice ?? this.quotedPrice,
+      hardwareBrand: hardwareBrand ?? this.hardwareBrand,
+      hardwareKeyway: hardwareKeyway ?? this.hardwareKeyway,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

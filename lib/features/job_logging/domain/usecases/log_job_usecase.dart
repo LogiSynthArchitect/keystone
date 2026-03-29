@@ -9,7 +9,7 @@ import '../../../../core/constants/app_enums.dart';
 class LogJobParams {
   final String userId;
   final String customerId;
-  final ServiceType serviceType;
+  final String serviceType;
   final DateTime jobDate;
   final String? location;
   final double? latitude;
@@ -83,6 +83,9 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
       followUpSent: false,
       syncStatus: SyncStatus.pending,
       isArchived: false,
+      status: 'in_progress',
+      paymentStatus: 'unpaid',
+      isDeleted: false,
       createdAt: now,
       updatedAt: now,
     );

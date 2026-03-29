@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
@@ -58,6 +57,13 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         KsSnackbar.show(context, message: next.errorMessage!, type: KsSnackbarType.error);
       }
     });
+
+    final v1Types = [
+      'car_lock_programming',
+      'door_lock_installation',
+      'door_lock_repair',
+      'smart_lock_installation',
+    ];
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -132,12 +138,12 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                         onTap: () => ref.read(notesListProvider.notifier).filterByCategory(null),
                       ),
                       const SizedBox(width: 8),
-                      ...ServiceType.values.map((type) {
+                      ...v1Types.map((type) {
                         final labels = {
-                          ServiceType.carLockProgramming: "CAR KEY",
-                          ServiceType.doorLockInstallation: "INSTALL",
-                          ServiceType.doorLockRepair: "REPAIR",
-                          ServiceType.smartLockInstallation: "SMART",
+                          'car_lock_programming': "CAR KEY",
+                          'door_lock_installation': "INSTALL",
+                          'door_lock_repair': "REPAIR",
+                          'smart_lock_installation': "SMART",
                         };
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),

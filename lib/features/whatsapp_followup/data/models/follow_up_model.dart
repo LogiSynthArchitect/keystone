@@ -8,6 +8,8 @@ class FollowUpModel {
   final String messageText;
   final String sentAt;
   final bool deliveryConfirmed;
+  final String responseStatus;
+  final String? responseUpdatedAt;
   final String createdAt;
 
   const FollowUpModel({
@@ -18,6 +20,8 @@ class FollowUpModel {
     required this.messageText,
     required this.sentAt,
     required this.deliveryConfirmed,
+    this.responseStatus = 'sent',
+    this.responseUpdatedAt,
     required this.createdAt,
   });
 
@@ -29,6 +33,8 @@ class FollowUpModel {
         messageText: json['message_text'] as String,
         sentAt: json['sent_at'] as String,
         deliveryConfirmed: json['delivery_confirmed'] as bool,
+        responseStatus: json['response_status'] as String? ?? 'sent',
+        responseUpdatedAt: json['response_updated_at'] as String?,
         createdAt: json['created_at'] as String,
       );
 
@@ -40,6 +46,8 @@ class FollowUpModel {
         'message_text': messageText,
         'sent_at': sentAt,
         'delivery_confirmed': deliveryConfirmed,
+        'response_status': responseStatus,
+        'response_updated_at': responseUpdatedAt,
         'created_at': createdAt,
       };
 
@@ -51,6 +59,34 @@ class FollowUpModel {
         messageText: messageText,
         sentAt: DateTime.parse(sentAt),
         deliveryConfirmed: deliveryConfirmed,
+        responseStatus: responseStatus,
+        responseUpdatedAt: responseUpdatedAt != null ? DateTime.parse(responseUpdatedAt!) : null,
         createdAt: DateTime.parse(createdAt),
       );
+
+  FollowUpModel copyWith({
+    String? id,
+    String? jobId,
+    String? userId,
+    String? customerId,
+    String? messageText,
+    String? sentAt,
+    bool? deliveryConfirmed,
+    String? responseStatus,
+    String? responseUpdatedAt,
+    String? createdAt,
+  }) {
+    return FollowUpModel(
+      id: id ?? this.id,
+      jobId: jobId ?? this.jobId,
+      userId: userId ?? this.userId,
+      customerId: customerId ?? this.customerId,
+      messageText: messageText ?? this.messageText,
+      sentAt: sentAt ?? this.sentAt,
+      deliveryConfirmed: deliveryConfirmed ?? this.deliveryConfirmed,
+      responseStatus: responseStatus ?? this.responseStatus,
+      responseUpdatedAt: responseUpdatedAt ?? this.responseUpdatedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

@@ -12,6 +12,8 @@ class CustomerModel {
   final String? lastJobAt;
   final SyncStatus syncStatus;
   final String? syncErrorMessage;
+  final String? propertyType;
+  final String? leadSource;
   final String createdAt;
   final String updatedAt;
 
@@ -26,6 +28,8 @@ class CustomerModel {
     this.lastJobAt,
     this.syncStatus = SyncStatus.synced,
     this.syncErrorMessage,
+    this.propertyType,
+    this.leadSource,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -41,6 +45,8 @@ class CustomerModel {
         lastJobAt: json['last_job_at'] as String?,
         syncStatus: _parseSyncStatus(json['sync_status'] as String? ?? 'synced'),
         syncErrorMessage: json['sync_error_message'] as String?,
+        propertyType: json['property_type'] as String?,
+        leadSource: json['lead_source'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
@@ -63,6 +69,8 @@ class CustomerModel {
         'last_job_at': lastJobAt,
         'sync_status': syncStatus.name,
         'sync_error_message': syncErrorMessage,
+        'property_type': propertyType,
+        'lead_source': leadSource,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -78,6 +86,8 @@ class CustomerModel {
         lastJobAt: lastJobAt != null ? DateTime.parse(lastJobAt!) : null,
         syncStatus: syncStatus,
         syncErrorMessage: syncErrorMessage,
+        propertyType: propertyType,
+        leadSource: leadSource,
         createdAt: DateTime.parse(createdAt),
         updatedAt: DateTime.parse(updatedAt),
       );
@@ -93,6 +103,8 @@ class CustomerModel {
     String? lastJobAt,
     SyncStatus? syncStatus,
     String? syncErrorMessage,
+    String? propertyType,
+    String? leadSource,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -107,6 +119,8 @@ class CustomerModel {
       lastJobAt: lastJobAt ?? this.lastJobAt,
       syncStatus: syncStatus ?? this.syncStatus,
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
+      propertyType: propertyType ?? this.propertyType,
+      leadSource: leadSource ?? this.leadSource,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

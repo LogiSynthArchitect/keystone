@@ -1,5 +1,4 @@
 import '../../domain/entities/knowledge_note_entity.dart';
-import '../../../../core/constants/app_enums.dart';
 
 class KnowledgeNoteModel {
   final String id;
@@ -10,6 +9,7 @@ class KnowledgeNoteModel {
   final String? photoUrl;
   final String? serviceType;
   final bool isArchived;
+  final String? lastEditedAt;
   final String createdAt;
   final String updatedAt;
   final String syncStatus;
@@ -23,6 +23,7 @@ class KnowledgeNoteModel {
     this.photoUrl,
     this.serviceType,
     required this.isArchived,
+    this.lastEditedAt,
     required this.createdAt,
     required this.updatedAt,
     this.syncStatus = 'synced',
@@ -38,6 +39,7 @@ class KnowledgeNoteModel {
         photoUrl: json['photo_url'] as String?,
         serviceType: json['service_type'] as String?,
         isArchived: json['is_archived'] as bool,
+        lastEditedAt: json['last_edited_at'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
         syncStatus: json['sync_status'] as String? ?? 'synced',
@@ -52,6 +54,7 @@ class KnowledgeNoteModel {
         'photo_url': photoUrl,
         'service_type': serviceType,
         'is_archived': isArchived,
+        'last_edited_at': lastEditedAt,
         'created_at': createdAt,
         'updated_at': updatedAt,
         'sync_status': syncStatus,
@@ -65,8 +68,9 @@ class KnowledgeNoteModel {
         description: entity.description,
         tags: entity.tags,
         photoUrl: entity.photoUrl,
-        serviceType: entity.serviceType?.name,
+        serviceType: entity.serviceType,
         isArchived: entity.isArchived,
+        lastEditedAt: entity.lastEditedAt?.toIso8601String(),
         createdAt: entity.createdAt.toIso8601String(),
         updatedAt: entity.updatedAt.toIso8601String(),
         syncStatus: 'synced',
@@ -81,6 +85,7 @@ class KnowledgeNoteModel {
     String? photoUrl,
     String? serviceType,
     bool? isArchived,
+    String? lastEditedAt,
     String? createdAt,
     String? updatedAt,
     String? syncStatus,
@@ -94,6 +99,7 @@ class KnowledgeNoteModel {
         photoUrl: photoUrl ?? this.photoUrl,
         serviceType: serviceType ?? this.serviceType,
         isArchived: isArchived ?? this.isArchived,
+        lastEditedAt: lastEditedAt ?? this.lastEditedAt,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         syncStatus: syncStatus ?? this.syncStatus,
@@ -106,19 +112,10 @@ class KnowledgeNoteModel {
         description: description,
         tags: tags,
         photoUrl: photoUrl,
-        serviceType: serviceType != null ? _parseServiceType(serviceType!) : null,
+        serviceType: serviceType,
         isArchived: isArchived,
+        lastEditedAt: lastEditedAt != null ? DateTime.parse(lastEditedAt!) : null,
         createdAt: DateTime.parse(createdAt),
         updatedAt: DateTime.parse(updatedAt),
       );
-
-  static ServiceType _parseServiceType(String value) {
-    switch (value) {
-      case 'car_lock_programming':    return ServiceType.carLockProgramming;
-      case 'door_lock_installation':  return ServiceType.doorLockInstallation;
-      case 'door_lock_repair':        return ServiceType.doorLockRepair;
-      case 'smart_lock_installation': return ServiceType.smartLockInstallation;
-      default:                        return ServiceType.doorLockRepair;
-    }
-  }
 }

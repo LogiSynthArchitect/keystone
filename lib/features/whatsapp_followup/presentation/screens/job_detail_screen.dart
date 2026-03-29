@@ -8,7 +8,6 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
@@ -266,13 +265,8 @@ class JobDetailScreen extends ConsumerWidget {
     );
   }
 
-  String _getServiceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return "CAR KEY PROGRAMMING";
-      case ServiceType.doorLockInstallation:  return "DOOR LOCK INSTALLATION";
-      case ServiceType.doorLockRepair:        return "DOOR LOCK REPAIR";
-      case ServiceType.smartLockInstallation: return "SMART LOCK INSTALLATION";
-    }
+  String _getServiceLabel(String type) {
+    return type.replaceAll('_', ' ').toUpperCase();
   }
 
   Widget _buildCustomerModule(BuildContext context, WidgetRef ref, String customerId) {
