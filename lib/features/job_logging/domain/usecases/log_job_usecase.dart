@@ -16,6 +16,11 @@ class LogJobParams {
   final double? longitude;
   final String? notes;
   final int? amountCharged;
+  final String status;
+  final String paymentStatus;
+  final double? quotedPrice;
+  final String? hardwareBrand;
+  final String? hardwareKeyway;
 
   const LogJobParams({
     required this.userId,
@@ -27,6 +32,11 @@ class LogJobParams {
     this.longitude,
     this.notes,
     this.amountCharged,
+    this.status = 'in_progress',
+    this.paymentStatus = 'unpaid',
+    this.quotedPrice,
+    this.hardwareBrand,
+    this.hardwareKeyway,
   });
 }
 
@@ -83,8 +93,11 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
       followUpSent: false,
       syncStatus: SyncStatus.pending,
       isArchived: false,
-      status: 'in_progress',
-      paymentStatus: 'unpaid',
+      status: params.status,
+      paymentStatus: params.paymentStatus,
+      quotedPrice: params.quotedPrice,
+      hardwareBrand: params.hardwareBrand,
+      hardwareKeyway: params.hardwareKeyway,
       isDeleted: false,
       createdAt: now,
       updatedAt: now,

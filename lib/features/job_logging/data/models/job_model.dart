@@ -84,6 +84,34 @@ class JobModel {
     updatedAt: json['updated_at'],
   );
 
+  factory JobModel.fromEntity(JobEntity entity) => JobModel(
+    id: entity.id,
+    userId: entity.userId,
+    customerId: entity.customerId,
+    serviceType: entity.serviceType,
+    jobDate: entity.jobDate,
+    location: entity.location,
+    latitude: entity.latitude,
+    longitude: entity.longitude,
+    notes: entity.notes,
+    amountCharged: entity.amountCharged,
+    followUpSent: entity.followUpSent,
+    followUpSentAt: entity.followUpSentAt,
+    syncStatus: entity.syncStatus.name,
+    syncErrorMessage: entity.syncErrorMessage,
+    isArchived: entity.isArchived,
+    status: entity.status,
+    paymentStatus: entity.paymentStatus,
+    paymentMethod: entity.paymentMethod,
+    quotedPrice: entity.quotedPrice,
+    hardwareBrand: entity.hardwareBrand,
+    hardwareKeyway: entity.hardwareKeyway,
+    isDeleted: entity.isDeleted,
+    deletedAt: entity.deletedAt,
+    createdAt: entity.createdAt.toIso8601String(),
+    updatedAt: entity.updatedAt.toIso8601String(),
+  );
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'user_id': userId,

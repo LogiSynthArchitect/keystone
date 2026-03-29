@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/errors/validation_exception.dart';
@@ -8,8 +10,17 @@ import '../../../../core/utils/currency_formatter.dart';
 import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../../data/datasources/job_local_datasource.dart';
 import '../../data/datasources/job_remote_datasource.dart';
+import '../../data/datasources/job_parts_local_datasource.dart';
+import '../../data/datasources/job_parts_remote_datasource.dart';
+import '../../data/datasources/job_photos_local_datasource.dart';
+import '../../data/datasources/job_photos_remote_datasource.dart';
+import '../../data/datasources/job_audit_local_datasource.dart';
+import '../../data/datasources/job_audit_remote_datasource.dart';
 import '../../data/repositories/job_repository_impl.dart';
 import '../../domain/entities/job_entity.dart';
+import '../../domain/entities/job_part_entity.dart';
+import '../../domain/entities/job_photo_entity.dart';
+import '../../domain/entities/job_audit_entry_entity.dart';
 import '../../domain/repositories/job_repository.dart';
 import '../../domain/usecases/get_jobs_usecase.dart';
 import '../../domain/usecases/get_job_usecase.dart';
@@ -17,6 +28,7 @@ import '../../domain/usecases/log_job_usecase.dart';
 import '../../domain/usecases/sync_offline_jobs_usecase.dart';
 import '../../domain/usecases/archive_job_usecase.dart';
 import '../../domain/usecases/log_job_with_customer_usecase.dart';
+import '../../domain/usecases/edit_job_usecase.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -25,9 +37,20 @@ import '../../domain/entities/correction_request_entity.dart';
 import '../../domain/repositories/correction_request_repository.dart';
 import '../../data/repositories/correction_request_repository_impl.dart';
 import '../../domain/usecases/request_correction_usecase.dart';
+import '../../data/models/job_part_model.dart';
+import '../../data/models/job_photo_model.dart';
 
 final jobLocalDatasourceProvider = Provider<JobLocalDatasource>((ref) => JobLocalDatasource());
 final jobRemoteDatasourceProvider = Provider<JobRemoteDatasource>((ref) => JobRemoteDatasource(ref.watch(supabaseClientProvider)));
+
+final jobPartsLocalDatasourceProvider = Provider<JobPartsLocalDatasource>((ref) => JobPartsLocalDatasource());
+final jobPartsRemoteDatasourceProvider = Provider<JobPartsRemoteDatasource>((ref) => JobPartsRemoteDatasource(ref.watch(supabaseClientProvider)));
+
+final jobPhotosLocalDatasourceProvider = Provider<JobPhotosLocalDatasource>((ref) => JobPhotosLocalDatasource());
+final jobPhotosRemoteDatasourceProvider = Provider<JobPhotosRemoteDatasource>((ref) => JobPhotosRemoteDatasource(ref.watch(supabaseClientProvider)));
+
+final jobAuditLocalDatasourceProvider = Provider<JobAuditLocalDatasource>((ref) => JobAuditLocalDatasource());
+final jobAuditRemoteDatasourceProvider = Provider<JobAuditRemoteDatasource>((ref) => JobAuditRemoteDatasource(ref.watch(supabaseClientProvider)));
 
 final jobRepositoryProvider = Provider<JobRepository>((ref) => JobRepositoryImpl(
   ref.watch(jobRemoteDatasourceProvider),
@@ -36,6 +59,12 @@ final jobRepositoryProvider = Provider<JobRepository>((ref) => JobRepositoryImpl
   ref.watch(supabaseClientProvider),
   ref.watch(customerLocalDatasourceProvider),
   ref.watch(followUpRepositoryProvider),
+  ref.watch(jobPartsLocalDatasourceProvider),
+  ref.watch(jobPartsRemoteDatasourceProvider),
+  ref.watch(jobPhotosLocalDatasourceProvider),
+  ref.watch(jobPhotosRemoteDatasourceProvider),
+  ref.watch(jobAuditLocalDatasourceProvider),
+  ref.watch(jobAuditRemoteDatasourceProvider),
 ));
 
 final correctionRequestRepositoryProvider = Provider<CorrectionRequestRepository>((ref) =>
@@ -46,6 +75,7 @@ final getJobUsecaseProvider = Provider<GetJobUsecase>((ref) => GetJobUsecase(ref
 final logJobUsecaseProvider = Provider<LogJobUsecase>((ref) => LogJobUsecase(ref.watch(jobRepositoryProvider), ref.watch(customerRepositoryProvider)));
 final syncOfflineJobsUsecaseProvider = Provider<SyncOfflineJobsUsecase>((ref) => SyncOfflineJobsUsecase(ref.watch(jobRepositoryProvider)));
 final archiveJobUsecaseProvider = Provider<ArchiveJobUsecase>((ref) => ArchiveJobUsecase(ref.watch(jobRepositoryProvider)));
+final editJobUsecaseProvider = Provider<EditJobUsecase>((ref) => EditJobUsecase(ref.watch(jobRepositoryProvider)));
 final requestCorrectionUsecaseProvider = Provider<RequestCorrectionUsecase>((ref) => RequestCorrectionUsecase(ref.watch(correctionRequestRepositoryProvider)));
 
 final adminRequestsProvider = FutureProvider<List<CorrectionRequestEntity>>((ref) async {
@@ -97,6 +127,18 @@ final logJobWithCustomerUsecaseProvider = Provider<LogJobWithCustomerUsecase>(
 final jobDetailProvider = FutureProvider.family<JobEntity?, String>((ref, jobId) async {
   final getJob = ref.watch(getJobUsecaseProvider);
   return await getJob(jobId);
+});
+
+final jobPartsProvider = FutureProvider.family<List<JobPartEntity>, String>((ref, jobId) async {
+  return await ref.watch(jobRepositoryProvider).getPartsForJob(jobId);
+});
+
+final jobPhotosProvider = FutureProvider.family<List<JobPhotoEntity>, String>((ref, jobId) async {
+  return await ref.watch(jobRepositoryProvider).getPhotosForJob(jobId);
+});
+
+final jobAuditLogProvider = FutureProvider.family<List<JobAuditEntryEntity>, String>((ref, jobId) async {
+  return await ref.watch(jobRepositoryProvider).getAuditLogForJob(jobId);
 });
 
 class JobListState {
@@ -151,7 +193,6 @@ int get pendingCount => allJobs.where((j) => j.syncStatus == SyncStatus.pending)
 int get thisMonthEarnings {
   final now = DateTime.now();
   final thisMonthJobs = allJobs.where((j) {
-    // Robust month/year comparison
     return j.jobDate.year == now.year &&
            j.jobDate.month == now.month &&
            j.amountCharged != null;
@@ -232,6 +273,7 @@ class JobListNotifier extends StateNotifier<JobListState> {
     try {
       final repo = _ref.read(jobRepositoryProvider);
       final existingJob = await repo.getJobById(jobId);
+      if (existingJob == null) return;
       final updatedJob = existingJob.copyWith(followUpSent: sent);
       await repo.updateJob(updatedJob);
       
@@ -276,8 +318,10 @@ class LogJobState {
 class LogJobNotifier extends StateNotifier<LogJobState> {
   final Ref _ref;
   final LogJobWithCustomerUsecase _logJobWithCustomer;
+  final JobPartsLocalDatasource _partsLocal;
+  final JobPhotosLocalDatasource _photosLocal;
 
-  LogJobNotifier(this._ref, this._logJobWithCustomer) : super(const LogJobState());
+  LogJobNotifier(this._ref, this._logJobWithCustomer, this._partsLocal, this._photosLocal) : super(const LogJobState());
 
   void reset() => state = const LogJobState();
 
@@ -292,6 +336,13 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
     double? longitude,
     String? notes,
     String? amountChargedString,
+    String status = 'in_progress',
+    String paymentStatus = 'unpaid',
+    String? quotedPriceString,
+    String? hardwareBrand,
+    String? hardwareKeyway,
+    List<(String, int, int)>? parts, // name, qty, price
+    List<(File, String)>? photos, // file, label
   }) async {
     if (state.isSubmitting) return null;
     state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
@@ -300,10 +351,17 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
       final user = await _ref.read(currentUserProvider.future);
       final userId = user?.id;
       if (userId == null) throw Exception('Authentication session expired. Please log in again.');
+      
       int? finalAmount;
       if (amountChargedString != null && amountChargedString.trim().isNotEmpty) {
         finalAmount = CurrencyFormatter.parseToPesewas(amountChargedString);
-        if (finalAmount == null) throw const ValidationException(message: "Invalid currency format.", code: "INVALID_AMOUNT");
+        if (finalAmount == null) throw const ValidationException(message: "Invalid currency format for final amount.", code: "INVALID_AMOUNT");
+      }
+
+      int? quotedPrice;
+      if (quotedPriceString != null && quotedPriceString.trim().isNotEmpty) {
+        quotedPrice = CurrencyFormatter.parseToPesewas(quotedPriceString);
+        if (quotedPrice == null) throw const ValidationException(message: "Invalid currency format for quoted price.", code: "INVALID_QUOTED_PRICE");
       }
 
       final job = await _logJobWithCustomer(LogJobWithCustomerParams(
@@ -316,19 +374,44 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
         location: location,
         notes: notes,
         amountCharged: finalAmount,
+        status: status,
+        paymentStatus: paymentStatus,
+        quotedPrice: quotedPrice != null ? quotedPrice / 100.0 : null,
+        hardwareBrand: hardwareBrand,
+        hardwareKeyway: hardwareKeyway,
       ));
+
+      // Save parts locally
+      if (parts != null && parts.isNotEmpty) {
+        final partModels = parts.map((p) => JobPartModel(
+          id: const Uuid().v4(),
+          jobId: job.id,
+          partName: p.$1,
+          quantity: p.$2,
+          unitPrice: p.$3,
+          createdAt: DateTime.now().toIso8601String(),
+        )).toList();
+        await _partsLocal.saveAll(partModels);
+      }
+
+      // Save photos locally (storage upload happens during sync or separate task)
+      if (photos != null && photos.isNotEmpty) {
+        for (var p in photos) {
+          await _photosLocal.savePhoto(JobPhotoModel(
+            id: const Uuid().v4(),
+            jobId: job.id,
+            storagePath: p.$1.path, // Locally using file path until synced
+            label: p.$2,
+            createdAt: DateTime.now().toIso8601String(),
+          ));
+        }
+      }
       
       _ref.read(customerListProvider.notifier).incrementJobCount(job.customerId);
       await _ref.read(customerListProvider.notifier).refresh();
 
-      // --- REACTIVITY UPGRADE ---
-      // 1. Add to the list immediately (shows as 'Pending')
       _ref.read(jobListProvider.notifier).addJob(job);
-      
-      // 2. Trigger background sync and await it
       await _ref.read(jobListProvider.notifier).refresh();
-
-      // 3. Tactile Feedback (GEMINI.md Mandate)
       await HapticFeedback.mediumImpact();
 
       state = state.copyWith(isLoading: false, isSubmitting: false, saved: true);
@@ -340,4 +423,9 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
   }
 }
 
-final logJobProvider = StateNotifierProvider<LogJobNotifier, LogJobState>((ref) => LogJobNotifier(ref, ref.watch(logJobWithCustomerUsecaseProvider)));
+final logJobProvider = StateNotifierProvider<LogJobNotifier, LogJobState>((ref) => LogJobNotifier(
+  ref, 
+  ref.watch(logJobWithCustomerUsecaseProvider),
+  ref.watch(jobPartsLocalDatasourceProvider),
+  ref.watch(jobPhotosLocalDatasourceProvider),
+));

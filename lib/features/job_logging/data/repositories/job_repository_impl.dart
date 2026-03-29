@@ -1,16 +1,26 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/errors/storage_exception.dart' as core_storage;
-import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/network/connectivity_service.dart';
 import '../../../../core/constants/app_enums.dart';
 import 'package:keystone/features/customer_history/data/datasources/customer_local_datasource.dart';
 import 'package:keystone/features/whatsapp_followup/domain/repositories/follow_up_repository.dart';
 import '../../domain/entities/job_entity.dart';
+import '../../domain/entities/job_part_entity.dart';
+import '../../domain/entities/job_photo_entity.dart';
+import '../../domain/entities/job_audit_entry_entity.dart';
 import '../../domain/repositories/job_repository.dart';
 import '../datasources/job_remote_datasource.dart';
 import '../datasources/job_local_datasource.dart';
+import '../datasources/job_parts_local_datasource.dart';
+import '../datasources/job_parts_remote_datasource.dart';
+import '../datasources/job_photos_local_datasource.dart';
+import '../datasources/job_photos_remote_datasource.dart';
+import '../datasources/job_audit_local_datasource.dart';
+import '../datasources/job_audit_remote_datasource.dart';
 import '../models/job_model.dart';
+import '../models/job_audit_entry_model.dart';
 
 class JobRepositoryImpl implements JobRepository {
   final JobRemoteDatasource _remote;
@@ -19,18 +29,33 @@ class JobRepositoryImpl implements JobRepository {
   final SupabaseClient _supabase;
   final CustomerLocalDatasource _customerLocal;
   final FollowUpRepository _followUpRepo;
+  
+  final JobPartsLocalDatasource _partsLocal;
+  final JobPhotosLocalDatasource _photosLocal;
+  final JobAuditLocalDatasource _auditLocal;
+  final JobAuditRemoteDatasource _auditRemote;
 
-  JobRepositoryImpl(this._remote, this._local, this._connectivity, this._supabase, this._customerLocal, this._followUpRepo);
+  JobRepositoryImpl(
+    this._remote,
+    this._local,
+    this._connectivity,
+    this._supabase,
+    this._customerLocal,
+    this._followUpRepo,
+    this._partsLocal,
+    JobPartsRemoteDatasource _partsRemote,
+    this._photosLocal,
+    JobPhotosRemoteDatasource _photosRemote,
+    this._auditLocal,
+    this._auditRemote,
+  );
 
-  // Cache the internal public.users.id to avoid a roundtrip on every operation.
-  // jobs.user_id FK references public.users.id (internal UUID), NOT auth.users.id (auth UID).
   String? _cachedInternalUserId;
-  String? _cachedAuthId; // tracks which auth session the cached internal ID belongs to
+  String? _cachedAuthId;
 
   Future<String> _getInternalUserId() async {
     final authId = _supabase.auth.currentUser?.id;
     if (authId == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
-    // Invalidate cache if the auth session has changed (e.g. different user logged in).
     if (_cachedInternalUserId != null && _cachedAuthId != authId) {
       _cachedInternalUserId = null;
       _cachedAuthId = null;
@@ -50,8 +75,7 @@ class JobRepositoryImpl implements JobRepository {
         final remoteModels = await _remote.getJobs(userId: await _getInternalUserId(), limit: limit, offset: offset);
         for (final m in remoteModels) {
           final existing = await _local.getJob(m.id);
-          // Don't overwrite a locally-pending archive with the remote stale state
-          if (existing != null && existing.isArchived && existing.syncStatus == SyncStatus.pending.name) {
+          if (existing != null && (existing.isArchived || existing.isDeleted) && existing.syncStatus == SyncStatus.pending.name) {
             continue;
           }
           await _local.saveJob(m);
@@ -61,7 +85,7 @@ class JobRepositoryImpl implements JobRepository {
       }
     }
     var local = await _local.getJobs(limit: limit, offset: offset);
-    if (!includeArchived) local = local.where((j) => !j.isArchived).toList();
+    if (!includeArchived) local = local.where((j) => !j.isArchived && !j.isDeleted).toList();
     local.sort((a, b) {
       final dateCompare = b.jobDate.compareTo(a.jobDate);
       return dateCompare != 0 ? dateCompare : b.createdAt.compareTo(a.createdAt);
@@ -70,11 +94,10 @@ class JobRepositoryImpl implements JobRepository {
   }
 
   @override
-  Future<JobEntity> getJobById(String id) async {
+  Future<JobEntity?> getJobById(String id) async {
     final jobs = await _local.getJobs();
     final found = jobs.where((j) => j.id == id).firstOrNull;
-    if (found != null) return found.toEntity();
-    throw const core_storage.StorageException(message: 'Job not found.', code: 'JOB_NOT_FOUND');
+    return found?.toEntity();
   }
 
   @override
@@ -100,23 +123,6 @@ class JobRepositoryImpl implements JobRepository {
 
   @override
   Future<JobEntity> updateJob(JobEntity job) async {
-    JobEntity existing;
-    try {
-      existing = await getJobById(job.id);
-    } catch (_) {
-      final all = await _local.getJobs();
-      final matched = all.where((j) => j.createdAt == job.createdAt.toIso8601String() && j.customerId == job.customerId).firstOrNull;
-      if (matched == null) throw const core_storage.StorageException(message: "Job record lost or synced during edit. Please refresh.", code: "CONCURRENCY_CONFLICT");
-      existing = matched.toEntity();
-    }
-    
-    if (existing.syncStatus == SyncStatus.synced) {
-      if (DateTime.now().difference(existing.createdAt).inHours >= 24) {
-        if (existing.serviceType != job.serviceType || existing.jobDate != job.jobDate) {
-          throw const ValidationException(message: 'Service type and date are locked after 24 hours of syncing.', code: 'JOB_LOCKED');
-        }
-      }
-    }
     final json = _jobEntityToJson(job);
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
@@ -137,23 +143,23 @@ class JobRepositoryImpl implements JobRepository {
   Future<void> archiveJob(String id) async {
     try {
       final job = await getJobById(id);
+      if (job == null) return;
 
       if (job.syncStatus == SyncStatus.pending) {
         await _local.deleteJob(id);
         return;
       }
 
-      final archivedModel = JobModel.fromJson({..._jobEntityToJson(job), 'is_archived': true, 'sync_status': 'pending'});
+      final archivedModel = JobModel.fromEntity(job.copyWith(isDeleted: true, syncStatus: SyncStatus.pending));
       await _local.saveJob(archivedModel);
       
-      // Silence remote failure — local update is what matters for offline-first.
       try {
         if (await _connectivity.isConnected) {
-          await _remote.updateJob(id, {'is_archived': true});
+          await _remote.updateJob(id, {'is_deleted': true});
           await _local.updateSyncStatus(id, 'synced');
         }
       } catch (e) {
-        debugPrint('[KS:JOBS] archiveJob remote sync failed (will retry later): $e');
+        debugPrint('[KS:JOBS] archiveJob remote sync failed: $e');
       }
     } catch (e) {
       debugPrint('[KS:JOBS] archiveJob local operation failed: $e');
@@ -169,62 +175,39 @@ class JobRepositoryImpl implements JobRepository {
 
   @override
   Future<void> syncPendingJobs() async {
-    debugPrint('[KS:SYNC] syncPendingJobs START');
     final pending = await _local.getPendingJobs();
-    debugPrint('[KS:SYNC] Pending jobs: ${pending.length}');
-    
     if (pending.isEmpty) return;
     
-    final isOnline = await _connectivity.isConnected;
-    debugPrint('[KS:SYNC] Connectivity: $isOnline');
+    if (!await _connectivity.isConnected) return;
 
     final safeToSync = <JobModel>[];
     for (final job in pending) {
       final customer = await _customerLocal.getCustomer(job.customerId);
       if (customer == null) {
-        debugPrint('[KS:SYNC] Deleting orphaned job: ${job.id}');
         await _local.deleteJob(job.id);
       } else if (customer.syncStatus == SyncStatus.synced) {
-        // Only sync jobs whose customer is confirmed on the server.
-        // pending = not sent yet, failed = send failed — neither is safe to use as FK.
         safeToSync.add(job);
-      } else {
-        debugPrint('[KS:SYNC] Job ${job.id} waiting — customer ${job.customerId} status: ${customer.syncStatus}');
       }
     }
     
-    debugPrint('[KS:SYNC] Safe to sync: ${safeToSync.length}');
     if (safeToSync.isEmpty) return;
 
     try {
       final payload = safeToSync.map((m) => _jobEntityToJson(m.toEntity())).toList();
-      debugPrint('[KS:SYNC] Sending ${payload.length} jobs for sync');
-      
       final result = await _remote.batchSync(await _getInternalUserId(), payload);
-      debugPrint('[KS:SYNC] RPC Result: $result');
 
       final syncedList = result['synced'] as List<dynamic>? ?? [];
       final failedList = result['failed'] as List<dynamic>? ?? [];
 
-      if (failedList.isNotEmpty) {
-        for (var failure in failedList) {
-          debugPrint('[KS:SYNC] FAILURE DETAIL: ${failure['local_id']} -> ${failure['error']}');
-        }
-      }
-
-      // 1. Process successful syncs
       for (final syncedItem in syncedList) {
         final localId = syncedItem['local_id'] as String?;
-        if (localId == null) continue;
-        
         final serverId = syncedItem['server_id'] as String?;
         final originalJob = safeToSync.where((j) => j.id == localId).firstOrNull;
-        if (originalJob == null || serverId == null) continue;
+        if (originalJob == null || serverId == null || localId == null) continue;
 
         final updatedJson = originalJob.toJson();
         updatedJson['id'] = serverId;
-        updatedJson['sync_status'] = syncedItem['sync_status'] as String? ?? 'synced';
-        
+        updatedJson['sync_status'] = 'synced';
         await _local.saveJob(JobModel.fromJson(updatedJson));
 
         if (localId != serverId) {
@@ -233,27 +216,129 @@ class JobRepositoryImpl implements JobRepository {
         }
       }
 
-      // 2. Process failed syncs
       for (final failedItem in failedList) {
         final localId = failedItem['local_id'] as String?;
-        if (localId == null) continue;
-
         final errorMessage = failedItem['error'] as String?;
         final originalJob = safeToSync.where((j) => j.id == localId).firstOrNull;
-        
         if (originalJob != null) {
-          final failedModel = originalJob.copyWith(
-            syncStatus: SyncStatus.failed.name,
-            syncErrorMessage: errorMessage ?? 'Server rejection',
-          );
-          await _local.saveJob(failedModel);
+          await _local.saveJob(originalJob.copyWith(syncStatus: SyncStatus.failed.name, syncErrorMessage: errorMessage));
         }
       }
     } catch (e) {
-      debugPrint('[KS:SYNC] FATAL ERROR (Network/Auth): $e');
-      // DO NOT mark as failed here. 
-      // Keeping them as 'pending' allows the next sync attempt (on refresh) to try again.
+      debugPrint('[KS:SYNC] syncPendingJobs FATAL: $e');
     }
+  }
+
+  // --- V2 Methods ---
+
+  @override
+  Future<List<JobPartEntity>> getPartsForJob(String jobId) async {
+    final models = await _partsLocal.getPartsForJob(jobId);
+    return models.map((m) => m.toEntity()).toList();
+  }
+
+  @override
+  Future<List<JobPhotoEntity>> getPhotosForJob(String jobId) async {
+    final models = await _photosLocal.getPhotosForJob(jobId);
+    return models.map((m) => m.toEntity()).toList();
+  }
+
+  @override
+  Future<List<JobAuditEntryEntity>> getAuditLogForJob(String jobId) async {
+    final models = await _auditLocal.getEntriesForJob(jobId);
+    return models.map((m) => m.toEntity()).toList();
+  }
+
+  @override
+  Future<JobEntity> editJob(String jobId, Map<String, dynamic> changes, String editedBy) async {
+    final existing = await getJobById(jobId);
+    if (existing == null) throw Exception('Job not found.');
+
+    final now = DateTime.now();
+    final List<JobAuditEntryEntity> audits = [];
+
+    changes.forEach((key, newValue) {
+      final oldValue = _getFieldValue(existing, key);
+      if (oldValue != newValue) {
+        audits.add(JobAuditEntryEntity(
+          id: const Uuid().v4(),
+          jobId: jobId,
+          userId: editedBy,
+          action: 'updated',
+          oldValues: {key: oldValue},
+          newValues: {key: newValue},
+          createdAt: now,
+        ));
+      }
+    });
+
+    if (audits.isEmpty) return existing;
+
+    final updatedEntity = _applyChanges(existing, changes).copyWith(updatedAt: now, syncStatus: SyncStatus.pending);
+    await _local.saveJob(JobModel.fromEntity(updatedEntity));
+    await _auditLocal.saveAll(audits.map((e) => JobAuditEntryModel(
+      id: e.id, jobId: e.jobId, userId: e.userId, action: e.action, 
+      oldValues: e.oldValues, newValues: e.newValues, createdAt: e.createdAt.toIso8601String()
+    )).toList());
+
+    if (await _connectivity.isConnected) {
+      try {
+        final remoteJob = await _remote.updateJob(jobId, changes);
+        await _local.saveJob(remoteJob);
+        // Best effort audit push
+        await _auditRemote.insertAll(audits.map((e) => {
+          'id': e.id, 'job_id': e.jobId, 'user_id': e.userId, 'action': e.action,
+          'old_values': e.oldValues, 'new_values': e.newValues, 'created_at': e.createdAt.toIso8601String()
+        }).toList());
+        return remoteJob.toEntity();
+      } catch (e) {
+        debugPrint('[KS:JOBS] Remote editJob failed: $e');
+      }
+    }
+
+    return updatedEntity;
+  }
+
+  @override
+  Future<JobEntity> updateJobStatus(String jobId, String newStatus, String editedBy) {
+    return editJob(jobId, {'status': newStatus}, editedBy);
+  }
+
+  @override
+  Future<JobEntity> updatePaymentStatus(String jobId, String newStatus, String? method, String editedBy) {
+    return editJob(jobId, {
+      'payment_status': newStatus,
+      if (method != null) 'payment_method': method,
+    }, editedBy);
+  }
+
+  dynamic _getFieldValue(JobEntity job, String key) {
+    switch (key) {
+      case 'service_type': return job.serviceType;
+      case 'status': return job.status;
+      case 'payment_status': return job.paymentStatus;
+      case 'payment_method': return job.paymentMethod;
+      case 'amount_charged': return job.amountCharged != null ? job.amountCharged! / 100.0 : null;
+      case 'location': return job.location;
+      case 'notes': return job.notes;
+      case 'hardware_brand': return job.hardwareBrand;
+      case 'hardware_keyway': return job.hardwareKeyway;
+      default: return null;
+    }
+  }
+
+  JobEntity _applyChanges(JobEntity job, Map<String, dynamic> changes) {
+    return job.copyWith(
+      serviceType: changes['service_type'] as String?,
+      status: changes['status'] as String?,
+      paymentStatus: changes['payment_status'] as String?,
+      paymentMethod: changes['payment_method'] as String?,
+      amountCharged: changes['amount_charged'] != null ? ((changes['amount_charged'] as num) * 100).round() : null,
+      location: changes['location'] as String?,
+      notes: changes['notes'] as String?,
+      hardwareBrand: changes['hardware_brand'] as String?,
+      hardwareKeyway: changes['hardware_keyway'] as String?,
+    );
   }
 
   Map<String, dynamic> _jobEntityToJson(JobEntity job) => {
@@ -264,7 +349,11 @@ class JobRepositoryImpl implements JobRepository {
     'notes': job.notes, 'amount_charged': job.amountCharged != null ? job.amountCharged! / 100.0 : null,
     'follow_up_sent': job.followUpSent, 'follow_up_sent_at': job.followUpSentAt?.toIso8601String(),
     'sync_status': job.syncStatus.name, 'sync_error_message': job.syncErrorMessage,
-    'is_archived': job.isArchived, 'created_at': job.createdAt.toIso8601String(),
+    'is_archived': job.isArchived, 'is_deleted': job.isDeleted,
+    'status': job.status, 'payment_status': job.paymentStatus, 'payment_method': job.paymentMethod,
+    'quoted_price': job.quotedPrice != null ? job.quotedPrice! / 100.0 : null,
+    'hardware_brand': job.hardwareBrand, 'hardware_keyway': job.hardwareKeyway,
+    'created_at': job.createdAt.toIso8601String(),
     'updated_at': job.updatedAt.toIso8601String(),
   };
 }

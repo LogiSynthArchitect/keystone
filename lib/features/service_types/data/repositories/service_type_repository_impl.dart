@@ -20,19 +20,51 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
     }
 
     final localModels = await _local.getServiceTypes();
-    if (localModels.isEmpty) {
-      return _getV1Defaults();
-    }
-
     return localModels.map((m) => m.toEntity()).toList();
   }
 
   @override
   Future<ServiceTypeEntity> createServiceType(ServiceTypeEntity serviceType) async {
     final model = ServiceTypeModel.fromEntity(serviceType);
-    final remoteModel = await _remote.createServiceType(model.toJson());
-    await _local.saveServiceTypes([remoteModel]);
-    return remoteModel.toEntity();
+    await _local.saveServiceType(model);
+    if (await _connectivity.isConnected) {
+      try {
+        final remoteModel = await _remote.createServiceType(model.toJson());
+        await _local.saveServiceType(remoteModel);
+        return remoteModel.toEntity();
+      } catch (e) {
+        debugPrint('[KS:SERVICE_TYPES] Remote create failed: $e');
+      }
+    }
+    return model.toEntity();
+  }
+
+  @override
+  Future<ServiceTypeEntity> updateServiceType(ServiceTypeEntity serviceType) async {
+    final model = ServiceTypeModel.fromEntity(serviceType);
+    await _local.saveServiceType(model);
+    if (await _connectivity.isConnected) {
+      try {
+        final remoteModel = await _remote.updateServiceType(serviceType.id, model.toJson());
+        await _local.saveServiceType(remoteModel);
+        return remoteModel.toEntity();
+      } catch (e) {
+        debugPrint('[KS:SERVICE_TYPES] Remote update failed: $e');
+      }
+    }
+    return model.toEntity();
+  }
+
+  @override
+  Future<void> deleteServiceType(String id) async {
+    await _local.deleteServiceType(id);
+    if (await _connectivity.isConnected) {
+      try {
+        await _remote.deleteServiceType(id);
+      } catch (e) {
+        debugPrint('[KS:SERVICE_TYPES] Remote delete failed: $e');
+      }
+    }
   }
 
   @override
@@ -44,15 +76,5 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
     } catch (e) {
       debugPrint('[KS:SERVICE_TYPES] Sync failed: $e');
     }
-  }
-
-  List<ServiceTypeEntity> _getV1Defaults() {
-    final now = DateTime.now();
-    return [
-      ServiceTypeEntity(id: 'v1_1', userId: 'system', name: 'Car Key Programming', slug: 'car_lock_programming', displayOrder: 10, createdAt: now, updatedAt: now),
-      ServiceTypeEntity(id: 'v1_2', userId: 'system', name: 'Door Lock Installation', slug: 'door_lock_installation', displayOrder: 20, createdAt: now, updatedAt: now),
-      ServiceTypeEntity(id: 'v1_3', userId: 'system', name: 'Door Lock Repair', slug: 'door_lock_repair', displayOrder: 30, createdAt: now, updatedAt: now),
-      ServiceTypeEntity(id: 'v1_4', userId: 'system', name: 'Smart Lock Installation', slug: 'smart_lock_installation', displayOrder: 40, createdAt: now, updatedAt: now),
-    ];
   }
 }

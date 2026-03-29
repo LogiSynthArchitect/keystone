@@ -5,6 +5,8 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/constants/app_enums.dart';
+import '../../../../core/widgets/ks_badge.dart';
+import '../../../../core/widgets/sync_status_indicator.dart';
 import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 
@@ -57,6 +59,8 @@ class JobCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                SyncStatusIndicator(status: job.syncStatus, size: 14),
+                const SizedBox(width: 8),
                 Text(
                   DateFormatter.short(job.jobDate).toUpperCase(),
                   style: AppTextStyles.caption.copyWith(
@@ -124,7 +128,16 @@ class JobCard extends StatelessWidget {
               ],
             ),
 
-            if (job.followUpSent || job.syncStatus != SyncStatus.synced) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildStatusBadge(job.status),
+                const SizedBox(width: 8),
+                _buildPaymentBadge(job.paymentStatus),
+              ],
+            ),
+
+            if (job.followUpSent || job.syncStatus == SyncStatus.failed) ...[
               const SizedBox(height: 16),
               Divider(color: context.ksc.primary700, height: 1),
               const SizedBox(height: 12),
@@ -134,21 +147,14 @@ class JobCard extends StatelessWidget {
                   Row(
                     children: [
                       if (job.followUpSent)
-                        _Badge(
+                        _CustomBadge(
                           label: "WHATSAPP OPENED",
                           color: context.ksc.success500,
                           icon: LineAwesomeIcons.check_circle_solid,
                         ),
 
-                      if (job.syncStatus == SyncStatus.pending)
-                        _Badge(
-                          label: "SAVING...",
-                          color: context.ksc.accent500,
-                          icon: LineAwesomeIcons.sync_solid,
-                        ),
-
                       if (job.syncStatus == SyncStatus.failed)
-                        _Badge(
+                        _CustomBadge(
                           label: "SAVE FAILED",
                           color: context.ksc.error500,
                           icon: LineAwesomeIcons.exclamation_circle_solid,
@@ -175,14 +181,30 @@ class JobCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildStatusBadge(String status) {
+    String label = status.replaceAll('_', ' ').toUpperCase();
+    KsBadgeVariant variant = KsBadgeVariant.neutral;
+    if (status == 'completed' || status == 'invoiced') variant = KsBadgeVariant.success;
+    if (status == 'quoted') variant = KsBadgeVariant.info;
+    return KsBadge(label: label, variant: variant);
+  }
+
+  Widget _buildPaymentBadge(String status) {
+    String label = status.toUpperCase();
+    KsBadgeVariant variant = KsBadgeVariant.error;
+    if (status == 'paid') variant = KsBadgeVariant.success;
+    if (status == 'partial') variant = KsBadgeVariant.warning;
+    return KsBadge(label: label, variant: variant);
+  }
 }
 
-class _Badge extends StatelessWidget {
+class _CustomBadge extends StatelessWidget {
   final String label;
   final Color color;
   final IconData icon;
 
-  const _Badge({required this.label, required this.color, required this.icon});
+  const _CustomBadge({required this.label, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {

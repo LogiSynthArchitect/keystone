@@ -13,6 +13,16 @@ class ServiceTypeLocalDatasource {
     await _box.flush();
   }
 
+  Future<void> saveServiceType(ServiceTypeModel type) async {
+    await _box.put(type.id, type.toJson());
+    await _box.flush();
+  }
+
+  Future<void> deleteServiceType(String id) async {
+    await _box.delete(id);
+    await _box.flush();
+  }
+
   Future<List<ServiceTypeModel>> getServiceTypes() async {
     return _box.values
         .map((json) => ServiceTypeModel.fromJson(Map<String, dynamic>.from(json)))
