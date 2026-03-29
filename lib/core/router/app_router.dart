@@ -19,6 +19,8 @@ import '../../features/whatsapp_followup/presentation/screens/job_detail_screen.
 import '../../features/customer_history/presentation/screens/customer_list_screen.dart';
 import '../../features/customer_history/presentation/screens/add_customer_screen.dart';
 import '../../features/customer_history/presentation/screens/customer_detail_screen.dart';
+import '../../features/customer_history/presentation/screens/edit_customer_screen.dart';
+import '../../features/key_codes/presentation/screens/key_codes_screen.dart';
 import '../../features/knowledge_base/presentation/screens/notes_list_screen.dart';
 import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
@@ -99,6 +101,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.customers, builder: (context, state) => const CustomerListScreen()),
       GoRoute(path: RouteNames.addCustomer, builder: (context, state) => const AddCustomerScreen()),
       GoRoute(path: '/customers/:id', builder: (context, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!)),
+      GoRoute(path: '/customers/:id/edit', builder: (context, state) => EditCustomerScreen(customerId: state.pathParameters['id']!)),
+      GoRoute(path: '/customers/:id/keycodes', builder: (context, state) => KeyCodesScreen(customerId: state.pathParameters['id']!)),
       GoRoute(path: RouteNames.notes, builder: (context, state) => const NotesListScreen()),
       GoRoute(path: RouteNames.addNote, builder: (context, state) => const AddNoteScreen()),
       GoRoute(path: '/notes/:id', builder: (context, state) => NoteDetailScreen(noteId: state.pathParameters['id']!)),

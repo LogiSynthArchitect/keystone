@@ -13,6 +13,7 @@ import '../../domain/usecases/create_customer_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
 import '../../domain/usecases/get_customer_by_phone_usecase.dart';
 import '../../domain/usecases/sync_offline_customers_usecase.dart';
+import '../../domain/usecases/update_customer_usecase.dart';
 
 final customerLocalDatasourceProvider = Provider<CustomerLocalDatasource>(
   (ref) => CustomerLocalDatasource());
@@ -40,6 +41,9 @@ final createCustomerUsecaseProvider = Provider<CreateCustomerUsecase>(
 
 final syncOfflineCustomersUsecaseProvider = Provider<SyncOfflineCustomersUsecase>(
   (ref) => SyncOfflineCustomersUsecase(ref.watch(customerRepositoryProvider)));
+
+final updateCustomerUsecaseProvider = Provider<UpdateCustomerUsecase>(
+  (ref) => UpdateCustomerUsecase(ref.watch(customerRepositoryProvider)));
 
 class CustomerListState {
   final List<CustomerEntity> customers;

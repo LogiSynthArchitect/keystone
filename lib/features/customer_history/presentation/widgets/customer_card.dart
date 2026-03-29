@@ -66,6 +66,10 @@ class CustomerCard extends StatelessWidget {
                             style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1.0)
                           ),
                         ),
+                      if (customer.propertyType != null) ...[
+                        const SizedBox(width: 4),
+                        _propertyBadge(context, customer.propertyType!),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -99,6 +103,19 @@ class CustomerCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _propertyBadge(BuildContext context, String type) {
+    final (label, color) = switch (type) {
+      'residential' => ('RES',  context.ksc.success500),
+      'commercial'  => ('COM',  context.ksc.warning500),
+      _             => ('AUTO', context.ksc.neutral500),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2), border: Border.all(color: color.withValues(alpha: 0.3))),
+      child: Text(label, style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 0.5)),
     );
   }
 }

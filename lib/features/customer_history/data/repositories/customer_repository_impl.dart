@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/storage_exception.dart' as core_storage;
+import '../../../../core/errors/duplicate_customer_exception.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/network/connectivity_service.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
@@ -80,6 +81,21 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   @override
   Future<CustomerEntity> createCustomer(CustomerEntity customer) async {
+    // Duplicate detection: check local cache first for same phone + same user
+    final existing = await _local.getCustomers();
+    final duplicate = existing.where((c) =>
+      c.phoneNumber == customer.phoneNumber &&
+      c.userId == _userId &&
+      c.syncStatus != SyncStatus.deleted
+    ).firstOrNull;
+    if (duplicate != null) {
+      throw DuplicateCustomerException(
+        message: 'A customer with this phone number already exists.',
+        existingCustomerId: duplicate.id,
+        existingCustomerName: duplicate.fullName,
+      );
+    }
+
     final now = DateTime.now().toIso8601String();
     final localModel = CustomerModel(
       id: const Uuid().v4(),
@@ -147,6 +163,8 @@ class CustomerRepositoryImpl implements CustomerRepository {
       totalJobs: existing?.totalJobs ?? 0,
       lastJobAt: existing?.lastJobAt,
       syncStatus: SyncStatus.pending,
+      propertyType: customer.propertyType,
+      leadSource: customer.leadSource,
       createdAt: existing?.createdAt ?? DateTime.now().toIso8601String(),
       updatedAt: DateTime.now().toIso8601String(),
     );
@@ -160,6 +178,8 @@ class CustomerRepositoryImpl implements CustomerRepository {
           'phone_number': customer.phoneNumber,
           'location': customer.location,
           'notes': customer.notes,
+          'property_type': customer.propertyType,
+          'lead_source': customer.leadSource,
         });
         
         final syncedModel = CustomerModel(

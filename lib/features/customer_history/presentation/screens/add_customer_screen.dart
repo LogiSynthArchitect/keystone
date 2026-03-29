@@ -8,6 +8,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/router/route_names.dart';
 import '../providers/customer_providers.dart';
 
 class AddCustomerScreen extends ConsumerStatefulWidget {
@@ -25,6 +26,10 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   final _locationController = TextEditingController();
   final _notesController    = TextEditingController();
 
+  // Duplicate detection state
+  String? _duplicateId;
+  String? _duplicateName;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +46,18 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     _locationController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkDuplicate(String phone) async {
+    if (phone.length != 10) {
+      setState(() { _duplicateId = null; _duplicateName = null; });
+      return;
+    }
+    final existing = await ref.read(customerRepositoryProvider).getCustomerByPhone(phone);
+    setState(() {
+      _duplicateId   = existing?.id;
+      _duplicateName = existing?.fullName;
+    });
   }
 
   bool get _isDirty =>
@@ -253,7 +270,36 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
           ],
+          onChanged: (v) => _checkDuplicate(v),
         ),
+        if (_duplicateId != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: context.ksc.warning500.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.warning500.withValues(alpha: 0.4))),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_outlined, size: 16, color: context.ksc.warning500),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text.rich(TextSpan(
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.warning500, fontSize: 11),
+                    children: [
+                      TextSpan(text: "A customer named "),
+                      TextSpan(text: _duplicateName, style: const TextStyle(fontWeight: FontWeight.w900)),
+                      TextSpan(text: " already exists with this number. "),
+                    ],
+                  )),
+                ),
+                TextButton(
+                  onPressed: () => context.push(RouteNames.customerDetail(_duplicateId!)),
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                  child: Text("VIEW", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
