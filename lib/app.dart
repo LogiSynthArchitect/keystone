@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/app_text_styles.dart';
 import 'core/theme/ks_colors.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/constants/supabase_constants.dart';
 
 class KeystoneApp extends ConsumerWidget {
   const KeystoneApp({super.key});
@@ -32,11 +33,13 @@ class KeystoneApp extends ConsumerWidget {
 
   void _logError(String error, String stack) {
     try {
-      Supabase.instance.client.from('app_events').insert({
+      Supabase.instance.client.from(SupabaseConstants.appEventsTable).insert({
         'event_name': 'app_error',
         'properties': {'error': error, 'stack': stack.substring(0, stack.length.clamp(0, 500))},
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[KS:APP] Remote error log failed: $e');
+    }
   }
 }
 

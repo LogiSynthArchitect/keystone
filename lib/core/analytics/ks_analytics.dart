@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../constants/supabase_constants.dart';
 
 class KsAnalytics {
   KsAnalytics._();
@@ -7,7 +8,7 @@ class KsAnalytics {
   static Future<void> log(String eventName, {Map<String, dynamic>? properties}) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      await Supabase.instance.client.from('app_events').insert({
+      await Supabase.instance.client.from(SupabaseConstants.appEventsTable).insert({
         'user_id': user?.id,
         'event_name': eventName,
         'properties': properties ?? {},

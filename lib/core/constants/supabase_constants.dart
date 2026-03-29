@@ -14,10 +14,12 @@ class SupabaseConstants {
   static const String profilePhotosBucket = 'profile-photos';
   static const String notePhotosBucket    = 'note-photos';
 
-  static const String usersTable          = 'users';
-  static const String profilesTable       = 'profiles';
-  static const String customersTable      = 'customers';
-  static const String jobsTable           = 'jobs';
-  static const String knowledgeNotesTable = 'knowledge_notes';
-  static const String followUpsTable      = 'follow_ups';
+  static const String usersTable               = 'users';
+  static const String profilesTable            = 'profiles';
+  static const String customersTable           = 'customers';
+  static const String jobsTable                = 'jobs';
+  static const String knowledgeNotesTable      = 'knowledge_notes';
+  static const String followUpsTable           = 'follow_ups';
+  static const String correctionRequestsTable  = 'correction_requests';
+  static const String appEventsTable           = 'app_events';
 }
