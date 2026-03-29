@@ -14,6 +14,7 @@ class RouteNames {
   // Job sub-routes
   static const String logJob      = '/jobs/new';
   static String jobDetail(String id) => '/jobs/$id';
+  static String editJob(String id) => '/jobs/$id/edit';
   // Customer sub-routes
   static const String addCustomer = '/customers/new';
   static String customerDetail(String id) => '/customers/$id';
@@ -22,6 +23,7 @@ class RouteNames {
   static String noteDetail(String id) => '/notes/$id';
   // Profile sub-routes
   static const String editProfile = '/profile/edit';
+  static const String serviceTypes = '/profile/service-types';
   static const String adminRequests = '/admin/requests';
   // Public
   static String publicProfile(String slug) => '/p/$slug';

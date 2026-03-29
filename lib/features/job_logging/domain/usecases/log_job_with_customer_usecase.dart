@@ -17,6 +17,11 @@ class LogJobWithCustomerParams {
   final double? longitude;
   final String? notes;
   final int? amountCharged;
+  final String status;
+  final String paymentStatus;
+  final double? quotedPrice;
+  final String? hardwareBrand;
+  final String? hardwareKeyway;
 
   const LogJobWithCustomerParams({
     required this.userId,
@@ -30,6 +35,11 @@ class LogJobWithCustomerParams {
     this.longitude,
     this.notes,
     this.amountCharged,
+    this.status = 'in_progress',
+    this.paymentStatus = 'unpaid',
+    this.quotedPrice,
+    this.hardwareBrand,
+    this.hardwareKeyway,
   });
 }
 
@@ -49,8 +59,6 @@ class LogJobWithCustomerUsecase {
         finalCustomerId = params.existingCustomerId!;
       } else if (params.newCustomerName != null && params.customerPhone != null) {
         final normalized = PhoneFormatter.normalize(params.customerPhone!);
-        
-        // Check if customer already exists by phone to prevent duplicates
         final existing = await _customerRepo.getCustomerByPhone(normalized);
         
         if (existing != null) {
@@ -78,8 +86,15 @@ class LogJobWithCustomerUsecase {
         serviceType: params.serviceType,
         jobDate: params.jobDate,
         location: params.location,
+        latitude: params.latitude,
+        longitude: params.longitude,
         notes: params.notes,
         amountCharged: params.amountCharged,
+        status: params.status,
+        paymentStatus: params.paymentStatus,
+        quotedPrice: params.quotedPrice,
+        hardwareBrand: params.hardwareBrand,
+        hardwareKeyway: params.hardwareKeyway,
       ));
     } catch (e) {
       if (createdCustomerId != null) {

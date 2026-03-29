@@ -12,7 +12,7 @@ class ServiceTypeRemoteDatasource {
       final data = await _supabase
           .from(SupabaseConstants.serviceTypesTable)
           .select()
-          .order('display_order', ascending: true);
+          .order('created_at', ascending: true);
       return (data as List).map((json) => ServiceTypeModel.fromJson(json)).toList();
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not fetch service types.', code: 'FETCH_FAILED', cause: e);
@@ -29,6 +29,31 @@ class ServiceTypeRemoteDatasource {
       return ServiceTypeModel.fromJson(data);
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not create service type.', code: 'CREATE_FAILED', cause: e);
+    }
+  }
+
+  Future<ServiceTypeModel> updateServiceType(String id, Map<String, dynamic> json) async {
+    try {
+      final data = await _supabase
+          .from(SupabaseConstants.serviceTypesTable)
+          .update(json)
+          .eq('id', id)
+          .select()
+          .single();
+      return ServiceTypeModel.fromJson(data);
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not update service type.', code: 'UPDATE_FAILED', cause: e);
+    }
+  }
+
+  Future<void> deleteServiceType(String id) async {
+    try {
+      await _supabase
+          .from(SupabaseConstants.serviceTypesTable)
+          .delete()
+          .eq('id', id);
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not delete service type.', code: 'DELETE_FAILED', cause: e);
     }
   }
 }

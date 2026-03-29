@@ -5,8 +5,11 @@ import 'package:keystone/features/knowledge_base/domain/repositories/knowledge_n
 import 'package:keystone/features/whatsapp_followup/domain/repositories/follow_up_repository.dart';
 import 'package:keystone/features/auth/domain/repositories/auth_repository.dart';
 import 'package:keystone/features/technician_profile/domain/repositories/profile_repository.dart';
+import 'package:keystone/features/service_types/domain/repositories/service_type_repository.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_remote_datasource.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
+import 'package:keystone/features/service_types/data/datasources/service_type_remote_datasource.dart';
+import 'package:keystone/features/service_types/data/datasources/service_type_local_datasource.dart';
 import 'package:keystone/core/network/connectivity_service.dart';
 
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -18,7 +21,10 @@ class MockKnowledgeNoteRepository extends Mock implements KnowledgeNoteRepositor
 class MockFollowUpRepository extends Mock implements FollowUpRepository {}
 class MockAuthRepository extends Mock implements AuthRepository {}
 class MockProfileRepository extends Mock implements ProfileRepository {}
+class MockServiceTypeRepository extends Mock implements ServiceTypeRepository {}
 class MockJobRemoteDatasource extends Mock implements JobRemoteDatasource {}
 class MockJobLocalDatasource extends Mock implements JobLocalDatasource {}
+class MockServiceTypeRemoteDatasource extends Mock implements ServiceTypeRemoteDatasource {}
+class MockServiceTypeLocalDatasource extends Mock implements ServiceTypeLocalDatasource {}
 class MockConnectivityService extends Mock implements ConnectivityService {}
 class MockUrlLauncher extends Mock with MockPlatformInterfaceMixin implements UrlLauncherPlatform {}

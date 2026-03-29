@@ -13,6 +13,7 @@ import '../../features/auth/presentation/screens/transition_screen.dart';
 // Feature Screens
 import '../../features/job_logging/presentation/screens/job_list_screen.dart';
 import '../../features/job_logging/presentation/screens/log_job_screen.dart';
+import '../../features/job_logging/presentation/screens/edit_job_screen.dart';
 import '../../features/job_logging/presentation/screens/admin_requests_screen.dart';
 import '../../features/whatsapp_followup/presentation/screens/job_detail_screen.dart';
 import '../../features/customer_history/presentation/screens/customer_list_screen.dart';
@@ -24,6 +25,7 @@ import '../../features/knowledge_base/presentation/screens/note_detail_screen.da
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
+import '../../features/service_types/presentation/screens/service_types_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
@@ -93,6 +95,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.jobs, builder: (context, state) => const JobListScreen()),
       GoRoute(path: RouteNames.logJob, builder: (context, state) => LogJobScreen(preSelectedCustomerId: state.extra as String?)),
       GoRoute(path: '/jobs/:id', builder: (context, state) => JobDetailScreen(jobId: state.pathParameters['id']!)),
+      GoRoute(path: '/jobs/:id/edit', builder: (context, state) => EditJobScreen(jobId: state.pathParameters['id']!)),
       GoRoute(path: RouteNames.customers, builder: (context, state) => const CustomerListScreen()),
       GoRoute(path: RouteNames.addCustomer, builder: (context, state) => const AddCustomerScreen()),
       GoRoute(path: '/customers/:id', builder: (context, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!)),
@@ -101,6 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/notes/:id', builder: (context, state) => NoteDetailScreen(noteId: state.pathParameters['id']!)),
       GoRoute(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       GoRoute(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
+      GoRoute(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),
       GoRoute(path: RouteNames.adminRequests, builder: (context, state) => const AdminRequestsScreen()),
       GoRoute(path: '/p/:slug', builder: (context, state) => PublicProfileScreen(slug: state.pathParameters['slug']!)),
     ],
