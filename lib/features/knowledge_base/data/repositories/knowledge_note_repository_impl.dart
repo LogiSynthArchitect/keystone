@@ -106,6 +106,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
         'tags': note.tags,
         'photo_url': note.photoUrl,
         'service_type': note.serviceType,
+        'last_edited_at': note.lastEditedAt?.toIso8601String(),
       });
       
       await _local.saveNote(remoteModel);

@@ -14,6 +14,7 @@ import '../../domain/usecases/create_note_usecase.dart';
 import '../../domain/usecases/get_notes_usecase.dart';
 import '../../domain/usecases/archive_note_usecase.dart';
 import '../../domain/usecases/sync_pending_notes_usecase.dart';
+import '../../domain/usecases/update_note_usecase.dart';
 
 final knowledgeNoteLocalDatasourceProvider = Provider<KnowledgeNoteLocalDatasource>(
   (ref) => KnowledgeNoteLocalDatasource());
@@ -40,6 +41,9 @@ final archiveNoteUsecaseProvider = Provider<ArchiveNoteUsecase>(
 
 final syncPendingNotesUsecaseProvider = Provider<SyncPendingNotesUsecase>(
   (ref) => SyncPendingNotesUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
+
+final updateNoteUsecaseProvider = Provider<UpdateNoteUsecase>(
+  (ref) => UpdateNoteUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
 
 class NotesListState {
   final List<KnowledgeNoteEntity> notes;
@@ -141,6 +145,12 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
     state = state.copyWith(notes: [note, ...state.notes]);
   }
 
+  void updateNote(KnowledgeNoteEntity updated) {
+    state = state.copyWith(
+      notes: state.notes.map((n) => n.id == updated.id ? updated : n).toList(),
+    );
+  }
+
   Future<void> archiveNote(String id) async {
     try {
       await _repository.archiveNote(id);
@@ -223,3 +233,32 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
 
 final addNoteProvider = StateNotifierProvider<AddNoteNotifier, AddNoteState>(
   (ref) => AddNoteNotifier(ref.watch(createNoteUsecaseProvider), ref.watch(supabaseClientProvider)));
+
+class EditNoteState {
+  final bool isLoading;
+  final String? errorMessage;
+  final bool saved;
+  const EditNoteState({this.isLoading = false, this.errorMessage, this.saved = false});
+  EditNoteState copyWith({bool? isLoading, String? errorMessage, bool? saved, bool clearError = false}) =>
+    EditNoteState(isLoading: isLoading ?? this.isLoading, errorMessage: clearError ? null : (errorMessage ?? this.errorMessage), saved: saved ?? this.saved);
+}
+
+class EditNoteNotifier extends StateNotifier<EditNoteState> {
+  final UpdateNoteUsecase _updateNote;
+  EditNoteNotifier(this._updateNote) : super(const EditNoteState());
+  void reset() => state = const EditNoteState();
+  Future<KnowledgeNoteEntity?> save(KnowledgeNoteEntity note) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final updated = await _updateNote(UpdateNoteParams(note: note));
+      state = state.copyWith(isLoading: false, saved: true);
+      return updated;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      return null;
+    }
+  }
+}
+
+final editNoteProvider = StateNotifierProvider.autoDispose<EditNoteNotifier, EditNoteState>(
+  (ref) => EditNoteNotifier(ref.watch(updateNoteUsecaseProvider)));
