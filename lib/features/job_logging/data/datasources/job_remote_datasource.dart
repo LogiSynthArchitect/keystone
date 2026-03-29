@@ -24,6 +24,9 @@ class JobRemoteDatasource {
   }
 
   Future<JobModel> createJob(Map<String, dynamic> json) async {
+    if (json['user_id'] == null || (json['user_id'] as String).isEmpty) {
+      throw const NetworkException(message: 'Cannot create job: user_id is missing.', code: 'JOB_MISSING_USER_ID');
+    }
     try {
       final data = await _supabase.from('jobs').insert(json).select().single();
       return JobModel.fromJson(data);

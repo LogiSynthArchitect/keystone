@@ -34,6 +34,9 @@ class CustomerRemoteDatasource {
   }
 
   Future<CustomerModel> createCustomer(Map<String, dynamic> json) async {
+    if (json['user_id'] == null || (json['user_id'] as String).isEmpty) {
+      throw const NetworkException(message: 'Cannot create customer: user_id is missing.', code: 'CUSTOMER_MISSING_USER_ID');
+    }
     try {
       final data = await _supabase.from('customers').insert(json).select().single();
       return CustomerModel.fromJson(data);

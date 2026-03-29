@@ -160,7 +160,7 @@ class _RequestCard extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 
   void _showApproveDialog(BuildContext context, WidgetRef ref) {
