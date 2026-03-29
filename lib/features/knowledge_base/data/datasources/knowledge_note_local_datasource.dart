@@ -25,6 +25,7 @@ class KnowledgeNoteLocalDatasource {
         for (var note in notes) note.id: note.toJson().cast<String, dynamic>()
       };
       await _box.putAll(entries);
+      await _box.flush();
     } catch (e) {
       throw StorageException(
         message: 'Could not save notes locally.',
@@ -55,6 +56,7 @@ class KnowledgeNoteLocalDatasource {
         final updated = Map<String, dynamic>.from(existing);
         updated['sync_status'] = status;
         await _box.put(id, updated);
+        await _box.flush();
       }
     } catch (e) {
       throw StorageException(
@@ -68,6 +70,7 @@ class KnowledgeNoteLocalDatasource {
   Future<void> deleteNote(String id) async {
     try {
       await _box.delete(id);
+      await _box.flush();
     } catch (e) {
       throw StorageException(
         message: 'Could not delete local note.',

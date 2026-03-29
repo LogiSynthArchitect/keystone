@@ -145,12 +145,19 @@ class JobRepositoryImpl implements JobRepository {
 
       final archivedModel = JobModel.fromJson({..._jobEntityToJson(job), 'is_archived': true, 'sync_status': 'pending'});
       await _local.saveJob(archivedModel);
-      if (await _connectivity.isConnected) {
-        await _remote.updateJob(id, {'is_archived': true});
-        await _local.updateSyncStatus(id, 'synced');
+      
+      // Silence remote failure — local update is what matters for offline-first.
+      try {
+        if (await _connectivity.isConnected) {
+          await _remote.updateJob(id, {'is_archived': true});
+          await _local.updateSyncStatus(id, 'synced');
+        }
+      } catch (e) {
+        debugPrint('[KS:JOBS] archiveJob remote sync failed (will retry later): $e');
       }
     } catch (e) {
-      debugPrint('[KS:JOBS] archiveJob failed for id=$id: $e');
+      debugPrint('[KS:JOBS] archiveJob local operation failed: $e');
+      rethrow;
     }
   }
 

@@ -175,7 +175,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (didPop) return;
         final nav = Navigator.of(context);
         final ok = await _confirmDiscard();
-        if (ok) nav.pop();
+        if (ok && context.mounted) nav.pop();
       },
       child: Scaffold(
         backgroundColor: context.ksc.primary900,

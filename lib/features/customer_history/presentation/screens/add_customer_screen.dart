@@ -28,6 +28,10 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   @override
   void initState() {
     super.initState();
+    // Reset provider state so a returning user never sees stale saved/error state.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(addCustomerProvider.notifier).reset();
+    });
   }
 
   @override

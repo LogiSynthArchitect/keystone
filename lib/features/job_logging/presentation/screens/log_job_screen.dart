@@ -42,21 +42,24 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   void initState() {
     super.initState();
     final preSelectedId = widget.preSelectedCustomerId;
-    if (preSelectedId != null) {
-      _finalCustomerId = preSelectedId;
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      ref.read(logJobProvider.notifier).reset();
+
+      if (preSelectedId != null) {
+        _finalCustomerId = preSelectedId;
         try {
           final repo = ref.read(customerRepositoryProvider);
           final customer = await repo.getCustomerById(preSelectedId);
           setState(() {
             _customerController.text = customer.fullName;
-            if (customer.location != null) _locationController.text = customer.location!;
+            _phoneController.text    = customer.phoneNumber;
           });
         } catch (e) {
           debugPrint('[KS:LOG_JOB] Fast-prefill failed: $e');
         }
-      });
-    }
+      }
+    });
   }
 
   @override

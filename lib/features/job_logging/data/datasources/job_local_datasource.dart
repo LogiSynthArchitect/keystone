@@ -57,6 +57,7 @@ class JobLocalDatasource {
         final updated = Map<String, dynamic>.from(existing);
         updated['sync_status'] = status;
         await _box.put(id, updated);
+        await _box.flush();
       }
     } catch (e) {
       throw StorageException(message: 'Could not update sync status.', code: 'LOCAL_UPDATE_FAILED', cause: e);
@@ -65,6 +66,7 @@ class JobLocalDatasource {
 
   Future<void> deleteJob(String id) async {
     await _box.delete(id);
+    await _box.flush();
   }
 
   Future<void> cascadeCustomerId(String oldId, String newId) async {
@@ -86,6 +88,7 @@ class JobLocalDatasource {
         jobMap['customer_id'] = newId;
         await _box.put(key, jobMap);
       }
+      if (keysToUpdate.isNotEmpty) await _box.flush();
     } catch (e) {
       throw StorageException(message: 'Could not cascade customer ID.', code: 'CASCADE_FAILED', cause: e);
     }
@@ -111,6 +114,7 @@ class JobLocalDatasource {
         followUpMap['job_id'] = newId;
         await _followUpBox.put(key, followUpMap);
       }
+      if (followUpsToUpdate.isNotEmpty) await _followUpBox.flush();
     } catch (e) {
       throw StorageException(message: 'Could not cascade job ID to child records.', code: 'CHILD_CASCADE_FAILED', cause: e);
     }

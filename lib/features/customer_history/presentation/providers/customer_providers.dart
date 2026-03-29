@@ -217,6 +217,10 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
 
   AddCustomerNotifier(this._createCustomer, this._supabase) : super(const AddCustomerState());
 
+  void reset() {
+    state = const AddCustomerState();
+  }
+
   Future<CustomerEntity?> save({
     required String fullName,
     required String phoneNumber,
