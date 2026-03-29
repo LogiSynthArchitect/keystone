@@ -5,6 +5,7 @@ class ProfileLocalDatasource {
   Future<void> saveProfile(ProfileModel profile) async {
     final box = HiveService.profile;
     await box.put('current_profile', profile.toJson());
+    await box.flush();
   }
 
   Future<ProfileModel?> getProfile() async {
@@ -19,5 +20,6 @@ class ProfileLocalDatasource {
   Future<void> clearProfile() async {
     final box = HiveService.profile;
     await box.clear();
+    await box.flush();
   }
 }

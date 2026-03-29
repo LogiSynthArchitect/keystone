@@ -38,6 +38,7 @@ class CustomerLocalDatasource {
   Future<void> deleteCustomer(String id) async {
     // True delete from box only if it's already a tombstone or we want a hard delete
     await HiveService.customers.delete(id);
+    await HiveService.customers.flush();
   }
 
   Future<void> tombstoneCustomer(String id) async {

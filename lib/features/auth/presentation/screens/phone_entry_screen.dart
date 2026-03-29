@@ -28,6 +28,9 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
   void initState() {
     super.initState();
     _focusNode.addListener(() => setState(() => _isFocused = _focusNode.hasFocus));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authNotifierProvider.notifier).reset();
+    });
   }
 
   void _onPhoneChanged(String value) {

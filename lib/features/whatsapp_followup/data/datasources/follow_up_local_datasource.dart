@@ -17,6 +17,7 @@ class FollowUpLocalDatasource {
         map['job_id'] = newId;
         await _box.put(key, map);
       }
+      if (keysToUpdate.isNotEmpty) await _box.flush();
     } catch (e) {
       throw StorageException(
         message: 'Could not cascade job ID in follow-ups.',
@@ -29,6 +30,7 @@ class FollowUpLocalDatasource {
   Future<void> saveFollowUp(Map<String, dynamic> data) async {
     try {
       await _box.put(data['job_id'] as String, data);
+      await _box.flush();
     } catch (e) {
       throw StorageException(
         message: 'Could not save follow-up locally.',

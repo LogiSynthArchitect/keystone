@@ -54,6 +54,8 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
 
   AuthNotifier(this._requestOtp, this._verifyOtp, this._profileRepo, this._authRepo, this._ref) : super(AuthUiState());
 
+  void reset() => state = AuthUiState();
+
   void clearError() {
     if (state.errorMessage != null) {
       state = state.copyWith(clearError: true);
