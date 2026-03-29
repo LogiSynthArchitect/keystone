@@ -40,7 +40,7 @@ void main() {
   final validParams = LogJobParams(
     userId: 'user-123',
     customerId: 'customer-123',
-    serviceType: ServiceType.carLockProgramming,
+    serviceType: 'car_lock_programming',
     jobDate: DateTime.now(),
     notes: 'Test job',
     amountCharged: 150,
@@ -50,7 +50,7 @@ void main() {
     id: 'job-123',
     userId: 'user-123',
     customerId: 'customer-123',
-    serviceType: ServiceType.carLockProgramming,
+    serviceType: 'car_lock_programming',
     jobDate: DateTime.now(),
     followUpSent: false,
     syncStatus: SyncStatus.pending,
@@ -71,7 +71,7 @@ void main() {
       final result = await usecase(validParams);
 
       expect(result.id, equals('job-123'));
-      expect(result.serviceType, equals(ServiceType.carLockProgramming));
+      expect(result.serviceType, equals('car_lock_programming'));
       verify(() => mockRepository.createJob(any())).called(1);
     });
 
@@ -79,7 +79,7 @@ void main() {
       final futureParams = LogJobParams(
         userId: 'user-123',
         customerId: 'customer-123',
-        serviceType: ServiceType.carLockProgramming,
+        serviceType: 'car_lock_programming',
         jobDate: DateTime.now().add(const Duration(days: 2)),
       );
 
@@ -94,7 +94,7 @@ void main() {
       final zeroAmountParams = LogJobParams(
         userId: 'user-123',
         customerId: 'customer-123',
-        serviceType: ServiceType.carLockProgramming,
+        serviceType: 'car_lock_programming',
         jobDate: DateTime.now(),
         amountCharged: 0,
       );
@@ -110,7 +110,7 @@ void main() {
       final negativeAmountParams = LogJobParams(
         userId: 'user-123',
         customerId: 'customer-123',
-        serviceType: ServiceType.carLockProgramming,
+        serviceType: 'car_lock_programming',
         jobDate: DateTime.now(),
         amountCharged: -50,
       );
@@ -129,7 +129,7 @@ void main() {
       final noAmountParams = LogJobParams(
         userId: 'user-123',
         customerId: 'customer-123',
-        serviceType: ServiceType.carLockProgramming,
+        serviceType: 'car_lock_programming',
         jobDate: DateTime.now(),
       );
 
@@ -145,7 +145,7 @@ void main() {
       final todayParams = LogJobParams(
         userId: 'user-123',
         customerId: 'customer-123',
-        serviceType: ServiceType.carLockProgramming,
+        serviceType: 'car_lock_programming',
         jobDate: DateTime.now(),
       );
 

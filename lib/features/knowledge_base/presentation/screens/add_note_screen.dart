@@ -8,7 +8,6 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
 
@@ -25,7 +24,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   final _titleController       = TextEditingController();
   final _descriptionController = TextEditingController();
   List<String> _tags = [];
-  ServiceType? _serviceType;
+  String? _serviceType;
 
   @override
   void initState() {
@@ -247,6 +246,13 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   }
 
   Widget _buildStep2() {
+    final v1Types = [
+      'car_lock_programming',
+      'door_lock_installation',
+      'door_lock_repair',
+      'smart_lock_installation',
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -263,13 +269,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: ServiceType.values.map((type) {
-            final labels = {
-              ServiceType.carLockProgramming: "CAR KEY",
-              ServiceType.doorLockInstallation: "DOOR INSTALL",
-              ServiceType.doorLockRepair: "DOOR REPAIR",
-              ServiceType.smartLockInstallation: "SMART LOCK",
-            };
+          children: v1Types.map((type) {
+            final label = type.replaceAll('_', ' ').toUpperCase();
             final isSelected = _serviceType == type;
             return GestureDetector(
               onTap: () => setState(() => _serviceType = isSelected ? null : type),
@@ -280,11 +281,11 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
                     color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
-                    width: isSelected ? 1.5 : 1,
+                    width: 1.5,
                   ),
                 ),
                 child: Text(
-                  labels[type]!,
+                  label,
                   style: AppTextStyles.labelSmall.copyWith(
                     color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
                     fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,

@@ -39,7 +39,7 @@ class EditableFollowUpNotifier extends StateNotifier<EditableFollowUpState> {
       final message = WhatsAppConstants.buildFollowUpMessage(
         customerName: customer.fullName,
         technicianName: profile.displayName,
-        serviceType: _job.serviceType.name,
+        serviceType: _job.serviceType,
         profileUrl: profile.profileUrl,
       );
       state.controller.text = message;

@@ -8,11 +8,10 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../providers/auth_notifier.dart';
 
 class _ServiceData {
-  final ServiceType type;
+  final String type;
   final String label;
   final String image;
   _ServiceData(this.type, this.label, this.image);
@@ -29,14 +28,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _nameController = TextEditingController();
   final _nameFocusNode = FocusNode();
   int _step = 0;
-  final List<ServiceType> _selectedServices = [];
+  final List<String> _selectedServices = [];
   bool _nameFocused = false;
 
   final List<_ServiceData> _services = [
-    _ServiceData(ServiceType.carLockProgramming, 'CAR KEY\nPROGRAMMING', 'assets/services/car_key.png'),
-    _ServiceData(ServiceType.doorLockInstallation, 'DOOR LOCK\nINSTALLATION', 'assets/services/door_install.png'),
-    _ServiceData(ServiceType.doorLockRepair, 'DOOR LOCK\nREPAIR', 'assets/services/door_repair.png'),
-    _ServiceData(ServiceType.smartLockInstallation, 'SMART LOCK\nINSTALLATION', 'assets/services/smart_lock.png'),
+    _ServiceData('car_lock_programming', 'CAR KEY\nPROGRAMMING', 'assets/services/car_key.png'),
+    _ServiceData('door_lock_installation', 'DOOR LOCK\nINSTALLATION', 'assets/services/door_install.png'),
+    _ServiceData('door_lock_repair', 'DOOR LOCK\nREPAIR', 'assets/services/door_repair.png'),
+    _ServiceData('smart_lock_installation', 'SMART LOCK\nINSTALLATION', 'assets/services/smart_lock.png'),
   ];
 
   @override
@@ -80,7 +79,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() {}); // Update button state
   }
 
-  void _toggleService(ServiceType type) {
+  void _toggleService(String type) {
     ref.read(authNotifierProvider.notifier).clearError();
     setState(() {
       if (_selectedServices.contains(type)) {
@@ -269,7 +268,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               letterSpacing: 2.0,
               fontWeight: FontWeight.w700,
             ),
-          ).animate().fadeIn().slideX(begin: 0.1, end: 0),
+          ).animate().fadeIn().slideX(begin: -0.1, end: 0),
 
           const SizedBox(height: 8),
 
@@ -280,7 +279,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
             ),
-          ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.1, end: 0),
+          ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
 
           const SizedBox(height: 24),
           Text('Identify the specialized services you provide.',

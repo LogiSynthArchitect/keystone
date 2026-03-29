@@ -1,12 +1,10 @@
-import '../../../../core/constants/app_enums.dart';
-
 class ProfileEntity {
   final String id;
   final String userId;
   final String displayName;
   final String? bio;
   final String? photoUrl;
-  final List<ServiceType> services;
+  final List<String> services;
   final String whatsappNumber;
   final bool isPublic;
   final String profileUrl;
@@ -36,7 +34,7 @@ class ProfileEntity {
     String? displayName,
     String? bio,
     String? photoUrl,
-    List<ServiceType>? services,
+    List<String>? services,
     String? whatsappNumber,
     bool? isPublic,
     String? profileUrl,

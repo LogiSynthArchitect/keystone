@@ -4,7 +4,7 @@ class JobEntity {
   final String id;
   final String userId;
   final String customerId;
-  final ServiceType serviceType;
+  final String serviceType;
   final DateTime jobDate;
   final String? location;
   final double? latitude;
@@ -16,6 +16,14 @@ class JobEntity {
   final SyncStatus syncStatus;
   final String? syncErrorMessage;
   final bool isArchived;
+  final String status;           // 'quoted' | 'in_progress' | 'completed' | 'invoiced'
+  final String paymentStatus;    // 'unpaid' | 'partial' | 'paid'
+  final String? paymentMethod;   // 'cash' | 'mobile_money' | 'bank_transfer' | 'other'
+  final double? quotedPrice;
+  final String? hardwareBrand;
+  final String? hardwareKeyway;
+  final bool isDeleted;
+  final DateTime? deletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -35,6 +43,14 @@ class JobEntity {
     required this.syncStatus,
     this.syncErrorMessage,
     required this.isArchived,
+    this.status = 'in_progress',
+    this.paymentStatus = 'unpaid',
+    this.paymentMethod,
+    this.quotedPrice,
+    this.hardwareBrand,
+    this.hardwareKeyway,
+    this.isDeleted = false,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -45,12 +61,16 @@ class JobEntity {
   bool get hasLocation     => location != null && location!.isNotEmpty;
   bool get hasCoordinates => latitude != null && longitude != null;
   bool get canSendFollowUp => !followUpSent && !isArchived;
+  bool get isCompleted    => status == 'completed';
+  bool get isInvoiced     => status == 'invoiced';
+  bool get isPaid         => paymentStatus == 'paid';
+  bool get isDeleted_     => isDeleted;
 
   JobEntity copyWith({
     String? id,
     String? userId,
     String? customerId,
-    ServiceType? serviceType,
+    String? serviceType,
     DateTime? jobDate,
     String? location,
     double? latitude,
@@ -62,6 +82,14 @@ class JobEntity {
     SyncStatus? syncStatus,
     String? syncErrorMessage,
     bool? isArchived,
+    String? status,
+    String? paymentStatus,
+    String? paymentMethod,
+    double? quotedPrice,
+    String? hardwareBrand,
+    String? hardwareKeyway,
+    bool? isDeleted,
+    DateTime? deletedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -81,6 +109,14 @@ class JobEntity {
       syncStatus: syncStatus ?? this.syncStatus,
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
       isArchived: isArchived ?? this.isArchived,
+      status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      quotedPrice: quotedPrice ?? this.quotedPrice,
+      hardwareBrand: hardwareBrand ?? this.hardwareBrand,
+      hardwareKeyway: hardwareKeyway ?? this.hardwareKeyway,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

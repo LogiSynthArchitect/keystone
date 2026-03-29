@@ -22,4 +22,12 @@ class SupabaseConstants {
   static const String followUpsTable           = 'follow_ups';
   static const String correctionRequestsTable  = 'correction_requests';
   static const String appEventsTable           = 'app_events';
+  static const String serviceTypesTable       = 'service_types';
+  static const String jobPartsTable           = 'job_parts';
+  static const String jobPhotosTable          = 'job_photos';
+  static const String jobAuditLogTable        = 'job_audit_log';
+  static const String keyCodeHistoryTable     = 'key_code_history';
+  static const String noteJobLinksTable       = 'note_job_links';
+  static const String remindersTable          = 'reminders';
+  static const String activityEventsTable     = 'activity_events';
 }

@@ -5,7 +5,6 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../providers/job_providers.dart';
 import '../../domain/entities/correction_request_entity.dart';
 
@@ -164,8 +163,15 @@ class _RequestCard extends ConsumerWidget {
   }
 
   void _showApproveDialog(BuildContext context, WidgetRef ref) {
-    ServiceType selectedType = ServiceType.doorLockInstallation;
+    String selectedType = 'door_lock_installation';
     DateTime selectedDate = DateTime.now();
+
+    final v1Types = [
+      'car_lock_programming',
+      'door_lock_installation',
+      'door_lock_repair',
+      'smart_lock_installation',
+    ];
 
     showDialog(
       context: context,
@@ -176,13 +182,13 @@ class _RequestCard extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButtonFormField<ServiceType>(
+              DropdownButtonFormField<String>(
                 initialValue: selectedType,
                 dropdownColor: context.ksc.primary800,
                 decoration: const InputDecoration(labelText: "SERVICE TYPE"),
-                items: ServiceType.values.map((t) => DropdownMenuItem(
+                items: v1Types.map((t) => DropdownMenuItem(
                   value: t,
-                  child: Text(t.name.toUpperCase(), style: TextStyle(color: context.ksc.white)),
+                  child: Text(t.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(color: Colors.white)),
                 )).toList(),
                 onChanged: (val) => setState(() => selectedType = val!),
               ),
@@ -211,7 +217,7 @@ class _RequestCard extends ConsumerWidget {
                   request.id,
                   request.jobId,
                   {
-                    'service_type': selectedType.name,
+                    'service_type': selectedType,
                     'job_date': selectedDate.toIso8601String(),
                   }
                 );

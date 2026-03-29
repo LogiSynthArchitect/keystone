@@ -13,7 +13,6 @@ import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../providers/profile_provider.dart';
 import '../../domain/entities/profile_entity.dart';
-import '../../../../core/constants/app_enums.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -25,7 +24,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _nameController     = TextEditingController();
   final _bioController      = TextEditingController();
   final _whatsappController = TextEditingController();
-  List<ServiceType> _services = [];
+  List<String> _services = [];
   bool _isPublic = true;
   bool _initialized = false;
   bool _isUploadingPhoto = false;
@@ -33,8 +32,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String _originalName = '';
   String _originalBio = '';
   String _originalWhatsapp = '';
-  List<ServiceType> _originalServices = [];
+  List<String> _originalServices = [];
   bool _originalIsPublic = true;
+
+  // Placeholder for V1 service types until Phase 3 makes them dynamic
+  final List<String> _v1ServiceTypes = [
+    'car_lock_programming',
+    'door_lock_installation',
+    'door_lock_repair',
+    'smart_lock_installation',
+  ];
 
   @override
   void initState() {
@@ -81,10 +88,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _isPublic != _originalIsPublic ||
       !_listEquals(_services, _originalServices);
 
-  bool _listEquals(List<ServiceType> a, List<ServiceType> b) {
+  bool _listEquals(List<String> a, List<String> b) {
     if (a.length != b.length) return false;
-    final sa = [...a]..sort((x, y) => x.index.compareTo(y.index));
-    final sb = [...b]..sort((x, y) => x.index.compareTo(y.index));
+    final sa = [...a]..sort();
+    final sb = [...b]..sort();
     for (int i = 0; i < sa.length; i++) { if (sa[i] != sb[i]) return false; }
     return true;
   }
@@ -109,13 +116,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     ) ?? false;
   }
 
-  String _serviceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return 'CAR KEY PROGRAMMING';
-      case ServiceType.doorLockInstallation:  return 'DOOR LOCK INSTALLATION';
-      case ServiceType.doorLockRepair:        return 'DOOR LOCK REPAIR';
-      case ServiceType.smartLockInstallation: return 'SMART LOCK INSTALLATION';
-    }
+  String _serviceLabel(String type) {
+    return type.replaceAll('_', ' ').toUpperCase();
   }
 
   Future<void> _onPickPhoto() async {
@@ -239,7 +241,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     const SizedBox(height: AppSpacing.xl),
                     Text('OFFERED SERVICES', style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
                     const SizedBox(height: AppSpacing.md),
-                    ...ServiceType.values.map((type) {
+                    ..._v1ServiceTypes.map((type) {
                       final isSelected = _services.contains(type);
                       return Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),

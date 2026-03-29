@@ -76,7 +76,7 @@ class FollowUpButton extends ConsumerWidget {
                   customerPhone: customer.phoneNumber,
                   customerName: customer.fullName,
                   technicianName: profile.displayName,
-                  serviceType: job.serviceType.name,
+                  serviceType: job.serviceType,
                   profileUrl: profile.profileUrl,
                 );
 

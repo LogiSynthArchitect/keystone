@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/constants/app_enums.dart';
 import 'onboarding_step_indicator.dart';
 
 class ServicesStepView extends StatelessWidget {
-  final List<ServiceType> selectedServices;
-  final Function(ServiceType) onToggle;
+  final List<String> selectedServices;
+  final Function(String) onToggle;
 
   const ServicesStepView({
     super.key,
@@ -17,10 +16,10 @@ class ServicesStepView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = [
-      _ServiceData(ServiceType.carLockProgramming, 'Car Key\nProgramming', 'assets/services/car_key.png'),
-      _ServiceData(ServiceType.doorLockInstallation, 'Door Lock\nInstallation', 'assets/services/door_install.png'),
-      _ServiceData(ServiceType.doorLockRepair, 'Door Lock\nRepair', 'assets/services/door_repair.png'),
-      _ServiceData(ServiceType.smartLockInstallation, 'Smart Lock\nInstallation', 'assets/services/smart_lock.png'),
+      _ServiceData('car_lock_programming', 'Car Key\nProgramming', 'assets/services/car_key.png'),
+      _ServiceData('door_lock_installation', 'Door Lock\nInstallation', 'assets/services/door_install.png'),
+      _ServiceData('door_lock_repair', 'Door Lock\nRepair', 'assets/services/door_repair.png'),
+      _ServiceData('smart_lock_installation', 'Smart Lock\nInstallation', 'assets/services/smart_lock.png'),
     ];
 
     return Column(
@@ -79,7 +78,7 @@ class ServicesStepView extends StatelessWidget {
 }
 
 class _ServiceData {
-  final ServiceType type;
+  final String type;
   final String label;
   final String image;
   _ServiceData(this.type, this.label, this.image);

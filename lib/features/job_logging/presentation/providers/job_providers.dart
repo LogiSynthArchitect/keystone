@@ -120,7 +120,7 @@ class JobListState {
     if (searchQuery.isEmpty) return activeJobs;
     final query = searchQuery.toLowerCase();
     return activeJobs.where((j) =>
-      j.serviceType.name.toLowerCase().contains(query) ||
+      j.serviceType.toLowerCase().contains(query) ||
       (j.notes?.toLowerCase().contains(query) ?? false) ||
       (j.location?.toLowerCase().contains(query) ?? false)
     ).toList();
@@ -282,7 +282,7 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
   void reset() => state = const LogJobState();
 
   Future<JobEntity?> save({
-    required ServiceType serviceType,
+    required String serviceType,
     String? existingCustomerId,
     String? newCustomerName,
     String? customerPhone,

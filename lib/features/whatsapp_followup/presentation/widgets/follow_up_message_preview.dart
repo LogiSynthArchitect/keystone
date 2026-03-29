@@ -74,7 +74,7 @@ class _FollowUpMessagePreviewState extends ConsumerState<FollowUpMessagePreview>
                         final message = WhatsAppConstants.buildFollowUpMessage(
                           customerName: customer?.fullName ?? "Customer",
                           technicianName: profileState.profile!.displayName,
-                          serviceType: widget.job.serviceType.name,
+                          serviceType: widget.job.serviceType,
                           profileUrl: profileState.profile!.profileUrl,
                         );
                         editState.controller.text = message;

@@ -9,7 +9,6 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../job_logging/domain/entities/job_entity.dart';
 import '../providers/customer_providers.dart';
@@ -250,13 +249,8 @@ class CustomerDetailScreen extends ConsumerWidget {
     );
   }
 
-  String _getServiceLabel(ServiceType type) {
-    switch (type) {
-      case ServiceType.carLockProgramming:    return "CAR KEY PROGRAMMING";
-      case ServiceType.doorLockInstallation:  return "DOOR LOCK INSTALLATION";
-      case ServiceType.doorLockRepair:        return "DOOR LOCK REPAIR";
-      case ServiceType.smartLockInstallation: return "SMART LOCK INSTALLATION";
-    }
+  String _getServiceLabel(String type) {
+    return type.replaceAll('_', ' ').toUpperCase();
   }
 
   Widget _buildEmptyLedger(BuildContext context) {

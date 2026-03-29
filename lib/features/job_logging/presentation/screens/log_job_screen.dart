@@ -8,7 +8,6 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
-import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/phone_formatter.dart';
@@ -27,7 +26,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   int _currentStep = 0;
   final int _totalSteps = 3;
 
-  ServiceType? _serviceType;
+  String? _serviceType;
   String? _finalCustomerId;
 
   final _customerController = TextEditingController();

@@ -11,6 +11,8 @@ class CustomerEntity {
   final DateTime? lastJobAt;
   final SyncStatus syncStatus;
   final String? syncErrorMessage;
+  final String? propertyType;   // 'residential' | 'commercial' | 'automotive'
+  final String? leadSource;     // 'word_of_mouth' | 'google_maps' | 'referral' | 'physical_card' | 'whatsapp' | 'other'
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -25,6 +27,8 @@ class CustomerEntity {
     this.lastJobAt,
     this.syncStatus = SyncStatus.synced,
     this.syncErrorMessage,
+    this.propertyType,
+    this.leadSource,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -45,6 +49,8 @@ class CustomerEntity {
     DateTime? lastJobAt,
     SyncStatus? syncStatus,
     String? syncErrorMessage,
+    String? propertyType,
+    String? leadSource,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -59,6 +65,8 @@ class CustomerEntity {
       lastJobAt: lastJobAt ?? this.lastJobAt,
       syncStatus: syncStatus ?? this.syncStatus,
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
+      propertyType: propertyType ?? this.propertyType,
+      leadSource: leadSource ?? this.leadSource,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
