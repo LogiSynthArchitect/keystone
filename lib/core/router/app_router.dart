@@ -24,6 +24,8 @@ import '../../features/key_codes/presentation/screens/key_codes_screen.dart';
 import '../../features/knowledge_base/presentation/screens/notes_list_screen.dart';
 import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
+import '../../features/knowledge_base/presentation/screens/edit_note_screen.dart';
+import '../../features/note_links/presentation/screens/note_job_link_screen.dart';
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
@@ -106,6 +108,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.notes, builder: (context, state) => const NotesListScreen()),
       GoRoute(path: RouteNames.addNote, builder: (context, state) => const AddNoteScreen()),
       GoRoute(path: '/notes/:id', builder: (context, state) => NoteDetailScreen(noteId: state.pathParameters['id']!)),
+      GoRoute(path: '/notes/:id/edit', builder: (context, state) => EditNoteScreen(noteId: state.pathParameters['id']!)),
+      GoRoute(path: '/notes/:id/link', builder: (context, state) => NoteJobLinkScreen(noteId: state.pathParameters['id']!)),
       GoRoute(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       GoRoute(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
       GoRoute(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),

@@ -42,6 +42,7 @@ class UpdateNoteUsecase implements UseCase<KnowledgeNoteEntity, UpdateNoteParams
       photoUrl: note.photoUrl,
       serviceType: note.serviceType,
       isArchived: note.isArchived,
+      lastEditedAt: DateTime.now(),
       createdAt: note.createdAt,
       updatedAt: DateTime.now(),
     );

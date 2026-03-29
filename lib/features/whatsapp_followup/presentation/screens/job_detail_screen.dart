@@ -18,6 +18,8 @@ import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_photo_entity.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import 'package:keystone/features/customer_history/presentation/providers/customer_providers.dart';
+import 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart';
+import 'package:keystone/features/note_links/presentation/providers/note_link_provider.dart';
 import '../widgets/follow_up_button.dart';
 import '../widgets/follow_up_message_preview.dart';
 
@@ -122,6 +124,10 @@ class JobDetailScreen extends ConsumerWidget {
 
                       _buildSectionHeader(context, "COMMUNICATION STATUS"),
                       FollowUpMessagePreview(job: job),
+                      const SizedBox(height: 32),
+
+                      _buildSectionHeader(context, "LINKED NOTES"),
+                      _LinkedNotesList(jobId: job.id),
                       const SizedBox(height: 32),
 
                       _buildAuditLogSection(context, ref, job),
@@ -559,6 +565,86 @@ class JobDetailScreen extends ConsumerWidget {
           )).toList(),
         ),
       ),
+    );
+  }
+}
+
+class _LinkedNotesList extends ConsumerWidget {
+  final String jobId;
+  const _LinkedNotesList({required this.jobId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final linksAsync = ref.watch(noteLinkByJobProvider(jobId));
+    final noteState  = ref.watch(notesListProvider);
+
+    return linksAsync.when(
+      loading: () => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator(color: context.ksc.accent500, strokeWidth: 2)),
+      ),
+      error: (_, __) => Text("Could not load linked notes.", style: AppTextStyles.caption.copyWith(color: context.ksc.error500)),
+      data: (links) {
+        if (links.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: context.ksc.primary800,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: context.ksc.primary700),
+            ),
+            child: Text(
+              "No notes linked to this job.",
+              style: AppTextStyles.body.copyWith(color: context.ksc.neutral500),
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
+
+        return Column(
+          children: links.map((link) {
+            final note = noteState.notes.where((n) => n.id == link.noteId).firstOrNull;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: context.ksc.primary800,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: context.ksc.primary700),
+                ),
+                child: Row(
+                  children: [
+                    Icon(LineAwesomeIcons.sticky_note, size: 14, color: context.ksc.accent500),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            note != null ? note.title.toUpperCase() : 'NOTE #${link.noteId.substring(0, 8)}',
+                            style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (note != null && note.hasTags) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              note.tags.map((t) => '#$t').join(' '),
+                              style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 10),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }
