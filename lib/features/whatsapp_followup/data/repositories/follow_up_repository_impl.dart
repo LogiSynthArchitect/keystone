@@ -61,6 +61,10 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
         sentAt: DateTime.parse(localData['sent_at'] as String),
         deliveryConfirmed: localData['delivery_confirmed'] as bool? ?? false,
         createdAt: DateTime.parse(localData['sent_at'] as String),
+        responseStatus: localData['response_status'] as String? ?? 'sent',
+        responseUpdatedAt: localData['response_updated_at'] != null
+            ? DateTime.tryParse(localData['response_updated_at'] as String)
+            : null,
       );
     }
     // Fall back to remote.
