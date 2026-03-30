@@ -45,6 +45,8 @@ final syncOfflineCustomersUsecaseProvider = Provider<SyncOfflineCustomersUsecase
 final updateCustomerUsecaseProvider = Provider<UpdateCustomerUsecase>(
   (ref) => UpdateCustomerUsecase(ref.watch(customerRepositoryProvider)));
 
+const _kCustomerPageSize = 20;
+
 class CustomerListState {
   final List<CustomerEntity> customers;
   final List<CustomerEntity> searchResults;
@@ -53,6 +55,7 @@ class CustomerListState {
   final String? errorMessage;
   final String searchQuery;
   final String filterType; // 'all', 'recent', 'repeat'
+  final int displayLimit;
 
   const CustomerListState({
     this.customers = const [],
@@ -62,23 +65,24 @@ class CustomerListState {
     this.errorMessage,
     this.searchQuery = '',
     this.filterType = 'all',
+    this.displayLimit = _kCustomerPageSize,
   });
 
   List<CustomerEntity> get displayed {
     List<CustomerEntity> base = searchQuery.isEmpty ? customers : searchResults;
-    
+
     if (filterType == 'recent') {
-      // Logic for recent: Created in last 7 days (mock logic for V1)
       final weekAgo = DateTime.now().subtract(const Duration(days: 7));
-      return base.where((c) => c.createdAt.isAfter(weekAgo)).toList();
-    }
-    
-    if (filterType == 'repeat') {
-      return base.where((c) => c.totalJobs > 1).toList();
+      base = base.where((c) => c.createdAt.isAfter(weekAgo)).toList();
+    } else if (filterType == 'repeat') {
+      base = base.where((c) => c.totalJobs > 1).toList();
     }
 
     return base;
   }
+
+  List<CustomerEntity> get paged => displayed.take(displayLimit).toList();
+  bool get hasMore => displayed.length > displayLimit;
 
   CustomerListState copyWith({
     List<CustomerEntity>? customers,
@@ -88,6 +92,7 @@ class CustomerListState {
     String? errorMessage,
     String? searchQuery,
     String? filterType,
+    int? displayLimit,
     bool clearError = false,
   }) => CustomerListState(
     customers: customers ?? this.customers,
@@ -97,6 +102,7 @@ class CustomerListState {
     errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     searchQuery: searchQuery ?? this.searchQuery,
     filterType: filterType ?? this.filterType,
+    displayLimit: displayLimit ?? this.displayLimit,
   );
 }
 
@@ -124,11 +130,17 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
   }
 
   void setFilter(String type) {
-    state = state.copyWith(filterType: type);
+    state = state.copyWith(filterType: type, displayLimit: _kCustomerPageSize);
+  }
+
+  void loadMore() {
+    if (state.hasMore) {
+      state = state.copyWith(displayLimit: state.displayLimit + _kCustomerPageSize);
+    }
   }
 
   Future<void> search(String query) async {
-    state = state.copyWith(searchQuery: query);
+    state = state.copyWith(searchQuery: query, displayLimit: _kCustomerPageSize);
     if (query.trim().isEmpty) {
       state = state.copyWith(searchResults: [], isSearching: false, searchQuery: '');
       return;

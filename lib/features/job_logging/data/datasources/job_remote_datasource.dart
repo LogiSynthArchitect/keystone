@@ -48,6 +48,24 @@ class JobRemoteDatasource {
     }
   }
 
+  /// Returns the server's current [updatedAt] for [id], or null if the job
+  /// does not exist remotely yet.
+  Future<DateTime?> fetchServerUpdatedAt(String id) async {
+    try {
+      final data = await _supabase
+          .from('jobs')
+          .select('updated_at')
+          .eq('id', id)
+          .maybeSingle();
+      if (data == null) return null;
+      final raw = data['updated_at'];
+      if (raw == null) return null;
+      return DateTime.tryParse(raw.toString());
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Task 2: Return the RPC payload for cache reconciliation
   Future<Map<String, dynamic>> batchSync(String userId, List<Map<String, dynamic>> jobs) async {
     try {

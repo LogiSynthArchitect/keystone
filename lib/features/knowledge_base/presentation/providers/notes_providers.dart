@@ -45,6 +45,8 @@ final syncPendingNotesUsecaseProvider = Provider<SyncPendingNotesUsecase>(
 final updateNoteUsecaseProvider = Provider<UpdateNoteUsecase>(
   (ref) => UpdateNoteUsecase(ref.watch(knowledgeNoteRepositoryProvider)));
 
+const _kNotesPageSize = 20;
+
 class NotesListState {
   final List<KnowledgeNoteEntity> notes;
   final List<KnowledgeNoteEntity> searchResults;
@@ -53,6 +55,7 @@ class NotesListState {
   final String searchQuery;
   final bool showArchived;
   final String? filterCategory;
+  final int displayLimit;
 
   const NotesListState({
     this.notes = const [],
@@ -62,6 +65,7 @@ class NotesListState {
     this.searchQuery = '',
     this.showArchived = false,
     this.filterCategory,
+    this.displayLimit = _kNotesPageSize,
   });
 
   List<KnowledgeNoteEntity> get displayed {
@@ -69,6 +73,9 @@ class NotesListState {
     if (filterCategory == null) return baseList;
     return baseList.where((n) => n.serviceType == filterCategory).toList();
   }
+
+  List<KnowledgeNoteEntity> get paged => displayed.take(displayLimit).toList();
+  bool get hasMore => displayed.length > displayLimit;
 
   NotesListState copyWith({
     List<KnowledgeNoteEntity>? notes,
@@ -78,6 +85,7 @@ class NotesListState {
     String? searchQuery,
     bool? showArchived,
     String? filterCategory,
+    int? displayLimit,
     bool clearError = false,
     bool clearFilter = false,
   }) => NotesListState(
@@ -88,6 +96,7 @@ class NotesListState {
     searchQuery: searchQuery ?? this.searchQuery,
     showArchived: showArchived ?? this.showArchived,
     filterCategory: clearFilter ? null : (filterCategory ?? this.filterCategory),
+    displayLimit: displayLimit ?? this.displayLimit,
   );
 }
 
@@ -122,9 +131,15 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
 
   void filterByCategory(String? category) {
     if (category == null) {
-      state = state.copyWith(clearFilter: true);
+      state = state.copyWith(clearFilter: true, displayLimit: _kNotesPageSize);
     } else {
-      state = state.copyWith(filterCategory: category);
+      state = state.copyWith(filterCategory: category, displayLimit: _kNotesPageSize);
+    }
+  }
+
+  void loadMore() {
+    if (state.hasMore) {
+      state = state.copyWith(displayLimit: state.displayLimit + _kNotesPageSize);
     }
   }
 

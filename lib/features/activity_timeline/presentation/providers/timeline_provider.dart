@@ -87,7 +87,7 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
 
       state = TimelineState(events: events);
     } catch (e) {
-      state = TimelineState(errorMessage: 'Could not load activity.');
+      state = const TimelineState(errorMessage: 'Could not load activity.');
     }
   }
 

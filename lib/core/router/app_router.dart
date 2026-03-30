@@ -34,6 +34,7 @@ import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/reminders/presentation/screens/reminders_screen.dart';
 import '../../features/activity_timeline/presentation/screens/timeline_screen.dart';
+import '../../features/auth/presentation/screens/setup_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
@@ -122,6 +123,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.search, builder: (context, state) => const SearchScreen()),
       GoRoute(path: RouteNames.reminders, builder: (context, state) => const RemindersScreen()),
       GoRoute(path: RouteNames.timeline, builder: (context, state) => const TimelineScreen()),
+      GoRoute(path: RouteNames.setup, builder: (context, state) => const SetupScreen()),
       GoRoute(path: '/p/:slug', builder: (context, state) => PublicProfileScreen(slug: state.pathParameters['slug']!)),
     ],
   );

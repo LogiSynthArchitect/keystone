@@ -37,6 +37,8 @@ class RouteNames {
   static const String editProfile = '/profile/edit';
   static const String serviceTypes = '/profile/service-types';
   static const String adminRequests = '/admin/requests';
+  // Setup flow
+  static const String setup = '/setup';
   // Public
   static String publicProfile(String slug) => '/p/$slug';
 }
