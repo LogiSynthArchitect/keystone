@@ -127,6 +127,17 @@ class JobRepositoryImpl implements JobRepository {
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
+        // Conflict resolution: if the server has a newer version, it wins.
+        final serverUpdatedAt = await _remote.fetchServerUpdatedAt(job.id);
+        if (serverUpdatedAt != null && serverUpdatedAt.isAfter(job.updatedAt)) {
+          debugPrint('[KS:JOBS] Conflict detected for ${job.id}: server is newer (${serverUpdatedAt.toIso8601String()} > ${job.updatedAt.toIso8601String()}). Using server version.');
+          final serverJobs = await _remote.getJobs(userId: job.userId);
+          final serverJob = serverJobs.where((j) => j.id == job.id).firstOrNull;
+          if (serverJob != null) {
+            await _local.saveJob(serverJob);
+            return serverJob.toEntity();
+          }
+        }
         final updated = await _remote.updateJob(job.id, json);
         await _local.saveJob(updated);
         return updated.toEntity();

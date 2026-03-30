@@ -175,7 +175,14 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                 ? _buildLoadingState()
                 : state.filteredJobs.isEmpty
                     ? _buildEmptyState()
-                    : RefreshIndicator(
+                    : NotificationListener<ScrollNotification>(
+                        onNotification: (n) {
+                          if (n is ScrollEndNotification && n.metrics.extentAfter < 200) {
+                            ref.read(jobListProvider.notifier).loadMore();
+                          }
+                          return false;
+                        },
+                        child: RefreshIndicator(
                         onRefresh: () => ref.read(jobListProvider.notifier).refresh(),
                         color: context.ksc.accent500,
                         backgroundColor: context.ksc.primary800,
@@ -195,7 +202,18 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                               sliver: SliverList(
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
-                                    final job = state.filteredJobs[index];
+                                    final jobs = state.pagedJobs;
+                                    if (index == jobs.length) {
+                                      return state.hasMore
+                                          ? Padding(
+                                              padding: const EdgeInsets.only(bottom: 16.0),
+                                              child: Center(
+                                                child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500),
+                                              ),
+                                            )
+                                          : const SizedBox.shrink();
+                                    }
+                                    final job = jobs[index];
                                     return Padding(
                                       padding: const EdgeInsets.only(bottom: 16.0),
                                       child: JobCard(
@@ -204,7 +222,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                                       ),
                                     );
                                   },
-                                  childCount: state.filteredJobs.length,
+                                  childCount: state.pagedJobs.length + (state.hasMore ? 1 : 0),
                                 ),
                               ),
                             ),
@@ -212,6 +230,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                           ],
                         ),
                       ),
+                      ),   // NotificationListener
           ),
         ],
       ),
@@ -261,6 +280,29 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
               "You haven't logged any jobs yet.\nTap + below to log your first job.",
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, height: 1.5)
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () => context.push(RouteNames.setup),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: context.ksc.primary800,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LineAwesomeIcons.rocket_solid, color: context.ksc.accent500, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      "SETUP GUIDE",
+                      style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

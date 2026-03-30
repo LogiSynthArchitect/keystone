@@ -11,6 +11,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/services/data_export_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -180,6 +181,30 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
 
+                  const SizedBox(height: 32),
+                  _buildSectionLabel(context, "GETTING STARTED"),
+                  _buildActionTile(
+                    context,
+                    LineAwesomeIcons.rocket_solid,
+                    "SETUP GUIDE",
+                    () => context.push(RouteNames.setup),
+                  ),
+
+                  const SizedBox(height: 32),
+                  _buildSectionLabel(context, "DATA"),
+                  _buildActionTile(
+                    context,
+                    LineAwesomeIcons.file_code_solid,
+                    "EXPORT AS JSON",
+                    () => DataExportService.exportAsJson(),
+                  ),
+                  _buildActionTile(
+                    context,
+                    LineAwesomeIcons.file_csv_solid,
+                    "EXPORT JOBS AS CSV",
+                    () => DataExportService.exportAsCsv(),
+                  ),
+
                   const SizedBox(height: 48),
 
                   // EDIT PROFILE ACTION
@@ -253,6 +278,35 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(width: 12),
           Switch(value: isDark, onChanged: (_) => onToggle()),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionTile(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: context.ksc.primary700),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(icon, color: context.ksc.accent500, size: 20),
+                const SizedBox(width: 16),
+                Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                const Spacer(),
+                Icon(LineAwesomeIcons.download_solid, color: context.ksc.neutral500, size: 18),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

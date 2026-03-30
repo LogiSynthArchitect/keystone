@@ -180,6 +180,8 @@ class JobListFilters {
 
 const _sentinel = Object();
 
+const _kPageSize = 20;
+
 class JobListState {
   final List<JobEntity> activeJobs;
   final List<JobEntity> allJobs;
@@ -188,6 +190,7 @@ class JobListState {
   final String searchQuery;
   final bool isSyncing;
   final JobListFilters filters;
+  final int displayLimit;
 
   const JobListState({
     this.activeJobs = const [],
@@ -197,6 +200,7 @@ class JobListState {
     this.searchQuery = '',
     this.isSyncing = false,
     this.filters = const JobListFilters(),
+    this.displayLimit = _kPageSize,
   });
 
   List<JobEntity> get filteredJobs {
@@ -239,6 +243,9 @@ class JobListState {
     return jobs;
   }
 
+  List<JobEntity> get pagedJobs => filteredJobs.take(displayLimit).toList();
+  bool get hasMore => filteredJobs.length > displayLimit;
+
   JobListState copyWith({
     List<JobEntity>? activeJobs,
     List<JobEntity>? allJobs,
@@ -247,6 +254,7 @@ class JobListState {
     String? searchQuery,
     bool? isSyncing,
     JobListFilters? filters,
+    int? displayLimit,
     bool clearError = false
   }) {
     return JobListState(
@@ -257,6 +265,7 @@ class JobListState {
       searchQuery: searchQuery ?? this.searchQuery,
       isSyncing: isSyncing ?? this.isSyncing,
       filters: filters ?? this.filters,
+      displayLimit: displayLimit ?? this.displayLimit,
     );
   }
 
@@ -305,16 +314,22 @@ class JobListNotifier extends StateNotifier<JobListState> {
   void setSearchQuery(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      state = state.copyWith(searchQuery: query);
+      state = state.copyWith(searchQuery: query, displayLimit: _kPageSize);
     });
   }
 
   void setFilters(JobListFilters filters) {
-    state = state.copyWith(filters: filters);
+    state = state.copyWith(filters: filters, displayLimit: _kPageSize);
   }
 
   void clearFilters() {
-    state = state.copyWith(filters: const JobListFilters());
+    state = state.copyWith(filters: const JobListFilters(), displayLimit: _kPageSize);
+  }
+
+  void loadMore() {
+    if (state.hasMore) {
+      state = state.copyWith(displayLimit: state.displayLimit + _kPageSize);
+    }
   }
 
   Future<void> refresh() async {

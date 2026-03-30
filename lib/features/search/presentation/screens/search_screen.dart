@@ -8,6 +8,9 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
+import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
+import 'package:keystone/features/knowledge_base/domain/entities/knowledge_note_entity.dart';
 import '../providers/search_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -128,7 +131,7 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _JobTile extends StatelessWidget {
-  final job;
+  final JobEntity job;
   const _JobTile({required this.job});
 
   @override
@@ -175,7 +178,7 @@ class _JobTile extends StatelessWidget {
 }
 
 class _CustomerTile extends StatelessWidget {
-  final customer;
+  final CustomerEntity customer;
   const _CustomerTile({required this.customer});
 
   @override
@@ -218,7 +221,7 @@ class _CustomerTile extends StatelessWidget {
 }
 
 class _NoteTile extends StatelessWidget {
-  final note;
+  final KnowledgeNoteEntity note;
   const _NoteTile({required this.note});
 
   @override
