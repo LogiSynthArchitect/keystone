@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/permissions_provider.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
@@ -16,6 +18,27 @@ class KeyCodesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final permissions = ref.watch(permissionsProvider);
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    final isAdmin = user?.isAdmin ?? false;
+
+    if (!permissions.canViewKeyCodes && !isAdmin) {
+      return Scaffold(
+        backgroundColor: context.ksc.primary900,
+        appBar: const KsAppBar(title: "KEY CODES", showBack: true),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              "Key code access is restricted by your account settings.",
+              style: AppTextStyles.body.copyWith(color: context.ksc.neutral400),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+
     final state = ref.watch(keyCodeProvider(customerId));
 
     return Scaffold(

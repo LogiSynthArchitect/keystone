@@ -179,6 +179,13 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    _buildActionTile(
+                      context,
+                      LineAwesomeIcons.lock_solid,
+                      "TECHNICIAN PERMISSIONS",
+                      () => context.push(RouteNames.permissions),
+                    ),
                   ],
 
                   const SizedBox(height: 32),
