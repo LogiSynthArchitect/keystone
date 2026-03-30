@@ -50,6 +50,7 @@ class _ReminderCard extends StatelessWidget {
       case ReminderType.unpaidJob:       return context.ksc.error500;
       case ReminderType.stuckInProgress: return context.ksc.warning500;
       case ReminderType.followUpPending: return context.ksc.primary400;
+      case ReminderType.followUpNoResponse: return context.ksc.primary400;
     }
   }
 
@@ -58,6 +59,7 @@ class _ReminderCard extends StatelessWidget {
       case ReminderType.unpaidJob:       return LineAwesomeIcons.exclamation_triangle_solid;
       case ReminderType.stuckInProgress: return LineAwesomeIcons.clock_solid;
       case ReminderType.followUpPending: return LineAwesomeIcons.whatsapp;
+      case ReminderType.followUpNoResponse: return LineAwesomeIcons.comment_dots;
     }
   }
 

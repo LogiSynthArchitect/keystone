@@ -2,6 +2,7 @@ enum ReminderType {
   unpaidJob,
   stuckInProgress,
   followUpPending,
+  followUpNoResponse,
 }
 
 extension ReminderTypeLabel on ReminderType {
@@ -10,6 +11,7 @@ extension ReminderTypeLabel on ReminderType {
       case ReminderType.unpaidJob:       return 'UNPAID JOB';
       case ReminderType.stuckInProgress: return 'JOB IN PROGRESS';
       case ReminderType.followUpPending: return 'FOLLOW-UP NEEDED';
+      case ReminderType.followUpNoResponse: return 'AWAITING RESPONSE';
     }
   }
 
@@ -18,6 +20,7 @@ extension ReminderTypeLabel on ReminderType {
       case ReminderType.unpaidJob:       return 'Payment not yet collected';
       case ReminderType.stuckInProgress: return 'Job still in progress';
       case ReminderType.followUpPending: return 'Follow-up not sent yet';
+      case ReminderType.followUpNoResponse: return 'Awaiting customer response';
     }
   }
 }

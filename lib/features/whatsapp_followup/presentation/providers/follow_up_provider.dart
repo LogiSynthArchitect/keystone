@@ -62,7 +62,15 @@ class FollowUpState {
 class FollowUpNotifier extends StateNotifier<FollowUpState> {
   final SendFollowupUsecase _sendFollowup;
   final String _userId;
-  FollowUpNotifier(this._sendFollowup, this._userId) : super(const FollowUpState());
+  final FollowUpRepository _repository;
+  FollowUpNotifier(this._sendFollowup, this._userId, this._repository) : super(const FollowUpState());
+
+  Future<void> updateStatus(String jobId, String status) async {
+    await _repository.updateResponseStatus(jobId, status);
+    state = state.copyWith(
+      followUp: state.followUp?.copyWith(responseStatus: status),
+    );
+  }
 
   void buildPreview({
     required String customerName,
@@ -118,5 +126,11 @@ final followUpProvider = StateNotifierProvider.family<FollowUpNotifier, FollowUp
   (ref, jobId) => FollowUpNotifier(
     ref.watch(sendFollowupUsecaseProvider),
     ref.watch(supabaseClientProvider).auth.currentUser?.id ?? '',
+    ref.watch(followUpRepositoryProvider),
   ),
 );
+
+final followUpStatusProvider = FutureProvider.autoDispose.family<FollowUpEntity?, String>((ref, jobId) async {
+  final repo = ref.read(followUpRepositoryProvider);
+  return await repo.getFollowUpByJobId(jobId);
+});
