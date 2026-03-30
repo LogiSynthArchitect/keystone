@@ -29,6 +29,7 @@ import '../../features/note_links/presentation/screens/note_job_link_screen.dart
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
+import '../../features/technician_profile/presentation/screens/permissions_screen.dart';
 import '../../features/service_types/presentation/screens/service_types_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
@@ -119,6 +120,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
       GoRoute(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),
       GoRoute(path: RouteNames.adminRequests, builder: (context, state) => const AdminRequestsScreen()),
+      GoRoute(path: RouteNames.permissions, builder: (context, state) => const PermissionsScreen()),
       GoRoute(path: RouteNames.analytics, builder: (context, state) => const AnalyticsScreen()),
       GoRoute(path: RouteNames.search, builder: (context, state) => const SearchScreen()),
       GoRoute(path: RouteNames.reminders, builder: (context, state) => const RemindersScreen()),

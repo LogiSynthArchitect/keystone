@@ -22,6 +22,7 @@ import 'package:keystone/features/knowledge_base/presentation/providers/notes_pr
 import 'package:keystone/features/note_links/presentation/providers/note_link_provider.dart';
 import '../widgets/follow_up_button.dart';
 import '../widgets/follow_up_message_preview.dart';
+import '../../../../core/providers/permissions_provider.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   final String jobId;
@@ -30,6 +31,8 @@ class JobDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jobAsync = ref.watch(jobDetailProvider(jobId));
+    final permissions = ref.watch(permissionsProvider);
+    final isAdmin = ref.watch(currentUserProvider).valueOrNull?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -38,41 +41,44 @@ class JobDetailScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           jobAsync.when(
-            data: (job) => job == null ? const SizedBox.shrink() : IconButton(
-              icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
-              onPressed: () => context.push(RouteNames.editJob(jobId)),
-            ),
+            data: (job) => job == null
+                ? const SizedBox.shrink()
+                : IconButton(
+                    icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
+                    onPressed: () => context.push(RouteNames.editJob(jobId)),
+                  ),
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
-            onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: ctx.ksc.primary800,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  title: Text("ARCHIVE RECORD?", style: AppTextStyles.h2.copyWith(color: ctx.ksc.white)),
-                  content: Text("This job will be moved to history. It cannot be permanently deleted.", style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral400)),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: ctx.ksc.error500))),
-                  ],
-                ),
-              );
-              if (confirmed == true) {
-                await ref.read(jobListProvider.notifier).archive(jobId);
-                if (!context.mounted) return;
-                final error = ref.read(jobListProvider).errorMessage;
-                if (error != null && error.isNotEmpty) {
-                  KsSnackbar.show(context, message: error, type: KsSnackbarType.error);
-                } else {
-                  Navigator.pop(context);
+          if (permissions.canDeleteJobs || isAdmin)
+            IconButton(
+              icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: ctx.ksc.primary800,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    title: Text("ARCHIVE RECORD?", style: AppTextStyles.h2.copyWith(color: ctx.ksc.white)),
+                    content: Text("This job will be moved to history. It cannot be permanently deleted.", style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral400)),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
+                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("ARCHIVE", style: AppTextStyles.label.copyWith(color: ctx.ksc.error500))),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  await ref.read(jobListProvider.notifier).archive(jobId);
+                  if (!context.mounted) return;
+                  final error = ref.read(jobListProvider).errorMessage;
+                  if (error != null && error.isNotEmpty) {
+                    KsSnackbar.show(context, message: error, type: KsSnackbarType.error);
+                  } else {
+                    Navigator.pop(context);
+                  }
                 }
-              }
-            },
-          ),
+              },
+            ),
         ],
       ),
       body: Column(

@@ -7,6 +7,7 @@ import 'package:keystone/core/widgets/ks_app_bar.dart';
 import 'package:keystone/core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_snackbar.dart';
 import 'package:keystone/core/providers/auth_provider.dart';
+import 'package:keystone/core/providers/permissions_provider.dart';
 import '../providers/job_providers.dart';
 import '../../domain/entities/job_entity.dart';
 import '../../domain/usecases/edit_job_usecase.dart';
@@ -97,6 +98,9 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
   @override
   Widget build(BuildContext context) {
     final jobAsync = ref.watch(jobDetailProvider(widget.jobId));
+    final permissions = ref.watch(permissionsProvider);
+    final isAdmin = ref.watch(currentUserProvider).valueOrNull?.isAdmin ?? false;
+    final canEditPrice = permissions.canEditFinalPrice || isAdmin;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -127,9 +131,9 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
                       
                       const SizedBox(height: 32),
                       _section("FINANCIALS"),
-                      _field("Quoted Amount", _quotedAmountController),
+                      _field("Quoted Amount", _quotedAmountController, readOnly: !canEditPrice),
                       const SizedBox(height: 16),
-                      _field("Final Amount", _amountController),
+                      _field("Final Amount", _amountController, readOnly: !canEditPrice),
                       const SizedBox(height: 16),
                       _buildPaymentStatusRow(),
 
@@ -163,18 +167,23 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
     child: Text(title, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
   );
 
-  Widget _field(String label, TextEditingController ctrl, {int maxLines = 1}) => Column(
+  Widget _field(String label, TextEditingController ctrl, {int maxLines = 1, bool readOnly = false}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10)),
       const SizedBox(height: 8),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
+        decoration: BoxDecoration(
+          color: readOnly ? context.ksc.primary700 : context.ksc.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.ksc.primary700),
+        ),
         child: TextField(
           controller: ctrl,
           maxLines: maxLines,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          readOnly: readOnly,
+          style: TextStyle(color: readOnly ? context.ksc.neutral500 : Colors.white, fontWeight: FontWeight.bold),
           decoration: const InputDecoration(border: InputBorder.none),
         ),
       ),
