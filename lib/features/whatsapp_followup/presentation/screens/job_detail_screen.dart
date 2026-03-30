@@ -341,11 +341,12 @@ class JobDetailScreen extends ConsumerWidget {
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (parts) {
-        if (parts.isEmpty) return const SizedBox.shrink();
-        
+        final revenue   = job.amountCharged ?? 0;
         final totalCost = parts.fold<int>(0, (sum, p) => sum + p.totalCost);
-        final revenue = job.amountCharged ?? 0;
-        final profit = revenue - totalCost;
+        final profit    = revenue - totalCost;
+
+        // Hide if there's nothing to show
+        if (revenue == 0 && parts.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,20 +361,26 @@ class JobDetailScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  ...parts.map((p) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("${p.quantity}x ${p.partName.toUpperCase()}", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
-                        Text(CurrencyFormatter.formatShort(p.totalCost), style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-                      ],
-                    ),
-                  )),
-                  const SizedBox(height: 12),
+                  if (parts.isNotEmpty) ...[
+                    ...parts.map((p) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("${p.quantity}x ${p.partName.toUpperCase()}", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                          Text(CurrencyFormatter.formatShort(p.totalCost), style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+                        ],
+                      ),
+                    )),
+                    const SizedBox(height: 12),
+                    Divider(color: context.ksc.primary700, height: 1),
+                    const SizedBox(height: 12),
+                  ],
+                  _financialRow(context, "REVENUE", CurrencyFormatter.formatShort(revenue)),
+                  const SizedBox(height: 8),
+                  _financialRow(context, "PARTS COST", CurrencyFormatter.formatShort(totalCost)),
+                  const SizedBox(height: 8),
                   Divider(color: context.ksc.primary700, height: 1),
-                  const SizedBox(height: 12),
-                  _financialRow(context, "TOTAL PARTS COST", CurrencyFormatter.formatShort(totalCost)),
                   const SizedBox(height: 8),
                   _financialRow(context, "GROSS PROFIT", CurrencyFormatter.formatShort(profit.round()), isBold: true),
                 ],

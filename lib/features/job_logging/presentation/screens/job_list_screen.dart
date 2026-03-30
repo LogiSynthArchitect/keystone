@@ -65,6 +65,12 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
       backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "MY JOBS",
+        actions: [
+          IconButton(
+            icon: Icon(LineAwesomeIcons.chart_line_solid, color: context.ksc.neutral400, size: 22),
+            onPressed: () => context.push(RouteNames.analytics),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(72),
           child: Padding(

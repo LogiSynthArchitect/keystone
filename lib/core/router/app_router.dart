@@ -30,6 +30,7 @@ import '../../features/technician_profile/presentation/screens/profile_screen.da
 import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
 import '../../features/service_types/presentation/screens/service_types_screen.dart';
+import '../../features/analytics/presentation/screens/analytics_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authStateAsync = ref.watch(authStateProvider);
@@ -114,6 +115,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
       GoRoute(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),
       GoRoute(path: RouteNames.adminRequests, builder: (context, state) => const AdminRequestsScreen()),
+      GoRoute(path: RouteNames.analytics, builder: (context, state) => const AnalyticsScreen()),
       GoRoute(path: '/p/:slug', builder: (context, state) => PublicProfileScreen(slug: state.pathParameters['slug']!)),
     ],
   );

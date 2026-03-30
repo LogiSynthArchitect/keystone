@@ -29,6 +29,7 @@ import '../../domain/usecases/sync_offline_jobs_usecase.dart';
 import '../../domain/usecases/archive_job_usecase.dart';
 import '../../domain/usecases/log_job_with_customer_usecase.dart';
 import '../../domain/usecases/edit_job_usecase.dart';
+import '../../domain/usecases/update_payment_status_usecase.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -76,6 +77,7 @@ final logJobUsecaseProvider = Provider<LogJobUsecase>((ref) => LogJobUsecase(ref
 final syncOfflineJobsUsecaseProvider = Provider<SyncOfflineJobsUsecase>((ref) => SyncOfflineJobsUsecase(ref.watch(jobRepositoryProvider)));
 final archiveJobUsecaseProvider = Provider<ArchiveJobUsecase>((ref) => ArchiveJobUsecase(ref.watch(jobRepositoryProvider)));
 final editJobUsecaseProvider = Provider<EditJobUsecase>((ref) => EditJobUsecase(ref.watch(jobRepositoryProvider)));
+final updatePaymentStatusUsecaseProvider = Provider<UpdatePaymentStatusUsecase>((ref) => UpdatePaymentStatusUsecase(ref.watch(jobRepositoryProvider)));
 final requestCorrectionUsecaseProvider = Provider<RequestCorrectionUsecase>((ref) => RequestCorrectionUsecase(ref.watch(correctionRequestRepositoryProvider)));
 
 final adminRequestsProvider = FutureProvider<List<CorrectionRequestEntity>>((ref) async {
