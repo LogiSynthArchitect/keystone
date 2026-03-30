@@ -285,9 +285,9 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
                   child: Text.rich(TextSpan(
                     style: AppTextStyles.caption.copyWith(color: context.ksc.warning500, fontSize: 11),
                     children: [
-                      TextSpan(text: "A customer named "),
+                      const TextSpan(text: "A customer named "),
                       TextSpan(text: _duplicateName, style: const TextStyle(fontWeight: FontWeight.w900)),
-                      TextSpan(text: " already exists with this number. "),
+                      const TextSpan(text: " already exists with this number. "),
                     ],
                   )),
                 ),
