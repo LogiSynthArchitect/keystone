@@ -5,4 +5,5 @@ abstract class FollowUpRepository {
   Future<FollowUpEntity?> getFollowUpByJobId(String jobId);
   Future<List<FollowUpEntity>> getFollowUps({int limit = 25, int offset = 0});
   Future<void> updateJobId(String oldJobId, String newJobId);
+  Future<void> updateResponseStatus(String jobId, String status);
 }

@@ -17,31 +17,63 @@ class FollowUpButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (job.followUpSent) {
-      return GestureDetector(
-        onLongPress: () {
-          // Allow the user to manually mark as unsent if they backed out of WhatsApp
-          ref.read(jobListProvider.notifier).toggleFollowUpSent(job.id, false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Follow-up marked as unsent.')),
-          );
-        },
-        child: Container(
+      return Consumer(builder: (context, ref, _) {
+        final statusAsync = ref.watch(followUpStatusProvider(job.id));
+        final currentStatus = statusAsync.valueOrNull?.responseStatus ?? 'sent';
+
+        return Container(
           width: double.infinity,
-          color: context.ksc.success600.withValues(alpha: 0.1),
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          color: context.ksc.primary800,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(LineAwesomeIcons.check_circle, color: context.ksc.success500),
-              const SizedBox(width: 8),
               Text(
-                "WHATSAPP OPENED",
-                style: AppTextStyles.h2.copyWith(color: context.ksc.success500, fontWeight: FontWeight.w900),
+                'FOLLOW-UP SENT',
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.success500,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'UPDATE RESPONSE STATUS:',
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.neutral500,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _StatusChip(
+                    label: 'SENT',
+                    active: currentStatus == 'sent',
+                    color: context.ksc.neutral500,
+                    onTap: () => ref.read(followUpProvider(job.id).notifier).updateStatus(job.id, 'sent'),
+                  ),
+                  const SizedBox(width: 8),
+                  _StatusChip(
+                    label: 'RESPONDED',
+                    active: currentStatus == 'responded',
+                    color: context.ksc.success500,
+                    onTap: () => ref.read(followUpProvider(job.id).notifier).updateStatus(job.id, 'responded'),
+                  ),
+                  const SizedBox(width: 8),
+                  _StatusChip(
+                    label: 'NO RESPONSE',
+                    active: currentStatus == 'no_response',
+                    color: context.ksc.error500,
+                    onTap: () => ref.read(followUpProvider(job.id).notifier).updateStatus(job.id, 'no_response'),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-      );
+        );
+      });
     }
 
     return Container(
@@ -71,14 +103,14 @@ class FollowUpButton extends ConsumerWidget {
 
                 // Track follow-up in the analytics/system
                 ref.read(followUpProvider(job.id).notifier).send(
-                  jobId: job.id,
-                  customerId: customer.id,
-                  customerPhone: customer.phoneNumber,
-                  customerName: customer.fullName,
-                  technicianName: profile.displayName,
-                  serviceType: job.serviceType,
-                  profileUrl: profile.profileUrl,
-                );
+                      jobId: job.id,
+                      customerId: customer.id,
+                      customerPhone: customer.phoneNumber,
+                      customerName: customer.fullName,
+                      technicianName: profile.displayName,
+                      serviceType: job.serviceType,
+                      profileUrl: profile.profileUrl,
+                    );
 
                 // Update the job locally to show 'SENT' immediately
                 ref.read(jobListProvider.notifier).toggleFollowUpSent(job.id, true);
@@ -116,6 +148,38 @@ class FollowUpButton extends ConsumerWidget {
               ),
               Icon(LineAwesomeIcons.whatsapp, color: context.ksc.primary900, size: 28),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final Color color;
+  final VoidCallback onTap;
+  const _StatusChip({required this.label, required this.active, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? color.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: active ? color : context.ksc.primary700),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: active ? color : context.ksc.neutral500,
+            fontWeight: FontWeight.w800,
+            fontSize: 10,
+            letterSpacing: 0.8,
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keystone/core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import '../../domain/models/reminder_model.dart';
 
@@ -27,6 +28,7 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
     final now = DateTime.now();
     final dismissed = state.dismissedKeys;
     final reminders = <Reminder>[];
+    final followUpsBox = HiveService.followUps;
 
     for (final job in jobs) {
       final daysSince = now.difference(job.jobDate).inDays;
@@ -68,6 +70,27 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
           amountCharged: job.amountCharged,
           isDismissed: dismissed.contains(key),
         ));
+      }
+
+      // Follow-ups sent more than 3 days ago with no response
+      final followUpData = followUpsBox.get(job.id);
+      if (followUpData != null) {
+        final responseStatus = followUpData['response_status'] as String? ?? 'sent';
+        final sentAtRaw = followUpData['sent_at'] as String?;
+        if (responseStatus == 'sent' && sentAtRaw != null) {
+          final sentAt = DateTime.tryParse(sentAtRaw);
+          if (sentAt != null && now.difference(sentAt).inDays >= 3) {
+            final key = '${job.id}-${ReminderType.followUpNoResponse.name}';
+            reminders.add(Reminder(
+              jobId: job.id,
+              jobServiceType: job.serviceType,
+              jobDate: job.jobDate,
+              type: ReminderType.followUpNoResponse,
+              amountCharged: job.amountCharged,
+              isDismissed: dismissed.contains(key),
+            ));
+          }
+        }
       }
     }
 

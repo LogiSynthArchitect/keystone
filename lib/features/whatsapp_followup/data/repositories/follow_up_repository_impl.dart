@@ -82,4 +82,14 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
   Future<void> updateJobId(String oldJobId, String newJobId) async {
     await _local.cascadeJobId(oldJobId, newJobId);
   }
+
+  @override
+  Future<void> updateResponseStatus(String jobId, String status) async {
+    await _local.updateResponseStatus(jobId, status);
+    try {
+      await _remote.updateResponseStatus(jobId, status);
+    } catch (e) {
+      debugPrint('[KS:FOLLOWUP] Remote status update failed: $e');
+    }
+  }
 }

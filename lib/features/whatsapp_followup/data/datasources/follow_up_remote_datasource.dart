@@ -27,4 +27,20 @@ class FollowUpRemoteDatasource {
       return null;
     }
   }
+
+  Future<void> updateResponseStatus(String jobId, String status) async {
+    try {
+      await _supabase
+          .from('follow_ups')
+          .update({
+            'response_status': status,
+            'response_updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('job_id', jobId);
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not update follow-up status.', code: 'FOLLOWUP_STATUS_REMOTE_FAILED', cause: e);
+    } catch (e) {
+      throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
+    }
+  }
 }

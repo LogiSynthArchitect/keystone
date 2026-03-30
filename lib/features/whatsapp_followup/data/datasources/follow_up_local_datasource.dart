@@ -45,4 +45,22 @@ class FollowUpLocalDatasource {
     if (data == null) return null;
     return Map<String, dynamic>.from(data);
   }
+
+  Future<void> updateResponseStatus(String jobId, String status) async {
+    try {
+      final existing = _box.get(jobId);
+      if (existing == null) return;
+      final updated = Map<String, dynamic>.from(existing);
+      updated['response_status'] = status;
+      updated['response_updated_at'] = DateTime.now().toIso8601String();
+      await _box.put(jobId, updated);
+      await _box.flush();
+    } catch (e) {
+      throw StorageException(
+        message: 'Could not update follow-up status.',
+        code: 'FOLLOWUP_STATUS_UPDATE_FAILED',
+        cause: e,
+      );
+    }
+  }
 }
