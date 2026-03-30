@@ -13,6 +13,9 @@ import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../providers/job_providers.dart';
 import '../widgets/job_card.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../service_types/presentation/providers/service_type_provider.dart';
+import '../../../reminders/presentation/providers/reminders_provider.dart';
 
 class JobListScreen extends ConsumerStatefulWidget {
   const JobListScreen({super.key});
@@ -49,6 +52,22 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
     super.dispose();
   }
 
+  Future<void> _showFilterSheet(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusMd)),
+      ),
+      builder: (ctx) => _JobFilterSheet(
+        current: ref.read(jobListProvider).filters,
+        onApply: (f) => ref.read(jobListProvider.notifier).setFilters(f),
+        onClear: () => ref.read(jobListProvider.notifier).clearFilters(),
+      ),
+    );
+  }
+
   void _onTabTapped(int index) {
     switch (index) {
       case 0: context.go(RouteNames.jobs); break;
@@ -61,11 +80,56 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(jobListProvider);
+    final remindersCount = ref.watch(remindersProvider).activeCount;
     return Scaffold(
       backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "MY JOBS",
         actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: Icon(LineAwesomeIcons.bell_solid, color: remindersCount > 0 ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
+                onPressed: () => context.push(RouteNames.reminders),
+              ),
+              if (remindersCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(color: context.ksc.error500, shape: BoxShape.circle),
+                    child: Center(child: Text('$remindersCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.white))),
+                  ),
+                ),
+            ],
+          ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: Icon(LineAwesomeIcons.filter_solid, color: state.filters.hasActive ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
+                onPressed: () => _showFilterSheet(context),
+              ),
+              if (state.filters.activeCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(color: context.ksc.accent500, shape: BoxShape.circle),
+                    child: Center(child: Text('${state.filters.activeCount}', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.primary900))),
+                  ),
+                ),
+            ],
+          ),
+          IconButton(
+            icon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral400, size: 22),
+            onPressed: () => context.push(RouteNames.search),
+          ),
           IconButton(
             icon: Icon(LineAwesomeIcons.chart_line_solid, color: context.ksc.neutral400, size: 22),
             onPressed: () => context.push(RouteNames.analytics),
@@ -275,6 +339,324 @@ class _Stat extends StatelessWidget {
         const SizedBox(height: 4),
         Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
       ]
+    );
+  }
+}
+
+// ── Filter bottom sheet ──────────────────────────────────────────────────────
+
+class _JobFilterSheet extends ConsumerStatefulWidget {
+  final JobListFilters current;
+  final ValueChanged<JobListFilters> onApply;
+  final VoidCallback onClear;
+
+  const _JobFilterSheet({
+    required this.current,
+    required this.onApply,
+    required this.onClear,
+  });
+
+  @override
+  ConsumerState<_JobFilterSheet> createState() => _JobFilterSheetState();
+}
+
+class _JobFilterSheetState extends ConsumerState<_JobFilterSheet> {
+  late JobListFilters _draft;
+
+  @override
+  void initState() {
+    super.initState();
+    _draft = widget.current;
+  }
+
+  void _apply() {
+    widget.onApply(_draft);
+    Navigator.of(context).pop();
+  }
+
+  void _clear() {
+    widget.onClear();
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final serviceTypes = ref.watch(serviceTypeProvider)
+        .valueOrNull?.map((s) => s.name).toList() ?? const <String>[];
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, AppSpacing.xxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('FILTER JOBS',
+                      style: AppTextStyles.h3
+                          .copyWith(color: context.ksc.white, letterSpacing: 1.5)),
+                  TextButton(
+                    onPressed: _clear,
+                    child: Text('CLEAR ALL',
+                        style: AppTextStyles.captionMedium
+                            .copyWith(color: context.ksc.error500)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Status
+              _FilterSection(
+                label: 'STATUS',
+                options: const [
+                  ('quoted', 'Quoted'),
+                  ('in_progress', 'In Progress'),
+                  ('completed', 'Completed'),
+                  ('invoiced', 'Invoiced'),
+                ],
+                selected: _draft.status,
+                onSelect: (v) => setState(() => _draft = _draft.copyWith(status: v)),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Payment status
+              _FilterSection(
+                label: 'PAYMENT',
+                options: const [
+                  ('unpaid', 'Unpaid'),
+                  ('partial', 'Partial'),
+                  ('paid', 'Paid'),
+                ],
+                selected: _draft.paymentStatus,
+                onSelect: (v) =>
+                    setState(() => _draft = _draft.copyWith(paymentStatus: v)),
+              ),
+
+              if (serviceTypes.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _FilterSectionDynamic(
+                  label: 'SERVICE TYPE',
+                  options: serviceTypes,
+                  selected: _draft.serviceType,
+                  onSelect: (v) =>
+                      setState(() => _draft = _draft.copyWith(serviceType: v)),
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // Date range
+              Row(
+                children: [
+                  Text('DATE RANGE',
+                      style: AppTextStyles.captionMedium
+                          .copyWith(color: context.ksc.neutral500, letterSpacing: 1.5)),
+                  const Spacer(),
+                  if (_draft.dateRange != null)
+                    TextButton(
+                      onPressed: () =>
+                          setState(() => _draft = _draft.copyWith(dateRange: null)),
+                      child: Text('CLEAR',
+                          style: AppTextStyles.captionMedium
+                              .copyWith(color: context.ksc.error500)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                    initialDateRange: _draft.dateRange,
+                    builder: (ctx, child) => Theme(
+                      data: Theme.of(ctx).copyWith(
+                        colorScheme: ColorScheme.dark(
+                          primary: ctx.ksc.accent500,
+                          onPrimary: ctx.ksc.primary900,
+                          surface: ctx.ksc.primary800,
+                          onSurface: ctx.ksc.white,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) {
+                    setState(() => _draft = _draft.copyWith(dateRange: picked));
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: _draft.dateRange != null
+                        ? context.ksc.accent100
+                        : context.ksc.primary700,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    border: Border.all(
+                      color: _draft.dateRange != null
+                          ? context.ksc.accent500
+                          : context.ksc.primary600,
+                    ),
+                  ),
+                  child: Text(
+                    _draft.dateRange == null
+                        ? 'Select date range...'
+                        : '${_formatDate(_draft.dateRange!.start)} → ${_formatDate(_draft.dateRange!.end)}',
+                    style: AppTextStyles.body.copyWith(
+                      color: _draft.dateRange != null
+                          ? context.ksc.accent500
+                          : context.ksc.neutral500,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.xxl),
+              SizedBox(
+                width: double.infinity,
+                height: AppSpacing.buttonHeight,
+                child: ElevatedButton(
+                  onPressed: _apply,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.ksc.accent500,
+                    foregroundColor: context.ksc.primary900,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                  ),
+                  child: Text('APPLY FILTERS',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          color: context.ksc.primary900,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
+}
+
+class _FilterSection extends StatelessWidget {
+  final String label;
+  final List<(String, String)> options;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+
+  const _FilterSection({
+    required this.label,
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: AppTextStyles.captionMedium
+                .copyWith(color: context.ksc.neutral500, letterSpacing: 1.5)),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: options.map(((String val, String display) pair) {
+            final isSelected = selected == pair.$1;
+            return GestureDetector(
+              onTap: () => onSelect(isSelected ? null : pair.$1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                  border: Border.all(
+                    color: isSelected ? context.ksc.accent500 : context.ksc.primary600,
+                  ),
+                ),
+                child: Text(
+                  pair.$2.toUpperCase(),
+                  style: AppTextStyles.captionMedium.copyWith(
+                    color: isSelected ? context.ksc.primary900 : context.ksc.neutral400,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _FilterSectionDynamic extends StatelessWidget {
+  final String label;
+  final List<String> options;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+
+  const _FilterSectionDynamic({
+    required this.label,
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: AppTextStyles.captionMedium
+                .copyWith(color: context.ksc.neutral500, letterSpacing: 1.5)),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: options.map((name) {
+            final isSelected = selected == name;
+            return GestureDetector(
+              onTap: () => onSelect(isSelected ? null : name),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                  border: Border.all(
+                    color: isSelected ? context.ksc.accent500 : context.ksc.primary600,
+                  ),
+                ),
+                child: Text(
+                  name.toUpperCase(),
+                  style: AppTextStyles.captionMedium.copyWith(
+                    color: isSelected ? context.ksc.primary900 : context.ksc.neutral400,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

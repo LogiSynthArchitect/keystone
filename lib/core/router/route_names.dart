@@ -27,6 +27,12 @@ class RouteNames {
   static String noteLinkJobs(String id) => '/notes/$id/link';
   // Analytics
   static const String analytics    = '/analytics';
+  // Search
+  static const String search       = '/search';
+  // Reminders
+  static const String reminders    = '/reminders';
+  // Activity timeline
+  static const String timeline     = '/activity';
   // Profile sub-routes
   static const String editProfile = '/profile/edit';
   static const String serviceTypes = '/profile/service-types';

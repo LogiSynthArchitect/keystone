@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -143,6 +144,42 @@ final jobAuditLogProvider = FutureProvider.family<List<JobAuditEntryEntity>, Str
   return await ref.watch(jobRepositoryProvider).getAuditLogForJob(jobId);
 });
 
+class JobListFilters {
+  final String? status;           // 'quoted' | 'in_progress' | 'completed' | 'invoiced'
+  final String? paymentStatus;    // 'unpaid' | 'partial' | 'paid'
+  final String? serviceType;
+  final DateTimeRange? dateRange;
+
+  const JobListFilters({
+    this.status,
+    this.paymentStatus,
+    this.serviceType,
+    this.dateRange,
+  });
+
+  bool get hasActive =>
+      status != null || paymentStatus != null || serviceType != null || dateRange != null;
+
+  int get activeCount => [status, paymentStatus, serviceType, if (dateRange != null) 'date']
+      .where((v) => v != null).length;
+
+  JobListFilters copyWith({
+    Object? status = _sentinel,
+    Object? paymentStatus = _sentinel,
+    Object? serviceType = _sentinel,
+    Object? dateRange = _sentinel,
+  }) {
+    return JobListFilters(
+      status: status == _sentinel ? this.status : status as String?,
+      paymentStatus: paymentStatus == _sentinel ? this.paymentStatus : paymentStatus as String?,
+      serviceType: serviceType == _sentinel ? this.serviceType : serviceType as String?,
+      dateRange: dateRange == _sentinel ? this.dateRange : dateRange as DateTimeRange?,
+    );
+  }
+}
+
+const _sentinel = Object();
+
 class JobListState {
   final List<JobEntity> activeJobs;
   final List<JobEntity> allJobs;
@@ -150,44 +187,79 @@ class JobListState {
   final String? errorMessage;
   final String searchQuery;
   final bool isSyncing;
-  
+  final JobListFilters filters;
+
   const JobListState({
-    this.activeJobs = const [], 
-    this.allJobs = const [], 
-    this.isLoading = false, 
+    this.activeJobs = const [],
+    this.allJobs = const [],
+    this.isLoading = false,
     this.errorMessage,
     this.searchQuery = '',
     this.isSyncing = false,
+    this.filters = const JobListFilters(),
   });
 
   List<JobEntity> get filteredJobs {
-    if (searchQuery.isEmpty) return activeJobs;
-    final query = searchQuery.toLowerCase();
-    return activeJobs.where((j) =>
-      j.serviceType.toLowerCase().contains(query) ||
-      (j.notes?.toLowerCase().contains(query) ?? false) ||
-      (j.location?.toLowerCase().contains(query) ?? false)
-    ).toList();
+    var jobs = activeJobs;
+
+    // Text search
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      jobs = jobs.where((j) =>
+        j.serviceType.toLowerCase().contains(query) ||
+        (j.notes?.toLowerCase().contains(query) ?? false) ||
+        (j.location?.toLowerCase().contains(query) ?? false)
+      ).toList();
+    }
+
+    // Status filter
+    if (filters.status != null) {
+      jobs = jobs.where((j) => j.status == filters.status).toList();
+    }
+
+    // Payment status filter
+    if (filters.paymentStatus != null) {
+      jobs = jobs.where((j) => j.paymentStatus == filters.paymentStatus).toList();
+    }
+
+    // Service type filter
+    if (filters.serviceType != null) {
+      jobs = jobs.where((j) => j.serviceType == filters.serviceType).toList();
+    }
+
+    // Date range filter
+    if (filters.dateRange != null) {
+      final range = filters.dateRange!;
+      jobs = jobs.where((j) =>
+        !j.jobDate.isBefore(range.start) &&
+        !j.jobDate.isAfter(range.end)
+      ).toList();
+    }
+
+    return jobs;
   }
 
   JobListState copyWith({
-    List<JobEntity>? activeJobs, 
+    List<JobEntity>? activeJobs,
     List<JobEntity>? allJobs,
-    bool? isLoading, 
+    bool? isLoading,
     String? errorMessage,
     String? searchQuery,
     bool? isSyncing,
+    JobListFilters? filters,
     bool clearError = false
   }) {
     return JobListState(
-      activeJobs: activeJobs ?? this.activeJobs, 
+      activeJobs: activeJobs ?? this.activeJobs,
       allJobs: allJobs ?? this.allJobs,
-      isLoading: isLoading ?? this.isLoading, 
+      isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       searchQuery: searchQuery ?? this.searchQuery,
       isSyncing: isSyncing ?? this.isSyncing,
+      filters: filters ?? this.filters,
     );
   }
+
 int get totalJobs => activeJobs.length;
 
 int get pendingCount => allJobs.where((j) => j.syncStatus == SyncStatus.pending).length;
@@ -235,6 +307,14 @@ class JobListNotifier extends StateNotifier<JobListState> {
     _debounce = Timer(const Duration(milliseconds: 300), () {
       state = state.copyWith(searchQuery: query);
     });
+  }
+
+  void setFilters(JobListFilters filters) {
+    state = state.copyWith(filters: filters);
+  }
+
+  void clearFilters() {
+    state = state.copyWith(filters: const JobListFilters());
   }
 
   Future<void> refresh() async {
