@@ -5,6 +5,7 @@ class JobPhotoModel {
   final String jobId;
   final String storagePath;
   final String? label;
+  final String mediaType;
   final String createdAt;
 
   const JobPhotoModel({
@@ -12,6 +13,7 @@ class JobPhotoModel {
     required this.jobId,
     required this.storagePath,
     this.label,
+    this.mediaType = 'image',
     required this.createdAt,
   });
 
@@ -20,6 +22,7 @@ class JobPhotoModel {
         jobId: json['job_id'] as String,
         storagePath: json['storage_path'] as String,
         label: json['label'] as String?,
+        mediaType: json['media_type'] as String? ?? 'image',
         createdAt: json['created_at'] as String,
       );
 
@@ -28,14 +31,25 @@ class JobPhotoModel {
         'job_id': jobId,
         'storage_path': storagePath,
         'label': label,
+        'media_type': mediaType,
         'created_at': createdAt,
       };
+
+  factory JobPhotoModel.fromEntity(JobPhotoEntity entity) => JobPhotoModel(
+        id: entity.id,
+        jobId: entity.jobId,
+        storagePath: entity.storagePath,
+        label: entity.label,
+        mediaType: entity.mediaType,
+        createdAt: entity.createdAt.toIso8601String(),
+      );
 
   JobPhotoEntity toEntity() => JobPhotoEntity(
         id: id,
         jobId: jobId,
         storagePath: storagePath,
         label: label,
+        mediaType: mediaType,
         createdAt: DateTime.parse(createdAt),
       );
 }

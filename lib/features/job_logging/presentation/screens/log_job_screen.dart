@@ -2,30 +2,117 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:record/record.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/widgets/ks_step_indicator.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
-import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/utils/date_formatter.dart';
+import '../../../customer_history/presentation/providers/customer_providers.dart';
+import '../../../customer_history/domain/entities/customer_entity.dart';
 import '../providers/job_providers.dart';
+import '../../domain/entities/job_service_entity.dart';
+import '../../domain/entities/job_hardware_entity.dart';
+import '../../domain/entities/job_expense_entity.dart';
 import '../../../service_types/presentation/widgets/service_type_picker_v2.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../inventory/presentation/providers/inventory_providers.dart';
+import '../../../recurring_jobs/presentation/providers/recurring_schedule_provider.dart';
+import '../../../job_templates/domain/entities/job_template_entity.dart';
+import '../../../job_templates/presentation/providers/job_template_provider.dart';
+import '../../../../core/router/route_names.dart';
 
 class _PartRow {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController qtyController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
+  String? inventoryItemId;
 
   void dispose() {
     nameController.dispose();
     qtyController.dispose();
     priceController.dispose();
+  }
+
+  _PartRow copy() {
+    final p = _PartRow();
+    p.nameController.text = nameController.text;
+    p.qtyController.text = qtyController.text;
+    p.priceController.text = priceController.text;
+    p.inventoryItemId = inventoryItemId;
+    return p;
+  }
+}
+
+class _ServiceRow {
+  String? serviceType;
+  final qtyController = TextEditingController(text: '1');
+  final priceController = TextEditingController();
+
+  void dispose() {
+    qtyController.dispose();
+    priceController.dispose();
+  }
+}
+
+class _ExpenseRow {
+  String category = 'transport';
+  final descriptionController = TextEditingController();
+  final amountController = TextEditingController();
+
+  void dispose() {
+    descriptionController.dispose();
+    amountController.dispose();
+  }
+
+  _ExpenseRow copy() {
+    final e = _ExpenseRow();
+    e.category = category;
+    e.descriptionController.text = descriptionController.text;
+    e.amountController.text = amountController.text;
+    return e;
+  }
+}
+
+class _HardwareRow {
+  String? domain;
+  String? category;
+  final nameController = TextEditingController();
+  final qtyController = TextEditingController(text: '1');
+  final salePriceController = TextEditingController();
+  String? inventoryItemId;
+  InventoryItemEntity? inventoryItem;
+
+  bool get isFromInventory => inventoryItem != null;
+  String get displayName => isFromInventory ? inventoryItem!.name : nameController.text.trim();
+
+  void dispose() {
+    nameController.dispose();
+    qtyController.dispose();
+    salePriceController.dispose();
+  }
+
+  _HardwareRow copy() {
+    final h = _HardwareRow();
+    h.domain = domain;
+    h.category = category;
+    h.inventoryItemId = inventoryItemId;
+    h.inventoryItem = inventoryItem;
+    h.nameController.text = nameController.text;
+    h.qtyController.text = qtyController.text;
+    h.salePriceController.text = salePriceController.text;
+    return h;
   }
 }
 
@@ -39,12 +126,15 @@ class LogJobScreen extends ConsumerStatefulWidget {
 
 class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   int _currentStep = 0;
-  final int _totalSteps = 4; // Increased to 4 for Hardware/Parts/Photos
+  final int _totalSteps = 6;
 
   String? _serviceType;
   String? _finalCustomerId;
   String _status = 'in_progress';
   String _paymentStatus = 'unpaid';
+  String? _leadSource;
+  bool _isRecurring = false;
+  String _recurringInterval = 'monthly';
 
   final _customerController     = TextEditingController();
   final _phoneController        = TextEditingController();
@@ -52,10 +142,17 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   final _amountController       = TextEditingController();
   final _quotedAmountController = TextEditingController();
   final _notesController        = TextEditingController();
-  final _brandController        = TextEditingController();
-  final _keywayController       = TextEditingController();
+  String? _matchedCustomerName;
+  String? _matchedCustomerId;
 
   final List<_PartRow> _parts = [];
+  final List<_ServiceRow> _additionalServices = [];
+  final List<_HardwareRow> _hardwareItems = [];
+  final List<_ExpenseRow> _expenses = [];
+  int _partSuggestionIndex = -1;
+  List<InventoryItemEntity> _partSuggestions = [];
+  int _hwSuggestionIndex = -1;
+  List<InventoryItemEntity> _hwSuggestions = [];
   final List<XFile> _beforePhotos = [];
   final List<XFile> _afterPhotos = [];
 
@@ -82,6 +179,12 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           debugPrint('[KS:LOG_JOB] Fast-prefill failed: $e');
         }
       }
+
+      final userId = ref.read(currentUserProvider).valueOrNull?.id;
+      if (userId != null) {
+        final invItems = ref.read(inventoryProvider.notifier);
+        invItems.loadItems(userId);
+      }
     });
   }
 
@@ -93,9 +196,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     _amountController.dispose();
     _quotedAmountController.dispose();
     _notesController.dispose();
-    _brandController.dispose();
-    _keywayController.dispose();
     for (var p in _parts) { p.dispose(); }
+    for (var s in _additionalServices) { s.dispose(); }
+    for (var h in _hardwareItems) { h.dispose(); }
+    for (var e in _expenses) { e.dispose(); }
     super.dispose();
   }
 
@@ -104,6 +208,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       _amountController.text.isNotEmpty ||
                       _notesController.text.isNotEmpty ||
                       _parts.isNotEmpty ||
+                      _additionalServices.isNotEmpty ||
+                      _hardwareItems.isNotEmpty ||
+                      _expenses.isNotEmpty ||
                       _beforePhotos.isNotEmpty ||
                       _afterPhotos.isNotEmpty;
 
@@ -111,9 +218,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     final hasCustomer = _finalCustomerId != null;
     switch (_currentStep) {
       case 0: return _serviceType != null;
-      case 1: return _customerController.text.trim().isNotEmpty && (hasCustomer || _phoneController.text.trim().isNotEmpty);
-      case 2: return true;
+      case 1: return true;
+      case 2: return _customerController.text.trim().isNotEmpty && (hasCustomer || _phoneController.text.trim().isNotEmpty);
       case 3: return true;
+      case 4: return true;
+      case 5: return true;
       default: return false;
     }
   }
@@ -135,6 +244,105 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         if (ok && mounted) Navigator.of(context).pop();
       });
     }
+  }
+
+  void _loadTemplate() {
+    final userId = ref.read(currentUserProvider).valueOrNull?.id;
+    if (userId == null) return;
+    ref.read(jobTemplateProvider.notifier).loadTemplates(userId);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
+      builder: (ctx) {
+        return Consumer(builder: (context, ref, _) {
+          final templatesAsync = ref.watch(jobTemplateProvider);
+          return templatesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => Center(child: Text("FAILED TO LOAD", style: AppTextStyles.caption.copyWith(color: context.ksc.error500))),
+            data: (templates) {
+              if (templates.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("NO TEMPLATES", style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 8),
+                      Text("Save a job as template first", style: AppTextStyles.body.copyWith(color: context.ksc.neutral500)),
+                    ],
+                  ),
+                );
+              }
+              return ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(16),
+                itemCount: templates.length,
+                itemBuilder: (context, index) {
+                  final t = templates[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: context.ksc.primary700,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: ListTile(
+                      leading: Icon(LineAwesomeIcons.clipboard_list_solid, color: context.ksc.accent500),
+                      title: Text(t.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700)),
+                      subtitle: Text("${t.serviceType.replaceAll('_', ' ')} · ${t.services.length} services", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _applyTemplate(t);
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        });
+      },
+    );
+  }
+
+  void _applyTemplate(JobTemplateEntity template) {
+    setState(() {
+      _serviceType = template.serviceType;
+      _notesController.text = template.notes ?? '';
+
+      for (final s in template.services) {
+        final row = _ServiceRow();
+        row.serviceType = s['service_type'] as String?;
+        row.qtyController.text = (s['quantity'] as int? ?? 1).toString();
+        if (s['unit_price'] != null) {
+          row.priceController.text = ((s['unit_price'] as int) / 100.0).toStringAsFixed(2);
+        }
+        _additionalServices.add(row);
+      }
+
+      for (final h in template.hardwareItems) {
+        final row = _HardwareRow();
+        row.domain = h['domain'] as String?;
+        row.category = h['category'] as String?;
+        row.nameController.text = h['name'] as String? ?? '';
+        row.qtyController.text = (h['quantity'] as int? ?? 1).toString();
+        if (h['unit_sale_price'] != null) {
+          row.salePriceController.text = ((h['unit_sale_price'] as int) / 100.0).toStringAsFixed(2);
+        }
+        _hardwareItems.add(row);
+      }
+
+      for (final p in template.parts) {
+        final row = _PartRow();
+        row.nameController.text = p['part_name'] as String? ?? '';
+        row.qtyController.text = (p['quantity'] as int? ?? 1).toString();
+        if (p['unit_price'] != null) {
+          row.priceController.text = ((p['unit_price'] as int) / 100.0).toStringAsFixed(2);
+        }
+        _parts.add(row);
+      }
+    });
   }
 
   Future<bool> _confirmDiscard() async {
@@ -164,6 +372,17 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       }
     }
 
+    double? gpsLat;
+    double? gpsLng;
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 5),
+      );
+      gpsLat = pos.latitude;
+      gpsLng = pos.longitude;
+    } catch (_) {}
+
     final job = await ref.read(logJobProvider.notifier).save(
       serviceType: _serviceType!,
       existingCustomerId: _finalCustomerId,
@@ -171,29 +390,180 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       customerPhone: _finalCustomerId == null ? PhoneFormatter.normalize(_phoneController.text.trim()) : null,
       jobDate: _jobDate,
       location: _locationController.text.trim(),
+      latitude: gpsLat,
+      longitude: gpsLng,
       notes: _notesController.text.trim(),
       amountChargedString: _amountController.text.trim(),
       status: _status,
       paymentStatus: _paymentStatus,
       quotedPriceString: _quotedAmountController.text.trim(),
-      hardwareBrand: _brandController.text.trim(),
-      hardwareKeyway: _keywayController.text.trim(),
+      leadSource: _leadSource,
       parts: _parts.map((p) => (
         p.nameController.text.trim(),
         int.tryParse(p.qtyController.text.trim()) ?? 1,
-        CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0
+        CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0,
+        p.inventoryItemId,
+      )).toList(),
+      hardwareItems: _hardwareItems.map((h) => (
+        h.inventoryItemId,
+        h.nameController.text.trim(),
+        int.tryParse(h.qtyController.text.trim()) ?? 1,
+        h.inventoryItemId,
       )).toList(),
       photos: [
-        ..._beforePhotos.map((p) => (File(p.path), 'before')),
-        ..._afterPhotos.map((p) => (File(p.path), 'after')),
+        ..._beforePhotos.map((p) => (File(p.path), 'before', _inferMediaType(p.path))),
+        ..._afterPhotos.map((p) => (File(p.path), 'after', _inferMediaType(p.path))),
       ],
     );
 
     if (!mounted) return;
     if (job != null) {
+      final repo = ref.read(jobRepositoryProvider);
+
+      if (_additionalServices.isNotEmpty) {
+        final services = _additionalServices.asMap().entries.map((e) => JobServiceEntity(
+          id: const Uuid().v4(),
+          jobId: job.id,
+          serviceType: e.value.serviceType ?? '',
+          quantity: int.tryParse(e.value.qtyController.text.trim()) ?? 1,
+          unitPrice: CurrencyFormatter.parseToPesewas(e.value.priceController.text.trim()),
+          sortOrder: e.key,
+          createdAt: DateTime.now(),
+        )).toList();
+        await repo.saveServices(job.id, services);
+      }
+
+      if (_hardwareItems.isNotEmpty) {
+        final items = _hardwareItems.asMap().entries.map((e) {
+          final inv = e.value.inventoryItem;
+          return JobHardwareEntity(
+            id: const Uuid().v4(),
+            jobId: job.id,
+            domain: e.value.domain,
+            category: inv?.category ?? e.value.category,
+            brand: inv?.brand ?? '',
+            model: inv?.model ?? '',
+            keySpec: inv?.keySpec ?? '',
+            material: inv?.material ?? '',
+            finish: inv?.finish ?? '',
+            dimensions: inv?.dimensions ?? '',
+            quantity: int.tryParse(e.value.qtyController.text.trim()) ?? 1,
+            unitSalePrice: CurrencyFormatter.parseToPesewas(e.value.salePriceController.text.trim()),
+            unitCostPrice: inv?.defaultCostPrice,
+            notes: '',
+            sortOrder: e.key,
+            createdAt: DateTime.now(),
+          );
+        }).toList();
+        await repo.saveHardwareItems(job.id, items);
+      }
+
+      if (_expenses.isNotEmpty) {
+        final entities = _expenses.map((e) => JobExpenseEntity(
+          id: const Uuid().v4(),
+          jobId: job.id,
+          category: e.category,
+          description: e.descriptionController.text.trim(),
+          amount: CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0,
+          createdAt: DateTime.now(),
+        )).toList();
+        await repo.saveExpenses(job.id, entities);
+      }
+
       ref.read(logJobProvider.notifier).reset();
-      context.pop();
-      KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
+
+      final saveAsTemplate = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: context.ksc.primary800,
+          title: Text('SAVE AS TEMPLATE?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+          content: Text('Save this job as a reusable template?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('NO', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('YES', style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.bold))),
+          ],
+        ),
+      );
+
+      if (saveAsTemplate == true && mounted) {
+        final nameCtrl = TextEditingController();
+        final name = await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: context.ksc.primary800,
+            title: Text('TEMPLATE NAME', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+            content: TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              style: AppTextStyles.body.copyWith(color: context.ksc.white),
+              decoration: InputDecoration(
+                hintText: "e.g. Deadbolt replacement",
+                hintStyle: TextStyle(color: context.ksc.neutral500),
+                border: OutlineInputBorder(borderSide: BorderSide(color: context.ksc.primary700)),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('CANCEL', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+              TextButton(onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()), child: Text('SAVE', style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.bold))),
+            ],
+          ),
+        );
+
+        if (name != null && name.isNotEmpty && mounted) {
+          final userId = ref.read(currentUserProvider).valueOrNull?.id;
+          if (userId != null) {
+            final template = JobTemplateEntity(
+              id: const Uuid().v4(),
+              userId: userId,
+              name: name,
+              serviceType: _serviceType ?? '',
+              notes: _notesController.text.trim(),
+              services: _additionalServices.map((s) => {
+                'service_type': s.serviceType,
+                'quantity': int.tryParse(s.qtyController.text.trim()) ?? 1,
+                'unit_price': CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
+              }).toList(),
+              hardwareItems: _hardwareItems.map((h) => {
+                'domain': h.domain,
+                'category': h.category,
+                'name': h.nameController.text.trim(),
+                'quantity': int.tryParse(h.qtyController.text.trim()) ?? 1,
+                'unit_sale_price': CurrencyFormatter.parseToPesewas(h.salePriceController.text.trim()),
+              }).toList(),
+              parts: _parts.map((p) => {
+                'part_name': p.nameController.text.trim(),
+                'quantity': int.tryParse(p.qtyController.text.trim()) ?? 1,
+                'unit_price': CurrencyFormatter.parseToPesewas(p.priceController.text.trim()),
+              }).toList(),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+            await ref.read(jobTemplateProvider.notifier).saveTemplate(template);
+          }
+        }
+      }
+
+      if (_isRecurring && _finalCustomerId != null) {
+        final addDays = switch (_recurringInterval) {
+          'weekly' => 7,
+          'monthly' => 30,
+          'quarterly' => 90,
+          _ => 30,
+        };
+        await ref.read(recurringScheduleProvider.notifier).add(
+          customerId: _finalCustomerId!,
+          customerName: _customerController.text.trim(),
+          serviceType: _serviceType!,
+          intervalType: _recurringInterval,
+          nextDueDate: _jobDate.add(Duration(days: addDays)),
+          notes: _notesController.text.trim(),
+        );
+      }
+
+      if (mounted) {
+        context.pop();
+        KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
+      }
     } else {
       final error = ref.read(logJobProvider).errorMessage;
       if (error != null && error.isNotEmpty) {
@@ -223,7 +593,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         body: Column(
           children: [
             const KsOfflineBanner(),
-            _buildStepIndicator(),
+            KsStepIndicator(
+              currentStep: _currentStep,
+              totalSteps: _totalSteps,
+              labels: ["SERVICE", "STATUS", "CUSTOMER", "PRICING", "SCHEDULE", "EXTRAS"],
+            ),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
@@ -241,63 +615,14 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     );
   }
 
-  Widget _buildStepIndicator() {
-    final stepLabels = ["SERVICE", "CUSTOMER", "DETAILS", "EXTRAS"];
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        border: Border(bottom: BorderSide(color: context.ksc.primary700)),
-      ),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          final isActive = index == _currentStep;
-          final isCompleted = index < _currentStep;
-          return Expanded(
-            child: Row(
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: isActive ? context.ksc.accent500 : (isCompleted ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "${index + 1}",
-                      style: AppTextStyles.caption.copyWith(
-                        color: isActive ? context.ksc.primary900 : (isCompleted ? context.ksc.accent500 : context.ksc.neutral500),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ),
-                if (isActive) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    stepLabels[index],
-                    style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0, fontSize: 10),
-                  ),
-                ],
-                if (index < _totalSteps - 1)
-                  Expanded(child: Divider(color: context.ksc.primary700, indent: 6, endIndent: 6)),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
   Widget _buildCurrentStep() {
     switch (_currentStep) {
       case 0: return _buildStep1();
       case 1: return _buildStep2();
       case 2: return _buildStep3();
       case 3: return _buildStep4();
+      case 4: return _buildStep5();
+      case 5: return _buildStep6();
       default: return const SizedBox.shrink();
     }
   }
@@ -306,16 +631,26 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 32),
+        Text("SERVICE PERFORMED", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("The main reason for this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+        const SizedBox(height: 24),
         ServiceTypePickerV2(
           selected: _serviceType,
           onSelected: (t) => setState(() => _serviceType = t),
         ),
-        const SizedBox(height: 32),
-        Text("JOB STATUS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        _buildStatusSelector(),
+        const SizedBox(height: 48),
+        Text("ADDITIONAL SERVICES (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("Other services performed during this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+        const SizedBox(height: 16),
+        ..._additionalServices.asMap().entries.map((entry) => _buildServiceRow(entry.key, entry.value)),
+        if (_additionalServices.length < 10)
+          TextButton.icon(
+            onPressed: () => setState(() => _additionalServices.add(_ServiceRow())),
+            icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
+            label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+          ),
       ],
     );
   }
@@ -351,6 +686,25 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text("JOB STATUS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("Where is this job in the workflow?", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+        const SizedBox(height: 24),
+        _buildStatusSelector(),
+        const SizedBox(height: 32),
+        Text("LEAD SOURCE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("How did the customer find you?", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+        const SizedBox(height: 24),
+        _buildLeadSourceRow(),
+      ],
+    );
+  }
+
+  Widget _buildStep3() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text("CUSTOMER", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 32),
         _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null, maxLength: 100),
@@ -364,17 +718,90 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             fieldHint: "Required for WhatsApp follow-ups.",
             isNumeric: true,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+            onChanged: _onPhoneChanged,
           ),
+          if (_matchedCustomerName != null && _matchedCustomerId != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: context.ksc.accent500.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(LineAwesomeIcons.check_circle_solid, size: 14, color: context.ksc.accent500),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 10),
+                          children: [
+                            const TextSpan(text: "Linked to existing customer  "),
+                            TextSpan(
+                              text: _matchedCustomerName!.toUpperCase(),
+                              style: TextStyle(
+                                color: context.ksc.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ],
     );
   }
 
-  Widget _buildStep3() {
+  void _onPhoneChanged(String value) {
+    if (value.length == 10 && value.startsWith('0')) {
+      _lookupCustomer(value);
+    } else {
+      if (_matchedCustomerName != null) {
+        setState(() {
+          _matchedCustomerName = null;
+          _matchedCustomerId = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _lookupCustomer(String phone) async {
+    try {
+      final normalized = PhoneFormatter.normalize(phone);
+      final repo = ref.read(customerRepositoryProvider);
+      final customer = await repo.getCustomerByPhone(normalized);
+      if (customer != null && mounted) {
+        setState(() {
+          _matchedCustomerName = customer.fullName;
+          _matchedCustomerId = customer.id;
+          _finalCustomerId = customer.id; // Pre-set the customer ID
+        });
+      } else if (mounted && _matchedCustomerName != null) {
+        setState(() {
+          _matchedCustomerName = null;
+          _matchedCustomerId = null;
+          _finalCustomerId = null;
+        });
+      }
+    } catch (_) {
+      // Silently fail — lookup is non-critical
+    }
+  }
+
+  Widget _buildStep4() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("FINANCIALS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        Text("PRICING", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 32),
         _buildDarkField(label: "Quoted Amount (GHS)", hint: "0.00", controller: _quotedAmountController, isNumeric: true, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))]),
         const SizedBox(height: 24),
@@ -383,26 +810,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         Text("PAYMENT STATUS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         _buildPaymentStatusRow(),
-        const SizedBox(height: 48),
-        Text("LOCATION & DATE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 32),
-        _buildDarkField(label: "Location", hint: "East Legon, Accra", controller: _locationController, maxLength: 255),
-        const SizedBox(height: 24),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(context: context, initialDate: _jobDate, firstDate: DateTime(2024), lastDate: DateTime.now());
-            if (picked != null) setState(() => _jobDate = picked);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
-            child: Row(children: [
-              Icon(LineAwesomeIcons.calendar, size: 20, color: context.ksc.accent500),
-              const SizedBox(width: 12),
-              Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold)),
-            ]),
-          ),
-        ),
       ],
     );
   }
@@ -431,54 +838,1646 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     );
   }
 
-  Widget _buildStep4() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("HARDWARE (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 24),
-        _buildDarkField(label: "Lock Brand", hint: "e.g. Yale, Union", controller: _brandController),
-        const SizedBox(height: 24),
-        _buildDarkField(label: "Keyway Type", hint: "e.g. SC1, KW1", controller: _keywayController),
-        const SizedBox(height: 48),
-        Text("PARTS USED (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 16),
-        ..._parts.asMap().entries.map((entry) => _buildPartRow(entry.key, entry.value)),
-        if (_parts.length < 20)
-          TextButton.icon(
-            onPressed: () => setState(() => _parts.add(_PartRow())),
-            icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
-            label: Text("ADD PART", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+  Widget _buildLeadSourceRow() {
+    final sources = ['referral', 'walk_in', 'whatsapp', 'repeat_customer', 'social_media', 'phone_call', 'online_search', 'other'];
+    return Wrap(
+      spacing: 8, runSpacing: 8,
+      children: sources.map((s) {
+        final isSel = _leadSource == s;
+        return GestureDetector(
+          onTap: () => setState(() => _leadSource = isSel ? null : s),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSel ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: isSel ? context.ksc.accent500 : context.ksc.primary700),
+            ),
+            child: Text(s.replaceAll('_', ' ').toUpperCase(), style: AppTextStyles.caption.copyWith(
+              color: isSel ? context.ksc.accent500 : context.ksc.neutral400,
+              fontWeight: FontWeight.w900,
+            )),
           ),
-        const SizedBox(height: 48),
-        Text("PHOTOS (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 24),
-        _buildPhotoGroup("BEFORE PHOTOS", _beforePhotos),
-        const SizedBox(height: 24),
-        _buildPhotoGroup("AFTER PHOTOS", _afterPhotos),
-        const SizedBox(height: 48),
-        _buildDarkField(label: "NOTES", hint: "Specific hardware used...", controller: _notesController, maxLines: 3, maxLength: 2000),
-      ],
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildPartRow(int index, _PartRow part) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+  Widget _buildRecurringToggle() {
+    final intervals = [('weekly', 'WEEKLY'), ('monthly', 'MONTHLY'), ('quarterly', 'QUARTERLY')];
+    final nextDueStr = switch (_recurringInterval) {
+      'weekly' => DateFormatter.short(_jobDate.add(const Duration(days: 7))),
+      'monthly' => DateFormatter.short(_jobDate.add(const Duration(days: 30))),
+      'quarterly' => DateFormatter.short(_jobDate.add(const Duration(days: 90))),
+      _ => '',
+    };
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: _isRecurring ? context.ksc.accent500.withValues(alpha: 0.5) : context.ksc.primary700),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 3, child: _buildDarkField(label: "Part Name", hint: "Deadbolt", controller: part.nameController)),
-          const SizedBox(width: 8),
-          Expanded(flex: 1, child: _buildDarkField(label: "Qty", hint: "1", controller: part.qtyController, isNumeric: true)),
-          const SizedBox(width: 8),
-          Expanded(flex: 2, child: _buildDarkField(label: "Cost", hint: "0.00", controller: part.priceController, isNumeric: true)),
-          IconButton(icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18), onPressed: () => setState(() => _parts.removeAt(index))),
+          InkWell(
+            onTap: () => setState(() => _isRecurring = !_isRecurring),
+            child: Row(
+              children: [
+                Icon(
+                  _isRecurring ? LineAwesomeIcons.calendar_check_solid : LineAwesomeIcons.calendar_solid,
+                  color: _isRecurring ? context.ksc.accent500 : context.ksc.neutral500,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("REPEAT THIS JOB", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
+                      Text(_isRecurring ? "Next: $nextDueStr" : "Set up weekly / monthly / quarterly", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _isRecurring,
+                  onChanged: (v) => setState(() => _isRecurring = v),
+                  activeColor: context.ksc.accent500,
+                ),
+              ],
+            ),
+          ),
+          if (_isRecurring) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: intervals.map((opt) {
+                final isSelected = _recurringInterval == opt.$1;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _recurringInterval = opt.$1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary700,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
+                      ),
+                      child: Text(opt.$2, style: AppTextStyles.caption.copyWith(
+                        color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
+                        fontWeight: FontWeight.w900,
+                      )),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildPhotoGroup(String label, List<XFile> photos) {
+  Widget _buildCustomerHistorySuggestions() {
+    final suggestions = ref.watch(customerHistorySuggestionsProvider(_finalCustomerId!));
+    return suggestions.when(
+      data: (data) {
+        if (data.hardwareBrands.isEmpty && data.partNames.isEmpty) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: context.ksc.accent500.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(LineAwesomeIcons.history_solid, size: 16, color: context.ksc.accent500),
+                  const SizedBox(width: 8),
+                  Text("FROM PAST JOBS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (data.hardwareBrands.isNotEmpty) ...[
+                Text("BRANDS USED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: data.hardwareBrands.map((b) => GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_hardwareItems.isEmpty || _hardwareItems.last.nameController.text.isNotEmpty) {
+                          _hardwareItems.add(_HardwareRow());
+                        }
+                        _hardwareItems.last.nameController.text = b;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
+                      child: Text(b.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (data.partNames.isNotEmpty) ...[
+                Text("PARTS USED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6, runSpacing: 6,
+                  children: data.partNames.map((p) => GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (_parts.isEmpty || _parts.last.nameController.text.isNotEmpty) {
+                          _parts.add(_PartRow());
+                        }
+                        _parts.last.nameController.text = p;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
+                      child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
+                    ),
+                  )).toList(),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildStep5() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildRecurringToggle(),
+        const SizedBox(height: 48),
+        Text("DATE & LOCATION", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 32),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(context: context, initialDate: _jobDate, firstDate: DateTime(2024), lastDate: DateTime.now());
+            if (picked != null) setState(() => _jobDate = picked);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
+            child: Row(children: [
+              Icon(LineAwesomeIcons.calendar, size: 20, color: context.ksc.accent500),
+              const SizedBox(width: 12),
+              Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold)),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildDarkField(label: "Location", hint: "East Legon, Accra", controller: _locationController, maxLength: 255),
+      ],
+    );
+  }
+
+  Widget _buildStep6() {
+    final hwCount = _hardwareItems.length;
+    final hwTotal = _hardwareItems.fold<int>(0, (sum, h) {
+      final qty = int.tryParse(h.qtyController.text) ?? 1;
+      final price = CurrencyFormatter.parseToPesewas(h.salePriceController.text.trim()) ?? 0;
+      return sum + (qty * price);
+    });
+    final expCount = _expenses.length;
+    final expTotal = _expenses.fold<int>(0, (sum, e) {
+      return sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0);
+    });
+    final partCount = _parts.length;
+    final partTotal = _parts.fold<int>(0, (sum, p) {
+      return sum + ((CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0) * (int.tryParse(p.qtyController.text.trim()) ?? 1));
+    });
+    final photoCount = _beforePhotos.length + _afterPhotos.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_finalCustomerId != null)
+          _buildCustomerHistorySuggestions(),
+        const SizedBox(height: 24),
+        _buildExtrasCard(
+          icon: Icon(LineAwesomeIcons.lock_solid, size: 16, color: context.ksc.accent500),
+          title: "Hardware Items",
+          subtitle: "Locks, cylinders, remotes",
+          trailing: hwCount > 0
+              ? _extrasCountTrailing("$hwCount item${hwCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(hwTotal))
+              : _extrasEmptyTrailing(),
+          onTap: () => _showHardwareDrawer(),
+        ),
+        _buildExtrasCard(
+          icon: Icon(LineAwesomeIcons.coins_solid, size: 16, color: context.ksc.accent500),
+          title: "Expenses",
+          subtitle: "Transport, parking, subs",
+          trailing: expCount > 0
+              ? _extrasCountTrailing("$expCount item${expCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(expTotal))
+              : _extrasEmptyTrailing(),
+          onTap: () => _showExpensesDrawer(),
+        ),
+        _buildExtrasCard(
+          icon: Icon(LineAwesomeIcons.clipboard_list_solid, size: 16, color: context.ksc.accent500),
+          title: "Parts Used",
+          subtitle: "Parts and supplies",
+          trailing: partCount > 0
+              ? _extrasCountTrailing("$partCount item${partCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(partTotal))
+              : _extrasEmptyTrailing(),
+          onTap: () => _showPartsDrawer(),
+        ),
+        _buildExtrasCard(
+          icon: Icon(LineAwesomeIcons.camera_solid, size: 16, color: context.ksc.accent500),
+          title: "Photos",
+          subtitle: "Before & after photos",
+          trailing: photoCount > 0
+              ? _extrasCountTrailing("$photoCount photo${photoCount > 1 ? 's' : ''}")
+              : _extrasEmptyTrailing(),
+          onTap: () => _showPhotosDrawer(),
+        ),
+        _buildExtrasCard(
+          icon: Icon(LineAwesomeIcons.edit_solid, size: 16, color: context.ksc.accent500),
+          title: "Notes",
+          subtitle: "Job notes",
+          trailing: _extrasNoteTrailing(),
+          onTap: () => _showNotesDrawer(),
+        ),
+        const SizedBox(height: 48),
+      ],
+    );
+  }
+
+  Widget _buildExtrasCard({
+    required Widget icon,
+    required String title,
+    required String subtitle,
+    required Widget trailing,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: context.ksc.primary800,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: context.ksc.primary700),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: context.ksc.primary700,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: icon,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title.toUpperCase(),
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.neutral500,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              trailing,
+              const SizedBox(width: 8),
+              Icon(LineAwesomeIcons.angle_right_solid,
+                color: context.ksc.neutral500, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _extrasCountTrailing(String count, {String? amount}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(count,
+          style: AppTextStyles.caption.copyWith(
+            color: context.ksc.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+          ),
+        ),
+        if (amount != null)
+          Text(amount,
+            style: AppTextStyles.caption.copyWith(
+              color: context.ksc.accent500,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _extrasEmptyTrailing() {
+    return Text("No items",
+      style: AppTextStyles.caption.copyWith(
+        color: context.ksc.neutral600,
+        fontSize: 11,
+      ),
+    );
+  }
+
+  Widget _extrasNoteTrailing() {
+    final text = _notesController.text.trim();
+    if (text.isEmpty) {
+      return Text("No notes",
+        style: AppTextStyles.caption.copyWith(
+          color: context.ksc.neutral600,
+          fontSize: 11,
+        ),
+      );
+    }
+    return Text(text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.caption.copyWith(
+        color: context.ksc.neutral500,
+        fontSize: 11,
+        fontStyle: FontStyle.italic,
+      ),
+    );
+  }
+
+  Widget _buildExpenseRow(int index, _ExpenseRow expense) {
+    final categories = ['transport', 'parking', 'subcontractor', 'supplies', 'other'];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _buildDropdown("Category", categories, expense.category, (v) {
+                  setState(() => expense.category = v ?? 'transport');
+                }),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildDarkField(
+                    label: "Amount (GHS)", hint: "0.00",
+                    controller: expense.amountController, isNumeric: true,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
+                  onPressed: () => setState(() => _expenses.removeAt(index)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildDarkField(label: "Description", hint: "e.g. Troski fare to site", controller: expense.descriptionController),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPartRow(int index, _PartRow part) {
+    final showSuggestions = _partSuggestionIndex == index && _partSuggestions.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(flex: 3, child: _buildDarkField(
+                label: "Part Name", hint: "Deadbolt", controller: part.nameController,
+                onChanged: (v) {
+                  final items = ref.read(inventoryProvider).valueOrNull ?? [];
+                  final matches = items.where((i) =>
+                    i.itemType == 'part' &&
+                    i.name.toLowerCase().contains(v.toLowerCase())
+                  ).take(5).toList();
+                  setState(() {
+                    _partSuggestionIndex = matches.isNotEmpty ? index : -1;
+                    _partSuggestions = matches;
+                  });
+                },
+              )),
+              const SizedBox(width: 8),
+              Expanded(flex: 1, child: _buildDarkField(label: "Qty", hint: "1", controller: part.qtyController, isNumeric: true)),
+              const SizedBox(width: 8),
+              Expanded(flex: 2, child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: part.priceController, isNumeric: true)),
+              IconButton(icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18), onPressed: () => setState(() => _parts.removeAt(index))),
+            ],
+          ),
+          if (showSuggestions)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: context.ksc.primary700,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _partSuggestions.map((item) {
+                  return InkWell(
+                    onTap: () {
+                      part.nameController.text = item.name;
+                      part.inventoryItemId = item.id;
+                      if (item.defaultSalePrice != null) {
+                        part.priceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
+                      }
+                      setState(() {
+                        _partSuggestionIndex = -1;
+                        _partSuggestions = [];
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                          ),
+                          if (item.defaultSalePrice != null)
+                            Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceRow(int index, _ServiceRow service) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: ServiceTypePickerV2(
+                    selected: service.serviceType,
+                    onSelected: (t) {
+                      setState(() {
+                        service.serviceType = t;
+                        final types = ref.read(serviceTypeProvider).valueOrNull;
+                        if (types != null) {
+                          final match = types.where((st) => st.name == t).firstOrNull;
+                          if (match?.defaultPrice != null) {
+                            service.priceController.text = (match!.defaultPrice! / 100.0).toStringAsFixed(2);
+                          }
+                        }
+                      });
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
+                  onPressed: () => setState(() => _additionalServices.removeAt(index)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDarkField(label: "Qty", hint: "1", controller: service.qtyController, isNumeric: true),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildDarkField(label: "Price (GHS)", hint: "0.00", controller: service.priceController, isNumeric: true),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHardwareRow(int index, _HardwareRow hw) {
+    final showSuggestions = _hwSuggestionIndex == index && _hwSuggestions.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text("ITEM ${index + 1}", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
+                  onPressed: () => setState(() => _hardwareItems.removeAt(index)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _buildDarkField(
+                    label: "Hardware Name", hint: "e.g. Yale 210",
+                    controller: hw.nameController,
+                    onChanged: (v) {
+                      final items = ref.read(inventoryProvider).valueOrNull ?? [];
+                      final matches = items.where((i) =>
+                        i.itemType == 'hardware' &&
+                        i.name.toLowerCase().contains(v.toLowerCase())
+                      ).take(5).toList();
+                      setState(() {
+                        _hwSuggestionIndex = matches.isNotEmpty ? index : -1;
+                        _hwSuggestions = matches;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            if (showSuggestions)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(
+                  color: context.ksc.primary700,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _hwSuggestions.map((item) {
+                    return InkWell(
+                      onTap: () {
+                        hw.nameController.text = item.name;
+                        hw.inventoryItemId = item.id;
+                        if (item.defaultSalePrice != null) {
+                          hw.salePriceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
+                        }
+                        setState(() {
+                          _hwSuggestionIndex = -1;
+                          _hwSuggestions = [];
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        child: Row(
+                          children: [
+                            Icon(LineAwesomeIcons.lock_solid, size: 14, color: context.ksc.accent500),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                                  if (item.brand != null)
+                                    Text(item.brand!, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                                ],
+                              ),
+                            ),
+                            if (item.defaultSalePrice != null)
+                              Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDarkField(label: "Qty", hint: "1", controller: hw.qtyController, isNumeric: true),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: hw.salePriceController, isNumeric: true),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Compact card for hardware selected from inventory.
+  Widget _buildInventoryHardwareCard(int index, _HardwareRow hw) {
+    final item = hw.inventoryItem;
+    final qty = int.tryParse(hw.qtyController.text) ?? 1;
+    final unitPrice = CurrencyFormatter.parseToPesewas(hw.salePriceController.text.trim()) ?? item?.defaultSalePrice ?? 0;
+    final total = qty * unitPrice;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: Row(
+          children: [
+            Icon(LineAwesomeIcons.lock_solid, size: 18, color: context.ksc.accent500),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item?.name.toUpperCase() ?? 'HARDWARE',
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  // Qty stepper
+                  Row(
+                    children: [
+                      _buildQtyStepper(hw),
+                      const SizedBox(width: 12),
+                      if (unitPrice > 0)
+                        Text(
+                          "@ ${CurrencyFormatter.format(unitPrice)}",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.neutral500,
+                            fontSize: 10,
+                          ),
+                        ),
+                      const Spacer(),
+                      Text(
+                        CurrencyFormatter.format(total),
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.accent500,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 16),
+              onPressed: () => setState(() => _hardwareItems.removeAt(index)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Qty stepper with [-] [+] buttons
+  Widget _buildQtyStepper(_HardwareRow hw) {
+    final qty = int.tryParse(hw.qtyController.text) ?? 1;
+    return Container(
+      decoration: BoxDecoration(
+        color: context.ksc.primary900,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () {
+              if (qty > 1) {
+                setState(() => hw.qtyController.text = (qty - 1).toString());
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Icon(LineAwesomeIcons.minus_solid, size: 12, color: context.ksc.neutral500),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              '$qty',
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              setState(() => hw.qtyController.text = (qty + 1).toString());
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Icon(LineAwesomeIcons.plus_solid, size: 12, color: context.ksc.neutral500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bottom sheet to pick hardware from inventory.
+  void _showInventoryPicker({void Function(_HardwareRow item)? onItemSelected}) {
+    final items = ref.read(inventoryProvider).valueOrNull ?? [];
+    final hardwareItems = items.where((i) => i.itemType == 'hardware' && !i.isArchived).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        final searchCtrl = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final query = searchCtrl.text.toLowerCase().trim();
+            final filtered = query.isEmpty
+                ? hardwareItems
+                : hardwareItems.where((i) =>
+                    i.name.toLowerCase().contains(query) ||
+                    (i.brand?.toLowerCase().contains(query) ?? false) ||
+                    (i.category?.toLowerCase().contains(query) ?? false)
+                  ).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text("SELECT HARDWARE ITEM",
+                            style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Search field
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: context.ksc.primary900,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: context.ksc.primary700),
+                      ),
+                      child: TextField(
+                        controller: searchCtrl,
+                        onChanged: (_) => setSheetState(() {}),
+                        style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
+                        cursorColor: context.ksc.accent500,
+                        decoration: InputDecoration(
+                          hintText: "Search by name, brand...",
+                          hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
+                          prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral500, size: 18),
+                          suffixIcon: searchCtrl.text.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () {
+                                    searchCtrl.clear();
+                                    setSheetState(() {});
+                                  },
+                                  child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 18),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // List
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+                    ),
+                    child: filtered.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: Text("No hardware items found",
+                                style: AppTextStyles.body.copyWith(color: context.ksc.neutral500)),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) => Divider(height: 1, color: context.ksc.primary700),
+                            itemBuilder: (_, i) {
+                              final invItem = filtered[i];
+                              final stockStatus = invItem.isLowStock
+                                  ? "${invItem.quantity} left (low)"
+                                  : "Stock: ${invItem.quantity}";
+                              return InkWell(
+                                onTap: () {
+                                  // Create hardware row pre-filled from inventory
+                                  final hw = _HardwareRow();
+                                  hw.inventoryItem = invItem;
+                                  hw.inventoryItemId = invItem.id;
+                                  hw.nameController.text = invItem.name;
+                                  if (invItem.defaultSalePrice != null) {
+                                    hw.salePriceController.text = (invItem.defaultSalePrice! / 100.0).toStringAsFixed(2);
+                                  }
+                                  hw.qtyController.text = '1';
+                                  if (onItemSelected != null) {
+                                    onItemSelected(hw);
+                                  } else {
+                                    setState(() => _hardwareItems.add(hw));
+                                  }
+                                  Navigator.pop(ctx);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      Icon(LineAwesomeIcons.lock_solid, size: 16, color: context.ksc.accent500),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(invItem.name.toUpperCase(),
+                                              style: AppTextStyles.body.copyWith(
+                                                color: context.ksc.white,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              invItem.brand != null
+                                                  ? "${invItem.brand} · $stockStatus"
+                                                  : stockStatus,
+                                              style: AppTextStyles.caption.copyWith(
+                                                color: context.ksc.neutral500,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (invItem.defaultSalePrice != null)
+                                        Text(
+                                          CurrencyFormatter.format(invItem.defaultSalePrice!),
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: context.ksc.accent500,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<bool> _confirmDrawerClose(BuildContext sheetCtx) async {
+    return await showDialog<bool>(
+      context: sheetCtx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.ksc.primary800,
+        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        content: Text('You have unsaved changes. Discard them?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.bold))),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _showHardwareDrawer() {
+    // Local working copy — only committed to parent on DONE
+    final localItems = _hardwareItems.map((h) => h.copy()).toList();
+    bool dirty = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final hwCount = localItems.length;
+            final hwTotal = localItems.fold<int>(0, (sum, h) {
+              final qty = int.tryParse(h.qtyController.text) ?? 1;
+              final price = CurrencyFormatter.parseToPesewas(h.salePriceController.text.trim()) ?? 0;
+              return sum + (qty * price);
+            });
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("HARDWARE ITEMS",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(
+                                hwCount > 0
+                                    ? "$hwCount item${hwCount > 1 ? 's' : ''} · ${CurrencyFormatter.format(hwTotal)}"
+                                    : "No items added",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                _showInventoryPicker(
+                                  onItemSelected: (hw) {
+                                    localItems.add(hw);
+                                    dirty = true;
+                                    setSheetState(() {});
+                                  },
+                                );
+                              },
+                              icon: Icon(LineAwesomeIcons.search_solid, size: 16, color: context.ksc.primary900),
+                              label: Text("SELECT FROM INVENTORY",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.ksc.accent500,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...localItems.asMap().entries.map((entry) =>
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: entry.value.isFromInventory
+                                  ? _buildInventoryHardwareCard(entry.key, entry.value)
+                                  : _buildHardwareRow(entry.key, entry.value),
+                            ),
+                          ),
+                          if (localItems.isNotEmpty) const SizedBox(height: 8),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () {
+                                localItems.add(_HardwareRow());
+                                dirty = true;
+                                setSheetState(() {});
+                              },
+                              icon: Icon(LineAwesomeIcons.plus_solid, size: 14, color: context.ksc.neutral500),
+                              label: Text("Add Manual Entry",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _hardwareItems
+                                    ..clear()
+                                    ..addAll(localItems);
+                                });
+                                Navigator.pop(ctx);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.ksc.accent500,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: Text("DONE",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showExpensesDrawer() {
+    final localExpenses = _expenses.map((e) => e.copy()).toList();
+    bool dirty = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final expCount = localExpenses.length;
+            final expTotal = localExpenses.fold<int>(0, (sum, e) {
+              return sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0);
+            });
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("EXPENSES",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(
+                                expCount > 0
+                                    ? "$expCount item${expCount > 1 ? 's' : ''} · ${CurrencyFormatter.format(expTotal)}"
+                                    : "No expenses added",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          ...localExpenses.asMap().entries.map((entry) =>
+                            _buildExpenseRow(entry.key, entry.value)),
+                          if (localExpenses.length < 10)
+                            TextButton.icon(
+                              onPressed: () {
+                                localExpenses.add(_ExpenseRow());
+                                dirty = true;
+                                setSheetState(() {});
+                              },
+                              icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
+                              label: Text("ADD EXPENSE",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+                            ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _expenses
+                                    ..clear()
+                                    ..addAll(localExpenses);
+                                });
+                                Navigator.pop(ctx);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.ksc.accent500,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: Text("DONE",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showPartsDrawer() {
+    final localParts = _parts.map((p) => p.copy()).toList();
+    bool dirty = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final partCount = localParts.length;
+            final partTotal = localParts.fold<int>(0, (sum, p) {
+              return sum + ((CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0) * (int.tryParse(p.qtyController.text.trim()) ?? 1));
+            });
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("PARTS USED",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(
+                                partCount > 0
+                                    ? "$partCount item${partCount > 1 ? 's' : ''} · ${CurrencyFormatter.format(partTotal)}"
+                                    : "No parts added",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          ...localParts.asMap().entries.map((entry) =>
+                            _buildPartRow(entry.key, entry.value)),
+                          if (localParts.length < 20)
+                            TextButton.icon(
+                              onPressed: () {
+                                localParts.add(_PartRow());
+                                dirty = true;
+                                setSheetState(() {});
+                              },
+                              icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
+                              label: Text("ADD PART",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+                            ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _parts
+                                    ..clear()
+                                    ..addAll(localParts);
+                                });
+                                Navigator.pop(ctx);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.ksc.accent500,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: Text("DONE",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showPhotosDrawer() {
+    final localBefore = List<XFile>.from(_beforePhotos);
+    final localAfter = List<XFile>.from(_afterPhotos);
+    bool dirty = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final photoCount = localBefore.length + localAfter.length;
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("PHOTOS",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(
+                                photoCount > 0
+                                    ? "$photoCount photo${photoCount > 1 ? 's' : ''}"
+                                    : "No photos added",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          _buildPhotoGroup("BEFORE PHOTOS", localBefore, onChanged: () { dirty = true; setSheetState(() {}); }),
+                          const SizedBox(height: 16),
+                          _buildPhotoGroup("AFTER PHOTOS", localAfter, onChanged: () { dirty = true; setSheetState(() {}); }),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _beforePhotos
+                                    ..clear()
+                                    ..addAll(localBefore);
+                                  _afterPhotos
+                                    ..clear()
+                                    ..addAll(localAfter);
+                                });
+                                Navigator.pop(ctx);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.ksc.accent500,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: Text("DONE",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showNotesDrawer() {
+    final initialText = _notesController.text;
+    bool dirty = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("NOTES",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text("Job notes and comments",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            _notesController.text = initialText; // restore on discard
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _notesController,
+                            onChanged: (_) {
+                              if (!dirty) { dirty = true; setSheetState(() {}); }
+                            },
+                            maxLines: 5,
+                            maxLength: 2000,
+                            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                            style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              hintText: "Specific hardware used...",
+                              hintStyle: TextStyle(color: context.ksc.neutral500),
+                              contentPadding: const EdgeInsets.only(bottom: 8, top: 12),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: context.ksc.primary700, width: 1),
+                              ),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
+                              ),
+                              border: UnderlineInputBorder(
+                                borderSide: BorderSide(color: context.ksc.primary700),
+                              ),
+                              filled: false,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.ksc.accent500,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: Text("DONE",
+                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDropdown(String label, List<String> options, String? current, ValueChanged<String?> onChanged) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(color: context.ksc.primary700, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: current,
+                dropdownColor: context.ksc.primary800,
+                isExpanded: true,
+                hint: Text("Select", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
+                items: options.map((opt) => DropdownMenuItem(
+                  value: opt,
+                  child: Text(opt.replaceAll('_', ' ').toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                )).toList(),
+                onChanged: (v) => setState(() => onChanged(v)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoGroup(String label, List<XFile> photos, {VoidCallback? onChanged}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -490,15 +2489,54 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: Stack(
                 children: [
-                  Container(width: 60, height: 60, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), image: DecorationImage(image: FileImage(File(p.path)), fit: BoxFit.cover))),
-                  Positioned(top: 0, right: 0, child: GestureDetector(onTap: () => setState(() => photos.remove(p)), child: Container(color: Colors.black54, child: const Icon(Icons.close, size: 16, color: Colors.white)))),
+                  Container(
+                    width: 60, height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      image: p.path.endsWith('.mp4') || p.path.endsWith('.m4a')
+                          ? null
+                          : DecorationImage(image: FileImage(File(p.path)), fit: BoxFit.cover),
+                    ),
+                    child: p.path.endsWith('.mp4')
+                        ? Icon(LineAwesomeIcons.video_solid, color: context.ksc.accent500, size: 24)
+                        : p.path.endsWith('.m4a')
+                            ? Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.accent500, size: 24)
+                            : null,
+                  ),
+                  Positioned(top: 0, right: 0, child: GestureDetector(onTap: () {
+                    setState(() => photos.remove(p));
+                    onChanged?.call();
+                  }, child: Container(color: Colors.black54, child: const Icon(Icons.close, size: 16, color: Colors.white)))),
                 ],
               ),
             )),
-            if (photos.length < 2)
-              GestureDetector(
-                onTap: () => _pickPhoto(photos),
-                child: Container(width: 60, height: 60, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.camera_solid, color: context.ksc.neutral500)),
+            if (photos.length < 4)
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      _pickPhoto(photos);
+                      onChanged?.call();
+                    },
+                    child: Container(width: 48, height: 48, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.camera_solid, color: context.ksc.neutral500, size: 18)),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      _pickVideo(photos);
+                      onChanged?.call();
+                    },
+                    child: Container(width: 48, height: 48, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.video_solid, color: context.ksc.neutral500, size: 18)),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      _pickAudio(photos);
+                      onChanged?.call();
+                    },
+                    child: Container(width: 48, height: 48, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.neutral500, size: 18)),
+                  ),
+                ],
               ),
           ],
         ),
@@ -509,6 +2547,32 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   Future<void> _pickPhoto(List<XFile> list) async {
     final picked = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 1024, maxHeight: 1024, imageQuality: 80);
     if (picked != null) setState(() => list.add(picked));
+  }
+
+  Future<void> _pickVideo(List<XFile> list) async {
+    final picked = await ImagePicker().pickVideo(source: ImageSource.camera, maxDuration: const Duration(seconds: 60));
+    if (picked != null) setState(() => list.add(picked));
+  }
+
+  Future<void> _pickAudio(List<XFile> list) async {
+    try {
+      final audioPath = '/tmp/keystone_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final recorder = AudioRecorder();
+      await recorder.start(const RecordConfig(), path: audioPath);
+      await Future.delayed(const Duration(seconds: 30));
+      final recordedPath = await recorder.stop();
+      if (recordedPath != null && mounted) {
+        setState(() => list.add(XFile(recordedPath)));
+      }
+    } catch (e) {
+      debugPrint('[KS:AUDIO] Record failed: $e');
+    }
+  }
+
+  String _inferMediaType(String path) {
+    if (path.endsWith('.mp4') || path.endsWith('.mov')) return 'video';
+    if (path.endsWith('.m4a') || path.endsWith('.mp3') || path.endsWith('.wav')) return 'audio';
+    return 'image';
   }
 
   Widget _buildBottomAction(bool isLoading) {
@@ -546,22 +2610,33 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10)),
         if (fieldHint != null) ...[const SizedBox(height: 4), Text(fieldHint, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5))],
         const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
-          child: TextField(
-            controller: controller,
-            keyboardType: type,
-            maxLines: maxLines,
-            readOnly: readOnly,
-            inputFormatters: inputFormatters,
-            maxLength: maxLength,
-            maxLengthEnforcement: MaxLengthEnforcement.enforced,
-            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-            autocorrect: !isNumeric,
-            enableSuggestions: !isNumeric,
-            onChanged: onChanged,
-            style: AppTextStyles.body.copyWith(color: readOnly ? context.ksc.neutral500 : context.ksc.white, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: context.ksc.neutral500), contentPadding: const EdgeInsets.all(16), border: InputBorder.none, filled: true, fillColor: Colors.transparent),
+        TextField(
+          controller: controller,
+          keyboardType: type,
+          maxLines: maxLines,
+          readOnly: readOnly,
+          inputFormatters: inputFormatters,
+          maxLength: maxLength,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
+          buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+          autocorrect: !isNumeric,
+          enableSuggestions: !isNumeric,
+          onChanged: onChanged,
+          style: AppTextStyles.body.copyWith(color: readOnly ? context.ksc.neutral500 : context.ksc.white, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: context.ksc.neutral500),
+            contentPadding: const EdgeInsets.only(bottom: 8, top: 12),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700, width: 1),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
+            ),
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700),
+            ),
+            filled: false,
           ),
         ),
       ],

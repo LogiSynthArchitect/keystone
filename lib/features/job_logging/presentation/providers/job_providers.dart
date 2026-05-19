@@ -8,6 +8,7 @@ import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/services/pending_media_upload_service.dart';
 import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../../data/datasources/job_local_datasource.dart';
 import '../../data/datasources/job_remote_datasource.dart';
@@ -17,11 +18,20 @@ import '../../data/datasources/job_photos_local_datasource.dart';
 import '../../data/datasources/job_photos_remote_datasource.dart';
 import '../../data/datasources/job_audit_local_datasource.dart';
 import '../../data/datasources/job_audit_remote_datasource.dart';
+import '../../data/datasources/job_services_local_datasource.dart';
+import '../../data/datasources/job_services_remote_datasource.dart';
+import '../../data/datasources/job_hardware_local_datasource.dart';
+import '../../data/datasources/job_hardware_remote_datasource.dart';
+import '../../data/datasources/job_expenses_local_datasource.dart';
+import '../../data/datasources/job_expenses_remote_datasource.dart';
 import '../../data/repositories/job_repository_impl.dart';
 import '../../domain/entities/job_entity.dart';
 import '../../domain/entities/job_part_entity.dart';
 import '../../domain/entities/job_photo_entity.dart';
 import '../../domain/entities/job_audit_entry_entity.dart';
+import '../../domain/entities/job_service_entity.dart';
+import '../../domain/entities/job_hardware_entity.dart';
+import '../../domain/entities/job_expense_entity.dart';
 import '../../domain/repositories/job_repository.dart';
 import '../../domain/usecases/get_jobs_usecase.dart';
 import '../../domain/usecases/get_job_usecase.dart';
@@ -34,6 +44,7 @@ import '../../domain/usecases/update_payment_status_usecase.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
+import 'package:keystone/features/inventory/presentation/providers/inventory_providers.dart';
 
 import '../../domain/entities/correction_request_entity.dart';
 import '../../domain/repositories/correction_request_repository.dart';
@@ -54,6 +65,15 @@ final jobPhotosRemoteDatasourceProvider = Provider<JobPhotosRemoteDatasource>((r
 final jobAuditLocalDatasourceProvider = Provider<JobAuditLocalDatasource>((ref) => JobAuditLocalDatasource());
 final jobAuditRemoteDatasourceProvider = Provider<JobAuditRemoteDatasource>((ref) => JobAuditRemoteDatasource(ref.watch(supabaseClientProvider)));
 
+final jobServicesLocalDatasourceProvider = Provider<JobServicesLocalDatasource>((ref) => JobServicesLocalDatasource());
+final jobServicesRemoteDatasourceProvider = Provider<JobServicesRemoteDatasource>((ref) => JobServicesRemoteDatasource(ref.watch(supabaseClientProvider)));
+
+final jobHardwareLocalDatasourceProvider = Provider<JobHardwareLocalDatasource>((ref) => JobHardwareLocalDatasource());
+final jobHardwareRemoteDatasourceProvider = Provider<JobHardwareRemoteDatasource>((ref) => JobHardwareRemoteDatasource(ref.watch(supabaseClientProvider)));
+
+final jobExpensesLocalDatasourceProvider = Provider<JobExpensesLocalDatasource>((ref) => JobExpensesLocalDatasource());
+final jobExpensesRemoteDatasourceProvider = Provider<JobExpensesRemoteDatasource>((ref) => JobExpensesRemoteDatasource(ref.watch(supabaseClientProvider)));
+
 final jobRepositoryProvider = Provider<JobRepository>((ref) => JobRepositoryImpl(
   ref.watch(jobRemoteDatasourceProvider),
   ref.watch(jobLocalDatasourceProvider),
@@ -67,6 +87,12 @@ final jobRepositoryProvider = Provider<JobRepository>((ref) => JobRepositoryImpl
   ref.watch(jobPhotosRemoteDatasourceProvider),
   ref.watch(jobAuditLocalDatasourceProvider),
   ref.watch(jobAuditRemoteDatasourceProvider),
+  ref.watch(jobServicesLocalDatasourceProvider),
+  ref.watch(jobServicesRemoteDatasourceProvider),
+  ref.watch(jobHardwareLocalDatasourceProvider),
+  ref.watch(jobHardwareRemoteDatasourceProvider),
+  ref.watch(jobExpensesLocalDatasourceProvider),
+  ref.watch(jobExpensesRemoteDatasourceProvider),
 ));
 
 final correctionRequestRepositoryProvider = Provider<CorrectionRequestRepository>((ref) =>
@@ -127,9 +153,55 @@ final logJobWithCustomerUsecaseProvider = Provider<LogJobWithCustomerUsecase>(
   ),
 );
 
+class JobDetailData {
+  final JobEntity? job;
+  final List<JobPartEntity> parts;
+  final List<JobPhotoEntity> photos;
+  final List<JobAuditEntryEntity> auditLog;
+  final List<JobServiceEntity> services;
+  final List<JobHardwareEntity> hardware;
+  final String? error;
+
+  const JobDetailData({
+    this.job,
+    this.parts = const [],
+    this.photos = const [],
+    this.auditLog = const [],
+    this.services = const [],
+    this.hardware = const [],
+    this.error,
+  });
+
+  bool get isLoading => job == null && error == null;
+}
+
 final jobDetailProvider = FutureProvider.family<JobEntity?, String>((ref, jobId) async {
   final getJob = ref.watch(getJobUsecaseProvider);
   return await getJob(jobId);
+});
+
+final jobDetailCompositeProvider = FutureProvider.family<JobDetailData, String>((ref, jobId) async {
+  try {
+    final repo = ref.watch(jobRepositoryProvider);
+    final results = await Future.wait([
+      repo.getJobById(jobId),
+      repo.getPartsForJob(jobId),
+      repo.getPhotosForJob(jobId),
+      repo.getAuditLogForJob(jobId),
+      repo.getServicesForJob(jobId),
+      repo.getHardwareForJob(jobId),
+    ]);
+    return JobDetailData(
+      job: results[0] as JobEntity?,
+      parts: results[1] as List<JobPartEntity>,
+      photos: results[2] as List<JobPhotoEntity>,
+      auditLog: results[3] as List<JobAuditEntryEntity>,
+      services: results[4] as List<JobServiceEntity>,
+      hardware: results[5] as List<JobHardwareEntity>,
+    );
+  } catch (e) {
+    return JobDetailData(error: e.toString());
+  }
 });
 
 final jobPartsProvider = FutureProvider.family<List<JobPartEntity>, String>((ref, jobId) async {
@@ -142,6 +214,18 @@ final jobPhotosProvider = FutureProvider.family<List<JobPhotoEntity>, String>((r
 
 final jobAuditLogProvider = FutureProvider.family<List<JobAuditEntryEntity>, String>((ref, jobId) async {
   return await ref.watch(jobRepositoryProvider).getAuditLogForJob(jobId);
+});
+
+final jobServicesProvider = FutureProvider.family<List<JobServiceEntity>, String>((ref, jobId) async {
+  return await ref.watch(jobRepositoryProvider).getServicesForJob(jobId);
+});
+
+final jobHardwareProvider = FutureProvider.family<List<JobHardwareEntity>, String>((ref, jobId) async {
+  return await ref.watch(jobRepositoryProvider).getHardwareForJob(jobId);
+});
+
+final jobExpensesProvider = FutureProvider.family<List<JobExpenseEntity>, String>((ref, jobId) async {
+  return await ref.watch(jobRepositoryProvider).getExpensesForJob(jobId);
 });
 
 class JobListFilters {
@@ -348,7 +432,67 @@ class JobListNotifier extends StateNotifier<JobListState> {
 
   Future<void> archive(String id) async {
     try {
+      final job = state.activeJobs.where((j) => j.id == id).firstOrNull;
+      final customerId = job?.customerId;
+
       await _archiveJob(id);
+
+      if (customerId != null && customerId.isNotEmpty) {
+        try {
+          _ref.read(customerListProvider.notifier).decrementJobCount(customerId);
+        } catch (_) {}
+      }
+
+      // Restore stock for auto-cogs inventory items
+      try {
+        final user = await _ref.read(currentUserProvider.future);
+        if (user != null) {
+          final invRepo = _ref.read(inventoryRepositoryProvider);
+          final allInv = await invRepo.getItems(user.id);
+          final jobRepo = _ref.read(jobRepositoryProvider);
+
+          // Restore parts stock
+          final jobParts = await jobRepo.getPartsForJob(id);
+          for (final part in jobParts) {
+            final matches = part.inventoryItemId != null
+              ? allInv.where((i) => i.id == part.inventoryItemId && i.isAutoCogs).toList()
+              : allInv.where((i) =>
+                  i.isAutoCogs &&
+                  i.name.toLowerCase() == part.partName.toLowerCase()
+                ).toList();
+            for (final item in matches) {
+              await invRepo.adjustStock(
+                item.id, user.id, part.quantity ?? 1, 'job_unarchive',
+                reason: 'Restored from archived job ${id.substring(0, 8)}',
+                referenceType: 'job_archive',
+                referenceId: id,
+              );
+            }
+          }
+
+          // Restore hardware stock (matches by brand name)
+          final jobHardware = await jobRepo.getHardwareForJob(id);
+          for (final hw in jobHardware) {
+            final brand = hw.brand;
+            if (brand == null || brand.isEmpty) continue;
+            final matches = allInv.where((i) =>
+              i.isAutoCogs &&
+              i.name.toLowerCase() == brand.toLowerCase()
+            ).toList();
+            for (final item in matches) {
+              await invRepo.adjustStock(
+                item.id, user.id, hw.quantity, 'job_unarchive',
+                reason: 'Hardware restored from archived job ${id.substring(0, 8)}',
+                referenceType: 'job_archive',
+                referenceId: id,
+              );
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[KS:INVENTORY] Stock restoration on archive failed: $e');
+      }
+
       _ref.invalidate(jobDetailProvider(id));
       state = state.copyWith(
         activeJobs: state.activeJobs.where((j) => j.id != id).toList(),
@@ -436,10 +580,10 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
     String status = 'in_progress',
     String paymentStatus = 'unpaid',
     String? quotedPriceString,
-    String? hardwareBrand,
-    String? hardwareKeyway,
-    List<(String, int, int)>? parts, // name, qty, price
-    List<(File, String)>? photos, // file, label
+    String? leadSource,
+    List<(String, int, int, String?)>? parts, // name, qty, price, inventoryItemId
+    List<(String?, String, int, String?)>? hardwareItems, // inventoryItemId, name, qty, inventoryItemId (dup for pattern) 
+    List<(File, String, String)>? photos, // file, label, mediaType
   }) async {
     if (state.isSubmitting) return null;
     state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
@@ -474,8 +618,7 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
         status: status,
         paymentStatus: paymentStatus,
         quotedPrice: quotedPrice != null ? quotedPrice / 100.0 : null,
-        hardwareBrand: hardwareBrand,
-        hardwareKeyway: hardwareKeyway,
+        leadSource: leadSource,
       ));
 
       // Save parts locally
@@ -486,21 +629,94 @@ class LogJobNotifier extends StateNotifier<LogJobState> {
           partName: p.$1,
           quantity: p.$2,
           unitPrice: p.$3,
+          inventoryItemId: p.$4,
           createdAt: DateTime.now().toIso8601String(),
         )).toList();
         await _partsLocal.saveAll(partModels);
+
+        // Auto-deduct inventory for auto-cogs items
+        // Uses inventory_item_id for exact match, falls back to name match
+        try {
+          final invRepo = _ref.read(inventoryRepositoryProvider);
+          final allInv = await invRepo.getItems(userId);
+          for (final p in parts) {
+            final invId = p.$4;
+            final matches = invId != null
+              ? allInv.where((i) => i.id == invId && i.isAutoCogs).toList()
+              : allInv.where((i) =>
+                  i.isAutoCogs &&
+                  i.name.toLowerCase() == p.$1.toLowerCase()
+                ).toList();
+            for (final item in matches) {
+              await invRepo.adjustStock(
+                item.id, userId, -p.$2, 'job_use',
+                reason: 'Auto-COGS: ${p.$1} used in job ${job.id.substring(0, 8)}',
+                referenceType: 'job',
+                referenceId: job.id,
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('[KS:INVENTORY] Auto-COGS deduction failed: $e');
+        }
+
+        // Auto-deduct inventory for auto-cogs hardware items
+        if (hardwareItems != null && hardwareItems.isNotEmpty) {
+          try {
+            final invRepo = _ref.read(inventoryRepositoryProvider);
+            final allInv = await invRepo.getItems(userId);
+            for (final hw in hardwareItems) {
+              final invId = hw.$1;
+              if (invId == null) continue;
+              final matches = allInv.where((i) =>
+                i.id == invId && i.isAutoCogs
+              ).toList();
+              for (final item in matches) {
+                final qty = hw.$3;
+                await invRepo.adjustStock(
+                  item.id, userId, -qty, 'job_use',
+                  reason: 'Auto-COGS: ${hw.$2} used in job ${job.id.substring(0, 8)}',
+                  referenceType: 'job',
+                  referenceId: job.id,
+                );
+              }
+            }
+          } catch (e) {
+            debugPrint('[KS:INVENTORY] Hardware auto-COGS deduction failed: $e');
+          }
+        }
       }
 
-      // Save photos locally (storage upload happens during sync or separate task)
+      // Save photos locally and queue for upload
       if (photos != null && photos.isNotEmpty) {
         for (var p in photos) {
+          final photoId = const Uuid().v4();
           await _photosLocal.savePhoto(JobPhotoModel(
-            id: const Uuid().v4(),
+            id: photoId,
             jobId: job.id,
-            storagePath: p.$1.path, // Locally using file path until synced
+            storagePath: p.$1.path,
             label: p.$2,
+            mediaType: p.$3,
             createdAt: DateTime.now().toIso8601String(),
           ));
+        }
+
+        // Enqueue pending uploads for retry when online
+        try {
+          final svc = PendingMediaUploadService();
+          for (var p in photos) {
+            await svc.enqueue(PendingMediaUpload(
+              id: const Uuid().v4(),
+              filePath: p.$1.path,
+              jobId: job.id,
+              userId: userId,
+              mediaType: p.$3,
+              label: p.$2,
+              createdAt: DateTime.now(),
+            ));
+          }
+        } catch (e) {
+          debugPrint('[KS:PHOTOS] Failed to enqueue pending uploads: $e');
         }
       }
       
@@ -526,3 +742,46 @@ final logJobProvider = StateNotifierProvider<LogJobNotifier, LogJobState>((ref) 
   ref.watch(jobPartsLocalDatasourceProvider),
   ref.watch(jobPhotosLocalDatasourceProvider),
 ));
+
+class CustomerHistorySuggestions {
+  final Set<String> hardwareBrands;
+  final Set<String> hardwareKeyways;
+  final Set<String> partNames;
+
+  const CustomerHistorySuggestions({
+    this.hardwareBrands = const {},
+    this.hardwareKeyways = const {},
+    this.partNames = const {},
+  });
+}
+
+final customerHistorySuggestionsProvider = FutureProvider.family<CustomerHistorySuggestions, String>((ref, customerId) async {
+  final local = ref.watch(jobLocalDatasourceProvider);
+  final allJobs = await local.getJobs();
+  final pastJobs = allJobs.where((j) => j.customerId == customerId).toList();
+
+  final brands = <String>{};
+  final keyways = <String>{};
+  final partNames = <String>{};
+
+  for (final job in pastJobs) {
+    final entity = job.toEntity();
+    if (entity.hardwareBrand != null && entity.hardwareBrand!.isNotEmpty) {
+      brands.add(entity.hardwareBrand!);
+    }
+    if (entity.hardwareKeyway != null && entity.hardwareKeyway!.isNotEmpty) {
+      keyways.add(entity.hardwareKeyway!);
+    }
+
+    final parts = await ref.read(jobPartsLocalDatasourceProvider).getPartsForJob(entity.id);
+    for (final part in parts) {
+      if (part.partName.isNotEmpty) partNames.add(part.partName);
+    }
+  }
+
+  return CustomerHistorySuggestions(
+    hardwareBrands: brands,
+    hardwareKeyways: keyways,
+    partNames: partNames,
+  );
+});

@@ -38,9 +38,32 @@ class CustomerRemoteDatasource {
       throw const NetworkException(message: 'Cannot create customer: user_id is missing.', code: 'CUSTOMER_MISSING_USER_ID');
     }
     try {
+      // Server-side dedup: check if phone already exists on Supabase
+      // Catches duplicates when local cache is empty (fresh install / cleared data)
+      final phone = json['phone_number'] as String?;
+      if (phone != null && phone.isNotEmpty) {
+        final existing = await _supabase
+            .from('customers')
+            .select()
+            .eq('phone_number', phone)
+            .eq('user_id', json['user_id'])
+            .maybeSingle();
+        if (existing != null) {
+          return CustomerModel.fromJson(existing);
+        }
+      }
+
       final data = await _supabase.from('customers').insert(json).select().single();
       return CustomerModel.fromJson(data);
     } on PostgrestException catch (e) {
+      // Handle Supabase unique constraint violation as fallback
+      if (e.message.contains('phone_number') && e.message.contains('unique')) {
+        throw NetworkException(
+          message: 'A customer with this phone number already exists.',
+          code: 'CUSTOMER_DUPLICATE_PHONE',
+          cause: e,
+        );
+      }
       throw NetworkException(message: 'Could not save customer.', code: 'CUSTOMER_CREATE_FAILED', cause: e);
     } catch (e) {
       throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);

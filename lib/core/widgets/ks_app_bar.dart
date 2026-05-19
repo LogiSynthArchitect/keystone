@@ -7,6 +7,7 @@ import '../providers/sync_status_provider.dart';
 
 class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
+  final Widget? titleWidget;
   final List<Widget>? actions;
   final bool showBack;
   final VoidCallback? onBack;
@@ -15,6 +16,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const KsAppBar({
     super.key,
     required this.title,
+    this.titleWidget,
     this.actions,
     this.showBack = false,
     this.onBack,
@@ -29,18 +31,19 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: context.ksc.primary900,
       foregroundColor: context.ksc.white,
       elevation: 0,
+      scrolledUnderElevation: 0.5,
       centerTitle: false,
-      title: Text(
-        title.toUpperCase(),
+      title: titleWidget ?? Text(
+        title,
         style: AppTextStyles.h3.copyWith(
           color: context.ksc.white,
           fontWeight: FontWeight.w900,
-          letterSpacing: 1.5,
+          letterSpacing: 1.2,
         ),
       ),
       leading: showBack
           ? IconButton(
-              icon: const Icon(LineAwesomeIcons.angle_left_solid, size: 20),
+              icon: const Icon(LineAwesomeIcons.angle_left_solid, size: 22),
               onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           : null,
@@ -49,23 +52,25 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (pendingCount > 0)
           Center(
             child: Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: context.ksc.accent500,
-                borderRadius: BorderRadius.circular(12),
+                color: context.ksc.accent500.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(LineAwesomeIcons.sync_solid, size: 12, color: context.ksc.primary900),
-                  const SizedBox(width: 4),
+                  Icon(LineAwesomeIcons.sync_solid, size: 12, color: context.ksc.accent500),
+                  const SizedBox(width: 6),
                   Text(
                     '$pendingCount PENDING',
                     style: AppTextStyles.caption.copyWith(
-                      color: context.ksc.primary900,
+                      color: context.ksc.accent500,
                       fontWeight: FontWeight.w900,
                       fontSize: 10,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],

@@ -127,8 +127,8 @@ class KsColors extends ThemeExtension<KsColors> {
   // ─── LIGHT ───────────────────────────────────────────────────────────────
   static const KsColors light = KsColors(
     // Page + surface hierarchy inverted: dark navy → light blue-white
-    primary900: Color(0xFFF4F7FF), // page background
-    primary800: Color(0xFFFFFFFF), // card / surface
+    primary900: Color(0xFFFFFFFF), // page background — pure white
+    primary800: Color(0xFFF8FAFC), // card / surface — subtle off-white for separation
     primary700: Color(0xFFDCE6F5), // borders / dividers
     primary600: Color(0xFFB0C4DE), // active borders
     primary500: Color(0xFF2952A3), // interactive (same blue)
