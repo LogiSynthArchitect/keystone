@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 class HiveService {
   HiveService._();
@@ -18,80 +20,148 @@ class HiveService {
   static const String noteJobLinksBox    = 'note_job_links';
   static const String remindersBox       = 'reminders';
   static const String activityEventsBox  = 'activity_events';
+  static const String jobServicesBox     = 'job_services';
+  static const String jobHardwareBox     = 'job_hardware';
+  static const String jobExpensesBox     = 'job_expenses';
+  static const String jobTemplatesBox    = 'job_templates';
+  static const String inventoryItemsBox  = 'inventory_items';
+  static const String inventoryStockAdjustmentsBox = 'inventory_stock_adjustments';
+  static const String inventoryRestocksBox = 'inventory_restocks';
+  static const String recurringSchedulesBox = 'recurring_schedules';
+  static const String authBox = 'auth';
+  static const String pendingMediaUploadsBox = 'pending_media_uploads';
+  static const String metaBox = '_meta';
+  static const String lastOnlineSyncKey   = 'last_online_sync';
+  static const String backupDirName      = 'hive_backups';
+
+  static final List<String> allBoxNames = [
+    jobsBox, customersBox, notesBox, followUpsBox, profileBox,
+    settingsBox, serviceTypesBox, jobPartsBox, jobPhotosBox,
+    jobAuditLogBox, keyCodeHistoryBox, noteJobLinksBox,
+    remindersBox, activityEventsBox, jobServicesBox, jobHardwareBox, jobExpensesBox, jobTemplatesBox, inventoryItemsBox, inventoryStockAdjustmentsBox, inventoryRestocksBox, recurringSchedulesBox, authBox, pendingMediaUploadsBox,
+  ];
 
   static Future<void> initialize() async {
     await Hive.initFlutter();
-    
-    try {
-      await _openBoxes();
-    } on HiveError catch (e) {
-      debugPrint('[KS:HIVE] HiveError on open — wiping corrupt boxes and retrying: $e');
-      await Hive.deleteBoxFromDisk(jobsBox);
-      await Hive.deleteBoxFromDisk(customersBox);
-      await Hive.deleteBoxFromDisk(notesBox);
-      await Hive.deleteBoxFromDisk(followUpsBox);
-      await Hive.deleteBoxFromDisk(profileBox);
-      await Hive.deleteBoxFromDisk(settingsBox);
-      await Hive.deleteBoxFromDisk(serviceTypesBox);
-      await Hive.deleteBoxFromDisk(jobPartsBox);
-      await Hive.deleteBoxFromDisk(jobPhotosBox);
-      await Hive.deleteBoxFromDisk(jobAuditLogBox);
-      await Hive.deleteBoxFromDisk(keyCodeHistoryBox);
-      await Hive.deleteBoxFromDisk(noteJobLinksBox);
-      await Hive.deleteBoxFromDisk(remindersBox);
-      await Hive.deleteBoxFromDisk(activityEventsBox);
-      await _openBoxes();
+    await _openBoxes();
+  }
+
+  /// Per-box recovery: only the corrupted box is deleted, not all data.
+  static Future<void> _openBoxes() async {
+    Box? jobs;
+    Box? customers;
+
+    for (final name in allBoxNames) {
+      try {
+        final box = await Hive.openBox(name);
+        if (name == jobsBox) jobs = box;
+        if (name == customersBox) customers = box;
+      } on HiveError catch (e) {
+        debugPrint('[KS:HIVE] Per-box recovery: deleting corrupt "$name": $e');
+        try {
+          await Hive.deleteBoxFromDisk(name);
+          final box = await Hive.openBox(name);
+          if (name == jobsBox) jobs = box;
+          if (name == customersBox) customers = box;
+        } catch (e2) {
+          debugPrint('[KS:HIVE] Fatal: could not recover "$name": $e2');
+        }
+      }
+    }
+
+    try { await jobs?.compact(); } catch (_) {}
+    try { await customers?.compact(); } catch (_) {}
+
+    // Open meta box as untyped for version tracking etc.
+    await Hive.openBox(metaBox);
+
+    // Create a backup after successful init
+    try { await _createBackup(); } catch (_) {}
+  }
+
+  /// Backs up all Hive files to a backup directory.
+  /// Keeps last 3 backups, deletes older ones.
+  static Future<void> _createBackup() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final backupRoot = Directory('${dir.path}/$backupDirName');
+    if (!await backupRoot.exists()) await backupRoot.create(recursive: true);
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final thisBackup = Directory('${backupRoot.path}/$timestamp');
+    await thisBackup.create();
+
+    final hiveDir = await _hiveDir();
+    if (hiveDir == null) return;
+
+    for (final name in allBoxNames) {
+      final src = File('${hiveDir.path}/$name.hive');
+      if (await src.exists()) {
+        await src.copy('${thisBackup.path}/$name.hive');
+      }
+    }
+
+    // Keep last 3 backups
+    final allBackups = await backupRoot.list().toList();
+    if (allBackups.length > 3) {
+      allBackups.sort((a, b) => a.path.compareTo(b.path));
+      for (int i = 0; i < allBackups.length - 3; i++) {
+        if (allBackups[i] is Directory) {
+          await (allBackups[i] as Directory).delete(recursive: true);
+        }
+      }
     }
   }
 
-  static Future<void> _openBoxes() async {
-    final jobs = await Hive.openBox<Map>(jobsBox);
-    final customers = await Hive.openBox<Map>(customersBox);
-    await Hive.openBox<Map>(notesBox);
-    await Hive.openBox<Map>(followUpsBox);
-    await Hive.openBox<Map>(profileBox);
-    await Hive.openBox(settingsBox);
-    await Hive.openBox<Map>(serviceTypesBox);
-    await Hive.openBox<Map>(jobPartsBox);
-    await Hive.openBox<Map>(jobPhotosBox);
-    await Hive.openBox<Map>(jobAuditLogBox);
-    await Hive.openBox<Map>(keyCodeHistoryBox);
-    await Hive.openBox<Map>(noteJobLinksBox);
-    await Hive.openBox<Map>(remindersBox);
-    await Hive.openBox<Map>(activityEventsBox);
-
-    await jobs.compact();
-    await customers.compact();
+  /// Find the Hive storage directory.
+  static Future<Directory?> _hiveDir() async {
+    final dir = await getApplicationDocumentsDirectory();
+    // Hive default directory on mobile
+    final docDir = Directory(dir.path);
+    if (await docDir.exists()) return docDir;
+    return null;
   }
 
   static Future<void> clearAll() async {
-    await jobs.clear();
-    await customers.clear();
-    await notes.clear();
-    await followUps.clear();
-    await profile.clear();
-    await serviceTypes.clear();
-    await jobParts.clear();
-    await jobPhotos.clear();
-    await jobAuditLog.clear();
-    await keyCodeHistory.clear();
-    await noteJobLinks.clear();
-    await reminders.clear();
-    await activityEvents.clear();
+    for (final name in allBoxNames) {
+      try {
+        final box = Hive.box(name);
+        await box.clear();
+      } catch (_) {}
+    }
   }
 
-  static Box<Map> get jobs            => Hive.box<Map>(jobsBox);
-  static Box<Map> get customers       => Hive.box<Map>(customersBox);
-  static Box<Map> get notes           => Hive.box<Map>(notesBox);
-  static Box<Map> get followUps       => Hive.box<Map>(followUpsBox);
-  static Box<Map> get profile         => Hive.box<Map>(profileBox);
-  static Box<Map> get serviceTypes    => Hive.box<Map>(serviceTypesBox);
-  static Box<Map> get jobParts        => Hive.box<Map>(jobPartsBox);
-  static Box<Map> get jobPhotos       => Hive.box<Map>(jobPhotosBox);
-  static Box<Map> get jobAuditLog     => Hive.box<Map>(jobAuditLogBox);
-  static Box<Map> get keyCodeHistory  => Hive.box<Map>(keyCodeHistoryBox);
-  static Box<Map> get noteJobLinks    => Hive.box<Map>(noteJobLinksBox);
-  static Box<Map> get reminders       => Hive.box<Map>(remindersBox);
-  static Box<Map> get activityEvents  => Hive.box<Map>(activityEventsBox);
-  static Box      get settings        => Hive.box(settingsBox);
+  static Future<void> clearDataBoxes() async {
+    final keep = {authBox, pendingMediaUploadsBox, metaBox};
+    for (final name in allBoxNames) {
+      if (keep.contains(name)) continue;
+      try {
+        final box = Hive.box(name);
+        await box.clear();
+      } catch (_) {}
+    }
+  }
+
+  static Box get jobs            => Hive.box(jobsBox);
+  static Box get customers       => Hive.box(customersBox);
+  static Box get notes           => Hive.box(notesBox);
+  static Box get followUps       => Hive.box(followUpsBox);
+  static Box get profile         => Hive.box(profileBox);
+  static Box get serviceTypes    => Hive.box(serviceTypesBox);
+  static Box get jobParts        => Hive.box(jobPartsBox);
+  static Box get jobPhotos       => Hive.box(jobPhotosBox);
+  static Box get jobAuditLog     => Hive.box(jobAuditLogBox);
+  static Box get keyCodeHistory  => Hive.box(keyCodeHistoryBox);
+  static Box get noteJobLinks    => Hive.box(noteJobLinksBox);
+  static Box get reminders       => Hive.box(remindersBox);
+  static Box get activityEvents  => Hive.box(activityEventsBox);
+  static Box get jobServices    => Hive.box(jobServicesBox);
+  static Box get jobHardware    => Hive.box(jobHardwareBox);
+  static Box get jobExpenses    => Hive.box(jobExpensesBox);
+  static Box get jobTemplates       => Hive.box(jobTemplatesBox);
+  static Box get inventoryItems          => Hive.box(inventoryItemsBox);
+  static Box get inventoryStockAdjustments => Hive.box(inventoryStockAdjustmentsBox);
+  static Box get inventoryRestocks        => Hive.box(inventoryRestocksBox);
+  static Box get recurringSchedules       => Hive.box(recurringSchedulesBox);
+  static Box get auth           => Hive.box(authBox);
+  static Box get settings        => Hive.box(settingsBox);
 }

@@ -20,11 +20,17 @@ class JobModel {
   final String status;
   final String paymentStatus;
   final String? paymentMethod;
+  final String? leadSource;
   final double? quotedPrice;
   final String? hardwareBrand;
   final String? hardwareKeyway;
+  final String? quotedAt;
+  final String? inProgressAt;
+  final String? completedAt;
+  final String? invoicedAt;
   final bool isDeleted;
   final DateTime? deletedAt;
+  final String? coverImageUrl;
   final String createdAt;
   final String updatedAt;
 
@@ -47,11 +53,17 @@ class JobModel {
     this.status = 'in_progress',
     this.paymentStatus = 'unpaid',
     this.paymentMethod,
+    this.leadSource,
     this.quotedPrice,
     this.hardwareBrand,
     this.hardwareKeyway,
+    this.quotedAt,
+    this.inProgressAt,
+    this.completedAt,
+    this.invoicedAt,
     this.isDeleted = false,
     this.deletedAt,
+    this.coverImageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -75,11 +87,17 @@ class JobModel {
     status: json['status'] as String? ?? 'in_progress',
     paymentStatus: json['payment_status'] as String? ?? 'unpaid',
     paymentMethod: json['payment_method'] as String?,
+    leadSource: json['lead_source'] as String?,
     quotedPrice: json['quoted_price'] != null ? (num.parse(json['quoted_price'].toString()) * 100).round().toDouble() : null,
     hardwareBrand: json['hardware_brand'] as String?,
     hardwareKeyway: json['hardware_keyway'] as String?,
+    quotedAt: json['quoted_at'] as String?,
+    inProgressAt: json['in_progress_at'] as String?,
+    completedAt: json['completed_at'] as String?,
+    invoicedAt: json['invoiced_at'] as String?,
     isDeleted: json['is_deleted'] as bool? ?? false,
     deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
+    coverImageUrl: json['cover_image_url'] as String?,
     createdAt: json['created_at'],
     updatedAt: json['updated_at'],
   );
@@ -103,11 +121,17 @@ class JobModel {
     status: entity.status,
     paymentStatus: entity.paymentStatus,
     paymentMethod: entity.paymentMethod,
+    leadSource: entity.leadSource,
     quotedPrice: entity.quotedPrice,
     hardwareBrand: entity.hardwareBrand,
     hardwareKeyway: entity.hardwareKeyway,
+    quotedAt: entity.quotedAt?.toIso8601String(),
+    inProgressAt: entity.inProgressAt?.toIso8601String(),
+    completedAt: entity.completedAt?.toIso8601String(),
+    invoicedAt: entity.invoicedAt?.toIso8601String(),
     isDeleted: entity.isDeleted,
     deletedAt: entity.deletedAt,
+    coverImageUrl: entity.coverImageUrl,
     createdAt: entity.createdAt.toIso8601String(),
     updatedAt: entity.updatedAt.toIso8601String(),
   );
@@ -131,11 +155,17 @@ class JobModel {
     'status': status,
     'payment_status': paymentStatus,
     'payment_method': paymentMethod,
+    'lead_source': leadSource,
     'quoted_price': quotedPrice != null ? quotedPrice! / 100.0 : null,
     'hardware_brand': hardwareBrand,
     'hardware_keyway': hardwareKeyway,
+    'quoted_at': quotedAt,
+    'in_progress_at': inProgressAt,
+    'completed_at': completedAt,
+    'invoiced_at': invoicedAt,
     'is_deleted': isDeleted,
     'deleted_at': deletedAt?.toIso8601String(),
+    'cover_image_url': coverImageUrl,
     'created_at': createdAt,
     'updated_at': updatedAt,
   };
@@ -159,11 +189,17 @@ class JobModel {
     status: status,
     paymentStatus: paymentStatus,
     paymentMethod: paymentMethod,
+    leadSource: leadSource,
     quotedPrice: quotedPrice,
     hardwareBrand: hardwareBrand,
     hardwareKeyway: hardwareKeyway,
+    quotedAt: quotedAt != null ? DateTime.parse(quotedAt!) : null,
+    inProgressAt: inProgressAt != null ? DateTime.parse(inProgressAt!) : null,
+    completedAt: completedAt != null ? DateTime.parse(completedAt!) : null,
+    invoicedAt: invoicedAt != null ? DateTime.parse(invoicedAt!) : null,
     isDeleted: isDeleted,
     deletedAt: deletedAt,
+    coverImageUrl: coverImageUrl,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
   );
@@ -187,11 +223,17 @@ class JobModel {
     String? status,
     String? paymentStatus,
     String? paymentMethod,
+    String? leadSource,
     double? quotedPrice,
     String? hardwareBrand,
     String? hardwareKeyway,
+    String? quotedAt,
+    String? inProgressAt,
+    String? completedAt,
+    String? invoicedAt,
     bool? isDeleted,
     DateTime? deletedAt,
+    String? coverImageUrl,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -214,11 +256,17 @@ class JobModel {
       status: status ?? this.status,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      leadSource: leadSource ?? this.leadSource,
       quotedPrice: quotedPrice ?? this.quotedPrice,
       hardwareBrand: hardwareBrand ?? this.hardwareBrand,
       hardwareKeyway: hardwareKeyway ?? this.hardwareKeyway,
+      quotedAt: quotedAt ?? this.quotedAt,
+      inProgressAt: inProgressAt ?? this.inProgressAt,
+      completedAt: completedAt ?? this.completedAt,
+      invoicedAt: invoicedAt ?? this.invoicedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

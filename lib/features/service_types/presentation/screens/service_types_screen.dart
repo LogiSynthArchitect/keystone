@@ -22,7 +22,28 @@ class ServiceTypesScreen extends ConsumerWidget {
       ),
       body: state.when(
         loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
-        error: (err, _) => Center(child: Text("ERROR LOADING SERVICE TYPES", style: AppTextStyles.caption.copyWith(color: context.ksc.error500))),
+        error: (err, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 48, color: context.ksc.error500),
+              const SizedBox(height: 16),
+              Text("FAILED TO LOAD", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 8),
+              Text("Could not load service types.", style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(serviceTypeProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.ksc.accent500,
+                  foregroundColor: context.ksc.primary900,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: const Text("TAP TO RETRY"),
+              ),
+            ],
+          ),
+        ),
         data: (types) {
           if (types.isEmpty) {
             return Center(
@@ -57,7 +78,9 @@ class ServiceTypesScreen extends ConsumerWidget {
         onPressed: () => _showAddDialog(context, ref),
         backgroundColor: context.ksc.accent500,
         foregroundColor: context.ksc.primary900,
-        child: const Icon(LineAwesomeIcons.plus_solid),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
     );
   }

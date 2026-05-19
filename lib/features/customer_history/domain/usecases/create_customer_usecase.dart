@@ -11,6 +11,8 @@ class CreateCustomerParams {
   final String phoneNumber;
   final String? location;
   final String? notes;
+  final String? propertyType;
+  final String? leadSource;
 
   CreateCustomerParams({
     required this.userId,
@@ -18,6 +20,8 @@ class CreateCustomerParams {
     required this.phoneNumber,
     this.location,
     this.notes,
+    this.propertyType,
+    this.leadSource,
   });
 }
 
@@ -68,6 +72,8 @@ class CreateCustomerUsecase implements UseCase<CustomerEntity, CreateCustomerPar
       phoneNumber: normalizedPhone,
       location: params.location,
       notes: params.notes,
+      propertyType: params.propertyType,
+      leadSource: params.leadSource,
       totalJobs: 0,
       createdAt: now,
       updatedAt: now,

@@ -8,6 +8,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../providers/timeline_provider.dart';
 
@@ -179,28 +180,10 @@ class _EventTile extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LineAwesomeIcons.history_solid, size: 64, color: context.ksc.primary700),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'NO ACTIVITY YET',
-              style: AppTextStyles.h2.copyWith(
-                  color: context.ksc.neutral600, letterSpacing: 1.5, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Activity will appear here as you log and edit jobs.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: context.ksc.neutral700),
-            ),
-          ],
-        ),
-      ),
+    return const KsEmptyState(
+      icon: LineAwesomeIcons.history_solid,
+      title: 'NO ACTIVITY YET',
+      subtitle: 'Activity will appear here as you log and edit jobs.',
     );
   }
 }

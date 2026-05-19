@@ -1,8 +1,8 @@
 class JobAuditEntryEntity {
   final String id;
   final String jobId;
-  final String? userId; // Admin who performed the action
-  final String action; // 'created', 'updated', 'status_changed', 'archived', 'correction_requested', 'correction_approved', 'correction_rejected'
+  final String? userId;
+  final String action;
   final Map<String, dynamic>? oldValues;
   final Map<String, dynamic>? newValues;
   final DateTime createdAt;
@@ -16,4 +16,24 @@ class JobAuditEntryEntity {
     this.newValues,
     required this.createdAt,
   });
+
+  JobAuditEntryEntity copyWith({
+    String? id,
+    String? jobId,
+    String? userId,
+    String? action,
+    Map<String, dynamic>? oldValues,
+    Map<String, dynamic>? newValues,
+    DateTime? createdAt,
+  }) {
+    return JobAuditEntryEntity(
+      id: id ?? this.id,
+      jobId: jobId ?? this.jobId,
+      userId: userId ?? this.userId,
+      action: action ?? this.action,
+      oldValues: oldValues ?? this.oldValues,
+      newValues: newValues ?? this.newValues,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

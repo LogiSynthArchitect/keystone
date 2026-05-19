@@ -8,6 +8,8 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
+import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../job_logging/domain/entities/job_entity.dart';
@@ -15,6 +17,7 @@ import '../../../key_codes/presentation/providers/key_code_provider.dart';
 import '../../../key_codes/presentation/screens/edit_key_code_screen.dart';
 import '../providers/customer_providers.dart';
 import '../../domain/entities/customer_entity.dart';
+import '../widgets/merge_customer_sheet.dart';
 
 class CustomerDetailScreen extends ConsumerStatefulWidget {
   final String customerId;
@@ -40,6 +43,31 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
     super.dispose();
   }
 
+  void _confirmDelete(BuildContext context) {
+    KsConfirmDialog.show(
+      context,
+      title: "DELETE CUSTOMER",
+      message: "This customer will be removed from your list. Their job history will be preserved but the customer name will no longer be linked to past jobs.",
+      confirmLabel: "DELETE",
+      cancelLabel: "CANCEL",
+      isDanger: true,
+      onConfirm: () async {
+        try {
+          await ref.read(customerRepositoryProvider).deleteCustomer(widget.customerId);
+          ref.invalidate(customerListProvider);
+          if (context.mounted) {
+            context.pop();
+            KsSnackbar.show(context, message: "Customer deleted", type: KsSnackbarType.success);
+          }
+        } catch (_) {
+          if (context.mounted) {
+            KsSnackbar.show(context, message: "Delete failed", type: KsSnackbarType.error);
+          }
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final customerAsync = ref.watch(customerDetailProvider(widget.customerId));
@@ -61,6 +89,30 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
             icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
             onPressed: () => context.push(RouteNames.editCustomer(widget.customerId)),
           ),
+          IconButton(
+            icon: Icon(LineAwesomeIcons.compress_solid, color: context.ksc.neutral400, size: 22),
+            onPressed: () {
+              final customer = customerAsync.valueOrNull;
+              if (customer == null) return;
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: context.ksc.primary900,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
+                builder: (_) => MergeCustomerSheet(
+                  targetCustomer: customer,
+                  onMerged: () {
+                    ref.invalidate(customerListProvider);
+                    context.pop();
+                  },
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(LineAwesomeIcons.trash_alt_solid, color: context.ksc.error500, size: 22),
+            onPressed: () => _confirmDelete(context),
+          ),
         ],
       ),
       body: Column(
@@ -69,11 +121,50 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
           Expanded(
             child: customerAsync.when(
               loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
-              error: (err, _) => Center(child: Text("Could not load customer.", style: AppTextStyles.caption.copyWith(color: context.ksc.error500))),
+              error: (err, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 48, color: context.ksc.error500),
+                    const SizedBox(height: 16),
+                    Text("FAILED TO LOAD", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 8),
+                    Text("Could not load customer.", style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400)),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(customerDetailProvider(widget.customerId)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.ksc.accent500,
+                        foregroundColor: context.ksc.primary900,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                      child: const Text("TAP TO RETRY"),
+                    ),
+                  ],
+                ),
+              ),
               data: (customer) {
                 if (customer == null) {
                   return Center(child: Text("CUSTOMER NOT FOUND", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)));
                 }
+
+                final lifetimeRevenue = customerJobs.fold<int>(0, (sum, j) => sum + (j.amountCharged ?? 0));
+
+                final frequentBrands = customerJobs
+                    .where((j) => j.hardwareBrand != null && j.hardwareBrand!.isNotEmpty)
+                    .map((j) => j.hardwareBrand!)
+                    .toSet()
+                    .toList()
+                  ..sort();
+
+                final frequentParts = <String>{};
+                for (final j in customerJobs) {
+                  final parts = ref.watch(jobPartsProvider(j.id)).valueOrNull ?? [];
+                  for (final p in parts) {
+                    if (p.partName.isNotEmpty) frequentParts.add(p.partName);
+                  }
+                }
+                final sortedParts = frequentParts.toList()..sort();
 
                 return Column(
                   children: [
@@ -84,7 +175,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
                         children: [
                           _buildProfileModule(context, customer),
                           const SizedBox(height: 16),
-                          _buildStatsRow(context, customer, customerJobs.length),
+                          _buildStatsRow(context, customer, customerJobs.length, lifetimeRevenue),
+                          if (frequentBrands.isNotEmpty || sortedParts.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            _buildFrequentPartsChips(frequentBrands, sortedParts),
+                          ],
                         ],
                       ),
                     ),
@@ -193,20 +288,31 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
     );
   }
 
-  Widget _buildStatsRow(BuildContext context, CustomerEntity customer, int jobCount) {
+  Widget _buildStatsRow(BuildContext context, CustomerEntity customer, int jobCount, int lifetimeRevenue) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(color: context.ksc.primary800.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _stat(context, "TOTAL RECORDS", jobCount.toString().padLeft(2, '0')),
+          _stat(context, "TOTAL JOBS", jobCount.toString().padLeft(2, '0')),
           Container(width: 1, height: 20, color: context.ksc.primary700),
           _stat(context, "STATUS", customer.isRepeatCustomer ? "REPEAT" : "NEW"),
+          Container(width: 1, height: 20, color: context.ksc.primary700),
+          _statValue(context, "LIFETIME REVENUE", CurrencyFormatter.formatShort(lifetimeRevenue)),
         ],
       ),
     );
   }
+
+  Widget _statValue(BuildContext context, String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 1.0)),
+      const SizedBox(height: 2),
+      Text(value, style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+    ],
+  );
 
   Widget _stat(BuildContext context, String label, String value) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,6 +322,52 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
       Text(value, style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
     ],
   );
+
+  Widget _buildFrequentPartsChips(List<String> brands, List<String> parts) {
+    if (brands.isEmpty && parts.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LineAwesomeIcons.tools_solid, size: 14, color: context.ksc.accent500),
+              const SizedBox(width: 8),
+              Text("COMMONLY USED", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (brands.isNotEmpty) ...[
+            Text("BRANDS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6, runSpacing: 6,
+              children: brands.map((b) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
+                child: Text(b.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
+              )).toList(),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (parts.isNotEmpty) ...[
+            Text("PARTS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6, runSpacing: 6,
+              children: parts.map((p) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: context.ksc.primary500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary500.withValues(alpha: 0.3))),
+                child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.primary500, fontWeight: FontWeight.w800, fontSize: 9)),
+              )).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   String _leadSourceLabel(String key) {
     const map = {
@@ -365,56 +517,89 @@ class _ServiceHistoryTab extends StatelessWidget {
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: jobs.length,
-                  itemBuilder: (context, i) => _JobHistoryItem(job: jobs[i]),
+                  itemBuilder: (context, i) => _buildTimelineItem(context, jobs[i], i == 0, i == jobs.length - 1),
                 ),
         ),
       ],
     );
   }
-}
 
-class _JobHistoryItem extends StatelessWidget {
-  final JobEntity job;
-  const _JobHistoryItem({required this.job});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildTimelineItem(BuildContext context, JobEntity job, bool isFirst, bool isLast) {
+    final statusColor = switch (job.status) {
+      'completed' || 'invoiced' => context.ksc.success500,
+      'in_progress' => context.ksc.accent500,
+      _ => context.ksc.neutral500,
+    };
     final paymentColor = switch (job.paymentStatus) {
-      'paid'    => context.ksc.success500,
+      'paid' => context.ksc.success500,
       'partial' => context.ksc.warning500,
-      _         => context.ksc.error500,
+      _ => context.ksc.error500,
     };
 
-    return GestureDetector(
-      onTap: () => context.push(RouteNames.jobDetail(job.id)),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(DateFormatter.short(job.jobDate).toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 4),
-                  Text(job.serviceType.replaceAll('_', ' ').toUpperCase(), style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: paymentColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2), border: Border.all(color: paymentColor.withValues(alpha: 0.3))),
-                    child: Text(job.paymentStatus.toUpperCase(), style: AppTextStyles.caption.copyWith(color: paymentColor, fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 1.0)),
-                  ),
-                ],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 24,
+            child: Column(
+              children: [
+                if (!isFirst)
+                  Expanded(child: Container(width: 2, color: context.ksc.primary700))
+                else
+                  const Expanded(child: SizedBox.shrink()),
+                Container(
+                  width: 12, height: 12,
+                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle, border: Border.all(color: context.ksc.primary800, width: 2)),
+                ),
+                if (!isLast)
+                  Expanded(child: Container(width: 2, color: context.ksc.primary700))
+                else
+                  const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push(RouteNames.jobDetail(job.id)),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(DateFormatter.relative(job.jobDate).toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10)),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(color: paymentColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2)),
+                                child: Text(job.paymentStatus.toUpperCase(), style: AppTextStyles.caption.copyWith(color: paymentColor, fontWeight: FontWeight.w900, fontSize: 7, letterSpacing: 0.5)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(job.serviceType.replaceAll('_', ' ').toUpperCase(), style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
+                        ],
+                      ),
+                    ),
+                    if (job.hasAmount)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(CurrencyFormatter.formatShort(job.amountCharged!), style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()])),
+                      ),
+                  ],
+                ),
               ),
             ),
-            if (job.hasAmount)
-              Text(CurrencyFormatter.formatShort(job.amountCharged!), style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontFeatures: [const FontFeature.tabularFigures()])),
-            const SizedBox(width: 8),
-            Icon(LineAwesomeIcons.angle_right_solid, color: context.ksc.primary700, size: 16),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

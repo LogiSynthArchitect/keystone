@@ -44,12 +44,13 @@ void main() {
       expect(permissions.canViewKeyCodes, isTrue);
     });
 
-    test('4. UserPermissions.toJson should serialize all three fields', () {
+    test('4. UserPermissions.toJson should serialize all fields', () {
       // Arrange
       const permissions = UserPermissions(
         canEditFinalPrice: true,
         canDeleteJobs: false,
         canViewKeyCodes: true,
+        requireAfterPhoto: true,
       );
 
       // Act
@@ -60,6 +61,7 @@ void main() {
         'can_edit_final_price': true,
         'can_delete_jobs': false,
         'can_view_key_codes': true,
+        'require_after_photo': true,
       });
     });
 
@@ -69,6 +71,7 @@ void main() {
         canEditFinalPrice: true,
         canDeleteJobs: true,
         canViewKeyCodes: true,
+        requireAfterPhoto: true,
       );
 
       // Act
@@ -78,6 +81,18 @@ void main() {
       expect(updated.canEditFinalPrice, isFalse);
       expect(updated.canDeleteJobs, isTrue);
       expect(updated.canViewKeyCodes, isTrue);
+      expect(updated.requireAfterPhoto, isTrue);
+    });
+
+    test('6. requireAfterPhoto should default to false when missing from JSON', () {
+      // Arrange
+      final json = {'can_edit_final_price': true, 'can_delete_jobs': true, 'can_view_key_codes': true};
+
+      // Act
+      final permissions = UserPermissions.fromJson(json);
+
+      // Assert
+      expect(permissions.requireAfterPhoto, isFalse);
     });
   });
 }

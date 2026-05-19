@@ -48,26 +48,27 @@ class KsButton extends StatelessWidget {
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isDisabled ? context.ksc.neutral200 : context.ksc.primary700,
+            backgroundColor: isDisabled ? context.ksc.neutral400 : context.ksc.primary700,
             foregroundColor: isDisabled ? context.ksc.neutral500 : context.ksc.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
+            padding: EdgeInsets.zero,
             elevation: 0,
           ),
           child: _buildChild(context),
         );
       case KsButtonVariant.secondary:
-        return OutlinedButton(
+        return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: context.ksc.primary700,
-            side: BorderSide(
-              color: isDisabled ? context.ksc.neutral300 : context.ksc.primary700,
-            ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDisabled ? context.ksc.neutral400 : context.ksc.accent500,
+            foregroundColor: isDisabled ? context.ksc.neutral500 : context.ksc.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
+            elevation: 0,
+            padding: EdgeInsets.zero,
           ),
           child: _buildChild(context),
         );
@@ -78,8 +79,9 @@ class KsButton extends StatelessWidget {
             backgroundColor: context.ksc.accent500,
             foregroundColor: context.ksc.primary900,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
+            padding: EdgeInsets.zero,
             elevation: 0,
           ),
           child: _buildChild(context),
@@ -90,8 +92,9 @@ class KsButton extends StatelessWidget {
           style: TextButton.styleFrom(
             foregroundColor: context.ksc.primary600,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
+            padding: EdgeInsets.zero,
           ),
           child: _buildChild(context),
         );
@@ -102,8 +105,9 @@ class KsButton extends StatelessWidget {
             backgroundColor: context.ksc.error500,
             foregroundColor: context.ksc.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             ),
+            padding: EdgeInsets.zero,
             elevation: 0,
           ),
           child: _buildChild(context),
@@ -119,21 +123,29 @@ class KsButton extends StatelessWidget {
         child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.white),
       );
     }
-    final textStyle = size == KsButtonSize.large
+    final baseStyle = size == KsButtonSize.large
         ? AppTextStyles.label
         : AppTextStyles.labelSmall;
+    // Strip hardcoded gold color — let button's foregroundColor control it
+    final textStyle = TextStyle(
+      fontFamily: baseStyle.fontFamily,
+      fontSize: baseStyle.fontSize,
+      fontWeight: baseStyle.fontWeight,
+      letterSpacing: baseStyle.letterSpacing,
+      height: baseStyle.height,
+    );
     final children = <Widget>[];
     if (leadingIcon != null) {
       children.add(Icon(leadingIcon, size: 18));
       children.add(const SizedBox(width: AppSpacing.sm));
     }
-    children.add(Text(label, style: textStyle));
+    children.add(Text(label, style: textStyle, overflow: TextOverflow.ellipsis));
     if (trailingIcon != null) {
       children.add(const SizedBox(width: AppSpacing.sm));
       children.add(Icon(trailingIcon, size: 18));
     }
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
       children: children,
     );

@@ -10,4 +10,18 @@ class NoteJobLinkEntity {
     required this.jobId,
     required this.createdAt,
   });
+
+  NoteJobLinkEntity copyWith({
+    String? id,
+    String? noteId,
+    String? jobId,
+    DateTime? createdAt,
+  }) {
+    return NoteJobLinkEntity(
+      id: id ?? this.id,
+      noteId: noteId ?? this.noteId,
+      jobId: jobId ?? this.jobId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

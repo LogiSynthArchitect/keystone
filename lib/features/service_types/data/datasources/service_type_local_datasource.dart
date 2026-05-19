@@ -3,7 +3,7 @@ import '../../../../core/storage/hive_service.dart';
 import '../models/service_type_model.dart';
 
 class ServiceTypeLocalDatasource {
-  Box<Map> get _box => HiveService.serviceTypes;
+  Box get _box => HiveService.serviceTypes;
 
   Future<void> saveServiceTypes(List<ServiceTypeModel> types) async {
     final Map<String, Map> map = {

@@ -1,15 +1,15 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/network_exception.dart';
 import '../../../../core/constants/supabase_constants.dart';
+import '../../../../core/services/cloudinary_service.dart';
 import '../models/profile_model.dart';
-
-// Import dart:io only on non-web platforms to avoid compilation errors
-import 'dart:io' as io show File;
 
 class ProfileRemoteDatasource {
   final SupabaseClient _supabase;
-  ProfileRemoteDatasource(this._supabase);
+  final CloudinaryService _cloudinary;
+  ProfileRemoteDatasource(this._supabase) : _cloudinary = CloudinaryService();
 
   Future<ProfileModel?> getProfile(String userId) async {
     try {
@@ -76,14 +76,16 @@ class ProfileRemoteDatasource {
         throw const NetworkException(message: 'Photo upload not supported on web.', code: 'WEB_UPLOAD_UNSUPPORTED');
       }
 
-      // On mobile, use io.File. On web, this code path is never reached.
-      // Using dynamic to bypass web compiler's argument check for io.File.
-      final dynamic file = io.File(filePath);
+      final file = File(filePath);
+      final cloudUrl = await _cloudinary.uploadMedia(
+        file: file,
+        publicId: 'profile_${userId}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      if (cloudUrl != null) return cloudUrl;
+
       final ext = filePath.split('.').last.toLowerCase();
       final path = '$userId/profile.$ext';
-      
       await _supabase.storage.from(SupabaseConstants.profilePhotosBucket).upload(path, file, fileOptions: const FileOptions(upsert: true));
-      
       final rawUrl = _supabase.storage.from(SupabaseConstants.profilePhotosBucket).getPublicUrl(path);
       return '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
     } catch (e) {

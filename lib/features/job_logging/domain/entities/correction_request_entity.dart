@@ -20,4 +20,26 @@ class CorrectionRequestEntity {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  CorrectionRequestEntity copyWith({
+    String? id,
+    String? jobId,
+    String? userId,
+    String? reason,
+    CorrectionRequestStatus? status,
+    String? adminNotes,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return CorrectionRequestEntity(
+      id: id ?? this.id,
+      jobId: jobId ?? this.jobId,
+      userId: userId ?? this.userId,
+      reason: reason ?? this.reason,
+      status: status ?? this.status,
+      adminNotes: adminNotes ?? this.adminNotes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

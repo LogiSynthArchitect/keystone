@@ -71,9 +71,11 @@ void main() {
         jobCount: 3,
         revenue: 15000,
         grossProfit: 12000,
+        netProfit: 10000,
       );
 
       expect(breakdown.grossProfit, equals(12000));
+      expect(breakdown.netProfit, equals(10000));
       expect(breakdown.revenue - breakdown.grossProfit, equals(3000)); // parts cost
     });
   });

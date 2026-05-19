@@ -8,14 +8,10 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
+import '../../../../core/utils/icon_helpers.dart';
+import '../../../service_types/presentation/providers/service_type_provider.dart';
+import '../../../service_types/domain/entities/service_type_entity.dart';
 import '../providers/auth_notifier.dart';
-
-class _ServiceData {
-  final String type;
-  final String label;
-  final String image;
-  _ServiceData(this.type, this.label, this.image);
-}
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -30,13 +26,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _step = 0;
   final List<String> _selectedServices = [];
   bool _nameFocused = false;
-
-  final List<_ServiceData> _services = [
-    _ServiceData('car_lock_programming', 'CAR KEY\nPROGRAMMING', 'assets/services/car_key.png'),
-    _ServiceData('door_lock_installation', 'DOOR LOCK\nINSTALLATION', 'assets/services/door_install.png'),
-    _ServiceData('door_lock_repair', 'DOOR LOCK\nREPAIR', 'assets/services/door_repair.png'),
-    _ServiceData('smart_lock_installation', 'SMART LOCK\nINSTALLATION', 'assets/services/smart_lock.png'),
-  ];
 
   @override
   void initState() {
@@ -76,16 +65,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _onNameChanged(String value) {
     ref.read(authNotifierProvider.notifier).clearError();
-    setState(() {}); // Update button state
+    setState(() {});
   }
 
-  void _toggleService(String type) {
+  void _toggleService(String name) {
     ref.read(authNotifierProvider.notifier).clearError();
     setState(() {
-      if (_selectedServices.contains(type)) {
-        _selectedServices.remove(type);
+      if (_selectedServices.contains(name)) {
+        _selectedServices.remove(name);
       } else {
-        _selectedServices.add(type);
+        _selectedServices.add(name);
       }
     });
   }
@@ -111,7 +100,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     _buildBackButton(context),
                     const SizedBox(height: 48),
 
-                    // Animated Step Content
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: _step == 0
@@ -119,7 +107,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           : _buildServicesStep(context, key: const ValueKey('step1')),
                     ),
 
-                    // Error Banner
                     if (errorMessage != null && errorMessage.isNotEmpty) ...[
                       const SizedBox(height: 24),
                       KsBanner(message: errorMessage),
@@ -131,7 +118,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
 
-            // Bottom Bar (Hidden when keyboard is open)
             if (!keyboardVisible) _buildBottomBar(context, authState.isLoading),
           ],
         ),
@@ -190,7 +176,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         key: key,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // INDUSTRIAL EYEBROW
           Text(
             'ONBOARDING PHASE 01',
             style: AppTextStyles.caption.copyWith(
@@ -256,105 +241,133 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       );
 
-  Widget _buildServicesStep(BuildContext context, {Key? key}) => Column(
-        key: key,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // INDUSTRIAL EYEBROW
-          Text(
-            'ONBOARDING PHASE 02',
-            style: AppTextStyles.caption.copyWith(
-              color: context.ksc.accent500,
-              letterSpacing: 2.0,
-              fontWeight: FontWeight.w700,
-            ),
-          ).animate().fadeIn().slideX(begin: -0.1, end: 0),
+  Widget _buildServicesStep(BuildContext context, {Key? key}) {
+    final serviceTypesAsync = ref.watch(serviceTypeProvider);
 
-          const SizedBox(height: 8),
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ONBOARDING PHASE 02',
+          style: AppTextStyles.caption.copyWith(
+            color: context.ksc.accent500,
+            letterSpacing: 2.0,
+            fontWeight: FontWeight.w700,
+          ),
+        ).animate().fadeIn().slideX(begin: -0.1, end: 0),
 
-          Text(
-            'SELECT CAPABILITIES',
-            style: AppTextStyles.h1.copyWith(
-              color: context.ksc.white,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-            ),
-          ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+        const SizedBox(height: 8),
 
-          const SizedBox(height: 24),
-          Text('Identify the specialized services you provide.',
-              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 32),
-          _buildStepIndicator(context),
-          const SizedBox(height: 48),
+        Text(
+          'SELECT CAPABILITIES',
+          style: AppTextStyles.h1.copyWith(
+            color: context.ksc.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
+          ),
+        ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
 
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.1,
-            children: _services.map((service) {
-              final isSelected = _selectedServices.contains(service.type);
-              return GestureDetector(
-                onTap: () => _toggleService(service.type),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(service.image, fit: BoxFit.cover),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.black.withValues(alpha: 0.2), Colors.black.withValues(alpha: 0.8)],
-                            ),
-                          ),
+        const SizedBox(height: 24),
+        Text('Select the services you provide. You can customize these later.',
+            style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 32),
+        _buildStepIndicator(context),
+        const SizedBox(height: 48),
+
+        serviceTypesAsync.when(
+          loading: () => const Center(child: Padding(
+            padding: EdgeInsets.all(32),
+            child: CircularProgressIndicator(),
+          )),
+          error: (err, _) => Center(
+            child: Text('Failed to load services',
+                style: AppTextStyles.caption.copyWith(color: context.ksc.error500)),
+          ),
+          data: (types) {
+            final grouped = _groupByCategory(types);
+            return ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: grouped.entries.map((entry) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 8),
+                      child: Text(
+                        entry.key.toUpperCase(),
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.accent500,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w700,
                         ),
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          right: 12,
-                          child: Text(
-                            service.label,
-                            style: AppTextStyles.label.copyWith(
-                              color: context.ksc.white,
-                              fontWeight: FontWeight.w800,
-                              height: 1.2,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        if (isSelected)
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(color: context.ksc.accent500, shape: BoxShape.circle),
-                              child: Icon(LineAwesomeIcons.check_solid, size: 12, color: context.ksc.primary900),
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
+                    ...entry.value.map((type) => _serviceTile(type)),
+                  ],
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Map<String, List<ServiceTypeEntity>> _groupByCategory(List<ServiceTypeEntity> types) {
+    final map = <String, List<ServiceTypeEntity>>{};
+    for (final t in types) {
+      map.putIfAbsent(t.category, () => []).add(t);
+    }
+    return map;
+  }
+
+  Widget _serviceTile(ServiceTypeEntity type) {
+    final isSelected = _selectedServices.contains(type.name);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: () => _toggleService(type.name),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? context.ksc.accent500.withValues(alpha: 0.1)
+                : context.ksc.primary800,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                getLineAwesomeIcon(type.iconName),
+                size: 20,
+                color: isSelected ? context.ksc.accent500 : context.ksc.neutral500,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  type.name.toUpperCase(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isSelected ? context.ksc.white : context.ksc.neutral400,
+                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                    letterSpacing: 0.5,
                   ),
                 ),
-              );
-            }).toList(),
-          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
-        ],
-      );
+              ),
+              if (isSelected)
+                Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: context.ksc.accent500),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildBottomBar(BuildContext context, bool isLoading) => Container(
         width: double.infinity,

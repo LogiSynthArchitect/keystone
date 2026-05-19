@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_logo_animated.dart';
-import '../../../../core/providers/shared_feature_providers.dart';
+import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../providers/auth_notifier.dart';
 
 class TransitionScreen extends ConsumerStatefulWidget {
@@ -18,20 +19,18 @@ class TransitionScreen extends ConsumerStatefulWidget {
 }
 
 class _TransitionScreenState extends ConsumerState<TransitionScreen> {
-  bool _isMinDelayPassed = false;
+  bool _canNavigate = false;
 
   @override
   void initState() {
     super.initState();
 
-    // 01. SEAMLESS HANDOVER
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
     });
 
-    // Ensure the branded reveal is seen for at least 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _isMinDelayPassed = true);
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) setState(() => _canNavigate = true);
     });
   }
 
@@ -41,9 +40,8 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
     final profile = ref.watch(profileProvider).profile;
     final authUiState = ref.watch(authNotifierProvider);
 
-    // Navigation logic: Move out once delay is passed AND data is ready
-    if (_isMinDelayPassed && !authStateAsync.isLoading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_canNavigate && !authStateAsync.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final state = authStateAsync.valueOrNull ?? const AuthState();
         if (!state.isAuthenticated) {
@@ -51,7 +49,7 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         } else if (!state.hasProfile) {
           context.go(RouteNames.onboarding);
         } else {
-          context.go(RouteNames.jobs);
+          context.go(RouteNames.dashboard);
         }
       });
     }

@@ -247,6 +247,51 @@ class CustomerRepositoryImpl implements CustomerRepository {
   }
 
   @override
+  Future<void> mergeCustomers(String targetId, String sourceId) async {
+    final target = await _local.getCustomer(targetId);
+    final source = await _local.getCustomer(sourceId);
+    if (target == null || source == null) {
+      throw const core_storage.StorageException(message: 'One or both customers not found.', code: 'MERGE_FAILED');
+    }
+
+    // Merge: source fills in any nulls on target
+    final now = DateTime.now().toIso8601String();
+    final merged = target.copyWith(
+      location: target.location ?? source.location,
+      notes: target.notes ?? source.notes,
+      propertyType: target.propertyType ?? source.propertyType,
+      leadSource: target.leadSource ?? source.leadSource,
+      totalJobs: target.totalJobs + source.totalJobs,
+      updatedAt: now,
+    );
+
+    await _local.saveCustomer(merged);
+
+    // Cascade jobs from source → target
+    await _jobLocal.cascadeCustomerId(sourceId, targetId);
+
+    // Tombstone source
+    await _local.tombstoneCustomer(sourceId);
+
+    // If online: update remote
+    if (await _connectivity.isConnected) {
+      try {
+        await _remote.updateCustomer(targetId, {
+          'full_name': merged.fullName,
+          'phone_number': merged.phoneNumber,
+          'location': merged.location,
+          'notes': merged.notes,
+          'property_type': merged.propertyType,
+          'lead_source': merged.leadSource,
+        });
+        await _remote.deleteCustomer(sourceId);
+      } catch (e) {
+        debugPrint('[KS:CUSTOMERS] Remote merge sync failed, queued for retry: $e');
+      }
+    }
+  }
+
+  @override
   Future<void> syncPendingCustomers() async {
     final pending = await _local.getPendingCustomers();
     if (pending.isEmpty) return;

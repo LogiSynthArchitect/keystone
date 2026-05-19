@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
+import '../../../../core/providers/supabase_provider.dart';
 import '../providers/auth_notifier.dart';
 
 class PhoneEntryScreen extends ConsumerStatefulWidget {
@@ -23,6 +24,8 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
   final _focusNode = FocusNode();
   bool _canContinue = false;
   bool _isFocused = false;
+  int _devTapCount = 0;
+  bool _showDevBypass = false;
 
   @override
   void initState() {
@@ -49,8 +52,52 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
 
   Future<void> _onContinue() async {
     _focusNode.unfocus();
-    final success = await ref.read(authNotifierProvider.notifier).requestOtp(_controller.text.trim());
-    if (success && mounted) context.push(RouteNames.otpVerify);
+    final phone = _controller.text.trim();
+    if (!_canContinue) return;
+
+    final normalized = '+233$phone';
+    ref.read(authNotifierProvider.notifier).setPhoneNumber(normalized);
+
+    try {
+      final strategy = await ref.read(supabaseClientProvider).rpc(
+        'get_auth_strategy',
+        params: {'p_phone': normalized},
+      ) as String?;
+
+      if (!mounted) return;
+
+      switch (strategy) {
+        case 'NEW_USER':
+          context.push(RouteNames.createPassword);
+        case 'PASSWORD_USER':
+          context.push(RouteNames.passwordEntry);
+        case 'OTP_USER':
+          final success = await ref.read(authNotifierProvider.notifier).requestOtp(phone);
+          if (success && mounted) context.push(RouteNames.otpVerify);
+        default:
+          context.push(RouteNames.createPassword);
+      }
+    } catch (_) {
+      if (mounted) {
+        ref.read(authNotifierProvider.notifier).setError(
+          'Network error. Check your connection and try again.',
+        );
+      }
+    }
+  }
+
+  Future<void> _onDevBypass() async {
+    _focusNode.unfocus();
+    final phone = _controller.text.trim();
+    if (phone.isEmpty) return;
+
+    final normalized = '+233$phone';
+    ref.read(authNotifierProvider.notifier).setPhoneNumber(normalized);
+
+    final success = await ref.read(authNotifierProvider.notifier).bypassOtp(normalized);
+    if (success && mounted) {
+      context.pushReplacement(RouteNames.initialSync);
+    }
   }
 
   @override
@@ -86,24 +133,50 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
 
                     const SizedBox(height: 8),
 
-                    Text(
-                      'SIGN IN',
-                      style: AppTextStyles.h1.copyWith(
-                        color: context.ksc.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
+                    GestureDetector(
+                      onTap: () {
+                        _devTapCount++;
+                        if (_devTapCount >= 5) {
+                          setState(() => _showDevBypass = true);
+                          _devTapCount = 0;
+                        }
+                      },
+                      child: Text(
+                        'SIGN IN',
+                        style: AppTextStyles.h1.copyWith(
+                          color: context.ksc.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                        ),
                       ),
                     ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
 
                     const SizedBox(height: 24),
 
                     Text(
-                      'Enter your phone number to receive a one-time code.',
+                      'Enter your phone number to sign in or create an account.',
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: context.ksc.neutral400,
                         fontWeight: FontWeight.w600,
                       ),
                     ).animate().fadeIn(delay: 200.ms),
+
+                    if (_showDevBypass) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _onDevBypass(),
+                          icon: const Icon(Icons.developer_mode, size: 18),
+                          label: const Text('DEV BYPASS (TEMP)'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.shade800,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ).animate().fadeIn(),
+                    ],
 
                     const SizedBox(height: 48),
 
@@ -113,6 +186,8 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                     ],
 
                     _buildPhoneInput(context),
+                    const SizedBox(height: 24),
+                    _buildPasswordLink(context),
                   ],
                 ),
               ),
@@ -203,6 +278,48 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
           ],
         ),
       ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
+
+  Widget _buildPasswordLink(BuildContext context) {
+    return Column(
+      children: [
+        Align(
+          alignment: Alignment.center,
+          child: GestureDetector(
+            onTap: () => context.push(RouteNames.passwordEntry),
+            child: Text(
+              'SIGN IN WITH PASSWORD',
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.accent500,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.center,
+          child: GestureDetector(
+            onTap: () {
+              final phone = _controller.text.trim();
+              if (phone.isNotEmpty) {
+                ref.read(authNotifierProvider.notifier).setPhoneNumber('+233$phone');
+              }
+              context.push(RouteNames.otpVerify);
+            },
+            child: Text(
+              'Need help? Login with OTP',
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.neutral500,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 500.ms);
+  }
 
   Widget _buildBottomBar(BuildContext context, bool isLoading) => Container(
         width: double.infinity,

@@ -9,4 +9,5 @@ abstract class CustomerRepository {
   Future<void> deleteCustomer(String id);
   Future<List<CustomerEntity>> searchCustomers(String query);
   Future<void> syncPendingCustomers();
+  Future<void> mergeCustomers(String targetId, String sourceId);
 }

@@ -4,6 +4,7 @@ import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/storage/hive_service.dart';
 import 'package:keystone/features/technician_profile/domain/entities/profile_entity.dart';
 import 'package:keystone/features/technician_profile/domain/repositories/profile_repository.dart';
@@ -19,6 +20,7 @@ class AuthUiState {
   final String? phoneNumber;
   final bool isOtpSent;
   final bool? hasProfile;
+  final bool isPasswordCreated;
 
   AuthUiState({
     this.isLoading = false,
@@ -26,6 +28,7 @@ class AuthUiState {
     this.phoneNumber,
     this.isOtpSent = false,
     this.hasProfile,
+    this.isPasswordCreated = false,
   });
 
   AuthUiState copyWith({
@@ -34,6 +37,7 @@ class AuthUiState {
     String? phoneNumber,
     bool? isOtpSent,
     bool? hasProfile,
+    bool? isPasswordCreated,
     bool clearError = false,
   }) => AuthUiState(
     isLoading: isLoading ?? this.isLoading,
@@ -41,6 +45,7 @@ class AuthUiState {
     phoneNumber: phoneNumber ?? this.phoneNumber,
     isOtpSent: isOtpSent ?? this.isOtpSent,
     hasProfile: hasProfile ?? this.hasProfile,
+    isPasswordCreated: isPasswordCreated ?? this.isPasswordCreated,
   );
 }
 
@@ -71,6 +76,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       return true;
     } catch (e) {
       String cleanError = e.toString();
+      debugPrint('[KS:AUTH] requestOtp RAW ERROR: $e');
       if (cleanError.contains('20003') || cleanError.contains('invalid username')) {
         cleanError = "SMS Gateway Fault: Check Twilio Credentials.";
       } else {
@@ -109,16 +115,65 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     }
   }
 
+  Future<bool> bypassOtp(String phone) async {
+    state = state.copyWith(isLoading: true, phoneNumber: phone, clearError: true);
+    try {
+      final supabase = _ref.read(supabaseClientProvider);
+      final response = await supabase.functions.invoke(
+        'dev-bypass',
+        body: {
+          'phone': phone,
+          'bypass_secret': 'dev-bypass-2026',
+        },
+      );
+
+      if (response.data == null || response.data['access_token'] == null) {
+        throw Exception('No session returned');
+      }
+
+      await supabase.auth.setSession(
+        response.data['refresh_token'] as String,
+      );
+
+      final passwordExists = response.data['password_exists'] as bool? ?? false;
+      if (passwordExists) {
+        Hive.box('auth').put('password_exists', true);
+      }
+
+      await _ref.read(authStateProvider.notifier).refresh();
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      debugPrint('[KS:AUTH] bypassOtp error: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'Dev bypass failed: $e');
+      return false;
+    }
+  }
+
   Future<bool> completeOnboarding({required String name, required List<String> services}) async {
-    final phone = state.phoneNumber;
-    if (phone == null) return false;
+    debugPrint('[KS:ONBOARD] completeOnboarding — name: $name, services: $services');
+    String? phone = state.phoneNumber;
+    debugPrint('[KS:ONBOARD] phone from state: $phone');
+    if (phone == null) {
+      final supabase = _ref.read(supabaseClientProvider);
+      phone = supabase.auth.currentUser?.phone;
+      debugPrint('[KS:ONBOARD] phone from currentUser: $phone');
+      if (phone == null) {
+        debugPrint('[KS:ONBOARD] phone is null — cannot continue');
+        return false;
+      }
+      state = state.copyWith(phoneNumber: phone);
+    }
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       // 1. Create/Update user record (Idempotent)
+      debugPrint('[KS:ONBOARD] calling createUser...');
       final user = await _authRepo.createUser(fullName: name, phoneNumber: phone);
+      debugPrint('[KS:ONBOARD] createUser success — user: ${user.authId}, slug: ${user.profileSlug}');
       
       // 2. Create profile record
+      debugPrint('[KS:ONBOARD] calling createProfile...');
       final profile = ProfileEntity(
         id: '',
         userId: user.authId ?? '',
@@ -128,23 +183,52 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
         services: services,
         whatsappNumber: user.phoneNumber,
         isPublic: true,
-        profileUrl: user.profileSlug, // Use the slug from the created user
+        profileUrl: user.profileSlug,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
       await _profileRepo.createProfile(profile);
+      debugPrint('[KS:ONBOARD] createProfile success');
+
+      // If this user was created via dev-bypass (already has password), mark it
+      final authBox = Hive.box('auth');
+      if (authBox.get('password_exists', defaultValue: false) as bool) {
+        final supabase = _ref.read(supabaseClientProvider);
+        try {
+          await supabase.from('profiles').update({
+            'password_created': true,
+          }).eq('user_id', user.authId!);
+          debugPrint('[KS:ONBOARD] password_created set to true (dev-bypass)');
+        } catch (_) {}
+        await authBox.delete('password_exists');
+      }
       
       // 3. Force refresh router and profile state
       await _ref.read(authStateProvider.notifier).refresh();
       _ref.invalidate(profileProvider);
       
       state = state.copyWith(isLoading: false, hasProfile: true);
+      debugPrint('[KS:ONBOARD] complete — success');
       return true;
-    } catch (e) {
+    } catch (e, s) {
+      debugPrint('[KS:ONBOARD] ERROR — $e');
+      debugPrint('[KS:ONBOARD] stack — $s');
       String cleanError = e.toString().replaceFirst(RegExp(r"AppException\(\d+\):\s*"), "").trim();
       state = state.copyWith(isLoading: false, errorMessage: cleanError);
       return false;
     }
+  }
+
+  void setError(String message) {
+    state = state.copyWith(errorMessage: message);
+  }
+
+  void setPhoneNumber(String phone) {
+    state = state.copyWith(phoneNumber: phone);
+  }
+
+  Future<void> setPasswordCreated() async {
+    state = state.copyWith(isPasswordCreated: true);
   }
 
   Future<void> logout() async {

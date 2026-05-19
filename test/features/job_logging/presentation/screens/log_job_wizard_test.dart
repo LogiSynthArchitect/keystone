@@ -51,7 +51,7 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       // Verify Step 1 heading
-      expect(find.text('SERVICE TYPE'), findsOneWidget);
+      expect(find.text('PRIMARY SERVICE'), findsOneWidget);
 
       // Verify "NEXT STEP" button is present but dimmed (alpha 0.3)
       final nextStepText = find.text('NEXT STEP');

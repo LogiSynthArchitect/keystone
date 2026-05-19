@@ -4,8 +4,8 @@ import '../../../../core/storage/hive_service.dart';
 import '../models/job_model.dart';
 
 class JobLocalDatasource {
-  Box<Map> get _box => HiveService.jobs;
-  Box<Map> get _followUpBox => HiveService.followUps;
+  Box get _box => HiveService.jobs;
+  Box get _followUpBox => HiveService.followUps;
 
   Future<JobModel?> getJob(String id) async {
     try {

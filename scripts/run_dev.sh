@@ -8,4 +8,7 @@ set +a
 
 flutter run \
   --dart-define=SUPABASE_URL=$SUPABASE_URL \
-  --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+  --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+  --dart-define=CLOUDINARY_NAME=$CLOUDINARY_NAME \
+  --dart-define=CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY \
+  --dart-define=CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET

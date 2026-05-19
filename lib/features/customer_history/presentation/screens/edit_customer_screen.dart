@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
@@ -105,10 +106,33 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
       backgroundColor: context.ksc.primary900,
       appBar: const KsAppBar(title: "EDIT CUSTOMER", showBack: true),
       body: customerAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text("Error: $e")),
+        loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 48, color: context.ksc.error500),
+              const SizedBox(height: 16),
+              Text("FAILED TO LOAD", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 8),
+              Text("Could not load customer details.", style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(customerDetailProvider(widget.customerId)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.ksc.accent500,
+                  foregroundColor: context.ksc.primary900,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: const Text("TAP TO RETRY"),
+              ),
+            ],
+          ),
+        ),
         data: (customer) {
-          if (customer == null) return const Center(child: Text("Customer not found"));
+          if (customer == null) {
+            return Center(child: Text("Customer not found", style: TextStyle(color: context.ksc.neutral400)));
+          }
           _initFrom(customer);
 
           return Column(

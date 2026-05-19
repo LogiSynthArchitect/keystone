@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'core/constants/supabase_constants.dart';
+import 'core/services/local_notification_service.dart';
 import 'core/storage/hive_service.dart';
 import 'app.dart';
 
@@ -50,6 +53,58 @@ void main() async {
   );
 
   await HiveService.initialize();
+
+  // Check Hive schema version — wipe + resync on app update
+  final metaBox = Hive.box(HiveService.metaBox);
+  final storedVersion = metaBox.get('hive_schema_version') as int? ?? 0;
+  const currentVersion = 1;
+  if (storedVersion < currentVersion) {
+    debugPrint('[KS:HIVE] Schema version $storedVersion → $currentVersion, wiping data boxes for clean re-sync');
+    await HiveService.clearDataBoxes();
+    await metaBox.put('hive_schema_version', currentVersion);
+  }
+
+  // Init local notifications
+  await LocalNotificationService.initialize(
+    onTap: (jobId) {
+      if (jobId != null) {
+        // Navigate to job detail on notification tap
+      }
+    },
+  );
+
+  // 03. MIN VERSION GATE — block outdated clients
+  try {
+    final pkg = await PackageInfo.fromPlatform();
+    final localVer = pkg.version;
+    final metaBox = Hive.box(HiveService.metaBox);
+    await metaBox.put('local_app_version', localVer);
+
+    final supabase = Supabase.instance.client;
+    final configResp = await supabase
+        .from('app_config')
+        .select('min_app_version')
+        .limit(1)
+        .single();
+    final minVer = configResp['min_app_version'] as String? ?? '1.0.0';
+    await metaBox.put('min_app_version', minVer);
+
+    final localParts = localVer.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final minParts = minVer.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    while (localParts.length < 3) localParts.add(0);
+    while (minParts.length < 3) minParts.add(0);
+
+    final isOutdated = localParts[0] < minParts[0] ||
+        (localParts[0] == minParts[0] && localParts[1] < minParts[1]) ||
+        (localParts[0] == minParts[0] && localParts[1] == minParts[1] && localParts[2] < minParts[2]);
+
+    await metaBox.put('app_is_outdated', isOutdated);
+    debugPrint('[KS:VERSION] Local: $localVer, Min: $minVer, Outdated: $isOutdated');
+  } catch (e) {
+    debugPrint('[KS:VERSION] Version check failed (offline or no config table): $e');
+    final metaBox = Hive.box(HiveService.metaBox);
+    await metaBox.put('app_is_outdated', false); // Allow offline — no server to force-upgrade
+  }
 
   runApp(
     const ProviderScope(

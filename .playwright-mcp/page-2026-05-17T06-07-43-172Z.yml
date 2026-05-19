@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: We've updated our Terms of Service
+          - button "Learn more" [ref=e16] [cursor=pointer]
+      - button "Dismiss banner" [ref=e17] [cursor=pointer]:
+        - img [ref=e19]
+    - generic [ref=e23]:
+      - navigation [ref=e24]:
+        - button "Connect" [disabled] [ref=e27]:
+          - img [ref=e29]
+          - generic [ref=e31]: Connect
+        - generic [ref=e32]:
+          - button [ref=e33] [cursor=pointer]:
+            - img [ref=e36]
+          - button "Menu dropdown button" [ref=e38] [cursor=pointer]:
+            - img [ref=e40]
+      - navigation "Floating toolbar" [ref=e41]:
+        - generic [ref=e42]:
+          - button [ref=e43] [cursor=pointer]:
+            - img [ref=e45]
+          - button "Help" [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img [ref=e51]
+              - generic [ref=e54]: Help
+          - button "Advisor Center" [ref=e57] [cursor=pointer]:
+            - generic [ref=e58]:
+              - img [ref=e59]
+              - generic [ref=e61]: Advisor Center
+          - button "SQL Editor" [ref=e63] [cursor=pointer]:
+            - generic [ref=e64]:
+              - img [ref=e65]
+              - generic [ref=e67]: SQL Editor
+          - button "AI Assistant" [ref=e69] [cursor=pointer]:
+            - generic [ref=e70]:
+              - img [ref=e73]
+              - generic [ref=e76]: AI Assistant
+    - main [ref=e86]:
+      - generic [ref=e87]:
+        - heading "Users" [level=3] [ref=e90]
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - img [ref=e95]
+              - combobox [ref=e98]:
+                - generic: Email address
+                - img [ref=e99]
+              - group [ref=e101]:
+                - textbox "Search by email" [ref=e102]
+            - generic [ref=e104] [cursor=pointer]:
+              - generic [ref=e105]: All columns
+              - img [ref=e107]
+            - button "Sorted by user ID" [disabled] [ref=e109]:
+              - img [ref=e111]
+              - generic [ref=e113]: Sorted by user ID
+          - generic [ref=e114]:
+            - button "Refresh" [ref=e115] [cursor=pointer]:
+              - img [ref=e117]
+            - button "Add user" [ref=e122] [cursor=pointer]:
+              - generic [ref=e123]: Add user
+              - img [ref=e125]
+        - grid [ref=e133]:
+          - row "UID Display name Email Phone" [ref=e134]:
+            - columnheader [ref=e135]
+            - columnheader "UID" [ref=e136]:
+              - paragraph [ref=e139]: UID
+            - columnheader "Display name" [ref=e141]:
+              - paragraph [ref=e144]: Display name
+            - columnheader "Email" [ref=e146]:
+              - paragraph [ref=e149]: Email
+            - columnheader "Phone" [ref=e151]:
+              - paragraph [ref=e154]: Phone
+        - generic [ref=e163]:
+          - img [ref=e164]
+          - text: Loading...
+  - alert [ref=e166]: Users | Authentication | Supabase

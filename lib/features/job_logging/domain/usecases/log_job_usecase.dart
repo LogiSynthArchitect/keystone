@@ -19,6 +19,7 @@ class LogJobParams {
   final String status;
   final String paymentStatus;
   final double? quotedPrice;
+  final String? leadSource;
   final String? hardwareBrand;
   final String? hardwareKeyway;
 
@@ -35,6 +36,7 @@ class LogJobParams {
     this.status = 'in_progress',
     this.paymentStatus = 'unpaid',
     this.quotedPrice,
+    this.leadSource,
     this.hardwareBrand,
     this.hardwareKeyway,
   });
@@ -95,9 +97,12 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
       isArchived: false,
       status: params.status,
       paymentStatus: params.paymentStatus,
+      leadSource: params.leadSource,
       quotedPrice: params.quotedPrice,
       hardwareBrand: params.hardwareBrand,
       hardwareKeyway: params.hardwareKeyway,
+      quotedAt: params.status == 'quoted' ? now : null,
+      inProgressAt: params.status == 'in_progress' ? now : null,
       isDeleted: false,
       createdAt: now,
       updatedAt: now,

@@ -3,7 +3,7 @@ import '../../../../core/storage/hive_service.dart';
 import '../models/job_part_model.dart';
 
 class JobPartsLocalDatasource {
-  Box<Map> get _box => HiveService.jobParts;
+  Box get _box => HiveService.jobParts;
 
   Future<List<JobPartModel>> getPartsForJob(String jobId) async {
     return _box.values

@@ -3,7 +3,7 @@ import '../../../../core/errors/storage_exception.dart';
 import '../../../../core/storage/hive_service.dart';
 
 class FollowUpLocalDatasource {
-  Box<Map> get _box => HiveService.followUps;
+  Box get _box => HiveService.followUps;
 
   Future<void> cascadeJobId(String oldId, String newId) async {
     try {

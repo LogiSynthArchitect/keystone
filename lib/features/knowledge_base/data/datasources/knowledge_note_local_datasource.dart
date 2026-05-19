@@ -4,7 +4,7 @@ import '../../../../core/storage/hive_service.dart';
 import '../models/knowledge_note_model.dart';
 
 class KnowledgeNoteLocalDatasource {
-  Box<Map> get _box => HiveService.notes;
+  Box get _box => HiveService.notes;
 
   Future<void> saveNote(KnowledgeNoteModel note) async {
     try {

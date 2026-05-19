@@ -70,8 +70,10 @@ class NotesListState {
 
   List<KnowledgeNoteEntity> get displayed {
     final baseList = searchQuery.isEmpty ? notes : searchResults;
-    if (filterCategory == null) return baseList;
-    return baseList.where((n) => n.serviceType == filterCategory).toList();
+    final filtered = filterCategory == null ? baseList : baseList.where((n) => n.serviceType == filterCategory).toList();
+    final pinned = filtered.where((n) => n.isPinned).toList();
+    final unpinned = filtered.where((n) => !n.isPinned).toList();
+    return [...pinned, ...unpinned];
   }
 
   List<KnowledgeNoteEntity> get paged => displayed.take(displayLimit).toList();
@@ -163,6 +165,13 @@ class NotesListNotifier extends StateNotifier<NotesListState> {
   void updateNote(KnowledgeNoteEntity updated) {
     state = state.copyWith(
       notes: state.notes.map((n) => n.id == updated.id ? updated : n).toList(),
+    );
+  }
+
+  void togglePin(String id) {
+    state = state.copyWith(
+      notes: state.notes.map((n) => n.id == id ? n.copyWith(isPinned: !n.isPinned) : n).toList(),
+      searchResults: state.searchResults.map((n) => n.id == id ? n.copyWith(isPinned: !n.isPinned) : n).toList(),
     );
   }
 

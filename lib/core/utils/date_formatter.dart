@@ -17,6 +17,9 @@ class DateFormatter {
   // Monday
   static String dayOfWeek(DateTime date) => _dayOfWeek.format(date);
 
+  // 09:30
+  static String shortTime(DateTime date) => DateFormat('HH:mm').format(date);
+
   // 2026-01-15 (for database)
   static String toDb(DateTime date) => _db.format(date);
 

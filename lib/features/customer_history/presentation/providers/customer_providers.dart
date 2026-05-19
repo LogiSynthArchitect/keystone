@@ -14,6 +14,7 @@ import '../../domain/usecases/get_customers_usecase.dart';
 import '../../domain/usecases/get_customer_by_phone_usecase.dart';
 import '../../domain/usecases/sync_offline_customers_usecase.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
+import '../../domain/usecases/merge_customers_usecase.dart';
 
 final customerLocalDatasourceProvider = Provider<CustomerLocalDatasource>(
   (ref) => CustomerLocalDatasource());
@@ -45,6 +46,9 @@ final syncOfflineCustomersUsecaseProvider = Provider<SyncOfflineCustomersUsecase
 final updateCustomerUsecaseProvider = Provider<UpdateCustomerUsecase>(
   (ref) => UpdateCustomerUsecase(ref.watch(customerRepositoryProvider)));
 
+final mergeCustomersUsecaseProvider = Provider<MergeCustomersUsecase>(
+  (ref) => MergeCustomersUsecase(ref.watch(customerRepositoryProvider)));
+
 const _kCustomerPageSize = 20;
 
 class CustomerListState {
@@ -55,6 +59,8 @@ class CustomerListState {
   final String? errorMessage;
   final String searchQuery;
   final String filterType; // 'all', 'recent', 'repeat'
+  final String? propertyFilter;
+  final String? leadSourceFilter;
   final int displayLimit;
 
   const CustomerListState({
@@ -65,6 +71,8 @@ class CustomerListState {
     this.errorMessage,
     this.searchQuery = '',
     this.filterType = 'all',
+    this.propertyFilter,
+    this.leadSourceFilter,
     this.displayLimit = _kCustomerPageSize,
   });
 
@@ -76,6 +84,14 @@ class CustomerListState {
       base = base.where((c) => c.createdAt.isAfter(weekAgo)).toList();
     } else if (filterType == 'repeat') {
       base = base.where((c) => c.totalJobs > 1).toList();
+    }
+
+    if (propertyFilter != null) {
+      base = base.where((c) => c.propertyType == propertyFilter).toList();
+    }
+
+    if (leadSourceFilter != null) {
+      base = base.where((c) => c.leadSource == leadSourceFilter).toList();
     }
 
     return base;
@@ -92,6 +108,8 @@ class CustomerListState {
     String? errorMessage,
     String? searchQuery,
     String? filterType,
+    String? propertyFilter,
+    String? leadSourceFilter,
     int? displayLimit,
     bool clearError = false,
   }) => CustomerListState(
@@ -102,6 +120,8 @@ class CustomerListState {
     errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     searchQuery: searchQuery ?? this.searchQuery,
     filterType: filterType ?? this.filterType,
+    propertyFilter: propertyFilter ?? this.propertyFilter,
+    leadSourceFilter: leadSourceFilter ?? this.leadSourceFilter,
     displayLimit: displayLimit ?? this.displayLimit,
   );
 }
@@ -133,6 +153,14 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
     state = state.copyWith(filterType: type, displayLimit: _kCustomerPageSize);
   }
 
+  void setPropertyFilter(String? value) {
+    state = state.copyWith(propertyFilter: value, displayLimit: _kCustomerPageSize);
+  }
+
+  void setLeadSourceFilter(String? value) {
+    state = state.copyWith(leadSourceFilter: value, displayLimit: _kCustomerPageSize);
+  }
+
   void loadMore() {
     if (state.hasMore) {
       state = state.copyWith(displayLimit: state.displayLimit + _kCustomerPageSize);
@@ -160,6 +188,16 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
         ? c.copyWith(totalJobs: c.totalJobs + 1) : c).toList(),
       searchResults: state.searchResults.map((c) => c.id == customerId 
         ? c.copyWith(totalJobs: c.totalJobs + 1) : c).toList(),
+    );
+  }
+
+  void decrementJobCount(String customerId) {
+    if (customerId.isEmpty) return;
+    state = state.copyWith(
+      customers: state.customers.map((c) => c.id == customerId 
+        ? c.copyWith(totalJobs: (c.totalJobs - 1).clamp(0, 999999)) : c).toList(),
+      searchResults: state.searchResults.map((c) => c.id == customerId 
+        ? c.copyWith(totalJobs: (c.totalJobs - 1).clamp(0, 999999)) : c).toList(),
     );
   }
 
@@ -242,6 +280,8 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
     required String phoneNumber,
     String? location,
     String? notes,
+    String? propertyType,
+    String? leadSource,
   }) async {
     if (state.isSubmitting) return null;
     state = state.copyWith(isLoading: true, isSubmitting: true, clearError: true);
@@ -255,6 +295,8 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
         phoneNumber: phoneNumber,
         location: location,
         notes: notes,
+        propertyType: propertyType,
+        leadSource: leadSource,
       ));
 
       state = state.copyWith(isLoading: false, isSubmitting: false, saved: true);

@@ -13,6 +13,7 @@ class CustomerEntity {
   final String? syncErrorMessage;
   final String? propertyType;   // 'residential' | 'commercial' | 'automotive'
   final String? leadSource;     // 'word_of_mouth' | 'google_maps' | 'referral' | 'physical_card' | 'whatsapp' | 'other'
+  final String? coverImageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,6 +30,7 @@ class CustomerEntity {
     this.syncErrorMessage,
     this.propertyType,
     this.leadSource,
+    this.coverImageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -51,6 +53,7 @@ class CustomerEntity {
     String? syncErrorMessage,
     String? propertyType,
     String? leadSource,
+    String? coverImageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -67,6 +70,7 @@ class CustomerEntity {
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
       propertyType: propertyType ?? this.propertyType,
       leadSource: leadSource ?? this.leadSource,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

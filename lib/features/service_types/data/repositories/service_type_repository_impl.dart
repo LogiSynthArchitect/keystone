@@ -71,8 +71,10 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
   Future<void> syncServiceTypes() async {
     try {
       final remoteModels = await _remote.getServiceTypes();
-      await _local.clear();
-      await _local.saveServiceTypes(remoteModels);
+      if (remoteModels.isNotEmpty) {
+        await _local.clear();
+        await _local.saveServiceTypes(remoteModels);
+      }
     } catch (e) {
       debugPrint('[KS:SERVICE_TYPES] Sync failed: $e');
     }

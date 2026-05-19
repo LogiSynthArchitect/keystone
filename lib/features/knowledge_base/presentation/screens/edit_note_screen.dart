@@ -1,13 +1,20 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/services/cloudinary_service.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
@@ -25,6 +32,8 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   final _descriptionController = TextEditingController();
   List<String> _tags = [];
   String? _serviceType;
+  String? _photoUrl;
+  bool _isUploadingPhoto = false;
   bool _initialised = false;
 
   static const _serviceTypes = [
@@ -47,6 +56,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     _descriptionController.text = note.description;
     _tags                       = List.from(note.tags);
     _serviceType                = note.serviceType;
+    _photoUrl                   = note.photoUrl;
     _initialised = true;
   }
 
@@ -56,28 +66,16 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: context.ksc.primary700),
-        ),
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        content: Text('Unsaved changes will be lost.', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.w900)),
-          ),
-        ],
-      ),
-    ) ?? false;
+    final result = await KsConfirmDialog.show(
+      context,
+      title: 'DISCARD CHANGES',
+      message: 'Unsaved changes will be lost.',
+      confirmLabel: 'DISCARD',
+      cancelLabel: 'KEEP EDITING',
+      isDanger: true,
+      onConfirm: () {},
+    );
+    return result ?? false;
   }
 
   Future<void> _onSave(KnowledgeNoteEntity original) async {
@@ -87,6 +85,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
       description: _descriptionController.text.trim(),
       tags: _tags,
       serviceType: _serviceType,
+      photoUrl: _photoUrl,
     );
     final result = await ref.read(editNoteProvider.notifier).save(updated);
     if (!mounted) return;
@@ -107,6 +106,32 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     final keyboard = MediaQuery.of(context).viewInsets.bottom > 0;
 
     if (note == null) {
+      final listState = ref.watch(notesListProvider);
+      if (listState.isLoading) {
+        return Scaffold(
+          backgroundColor: context.ksc.primary900,
+          appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
+          body: const Center(child: CircularProgressIndicator()),
+        );
+      }
+      if (listState.errorMessage != null) {
+        return Scaffold(
+          backgroundColor: context.ksc.primary900,
+          appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 48, color: context.ksc.error500),
+                const SizedBox(height: 16),
+                Text("FAILED TO LOAD", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 8),
+                Text(listState.errorMessage!, textAlign: TextAlign.center, style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400)),
+              ],
+            ),
+          ),
+        );
+      }
       return Scaffold(
         backgroundColor: context.ksc.primary900,
         appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
@@ -176,6 +201,45 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                         );
                       }).toList(),
                     ),
+                    // PHOTO SECTION
+                    Text("PHOTO", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    if (_photoUrl != null) ...[
+                      Container(
+                        width: double.infinity,
+                        height: 160,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: context.ksc.primary700),
+                          image: DecorationImage(image: NetworkImage(_photoUrl!), fit: BoxFit.cover),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    Row(
+                      children: [
+                        KsButton(
+                          label: _photoUrl == null ? "TAKE PHOTO" : "REPLACE PHOTO",
+                          variant: KsButtonVariant.secondary,
+                          size: KsButtonSize.small,
+                          fullWidth: false,
+                          leadingIcon: LineAwesomeIcons.camera_solid,
+                          isLoading: _isUploadingPhoto,
+                          onPressed: _isUploadingPhoto ? null : () => _pickPhoto(),
+                        ),
+                        if (_photoUrl != null) ...[
+                          const SizedBox(width: 12),
+                          KsButton(
+                            label: "REMOVE",
+                            variant: KsButtonVariant.danger,
+                            size: KsButtonSize.small,
+                            fullWidth: false,
+                            onPressed: () => setState(() => _photoUrl = null),
+                          ),
+                        ],
+                      ],
+                    ),
+
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -186,6 +250,63 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LineAwesomeIcons.camera_solid, color: Colors.white),
+              title: Text('Take Photo', style: AppTextStyles.body.copyWith(color: Colors.white)),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(LineAwesomeIcons.image_solid, color: Colors.white),
+              title: Text('Choose from Gallery', style: AppTextStyles.body.copyWith(color: Colors.white)),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final picked = await ImagePicker().pickImage(source: source, maxWidth: 1024, maxHeight: 1024, imageQuality: 80);
+    if (picked == null) return;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      final file = File(picked.path);
+      final cloudService = CloudinaryService();
+      final cloudUrl = await cloudService.uploadMedia(
+        file: file,
+        publicId: 'note_${const Uuid().v4()}',
+      );
+      if (cloudUrl != null) {
+        setState(() => _photoUrl = cloudUrl);
+        return;
+      }
+
+      final supabase = ref.read(supabaseClientProvider);
+      final userId = supabase.auth.currentUser?.id ?? 'unknown';
+      final fileName = '${const Uuid().v4()}.jpg';
+      final path = 'note-photos/$userId/$fileName';
+
+      await supabase.storage.from('note-photos').upload(path, file);
+      final publicUrl = supabase.storage.from('note-photos').getPublicUrl(path);
+      setState(() => _photoUrl = publicUrl);
+    } catch (_) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Could not upload photo", type: KsSnackbarType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
   }
 
   Widget _buildField({

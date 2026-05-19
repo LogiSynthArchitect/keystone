@@ -48,20 +48,32 @@ class AuthRemoteDatasource {
 
   Future<UserModel> createUser({required String authId, required String name, required String phone}) async {
     debugPrint('[KS:AUTH] createUser — authId: $authId, name: $name');
+    final baseSlug = name
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s-]'), '')
+        .replaceAll(RegExp(r'\s+'), '-')
+        .substring(0, name.length.clamp(1, 40));
+    final suffix = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+    final slug = '$baseSlug-${suffix.substring(suffix.length - 4)}';
+    debugPrint('[KS:AUTH] createUser — phone: $phone, slug: $slug');
     try {
+      debugPrint('[KS:AUTH] createUser — attempting upsert...');
       final data = await _supabase.from('users').upsert({
         'auth_id': authId,
         'full_name': name,
         'phone_number': phone,
+        'profile_slug': slug,
       }, onConflict: 'auth_id').select().single();
-      debugPrint('[KS:AUTH] createUser SUCCESS');
+      debugPrint('[KS:AUTH] createUser SUCCESS — data: $data');
       return UserModel.fromJson(data);
     } on supa.PostgrestException catch (e) {
-      debugPrint('[KS:AUTH] createUser PostgrestException — ${e.message} (code: ${e.code})');
-      throw NetworkException(message: 'Could not create user record.', code: 'USER_CREATE_FAILED', cause: e);
-    } catch (e) {
+      debugPrint('[KS:AUTH] createUser PostgrestException — msg: "${e.message}" code: ${e.code} details: ${e.details} hint: ${e.hint}');
+      debugPrint('[KS:AUTH] createUser PostgrestException — full: $e');
+      throw NetworkException(message: 'Could not create user record: ${e.message}', code: 'USER_CREATE_FAILED', cause: e);
+    } catch (e, s) {
       debugPrint('[KS:AUTH] createUser unknown error — $e');
-      throw const NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION');
+      debugPrint('[KS:AUTH] createUser stack — $s');
+      throw NetworkException(message: 'Could not create user record: $e', code: 'USER_CREATE_FAILED');
     }
   }
 

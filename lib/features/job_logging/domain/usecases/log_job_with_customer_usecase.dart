@@ -20,6 +20,7 @@ class LogJobWithCustomerParams {
   final String status;
   final String paymentStatus;
   final double? quotedPrice;
+  final String? leadSource;
   final String? hardwareBrand;
   final String? hardwareKeyway;
 
@@ -38,6 +39,7 @@ class LogJobWithCustomerParams {
     this.status = 'in_progress',
     this.paymentStatus = 'unpaid',
     this.quotedPrice,
+    this.leadSource,
     this.hardwareBrand,
     this.hardwareKeyway,
   });
@@ -92,6 +94,7 @@ class LogJobWithCustomerUsecase {
         amountCharged: params.amountCharged,
         status: params.status,
         paymentStatus: params.paymentStatus,
+        leadSource: params.leadSource,
         quotedPrice: params.quotedPrice,
         hardwareBrand: params.hardwareBrand,
         hardwareKeyway: params.hardwareKeyway,

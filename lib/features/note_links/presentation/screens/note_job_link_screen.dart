@@ -5,6 +5,7 @@ import 'package:keystone/core/theme/app_text_styles.dart';
 import 'package:keystone/core/theme/ks_colors.dart';
 import 'package:keystone/core/utils/date_formatter.dart';
 import 'package:keystone/core/widgets/ks_app_bar.dart';
+import 'package:keystone/core/widgets/ks_empty_state.dart';
 import 'package:keystone/core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_snackbar.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
@@ -53,11 +54,10 @@ class _NoteJobLinkScreenState extends ConsumerState<NoteJobLinkScreen> {
                 final linkedJobIds = links.map((l) => l.jobId).toSet();
 
                 if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      _searchQuery.isEmpty ? "NO JOBS FOUND" : "NO RESULTS",
-                      style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, letterSpacing: 1.5),
-                    ),
+                  return KsEmptyState(
+                    icon: _searchQuery.isEmpty ? LineAwesomeIcons.link_solid : LineAwesomeIcons.search_minus_solid,
+                    title: _searchQuery.isEmpty ? "NO JOBS FOUND" : "NO RESULTS",
+                    subtitle: _searchQuery.isEmpty ? "No jobs linked to this note yet." : "No jobs match your search.",
                   );
                 }
 

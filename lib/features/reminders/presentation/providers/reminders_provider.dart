@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:keystone/core/services/local_notification_service.dart';
 import 'package:keystone/core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import '../../domain/models/reminder_model.dart';
+import '../../domain/models/reminder_thresholds.dart';
 
 class RemindersState {
   final List<Reminder> reminders;
@@ -18,6 +20,7 @@ class RemindersState {
 
 class RemindersNotifier extends StateNotifier<RemindersState> {
   final Ref _ref;
+  static final Set<String> _notifiedKeys = {};
 
   RemindersNotifier(this._ref) : super(const RemindersState()) {
     _compute();
@@ -28,67 +31,90 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
     final now = DateTime.now();
     final dismissed = state.dismissedKeys;
     final reminders = <Reminder>[];
+    final newlyActive = <Reminder>[];
     final followUpsBox = HiveService.followUps;
+    final t = ReminderThresholds.load();
 
     for (final job in jobs) {
       final daysSince = now.difference(job.jobDate).inDays;
 
-      // Unpaid completed jobs older than 1 day
-      if (job.status == 'completed' && job.paymentStatus == 'unpaid' && daysSince >= 1) {
+      if (job.status == 'completed' && job.paymentStatus == 'unpaid' && daysSince >= t.unpaidJobDays) {
         final key = '${job.id}-${ReminderType.unpaidJob.name}';
-        reminders.add(Reminder(
+        final reminder = Reminder(
           jobId: job.id,
           jobServiceType: job.serviceType,
           jobDate: job.jobDate,
           type: ReminderType.unpaidJob,
           amountCharged: job.amountCharged,
           isDismissed: dismissed.contains(key),
-        ));
+        );
+        reminders.add(reminder);
+        if (!dismissed.contains(key)) newlyActive.add(reminder);
       }
 
-      // Jobs stuck in-progress for more than 3 days
-      if (job.status == 'in_progress' && daysSince >= 3) {
+      if (job.status == 'in_progress' && daysSince >= t.stuckInProgressDays) {
         final key = '${job.id}-${ReminderType.stuckInProgress.name}';
-        reminders.add(Reminder(
+        final reminder = Reminder(
           jobId: job.id,
           jobServiceType: job.serviceType,
           jobDate: job.jobDate,
           type: ReminderType.stuckInProgress,
           amountCharged: job.amountCharged,
           isDismissed: dismissed.contains(key),
-        ));
+        );
+        reminders.add(reminder);
+        if (!dismissed.contains(key)) newlyActive.add(reminder);
       }
 
-      // Jobs with no follow-up sent, completed, older than 1 day
-      if (job.status == 'completed' && !job.followUpSent && daysSince >= 1) {
+      if (job.status == 'completed' && !job.followUpSent && daysSince >= t.followUpPendingDays) {
         final key = '${job.id}-${ReminderType.followUpPending.name}';
-        reminders.add(Reminder(
+        final reminder = Reminder(
           jobId: job.id,
           jobServiceType: job.serviceType,
           jobDate: job.jobDate,
           type: ReminderType.followUpPending,
           amountCharged: job.amountCharged,
           isDismissed: dismissed.contains(key),
-        ));
+        );
+        reminders.add(reminder);
+        if (!dismissed.contains(key)) newlyActive.add(reminder);
       }
 
-      // Follow-ups sent more than 3 days ago with no response
       final followUpData = followUpsBox.get(job.id);
       if (followUpData != null) {
         final responseStatus = followUpData['response_status'] as String? ?? 'sent';
         final sentAtRaw = followUpData['sent_at'] as String?;
+
+        // Explicitly marked no_response → immediate reminder
+        if (responseStatus == 'no_response') {
+          final key = '${job.id}-${ReminderType.followUpNoResponse.name}';
+          final reminder = Reminder(
+            jobId: job.id,
+            jobServiceType: job.serviceType,
+            jobDate: job.jobDate,
+            type: ReminderType.followUpNoResponse,
+            amountCharged: job.amountCharged,
+            isDismissed: dismissed.contains(key),
+          );
+          reminders.add(reminder);
+          if (!dismissed.contains(key)) newlyActive.add(reminder);
+        }
+
+        // Sent but no response past threshold
         if (responseStatus == 'sent' && sentAtRaw != null) {
           final sentAt = DateTime.tryParse(sentAtRaw);
-          if (sentAt != null && now.difference(sentAt).inDays >= 3) {
+          if (sentAt != null && now.difference(sentAt).inDays >= t.followUpNoResponseDays) {
             final key = '${job.id}-${ReminderType.followUpNoResponse.name}';
-            reminders.add(Reminder(
+            final reminder = Reminder(
               jobId: job.id,
               jobServiceType: job.serviceType,
               jobDate: job.jobDate,
               type: ReminderType.followUpNoResponse,
               amountCharged: job.amountCharged,
               isDismissed: dismissed.contains(key),
-            ));
+            );
+            reminders.add(reminder);
+            if (!dismissed.contains(key)) newlyActive.add(reminder);
           }
         }
       }
@@ -101,6 +127,13 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
     });
 
     state = RemindersState(reminders: reminders, dismissedKeys: dismissed);
+
+    for (final r in newlyActive) {
+      final key = '${r.jobId}-${r.type.name}';
+      if (_notifiedKeys.add(key)) {
+        LocalNotificationService.showReminderNotification(r);
+      }
+    }
   }
 
   void dismiss(String jobId, ReminderType type) {

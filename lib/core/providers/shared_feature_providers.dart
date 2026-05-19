@@ -35,3 +35,7 @@ export 'package:keystone/features/technician_profile/presentation/providers/prof
 // Knowledge Base - Presentation Providers
 export 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart'
     show notesListProvider;
+
+// Service Types
+export 'package:keystone/features/service_types/presentation/providers/service_type_provider.dart'
+    show serviceTypeProvider;

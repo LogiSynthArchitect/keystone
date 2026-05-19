@@ -49,12 +49,33 @@ class PublicProfileScreen extends ConsumerWidget {
           Expanded(
             child: state.when(
               loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
-              error: (_, __) => _centeredMessage(
-                context: context,
-                icon: LineAwesomeIcons.exclamation_triangle_solid,
-                iconColor: context.ksc.error500,
-                title: 'Something went wrong',
-                subtitle: 'We could not load this profile. Please try again.',
+              error: (_, __) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(48),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 56, color: context.ksc.error500),
+                      const SizedBox(height: 20),
+                      Text('Something went wrong',
+                          style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 10),
+                      Text('We could not load this profile. Please try again.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(publicProfileProvider(slug)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.ksc.accent500,
+                          foregroundColor: context.ksc.primary900,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                        child: const Text("TAP TO RETRY"),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               data: (profile) {
                 if (profile == null) {

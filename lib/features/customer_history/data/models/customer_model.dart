@@ -14,6 +14,7 @@ class CustomerModel {
   final String? syncErrorMessage;
   final String? propertyType;
   final String? leadSource;
+  final String? coverImageUrl;
   final String createdAt;
   final String updatedAt;
 
@@ -30,6 +31,7 @@ class CustomerModel {
     this.syncErrorMessage,
     this.propertyType,
     this.leadSource,
+    this.coverImageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -47,6 +49,7 @@ class CustomerModel {
         syncErrorMessage: json['sync_error_message'] as String?,
         propertyType: json['property_type'] as String?,
         leadSource: json['lead_source'] as String?,
+        coverImageUrl: json['cover_image_url'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
@@ -71,6 +74,7 @@ class CustomerModel {
         'sync_error_message': syncErrorMessage,
         'property_type': propertyType,
         'lead_source': leadSource,
+        'cover_image_url': coverImageUrl,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -88,6 +92,7 @@ class CustomerModel {
         syncErrorMessage: syncErrorMessage,
         propertyType: propertyType,
         leadSource: leadSource,
+        coverImageUrl: coverImageUrl,
         createdAt: DateTime.parse(createdAt),
         updatedAt: DateTime.parse(updatedAt),
       );
@@ -105,6 +110,7 @@ class CustomerModel {
     String? syncErrorMessage,
     String? propertyType,
     String? leadSource,
+    String? coverImageUrl,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -121,6 +127,7 @@ class CustomerModel {
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
       propertyType: propertyType ?? this.propertyType,
       leadSource: leadSource ?? this.leadSource,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

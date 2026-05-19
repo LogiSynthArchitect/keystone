@@ -1,0 +1,89 @@
+<h2>How should the main Extras tab look?</h2>
+<p class="subtitle">Each section opens a bottom sheet, but what shows on the main tab?</p>
+
+<div class="section">
+  <h3>Layout A — Tappable cards with summary</h3>
+  <p>Each section is a card showing a count + total. Tap any card to open its bottom sheet.</p>
+  <div style="background:#1a1a2e;border-radius:12px;padding:16px;margin:12px 0">
+    <div style="background:#16213e;border-radius:8px;padding:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <div>
+        <div style="color:#e94560;font-weight:bold;font-size:11px;letter-spacing:1px">HARDWARE ITEMS</div>
+        <div style="color:#aaa;font-size:10px;margin-top:2px">Locks, cylinders, remotes</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:#fff;font-weight:bold">3 items</div>
+        <div style="color:#e94560;font-size:11px;font-weight:bold">GHS 340.00</div>
+      </div>
+    </div>
+    <div style="background:#0f3460;border-radius:8px;padding:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <div>
+        <div style="color:#e94560;font-weight:bold;font-size:11px;letter-spacing:1px">EXPENSES</div>
+        <div style="color:#aaa;font-size:10px;margin-top:2px">Transport, parking, subs</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:#fff;font-weight:bold">2 items</div>
+        <div style="color:#e94560;font-size:11px;font-weight:bold">GHS 55.00</div>
+      </div>
+    </div>
+    <div style="background:#0f3460;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <div>
+        <div style="color:#e94560;font-weight:bold;font-size:11px;letter-spacing:1px">PARTS USED</div>
+        <div style="color:#aaa;font-size:10px;margin-top:2px">Parts and supplies</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:#fff;font-weight:bold">1 item</div>
+        <div style="color:#e94560;font-size:11px;font-weight:bold">GHS 25.00</div>
+      </div>
+    </div>
+    <div style="background:#0f3460;border-radius:8px;margin-top:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <div>
+        <div style="color:#e94560;font-weight:bold;font-size:11px;letter-spacing:1px">PHOTOS</div>
+        <div style="color:#aaa;font-size:10px;margin-top:2px">Before & after photos</div>
+      </div>
+      <div style="color:#fff;font-weight:bold">4 photos</div>
+    </div>
+    <div style="background:#0f3460;border-radius:8px;margin-top:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <div>
+        <div style="color:#e94560;font-weight:bold;font-size:11px;letter-spacing:1px">NOTES</div>
+        <div style="color:#aaa;font-size:10px;margin-top:2px">Job notes</div>
+      </div>
+      <div style="color:#aaa;font-size:11px;font-style:italic">"Specific hardware used..."</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Layout B — Minimal list with + buttons</h3>
+  <p>Each section is a minimal row with just a + button. Open to see any existing items.</p>
+  <div style="background:#1a1a2e;border-radius:12px;padding:16px;margin:12px 0">
+    <div style="background:#0f3460;border-radius:8px;margin-bottom:6px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <span style="color:#fff;font-weight:bold">Hardware Items</span>
+      <span style="color:#e94560;font-size:18px;font-weight:bold">+</span>
+    </div>
+    <div style="background:#0f3460;border-radius:8px;margin-bottom:6px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <span style="color:#fff;font-weight:bold">Expenses</span>
+      <span style="color:#e94560;font-size:18px;font-weight:bold">+</span>
+    </div>
+    <div style="background:#0f3460;border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer">
+      <span style="color:#fff;font-weight:bold">Parts Used</span>
+      <span style="color:#e94560;font-size:18px;font-weight:bold">+</span>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Summary cards</h3>
+      <p>Card per section with item count + total cost. Quick glance at what's added.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Minimal + list</h3>
+      <p>Clean rows with just a plus button. See details only when you open the drawer.</p>
+    </div>
+  </div>
+</div>

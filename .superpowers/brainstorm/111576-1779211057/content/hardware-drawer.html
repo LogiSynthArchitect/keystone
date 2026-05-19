@@ -1,0 +1,63 @@
+<h2>Hardware Items — Bottom Sheet Drawer</h2>
+<p class="subtitle">Similar to current picker + list, but now inside a full-height drawer</p>
+
+<div style="background:#1a1a2e;border-radius:12px 12px 0 0;padding:24px;margin:12px 0">
+  <!-- Drag handle -->
+  <div style="width:40px;height:4px;background:#444;border-radius:2px;margin:0 auto 16px"></div>
+  
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <div style="color:#e94560;font-weight:bold;font-size:11px;letter-spacing:1px">HARDWARE ITEMS</div>
+      <div style="color:#888;font-size:11px;margin-top:2px">3 items · GHS 340.00</div>
+    </div>
+    <span style="color:#888;font-size:20px;cursor:pointer">✕</span>
+  </div>
+
+  <!-- Select from inventory -->
+  <button style="background:#e94560;color:#fff;border:none;border-radius:6px;padding:14px;width:100%;font-weight:bold;font-size:12px;letter-spacing:1px;cursor:pointer;margin-bottom:16px">+ SELECT FROM INVENTORY</button>
+
+  <!-- Existing items list -->
+  <div style="margin-bottom:16px">
+    <div style="background:#16213e;border-radius:8px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="color:#e94560">🔒</span>
+        <div>
+          <div style="color:#fff;font-weight:bold;font-size:12px">YALE 210 DEADBOLT</div>
+          <div style="color:#888;font-size:10px">Qty: 2 × GHS 120.00</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:#e94560;font-weight:bold;font-size:13px">GHS 240.00</div>
+        <span style="color:#ff4444;font-size:10px;cursor:pointer">Remove</span>
+      </div>
+    </div>
+
+    <div style="background:#16213e;border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="color:#e94560">🔒</span>
+        <div>
+          <div style="color:#fff;font-weight:bold;font-size:12px">SC1 KEY BLANK</div>
+          <div style="color:#888;font-size:10px">Qty: 5 × GHS 20.00</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:#e94560;font-weight:bold;font-size:13px">GHS 100.00</div>
+        <span style="color:#ff4444;font-size:10px;cursor:pointer">Remove</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual entry button -->
+  <button style="background:transparent;color:#e94560;border:1px dashed #e94560;border-radius:6px;padding:12px;width:100%;font-weight:bold;font-size:11px;cursor:pointer">+ ADD MANUAL ENTRY</button>
+
+  <!-- Save button -->
+  <button style="background:#e94560;color:#fff;border:none;border-radius:6px;padding:16px;width:100%;font-weight:bold;font-size:13px;letter-spacing:1px;cursor:pointer;margin-top:24px">DONE</button>
+</div>
+
+<div class="section label" style="margin-top:8px">Key changes from current</div>
+<ul style="color:#aaa;font-size:12px;line-height:1.8">
+  <li>Moved from inline list to <strong>full drawer</strong> with summary header</li>
+  <li>Items show as <strong>compact cards</strong> with qty + unit price + total</li>
+  <li>Admin-inserted items shown inlined</li>
+</ul>

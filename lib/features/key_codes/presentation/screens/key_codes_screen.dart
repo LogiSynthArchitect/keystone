@@ -6,6 +6,7 @@ import '../../../../core/providers/permissions_provider.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../customer_history/domain/entities/key_code_entry_entity.dart';
@@ -83,23 +84,18 @@ class KeyCodesScreen extends ConsumerWidget {
         onPressed: () => _openEdit(context, null),
         backgroundColor: context.ksc.accent500,
         foregroundColor: context.ksc.primary900,
-        child: const Icon(LineAwesomeIcons.plus_solid),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
       ),
     );
   }
 
   Widget _buildEmpty(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(LineAwesomeIcons.key_solid, size: 64, color: context.ksc.primary700),
-          const SizedBox(height: 16),
-          Text("NO KEY CODES SAVED", style: AppTextStyles.h3.copyWith(color: context.ksc.neutral500, letterSpacing: 1.5)),
-          const SizedBox(height: 8),
-          Text("No key codes saved for this customer yet.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral600)),
-        ],
-      ),
+    return const KsEmptyState(
+      icon: LineAwesomeIcons.key_solid,
+      title: 'NO KEY CODES SAVED',
+      subtitle: 'No key codes saved for this customer yet.',
     );
   }
 

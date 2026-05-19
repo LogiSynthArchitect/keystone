@@ -9,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../providers/profile_provider.dart';
@@ -144,7 +145,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       return;
     }
 
-    final profile = ref.read(profileProvider).profile!;
+    final profile = ref.read(profileProvider).profile;
+    if (profile == null) {
+      if (mounted) KsSnackbar.show(context, message: 'Profile not loaded yet. Try again.', type: KsSnackbarType.error);
+      return;
+    }
     final updated = profile.copyWith(
       displayName: _nameController.text.trim(),
       bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
@@ -170,6 +175,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final state = ref.watch(profileProvider);
     if (state.profile != null) _initFromProfile(state.profile!);
     final photoUrl = _pendingPhotoUrl ?? state.profile?.photoUrl;
+
+    // Show loading spinner while profile isn't ready
+    if (state.profile == null && state.isLoading) {
+      return Scaffold(
+        backgroundColor: context.ksc.primary900,
+        appBar: const KsAppBar(title: 'EDIT PROFILE', showBack: true),
+        body: Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
+      );
+    }
 
     return PopScope(
       canPop: !_isDirty,
@@ -198,15 +212,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         child: Stack(
                           children: [
                             Container(
-                              width: 88,
-                              height: 88,
+                              width: 80,
+                              height: 80,
                               decoration: BoxDecoration(
                                 color: context.ksc.primary800,
                                 shape: BoxShape.circle,
                                 border: Border.all(color: context.ksc.primary700, width: 2),
-                                image: photoUrl != null ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover) : null,
+                                image: photoUrl != null && photoUrl.isNotEmpty ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover) : null,
                               ),
-                              child: photoUrl == null
+                              child: photoUrl == null || photoUrl.isEmpty
                                   ? Center(child: Text(_nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : '?',
                                       style: AppTextStyles.h1.copyWith(color: context.ksc.white)))
                                   : null,
@@ -216,9 +230,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             Positioned(
                               bottom: 0, right: 0,
                               child: Container(
-                                padding: const EdgeInsets.all(6),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(color: context.ksc.accent500, shape: BoxShape.circle),
-                                child: Icon(LineAwesomeIcons.camera_solid, size: 14, color: context.ksc.primary900),
+                                child: Icon(LineAwesomeIcons.camera_solid, size: 18, color: context.ksc.primary900),
                               ),
                             ),
                           ],
@@ -344,32 +358,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         border: Border(top: BorderSide(color: context.ksc.primary700)),
       ),
       padding: const EdgeInsets.all(24.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _canSave && !isLoading && !_isUploadingPhoto ? _onSave : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'SAVE CHANGES',
-                style: AppTextStyles.h2.copyWith(
-                  color: _canSave ? context.ksc.white : context.ksc.neutral600,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              if (isLoading)
-                SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500))
-              else
-                Icon(
-                  LineAwesomeIcons.save_solid,
-                  color: _canSave ? context.ksc.accent500 : context.ksc.neutral700,
-                  size: 20,
-                ),
-            ],
-          ),
-        ),
+      child: KsButton(
+        label: 'SAVE CHANGES',
+        onPressed: _canSave && !isLoading && !_isUploadingPhoto ? _onSave : null,
+        trailingIcon: LineAwesomeIcons.save_solid,
+        variant: KsButtonVariant.primary,
+        isLoading: isLoading,
+        fullWidth: true,
       ),
     ).animate().fadeIn(delay: 400.ms);
   }

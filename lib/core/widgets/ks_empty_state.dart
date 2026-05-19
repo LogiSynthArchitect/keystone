@@ -8,6 +8,7 @@ class KsEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+  final double iconSize;
   final String? actionLabel;
   final VoidCallback? onAction;
 
@@ -16,6 +17,7 @@ class KsEmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.iconSize = 48,
     this.actionLabel,
     this.onAction,
   });
@@ -28,7 +30,7 @@ class KsEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: context.ksc.neutral300),
+            Icon(icon, size: iconSize, color: context.ksc.neutral300),
             const SizedBox(height: AppSpacing.lg),
             Text(title,
                 style: AppTextStyles.h3.copyWith(color: context.ksc.neutral600),

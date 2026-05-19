@@ -20,7 +20,7 @@ extension ReminderTypeLabel on ReminderType {
       case ReminderType.unpaidJob:       return 'Payment not yet collected';
       case ReminderType.stuckInProgress: return 'Job still in progress';
       case ReminderType.followUpPending: return 'Follow-up not sent yet';
-      case ReminderType.followUpNoResponse: return 'Awaiting customer response';
+      case ReminderType.followUpNoResponse: return 'No response — resend WhatsApp';
     }
   }
 }

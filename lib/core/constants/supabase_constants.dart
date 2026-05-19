@@ -30,4 +30,10 @@ class SupabaseConstants {
   static const String noteJobLinksTable       = 'note_job_links';
   static const String remindersTable          = 'reminders';
   static const String activityEventsTable     = 'activity_events';
+  static const String jobServicesTable        = 'job_services';
+  static const String jobHardwareTable         = 'job_hardware';
+  static const String inventoryItemsTable      = 'inventory_items';
+  static const String inventoryRestocksTable   = 'inventory_restocks';
+  static const String inventoryStockAdjustmentsTable = 'inventory_stock_adjustments';
+  static const String jobExpensesTable         = 'job_expenses';
 }

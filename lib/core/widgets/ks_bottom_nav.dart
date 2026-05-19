@@ -32,10 +32,10 @@ class KsBottomNav extends StatelessWidget {
           height: 64,
           child: Row(
             children: [
-              _buildNavItem(context, 0, 'JOBS', LineAwesomeIcons.briefcase_solid),
-              _buildNavItem(context, 1, 'CUSTOMERS', LineAwesomeIcons.users_solid),
-              _buildNavItem(context, 2, 'NOTES', LineAwesomeIcons.lightbulb_solid),
-              _buildNavItem(context, 3, 'PROFILE', LineAwesomeIcons.user_circle_solid),
+              _buildNavItem(context, 0, 'DASHBOARD', LineAwesomeIcons.th_large_solid),
+              _buildNavItem(context, 1, 'JOBS', LineAwesomeIcons.briefcase_solid),
+              _buildNavItem(context, 2, 'CUSTOMERS', LineAwesomeIcons.users_solid),
+              _buildNavItem(context, 3, 'MORE', LineAwesomeIcons.ellipsis_h_solid),
             ],
           ),
         ),
@@ -48,33 +48,39 @@ class KsBottomNav extends StatelessWidget {
     final color = isActive ? context.ksc.accent500 : context.ksc.neutral400;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: () => onTabTapped(index),
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: isActive ? context.ksc.accent500 : Colors.transparent,
-                width: 2,
-              ),
-            ),
-            color: isActive ? context.ksc.primary800.withValues(alpha: 0.3) : Colors.transparent,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppTextStyles.caption.copyWith(
-                  color: color,
-                  fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
-                  letterSpacing: 0.5,
+      child: Semantics(
+        button: true,
+        label: label,
+        hint: isActive ? 'Currently selected' : 'Tap to open $label',
+        selected: isActive,
+        child: GestureDetector(
+          onTap: () => onTabTapped(index),
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: isActive ? context.ksc.accent500 : Colors.transparent,
+                  width: 2,
                 ),
               ),
-            ],
+              color: isActive ? context.ksc.primary800.withValues(alpha: 0.3) : Colors.transparent,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: AppTextStyles.caption.copyWith(
+                    color: color,
+                    fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

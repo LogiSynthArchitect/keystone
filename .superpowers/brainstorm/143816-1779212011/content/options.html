@@ -1,0 +1,72 @@
+<h2>Replace the step tabs — 3 options</h2>
+<p class="subtitle">Current: SERVICE — CUSTOMER — DETAILS — EXTRAS with a progress bar</p>
+
+<div class="section">
+  <h3>Option A — Pill chips (horizontal scroll)</h3>
+  <p>Each step is a small pill. Current pill is filled accent. Completed have checkmarks. Future are outlined. They scroll horizontally — unlimited steps fit.</p>
+  <div style="background:#1a1a2e;border-radius:10px;padding:16px;margin:12px 0">
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">
+      <div style="background:#e94560;border-radius:20px;padding:6px 14px;white-space:nowrap;display:flex;align-items:center;gap:4px">
+        <span style="color:#fff;font-size:9px;font-weight:bold">✓ SERVICE</span>
+      </div>
+      <div style="background:#e94560;border-radius:20px;padding:6px 14px;white-space:nowrap;display:flex;align-items:center;gap:4px">
+        <span style="color:#fff;font-size:9px;font-weight:bold">✓ CUSTOMER</span>
+      </div>
+      <div style="background:#e94560;border-radius:20px;padding:6px 14px;white-space:nowrap;display:flex;align-items:center;gap:4px">
+        <span style="color:#fff;font-size:9px;font-weight:bold">● DETAILS</span>
+      </div>
+      <div style="background:transparent;border:1px solid #444;border-radius:20px;padding:6px 14px;white-space:nowrap">
+        <span style="color:#666;font-size:9px;font-weight:bold">EXTRAS</span>
+      </div>
+    </div>
+  </div>
+  <div class="pros-cons" style="margin-top:8px">
+    <div class="pros"><h4>Pros</h4><ul><li>Scales to any number of steps</li><li>Compact — single row</li><li>Clean, modern look</li></ul></div>
+    <div class="cons"><h4>Cons</h4><ul><li>Horizontal scroll is less glanceable</li><li>Small tap targets on mobile</li></ul></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Option B — Minimal progress bar + floating badge</h3>
+  <p>No labels at top. Just a thin 4px progress bar with a small floating badge showing the current step name. Ultra-minimal.</p>
+  <div style="background:#1a1a2e;border-radius:10px;padding:16px;margin:12px 0">
+    <div style="position:relative;height:32px;display:flex;align-items:center">
+      <div style="width:100%;height:4px;background:#333;border-radius:2px;">
+        <div style="width:60%;height:4px;background:#e94560;border-radius:2px;"></div>
+      </div>
+      <div style="position:absolute;left:58%;transform:translateX(-50%);background:#e94560;border-radius:12px;padding:4px 12px;top:-4px">
+        <span style="color:#fff;font-size:8px;font-weight:bold;letter-spacing:0.5px">DETAILS</span>
+      </div>
+    </div>
+  </div>
+  <div class="pros-cons" style="margin-top:8px">
+    <div class="pros"><h4>Pros</h4><ul><li>Ultra compact — ~32px height</li><li>Zero clutter</li><li>Section title shows in content area anyway</li></ul></div>
+    <div class="cons"><h4>Cons</h4><ul><li>No overview of remaining steps</li><li>User must tap Next to discover what's next</li></ul></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Option C — Section title in content + step counter</h3>
+  <p>No separate indicator bar. The section title is inside the content area. Bottom bar shows "Step 2 of 4" with a thin progress indicator next to the Next button.</p>
+  <div style="background:#1a1a2e;border-radius:10px;padding:16px;margin:12px 0">
+    <div style="min-height:200px;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:24px">
+          <div style="background:#0f3460;border-radius:6px;padding:4px 8px">
+            <span style="color:#e94560;font-size:9px;font-weight:bold">2 / 4</span>
+          </div>
+          <span style="color:#fff;font-size:14px;font-weight:bold">CUSTOMER</span>
+        </div>
+        <div style="background:#16213e;border-radius:8px;padding:16px">
+          <span style="color:#666;font-size:11px">Customer fields here...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pros-cons" style="margin-top:8px">
+    <div class="pros"><h4>Pros</h4><ul><li>Maximum content space</li><li>Cleanest look</li><li>Step counter in content feels natural</li></ul></div>
+    <div class="cons"><h4>Cons</h4><ul><li>No quick navigation between steps</li><li>Less obvious there are multiple steps</li></ul></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px">Do you want to keep Next/Back navigation at the bottom, or switch to a model where all sections are visible on one page?</p>

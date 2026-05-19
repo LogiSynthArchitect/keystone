@@ -76,6 +76,15 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
     }
   }
 
+  Future<void> updateServiceTypePrice(String id, int? defaultPrice) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final index = current.indexWhere((t) => t.id == id);
+    if (index == -1) return;
+    final updated = current[index].copyWith(defaultPrice: defaultPrice);
+    await updateServiceType(updated);
+  }
+
   Future<void> deleteServiceType(String id) async {
     try {
       await _ref.read(deleteServiceTypeUsecaseProvider).call(id);

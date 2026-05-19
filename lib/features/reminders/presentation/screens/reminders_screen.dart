@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../providers/reminders_provider.dart';
 import '../../domain/models/reminder_model.dart';
 
@@ -133,15 +134,44 @@ class _ReminderCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!isDismissed)
-                  IconButton(
-                    icon: Icon(LineAwesomeIcons.times_solid, size: 16, color: context.ksc.neutral500),
-                    onPressed: onDismiss,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  )
-                else
-                  Icon(LineAwesomeIcons.check_solid, size: 14, color: context.ksc.neutral600),
+                Column(
+                  children: [
+                    if (!isDismissed)
+                      IconButton(
+                        icon: Icon(LineAwesomeIcons.times_solid, size: 16, color: context.ksc.neutral500),
+                        onPressed: onDismiss,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      )
+                    else
+                      Icon(LineAwesomeIcons.check_solid, size: 14, color: context.ksc.neutral600),
+                    if (!isDismissed && reminder.type == ReminderType.followUpNoResponse) ...[
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () => context.push(RouteNames.jobDetail(reminder.jobId)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: context.ksc.accent500.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LineAwesomeIcons.whatsapp, size: 10, color: context.ksc.accent500),
+                              const SizedBox(width: 4),
+                              Text("RESEND", style: AppTextStyles.caption.copyWith(
+                                color: context.ksc.accent500,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 8,
+                              )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -154,27 +184,10 @@ class _ReminderCard extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LineAwesomeIcons.check_circle_solid, size: 64, color: context.ksc.success500),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'ALL CLEAR',
-              style: AppTextStyles.h2.copyWith(
-                  color: context.ksc.white, letterSpacing: 1.5, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'No reminders right now.',
-              style: AppTextStyles.body.copyWith(color: context.ksc.neutral500),
-            ),
-          ],
-        ),
-      ),
+    return const KsEmptyState(
+      icon: LineAwesomeIcons.check_circle_solid,
+      title: 'ALL CLEAR',
+      subtitle: 'No reminders right now.',
     );
   }
 }

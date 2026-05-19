@@ -8,6 +8,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
 import 'package:keystone/features/knowledge_base/domain/entities/knowledge_note_entity.dart';
@@ -250,7 +251,7 @@ class _NoteTile extends StatelessWidget {
                   ),
                   if (note.tags.isNotEmpty)
                     Text(
-                      (note.tags as List).join(' · '),
+                      note.tags.join(' · '),
                       style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -270,28 +271,11 @@ class _NoteTile extends StatelessWidget {
 class _SearchHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LineAwesomeIcons.search_solid, size: 56, color: context.ksc.primary700),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'SEARCH EVERYTHING',
-              style: AppTextStyles.h3.copyWith(
-                  color: context.ksc.neutral600, letterSpacing: 1.5),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Jobs, customers, and notes\nall in one place.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: context.ksc.neutral700),
-            ),
-          ],
-        ),
-      ),
+    return const KsEmptyState(
+      icon: LineAwesomeIcons.search_solid,
+      title: 'SEARCH EVERYTHING',
+      subtitle: 'Jobs, customers, and notes\nall in one place.',
+      iconSize: 56,
     );
   }
 }
@@ -302,28 +286,11 @@ class _NoResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LineAwesomeIcons.search_solid, size: 56, color: context.ksc.primary700),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'NO RESULTS',
-              style: AppTextStyles.h3.copyWith(
-                  color: context.ksc.neutral600, letterSpacing: 1.5),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Nothing found for "$query"',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: context.ksc.neutral700),
-            ),
-          ],
-        ),
-      ),
+    return KsEmptyState(
+      icon: LineAwesomeIcons.search_solid,
+      title: 'NO RESULTS',
+      subtitle: 'Nothing found for "$query"',
+      iconSize: 56,
     );
   }
 }

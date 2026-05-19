@@ -8,6 +8,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/widgets/ks_step_indicator.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/customer_providers.dart';
 
@@ -25,10 +26,27 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   final _phoneController    = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController    = TextEditingController();
+  String? _propertyType;
+  String? _leadSource;
 
   // Duplicate detection state
   String? _duplicateId;
   String? _duplicateName;
+
+  static const _propertyTypes = [
+    ('residential', 'Residential'),
+    ('commercial', 'Commercial'),
+    ('automotive', 'Automotive'),
+  ];
+
+  static const _leadSources = [
+    ('word_of_mouth', 'Word of Mouth'),
+    ('google_maps', 'Google Maps'),
+    ('referral', 'Referral'),
+    ('physical_card', 'Physical Card'),
+    ('whatsapp', 'WhatsApp'),
+    ('other', 'Other'),
+  ];
 
   @override
   void initState() {
@@ -135,6 +153,8 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
       phoneNumber: phone,
       location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      propertyType: _propertyType,
+      leadSource: _leadSource,
     );
     if (!mounted) return;
     if (customer != null) {
@@ -168,7 +188,11 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         body: Column(
           children: [
             const KsOfflineBanner(),
-            _buildStepIndicator(),
+            KsStepIndicator(
+              currentStep: _currentStep,
+              totalSteps: _totalSteps,
+              labels: ["CONTACT", "DETAILS"],
+            ),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
@@ -182,56 +206,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             if (!keyboardVisible) _buildBottomAction(state.isLoading),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    final stepLabels = ["CONTACT", "NOTES"];
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        border: Border(bottom: BorderSide(color: context.ksc.primary700)),
-      ),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          final isActive = index == _currentStep;
-          final isCompleted = index < _currentStep;
-          return Expanded(
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isActive ? context.ksc.accent500 : (isCompleted ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "${index + 1}",
-                      style: AppTextStyles.caption.copyWith(
-                        color: isActive ? context.ksc.primary900 : (isCompleted ? context.ksc.accent500 : context.ksc.neutral500),
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ),
-                if (isActive) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    stepLabels[index],
-                    style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
-                  ),
-                ],
-                if (index < _totalSteps - 1)
-                  Expanded(child: Divider(color: context.ksc.primary700, indent: 8, endIndent: 8)),
-              ],
-            ),
-          );
-        }),
       ),
     );
   }
@@ -308,10 +282,29 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("EXTRA NOTES", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        Text("EXTRA DETAILS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text("Optional details to help locate or identify the customer.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+        Text("Optional details to help classify and locate the customer.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
         const SizedBox(height: 32),
+
+        Text("PROPERTY TYPE (OPTIONAL)", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        const SizedBox(height: 12),
+        _chipSelector(
+          options: _propertyTypes,
+          selected: _propertyType,
+          onSelect: (v) => setState(() => _propertyType = _propertyType == v ? null : v),
+        ),
+        const SizedBox(height: 32),
+
+        Text("LEAD SOURCE (OPTIONAL)", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        const SizedBox(height: 12),
+        _chipSelector(
+          options: _leadSources,
+          selected: _leadSource,
+          onSelect: (v) => setState(() => _leadSource = _leadSource == v ? null : v),
+        ),
+        const SizedBox(height: 32),
+
         _buildDarkField(
           label: "Primary Location",
           hint: "East Legon, Accra",
@@ -329,6 +322,31 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           maxLength: 1000,
         ),
       ],
+    );
+  }
+
+  Widget _chipSelector({
+    required List<(String, String)> options,
+    required String? selected,
+    required ValueChanged<String> onSelect,
+  }) {
+    return Wrap(
+      spacing: 8, runSpacing: 8,
+      children: options.map((o) {
+        final isSelected = selected == o.$1;
+        return GestureDetector(
+          onTap: () => onSelect(o.$1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
+            ),
+            child: Text(o.$2, style: AppTextStyles.caption.copyWith(color: isSelected ? context.ksc.accent500 : context.ksc.neutral400, fontWeight: FontWeight.w900)),
+          ),
+        );
+      }).toList(),
     );
   }
 

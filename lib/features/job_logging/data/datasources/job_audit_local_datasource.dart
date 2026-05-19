@@ -3,7 +3,7 @@ import '../../../../core/storage/hive_service.dart';
 import '../models/job_audit_entry_model.dart';
 
 class JobAuditLocalDatasource {
-  Box<Map> get _box => HiveService.jobAuditLog;
+  Box get _box => HiveService.jobAuditLog;
 
   Future<List<JobAuditEntryModel>> getEntriesForJob(String jobId) async {
     return _box.values

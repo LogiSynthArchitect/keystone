@@ -1,0 +1,56 @@
+import 'package:hive_flutter/hive_flutter.dart';
+import '../../../../core/storage/hive_service.dart';
+
+class ReminderThresholds {
+  final int unpaidJobDays;      // after how many days unpaid completed job triggers
+  final int stuckInProgressDays; // after how many days in-progress is "stuck"
+  final int followUpPendingDays; // after how many days no follow-up triggers
+  final int followUpNoResponseDays; // after how many days no response triggers
+
+  const ReminderThresholds({
+    this.unpaidJobDays = 1,
+    this.stuckInProgressDays = 3,
+    this.followUpPendingDays = 1,
+    this.followUpNoResponseDays = 3,
+  });
+
+  ReminderThresholds copyWith({
+    int? unpaidJobDays,
+    int? stuckInProgressDays,
+    int? followUpPendingDays,
+    int? followUpNoResponseDays,
+  }) => ReminderThresholds(
+    unpaidJobDays: unpaidJobDays ?? this.unpaidJobDays,
+    stuckInProgressDays: stuckInProgressDays ?? this.stuckInProgressDays,
+    followUpPendingDays: followUpPendingDays ?? this.followUpPendingDays,
+    followUpNoResponseDays: followUpNoResponseDays ?? this.followUpNoResponseDays,
+  );
+
+  static const _key = 'reminder_thresholds';
+
+  static ReminderThresholds load() {
+    try {
+      final box = HiveService.settings;
+      final data = box.get(_key);
+      if (data is Map) {
+        return ReminderThresholds(
+          unpaidJobDays: data['unpaidJobDays'] as int? ?? 1,
+          stuckInProgressDays: data['stuckInProgressDays'] as int? ?? 3,
+          followUpPendingDays: data['followUpPendingDays'] as int? ?? 1,
+          followUpNoResponseDays: data['followUpNoResponseDays'] as int? ?? 3,
+        );
+      }
+    } catch (_) {}
+    return const ReminderThresholds();
+  }
+
+  static Future<void> save(ReminderThresholds t) async {
+    final box = HiveService.settings;
+    await box.put(_key, {
+      'unpaidJobDays': t.unpaidJobDays,
+      'stuckInProgressDays': t.stuckInProgressDays,
+      'followUpPendingDays': t.followUpPendingDays,
+      'followUpNoResponseDays': t.followUpNoResponseDays,
+    });
+  }
+}
