@@ -846,14 +846,21 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       children: [
         Text("CUSTOMER", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 32),
-        _buildDarkField(label: "Customer Name", hint: "Kwame Mensah", controller: _customerController, readOnly: widget.preSelectedCustomerId != null, maxLength: 100),
+        _buildCustomerField(
+          icon: LineAwesomeIcons.user_solid,
+          label: "Customer Name",
+          hint: "Kwame Mensah",
+          controller: _customerController,
+          readOnly: widget.preSelectedCustomerId != null,
+          maxLength: 100,
+        ),
         if (widget.preSelectedCustomerId == null) ...[
-          const SizedBox(height: 24),
-          _buildDarkField(
+          const SizedBox(height: 16),
+          _buildCustomerField(
+            icon: LineAwesomeIcons.phone_alt_solid,
             label: "Phone Number",
             hint: "024 123 4567",
             controller: _phoneController,
-            type: TextInputType.phone,
             fieldHint: "Required for WhatsApp follow-ups.",
             isNumeric: true,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
@@ -861,34 +868,38 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           ),
           if (_matchedCustomerName != null && _matchedCustomerId != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 16),
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: context.ksc.accent500.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    Icon(LineAwesomeIcons.check_circle_solid, size: 14, color: context.ksc.accent500),
-                    const SizedBox(width: 8),
+                    Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: context.ksc.accent500),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 10),
-                          children: [
-                            const TextSpan(text: "Linked to existing customer  "),
-                            TextSpan(
-                              text: _matchedCustomerName!.toUpperCase(),
-                              style: TextStyle(
-                                color: context.ksc.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 10,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("LINKED TO EXISTING CUSTOMER",
+                            style: AppTextStyles.caption.copyWith(
+                              color: context.ksc.accent500,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 9,
+                              letterSpacing: 0.5,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(_matchedCustomerName!.toUpperCase(),
+                            style: AppTextStyles.body.copyWith(
+                              color: context.ksc.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -897,6 +908,89 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             ),
         ],
       ],
+    );
+  }
+
+  Widget _buildCustomerField({
+    required IconData icon,
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    bool readOnly = false,
+    bool isNumeric = false,
+    String? fieldHint,
+    int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.ksc.primary700),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: context.ksc.accent500.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 22, color: context.ksc.accent500),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label.toUpperCase(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.neutral500,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                  ),
+                ),
+                if (fieldHint != null) ...[
+                  const SizedBox(height: 2),
+                  Text(fieldHint,
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.accent500.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 9,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                TextField(
+                  controller: controller,
+                  readOnly: readOnly,
+                  maxLength: maxLength,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                  inputFormatters: inputFormatters,
+                  onChanged: onChanged,
+                  keyboardType: isNumeric ? TextInputType.phone : TextInputType.text,
+                  style: AppTextStyles.body.copyWith(
+                    color: readOnly ? context.ksc.neutral500 : context.ksc.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: InputDecoration.collapsed(
+                    hintText: hint,
+                    hintStyle: AppTextStyles.body.copyWith(
+                      color: context.ksc.neutral600,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
