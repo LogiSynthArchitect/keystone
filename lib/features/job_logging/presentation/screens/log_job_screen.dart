@@ -2008,7 +2008,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     }).toList();
     bool dirty = false;
 
-    showModalBottomSheet(
+    showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.ksc.primary800,
@@ -2061,7 +2061,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                               final ok = await _confirmDrawerClose(ctx);
                               if (!ok) return;
                             }
-                            if (ctx.mounted) Navigator.pop(ctx);
+                            if (ctx.mounted) Navigator.pop(ctx, false);
                           },
                           child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
                         ),
@@ -2120,13 +2120,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 6),
                                     child: InkWell(
-                                      onTap: alreadyAdded ? null : () {
+                                      onTap: alreadyAdded ? null : () async {
                                         final row = _ServiceRow();
                                         row.serviceType = type.name;
                                         if (type.defaultPrice != null) {
                                           row.priceController.text = (type.defaultPrice! / 100.0).toStringAsFixed(2);
                                         }
-                                        _showServiceEditDrawer(
+                                        final added = await _showServiceEditDrawer(
                                           service: row,
                                           existingIndex: null,
                                           onChanged: () {
@@ -2135,6 +2135,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                             setSheetState(() {});
                                           },
                                         );
+                                        if (!added) row.dispose();
                                       },
                                       borderRadius: BorderRadius.circular(6),
                                       child: Container(
@@ -2196,13 +2197,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
+                          onPressed: () {
                           setState(() {
                             _additionalServices
                               ..clear()
                               ..addAll(localServices);
                           });
-                          Navigator.pop(ctx);
+                          Navigator.pop(ctx, true);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.ksc.accent500,
@@ -2221,7 +2222,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           },
         );
       },
-    );
+    ).then((committed) {
+      if (committed != true) {
+        for (final s in localServices) {
+          s.dispose();
+        }
+      }
+    });
   }
 
   /// Read-only summary card for a selected service in Drawer 1.
@@ -2310,7 +2317,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   /// Drawer 2: Edit qty + price for a single service.
   /// If [existingIndex] is null, the service is new (ADD mode).
   /// If [existingIndex] is set, it's editing an existing service.
-  Future<void> _showServiceEditDrawer({
+  Future<bool> _showServiceEditDrawer({
     required _ServiceRow service,
     required int? existingIndex,
     required VoidCallback onChanged,
@@ -2529,7 +2536,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
     if (result == true) {
       onChanged();
+      return true;
     }
+    return false;
   }
 
   Widget _buildDrawerQtyStepper(TextEditingController controller, VoidCallback onChanged) {
