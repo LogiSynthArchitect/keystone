@@ -2077,14 +2077,12 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                           if (localServices.isNotEmpty) ...[
                             ...localServices.asMap().entries.map((entry) {
                               return _buildAdditionalServiceSummaryCard(
-                                index: entry.key,
                                 service: entry.value,
                                 types: types,
                                 onTap: () {
                                   _showServiceEditDrawer(
                                     service: entry.value,
                                     existingIndex: entry.key,
-                                    localServices: localServices,
                                     onChanged: () {
                                       dirty = true;
                                       setSheetState(() {});
@@ -2131,7 +2129,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                         _showServiceEditDrawer(
                                           service: row,
                                           existingIndex: null,
-                                          localServices: localServices,
                                           onChanged: () {
                                             localServices.add(row);
                                             dirty = true;
@@ -2230,7 +2227,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   /// Read-only summary card for a selected service in Drawer 1.
   /// Tapping opens the edit drawer (Drawer 2).
   Widget _buildAdditionalServiceSummaryCard({
-    required int index,
     required _ServiceRow service,
     required List<ServiceTypeEntity> types,
     required VoidCallback onTap,
@@ -2317,7 +2313,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   Future<void> _showServiceEditDrawer({
     required _ServiceRow service,
     required int? existingIndex,
-    required List<_ServiceRow> localServices,
     required VoidCallback onChanged,
   }) async {
     final result = await showModalBottomSheet<bool>(
