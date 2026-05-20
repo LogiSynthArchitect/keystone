@@ -931,10 +931,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Icon(icon, size: 16, color: context.ksc.accent500),
+          padding: const EdgeInsets.only(top: 14),
+          child: Icon(icon, size: 20, color: context.ksc.accent500),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -943,7 +943,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 style: AppTextStyles.caption.copyWith(
                   color: context.ksc.neutral500,
                   fontWeight: FontWeight.w800,
-                  fontSize: 10,
                 ),
               ),
               if (fieldHint != null) ...[
@@ -957,7 +956,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               TextField(
                 controller: controller,
                 readOnly: readOnly,
@@ -967,13 +966,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 inputFormatters: inputFormatters,
                 onChanged: onChanged,
                 keyboardType: isNumeric ? TextInputType.phone : TextInputType.text,
-                style: AppTextStyles.body.copyWith(
+                style: AppTextStyles.bodyLarge.copyWith(
                   color: readOnly ? context.ksc.neutral500 : context.ksc.white,
                   fontWeight: FontWeight.bold,
                 ),
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: AppTextStyles.body.copyWith(
+                  hintStyle: AppTextStyles.bodyLarge.copyWith(
                     color: context.ksc.neutral600,
                     fontWeight: FontWeight.bold,
                   ),
