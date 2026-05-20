@@ -888,7 +888,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                             style: AppTextStyles.caption.copyWith(
                               color: context.ksc.accent500,
                               fontWeight: FontWeight.w800,
-                              fontSize: 9,
+                              fontSize: 10,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -948,7 +948,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   style: AppTextStyles.caption.copyWith(
                     color: context.ksc.accent500.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w600,
-                    fontSize: 9,
+                    fontSize: 10,
                     letterSpacing: 0.5,
                   ),
                 ),
