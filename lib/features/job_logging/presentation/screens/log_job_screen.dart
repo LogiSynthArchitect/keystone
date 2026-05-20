@@ -40,20 +40,17 @@ import '../../../../core/router/route_names.dart';
 class _PartRow {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController qtyController = TextEditingController();
-  final TextEditingController priceController = TextEditingController();
   String? inventoryItemId;
 
   void dispose() {
     nameController.dispose();
     qtyController.dispose();
-    priceController.dispose();
   }
 
   _PartRow copy() {
     final p = _PartRow();
     p.nameController.text = nameController.text;
     p.qtyController.text = qtyController.text;
-    p.priceController.text = priceController.text;
     p.inventoryItemId = inventoryItemId;
     return p;
   }
@@ -94,7 +91,6 @@ class _HardwareRow {
   String? category;
   final nameController = TextEditingController();
   final qtyController = TextEditingController(text: '1');
-  final salePriceController = TextEditingController();
   String? inventoryItemId;
   InventoryItemEntity? inventoryItem;
 
@@ -104,7 +100,6 @@ class _HardwareRow {
   void dispose() {
     nameController.dispose();
     qtyController.dispose();
-    salePriceController.dispose();
   }
 
   _HardwareRow copy() {
@@ -115,7 +110,6 @@ class _HardwareRow {
     h.inventoryItem = inventoryItem;
     h.nameController.text = nameController.text;
     h.qtyController.text = qtyController.text;
-    h.salePriceController.text = salePriceController.text;
     return h;
   }
 }
@@ -352,9 +346,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         row.category = h['category'] as String?;
         row.nameController.text = h['name'] as String? ?? '';
         row.qtyController.text = (h['quantity'] as int? ?? 1).toString();
-        if (h['unit_sale_price'] != null) {
-          row.salePriceController.text = ((h['unit_sale_price'] as int) / 100.0).toStringAsFixed(2);
-        }
         _hardwareItems.add(row);
       }
 
@@ -362,9 +353,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         final row = _PartRow();
         row.nameController.text = p['part_name'] as String? ?? '';
         row.qtyController.text = (p['quantity'] as int? ?? 1).toString();
-        if (p['unit_price'] != null) {
-          row.priceController.text = ((p['unit_price'] as int) / 100.0).toStringAsFixed(2);
-        }
         _parts.add(row);
       }
     });
@@ -428,7 +416,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       parts: _parts.map((p) => (
         p.nameController.text.trim(),
         int.tryParse(p.qtyController.text.trim()) ?? 1,
-        CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0,
+        0,
         p.inventoryItemId,
       )).toList(),
       hardwareItems: _hardwareItems.map((h) => (
@@ -475,7 +463,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             finish: inv?.finish ?? '',
             dimensions: inv?.dimensions ?? '',
             quantity: int.tryParse(e.value.qtyController.text.trim()) ?? 1,
-            unitSalePrice: CurrencyFormatter.parseToPesewas(e.value.salePriceController.text.trim()),
+            unitSalePrice: inv?.defaultSalePrice,
             unitCostPrice: inv?.defaultCostPrice,
             notes: '',
             sortOrder: e.key,
@@ -555,12 +543,12 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 'category': h.category,
                 'name': h.nameController.text.trim(),
                 'quantity': int.tryParse(h.qtyController.text.trim()) ?? 1,
-                'unit_sale_price': CurrencyFormatter.parseToPesewas(h.salePriceController.text.trim()),
+                'unit_sale_price': h.inventoryItem?.defaultSalePrice,
               }).toList(),
               parts: _parts.map((p) => {
                 'part_name': p.nameController.text.trim(),
                 'quantity': int.tryParse(p.qtyController.text.trim()) ?? 1,
-                'unit_price': CurrencyFormatter.parseToPesewas(p.priceController.text.trim()),
+                'unit_price': null,
               }).toList(),
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
@@ -1457,19 +1445,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
   Widget _buildStep6() {
     final hwCount = _hardwareItems.length;
-    final hwTotal = _hardwareItems.fold<int>(0, (sum, h) {
-      final qty = int.tryParse(h.qtyController.text) ?? 1;
-      final price = CurrencyFormatter.parseToPesewas(h.salePriceController.text.trim()) ?? 0;
-      return sum + (qty * price);
-    });
     final expCount = _expenses.length;
     final expTotal = _expenses.fold<int>(0, (sum, e) {
       return sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0);
     });
     final partCount = _parts.length;
-    final partTotal = _parts.fold<int>(0, (sum, p) {
-      return sum + ((CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0) * (int.tryParse(p.qtyController.text.trim()) ?? 1));
-    });
     final photoCount = _beforePhotos.length + _afterPhotos.length;
 
     return Column(
@@ -1483,7 +1463,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           title: "Hardware Items",
           subtitle: "Locks, cylinders, remotes",
           trailing: hwCount > 0
-              ? _extrasCountTrailing("$hwCount item${hwCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(hwTotal))
+              ? _extrasCountTrailing("$hwCount item${hwCount > 1 ? 's' : ''}")
               : _extrasEmptyTrailing(),
           onTap: () => _showHardwareDrawer(),
         ),
@@ -1501,7 +1481,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           title: "Parts Used",
           subtitle: "Parts and supplies",
           trailing: partCount > 0
-              ? _extrasCountTrailing("$partCount item${partCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(partTotal))
+              ? _extrasCountTrailing("$partCount item${partCount > 1 ? 's' : ''}")
               : _extrasEmptyTrailing(),
           onTap: () => _showPartsDrawer(),
         ),
@@ -1683,8 +1663,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             )),
             const SizedBox(width: 8),
             Expanded(flex: 1, child: _buildDarkField(label: "Qty", hint: "1", controller: part.qtyController, isNumeric: true)),
-            const SizedBox(width: 8),
-            Expanded(flex: 2, child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: part.priceController, isNumeric: true)),
             IconButton(icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18), onPressed: () => setState(() => _parts.removeAt(index))),
           ],
         ),
@@ -1701,9 +1679,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   onTap: () {
                     part.nameController.text = item.name;
                     part.inventoryItemId = item.id;
-                    if (item.defaultSalePrice != null) {
-                      part.priceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
-                    }
                     setState(() {
                       _partSuggestionIndex = -1;
                       _partSuggestions = [];
@@ -1716,8 +1691,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                         Expanded(
                           child: Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
                         ),
-                        if (item.defaultSalePrice != null)
-                          Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
                       ],
                     ),
                   ),
@@ -1725,6 +1698,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               }).toList(),
             ),
           ),
+
         const Padding(
           padding: EdgeInsets.only(top: 4),
           child: Divider(height: 1, color: Color(0xFF1E2A3A)),
@@ -1785,9 +1759,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   onTap: () {
                     hw.nameController.text = item.name;
                     hw.inventoryItemId = item.id;
-                    if (item.defaultSalePrice != null) {
-                      hw.salePriceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
-                    }
                     setState(() {
                       _hwSuggestionIndex = -1;
                       _hwSuggestions = [];
@@ -1799,19 +1770,17 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       children: [
                         Icon(LineAwesomeIcons.lock_solid, size: 14, color: context.ksc.accent500),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
-                              if (item.brand != null)
-                                Text(item.brand!, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-                            ],
-                          ),
-                        ),
-                        if (item.defaultSalePrice != null)
-                          Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
-                      ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                                  if (item.brand != null)
+                                    Text(item.brand!, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                                ],
+                              ),
+                            ),
+                          ],
                     ),
                   ),
                 );
@@ -1823,11 +1792,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           children: [
             Expanded(
               child: _buildDarkField(label: "Qty", hint: "1", controller: hw.qtyController, isNumeric: true),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: hw.salePriceController, isNumeric: true),
             ),
           ],
         ),
@@ -1842,9 +1806,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   /// Compact card for hardware selected from inventory.
   Widget _buildInventoryHardwareCard(int index, _HardwareRow hw) {
     final item = hw.inventoryItem;
-    final qty = int.tryParse(hw.qtyController.text) ?? 1;
-    final unitPrice = CurrencyFormatter.parseToPesewas(hw.salePriceController.text.trim()) ?? item?.defaultSalePrice ?? 0;
-    final total = qty * unitPrice;
 
     return Column(
       children: [
@@ -1867,29 +1828,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _buildQtyStepper(hw),
-                      const SizedBox(width: 12),
-                      if (unitPrice > 0)
-                        Text(
-                          "@ ${CurrencyFormatter.format(unitPrice)}",
-                          style: AppTextStyles.caption.copyWith(
-                            color: context.ksc.neutral500,
-                            fontSize: 10,
-                          ),
-                        ),
-                      const Spacer(),
-                      Text(
-                        CurrencyFormatter.format(total),
-                        style: AppTextStyles.caption.copyWith(
-                          color: context.ksc.accent500,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildQtyStepper(hw),
                 ],
               ),
             ),
@@ -2079,9 +2018,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                   hw.inventoryItem = invItem;
                                   hw.inventoryItemId = invItem.id;
                                   hw.nameController.text = invItem.name;
-                                  if (invItem.defaultSalePrice != null) {
-                                    hw.salePriceController.text = (invItem.defaultSalePrice! / 100.0).toStringAsFixed(2);
-                                  }
                                   hw.qtyController.text = '1';
                                   if (onItemSelected != null) {
                                     onItemSelected(hw);
@@ -2750,11 +2686,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             final hwCount = localItems.length;
-            final hwTotal = localItems.fold<int>(0, (sum, h) {
-              final qty = int.tryParse(h.qtyController.text) ?? 1;
-              final price = CurrencyFormatter.parseToPesewas(h.salePriceController.text.trim()) ?? 0;
-              return sum + (qty * price);
-            });
 
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
@@ -2779,7 +2710,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 hwCount > 0
-                                    ? "$hwCount item${hwCount > 1 ? 's' : ''} · ${CurrencyFormatter.format(hwTotal)}"
+                                    ? "$hwCount item${hwCount > 1 ? 's' : ''}"
                                     : "No items added",
                                 style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
                               ),
@@ -3021,9 +2952,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             final partCount = localParts.length;
-            final partTotal = localParts.fold<int>(0, (sum, p) {
-              return sum + ((CurrencyFormatter.parseToPesewas(p.priceController.text.trim()) ?? 0) * (int.tryParse(p.qtyController.text.trim()) ?? 1));
-            });
 
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
@@ -3048,7 +2976,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 partCount > 0
-                                    ? "$partCount item${partCount > 1 ? 's' : ''} · ${CurrencyFormatter.format(partTotal)}"
+                                    ? "$partCount item${partCount > 1 ? 's' : ''}"
                                     : "No parts added",
                                 style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
                               ),
