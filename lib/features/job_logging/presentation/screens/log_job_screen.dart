@@ -1557,62 +1557,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     );
   }
 
-  Widget _buildServiceRow(int index, _ServiceRow service) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: ServiceTypePickerV2(
-                    selected: service.serviceType,
-                    onSelected: (t) {
-                      setState(() {
-                        service.serviceType = t;
-                        final types = ref.read(serviceTypeProvider).valueOrNull;
-                        if (types != null) {
-                          final match = types.where((st) => st.name == t).firstOrNull;
-                          if (match?.defaultPrice != null) {
-                            service.priceController.text = (match!.defaultPrice! / 100.0).toStringAsFixed(2);
-                          }
-                        }
-                      });
-                    },
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
-                  onPressed: () => setState(() => _additionalServices.removeAt(index)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDarkField(label: "Qty", hint: "1", controller: service.qtyController, isNumeric: true),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: _buildDarkField(label: "Price (GHS)", hint: "0.00", controller: service.priceController, isNumeric: true, inputFormatters: [CurrencyInputFormatter()]),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildHardwareRow(int index, _HardwareRow hw, {VoidCallback? onRemove}) {
     final showSuggestions = _hwSuggestionIndex == index && _hwSuggestions.isNotEmpty;
