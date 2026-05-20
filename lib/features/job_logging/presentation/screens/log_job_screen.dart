@@ -1144,59 +1144,64 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     required TextEditingController controller,
     FocusNode? focusNode,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.ksc.primary700),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: context.ksc.accent500.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 22, color: context.ksc.accent500),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label.toUpperCase(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: context.ksc.neutral500,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [CurrencyInputFormatter()],
-                  style: AppTextStyles.h2.copyWith(
-                    color: context.ksc.white,
-                    fontWeight: FontWeight.w900,
-                  ),
-                  decoration: InputDecoration.collapsed(
-                    hintText: hint,
-                    hintStyle: AppTextStyles.h2.copyWith(
-                      color: context.ksc.neutral600,
-                      fontWeight: FontWeight.w900,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 14),
+          child: Icon(icon, size: 20, color: context.ksc.accent500),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(label.toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral500,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
+                  const Spacer(),
+                  Text("GHS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 12)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: controller,
+                focusNode: focusNode,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [CurrencyInputFormatter()],
+                style: AppTextStyles.h2.copyWith(
+                  color: context.ksc.white,
+                  fontWeight: FontWeight.w900,
                 ),
-              ],
-            ),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: AppTextStyles.h2.copyWith(
+                    color: context.ksc.neutral600,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.only(bottom: 4),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                  ),
+                  border: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2A3A4A)),
+                  ),
+                  filled: false,
+                ),
+              ),
+            ],
           ),
-          Text("GHS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 12)),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
