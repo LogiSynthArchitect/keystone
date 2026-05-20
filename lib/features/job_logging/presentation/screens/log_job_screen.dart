@@ -661,7 +661,46 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             subtitle: "Tap the button below to add services performed during this visit",
           )
         else
-          ..._additionalServices.asMap().entries.map((entry) => _buildServiceCard(entry.key, entry.value)),
+          ..._additionalServices.asMap().entries.map((entry) {
+            final svc = entry.value;
+            final qty = int.tryParse(svc.qtyController.text) ?? 1;
+            final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
+            final total = qty * unitPrice;
+            final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
+            final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                onTap: _showAdditionalServicesDrawer,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: context.ksc.primary800,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: context.ksc.primary700),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(ServiceIconMap.resolve(svcType?.iconName), size: 16, color: context.ksc.accent500),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                          style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, fontSize: 10),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
         const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
