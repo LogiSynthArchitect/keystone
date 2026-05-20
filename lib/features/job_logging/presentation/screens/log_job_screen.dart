@@ -241,7 +241,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         // Accept 10 digits (with 0) or 9 digits (without 0) — PhoneFormatter normalizes both
         return (phone.length == 10 && phone.startsWith('0')) ||
                (phone.length == 9 && !phone.startsWith('0'));
-      case 3: return true;
+      case 3:
+        final amountText = _amountController.text.trim();
+        if (amountText.isEmpty) return true;
+        final amount = CurrencyFormatter.parseToPesewas(amountText);
+        return amount != null && amount > 0;
       case 4: return true;
       case 5: return true;
       default: return false;
@@ -1167,7 +1171,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   style: AppTextStyles.caption.copyWith(
                     color: context.ksc.neutral500,
                     fontWeight: FontWeight.w800,
-                    fontSize: 10,
                   ),
                 ),
                 const SizedBox(height: 6),
