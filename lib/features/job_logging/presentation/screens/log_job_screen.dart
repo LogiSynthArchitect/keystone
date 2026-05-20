@@ -926,17 +926,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          margin: const EdgeInsets.only(top: 2),
-          decoration: BoxDecoration(
-            color: context.ksc.accent500.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 18, color: context.ksc.accent500),
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Icon(icon, size: 16, color: context.ksc.accent500),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -973,17 +967,25 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   color: readOnly ? context.ksc.neutral500 : context.ksc.white,
                   fontWeight: FontWeight.bold,
                 ),
-                decoration: InputDecoration.collapsed(
+                decoration: InputDecoration(
                   hintText: hint,
                   hintStyle: AppTextStyles.body.copyWith(
                     color: context.ksc.neutral600,
                     fontWeight: FontWeight.bold,
                   ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.only(bottom: 4),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                  ),
+                  border: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2A3A4A)),
+                  ),
+                  filled: false,
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: Divider(height: 1, color: Color(0xFF2A3A4A)),
               ),
             ],
           ),
