@@ -1359,25 +1359,19 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return suggestions.when(
       data: (data) {
         if (data.hardwareBrands.isEmpty && data.partNames.isEmpty) return const SizedBox.shrink();
-        return Container(
-          margin: const EdgeInsets.only(bottom: 24),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: context.ksc.accent500.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
-          ),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(LineAwesomeIcons.history_solid, size: 16, color: context.ksc.accent500),
+                  Icon(LineAwesomeIcons.history_solid, size: 14, color: context.ksc.accent500),
                   const SizedBox(width: 8),
                   Text("FROM PAST JOBS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               if (data.hardwareBrands.isNotEmpty) ...[
                 Text("BRANDS USED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
                 const SizedBox(height: 6),
@@ -1392,14 +1386,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                         _hardwareItems.last.nameController.text = b;
                       });
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
-                      child: Text(b.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
-                    ),
+                    child: Text(b.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, decoration: TextDecoration.underline)),
                   )).toList(),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
               ],
               if (data.partNames.isNotEmpty) ...[
                 Text("PARTS USED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
@@ -1415,14 +1405,14 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                         _parts.last.nameController.text = p;
                       });
                     },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
-                      child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
-                    ),
+                    child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, decoration: TextDecoration.underline)),
                   )).toList(),
                 ),
               ],
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Divider(height: 1, color: Color(0xFF1E2A3A)),
+              ),
             ],
           ),
         );
@@ -1547,53 +1537,38 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: context.ksc.primary800,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: context.ksc.primary700),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: context.ksc.primary700,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: icon,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title.toUpperCase(),
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                      ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: SizedBox(width: 20, height: 20, child: icon),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title.toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w900,
                     ),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.neutral500,
-                        fontSize: 10,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral500,
+                      fontSize: 10,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              trailing,
-              const SizedBox(width: 8),
-              Icon(LineAwesomeIcons.angle_right_solid,
-                color: context.ksc.neutral500, size: 16),
-            ],
-          ),
+            ),
+            trailing,
+            const SizedBox(width: 8),
+            Icon(LineAwesomeIcons.angle_right_solid,
+              color: context.ksc.neutral500, size: 16),
+          ],
         ),
       ),
     );
@@ -1655,231 +1630,212 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
   Widget _buildExpenseRow(int index, _ExpenseRow expense) {
     final categories = ['transport', 'parking', 'subcontractor', 'supplies', 'other'];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                _buildDropdown("Category", categories, expense.category, (v) {
-                  setState(() => expense.category = v ?? 'transport');
-                }),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: _buildDarkField(
-                    label: "Amount (GHS)", hint: "0.00",
-                    controller: expense.amountController, isNumeric: true,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
-                  onPressed: () => setState(() => _expenses.removeAt(index)),
-                ),
-              ],
+            Expanded(
+              child: _buildDropdown("Category", categories, expense.category, (v) {
+                setState(() => expense.category = v ?? 'transport');
+              }),
             ),
-            const SizedBox(height: 8),
-            _buildDarkField(label: "Description", hint: "e.g. Troski fare to site", controller: expense.descriptionController),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: _buildDarkField(
+                label: "Amount (GHS)", hint: "0.00",
+                controller: expense.amountController, isNumeric: true,
+              ),
+            ),
+            IconButton(
+              icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
+              onPressed: () => setState(() => _expenses.removeAt(index)),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        _buildDarkField(label: "Description", hint: "e.g. Troski fare to site", controller: expense.descriptionController),
+        const Divider(height: 24, color: Color(0xFF1E2A3A)),
+      ],
     );
   }
 
   Widget _buildPartRow(int index, _PartRow part) {
     final showSuggestions = _partSuggestionIndex == index && _partSuggestions.isNotEmpty;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(flex: 3, child: _buildDarkField(
-                label: "Part Name", hint: "Deadbolt", controller: part.nameController,
-                onChanged: (v) {
-                  final items = ref.read(inventoryProvider).valueOrNull ?? [];
-                  final matches = items.where((i) =>
-                    i.itemType == 'part' &&
-                    i.name.toLowerCase().contains(v.toLowerCase())
-                  ).take(5).toList();
-                  setState(() {
-                    _partSuggestionIndex = matches.isNotEmpty ? index : -1;
-                    _partSuggestions = matches;
-                  });
-                },
-              )),
-              const SizedBox(width: 8),
-              Expanded(flex: 1, child: _buildDarkField(label: "Qty", hint: "1", controller: part.qtyController, isNumeric: true)),
-              const SizedBox(width: 8),
-              Expanded(flex: 2, child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: part.priceController, isNumeric: true)),
-              IconButton(icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18), onPressed: () => setState(() => _parts.removeAt(index))),
-            ],
-          ),
-          if (showSuggestions)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: context.ksc.primary700,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _partSuggestions.map((item) {
-                  return InkWell(
-                    onTap: () {
-                      part.nameController.text = item.name;
-                      part.inventoryItemId = item.id;
-                      if (item.defaultSalePrice != null) {
-                        part.priceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
-                      }
-                      setState(() {
-                        _partSuggestionIndex = -1;
-                        _partSuggestions = [];
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
-                          ),
-                          if (item.defaultSalePrice != null)
-                            Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(flex: 3, child: _buildDarkField(
+              label: "Part Name", hint: "Deadbolt", controller: part.nameController,
+              onChanged: (v) {
+                final items = ref.read(inventoryProvider).valueOrNull ?? [];
+                final matches = items.where((i) =>
+                  i.itemType == 'part' &&
+                  i.name.toLowerCase().contains(v.toLowerCase())
+                ).take(5).toList();
+                setState(() {
+                  _partSuggestionIndex = matches.isNotEmpty ? index : -1;
+                  _partSuggestions = matches;
+                });
+              },
+            )),
+            const SizedBox(width: 8),
+            Expanded(flex: 1, child: _buildDarkField(label: "Qty", hint: "1", controller: part.qtyController, isNumeric: true)),
+            const SizedBox(width: 8),
+            Expanded(flex: 2, child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: part.priceController, isNumeric: true)),
+            IconButton(icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18), onPressed: () => setState(() => _parts.removeAt(index))),
+          ],
+        ),
+        if (showSuggestions)
+          Container(
+            margin: const EdgeInsets.only(top: 2),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
             ),
-        ],
-      ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _partSuggestions.map((item) {
+                return InkWell(
+                  onTap: () {
+                    part.nameController.text = item.name;
+                    part.inventoryItemId = item.id;
+                    if (item.defaultSalePrice != null) {
+                      part.priceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
+                    }
+                    setState(() {
+                      _partSuggestionIndex = -1;
+                      _partSuggestions = [];
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                        ),
+                        if (item.defaultSalePrice != null)
+                          Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        const Padding(
+          padding: EdgeInsets.only(top: 4),
+          child: Divider(height: 1, color: Color(0xFF1E2A3A)),
+        ),
+      ],
     );
   }
 
 
   Widget _buildHardwareRow(int index, _HardwareRow hw, {VoidCallback? onRemove}) {
     final showSuggestions = _hwSuggestionIndex == index && _hwSuggestions.isNotEmpty;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Text("ITEM ${index + 1}", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
-                  onPressed: onRemove ?? () => setState(() => _hardwareItems.removeAt(index)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: _buildDarkField(
-                    label: "Hardware Name", hint: "e.g. Yale 210",
-                    controller: hw.nameController,
-                    onChanged: (v) {
-                      final items = ref.read(inventoryProvider).valueOrNull ?? [];
-                      final matches = items.where((i) =>
-                        i.itemType == 'hardware' &&
-                        i.name.toLowerCase().contains(v.toLowerCase())
-                      ).take(5).toList();
-                      setState(() {
-                        _hwSuggestionIndex = matches.isNotEmpty ? index : -1;
-                        _hwSuggestions = matches;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            if (showSuggestions)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  color: context.ksc.primary700,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _hwSuggestions.map((item) {
-                    return InkWell(
-                      onTap: () {
-                        hw.nameController.text = item.name;
-                        hw.inventoryItemId = item.id;
-                        if (item.defaultSalePrice != null) {
-                          hw.salePriceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
-                        }
-                        setState(() {
-                          _hwSuggestionIndex = -1;
-                          _hwSuggestions = [];
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Row(
-                          children: [
-                            Icon(LineAwesomeIcons.lock_solid, size: 14, color: context.ksc.accent500),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
-                                  if (item.brand != null)
-                                    Text(item.brand!, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-                                ],
-                              ),
-                            ),
-                            if (item.defaultSalePrice != null)
-                              Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDarkField(label: "Qty", hint: "1", controller: hw.qtyController, isNumeric: true),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: hw.salePriceController, isNumeric: true),
-                ),
-              ],
+            Text("ITEM ${index + 1}", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+            const Spacer(),
+            IconButton(
+              icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
+              onPressed: onRemove ?? () => setState(() => _hardwareItems.removeAt(index)),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: _buildDarkField(
+                label: "Hardware Name", hint: "e.g. Yale 210",
+                controller: hw.nameController,
+                onChanged: (v) {
+                  final items = ref.read(inventoryProvider).valueOrNull ?? [];
+                  final matches = items.where((i) =>
+                    i.itemType == 'hardware' &&
+                    i.name.toLowerCase().contains(v.toLowerCase())
+                  ).take(5).toList();
+                  setState(() {
+                    _hwSuggestionIndex = matches.isNotEmpty ? index : -1;
+                    _hwSuggestions = matches;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+        if (showSuggestions)
+          Container(
+            margin: const EdgeInsets.only(top: 2),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _hwSuggestions.map((item) {
+                return InkWell(
+                  onTap: () {
+                    hw.nameController.text = item.name;
+                    hw.inventoryItemId = item.id;
+                    if (item.defaultSalePrice != null) {
+                      hw.salePriceController.text = (item.defaultSalePrice! / 100.0).toStringAsFixed(2);
+                    }
+                    setState(() {
+                      _hwSuggestionIndex = -1;
+                      _hwSuggestions = [];
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: [
+                        Icon(LineAwesomeIcons.lock_solid, size: 14, color: context.ksc.accent500),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
+                              if (item.brand != null)
+                                Text(item.brand!, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                        if (item.defaultSalePrice != null)
+                          Text(CurrencyFormatter.format(item.defaultSalePrice!), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDarkField(label: "Qty", hint: "1", controller: hw.qtyController, isNumeric: true),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: _buildDarkField(label: "Unit Price (GHS)", hint: "0.00", controller: hw.salePriceController, isNumeric: true),
+            ),
+          ],
+        ),
+        const Padding(
+          padding: EdgeInsets.only(top: 4),
+          child: Divider(height: 1, color: Color(0xFF1E2A3A)),
+        ),
+      ],
     );
   }
 
@@ -1890,18 +1846,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     final unitPrice = CurrencyFormatter.parseToPesewas(hw.salePriceController.text.trim()) ?? item?.defaultSalePrice ?? 0;
     final total = qty * unitPrice;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-        ),
-        child: Row(
+    return Column(
+      children: [
+        Row(
           children: [
-            Icon(LineAwesomeIcons.lock_solid, size: 18, color: context.ksc.accent500),
+            Icon(LineAwesomeIcons.lock_solid, size: 16, color: context.ksc.accent500),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1918,7 +1867,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  // Qty stepper
                   Row(
                     children: [
                       _buildQtyStepper(hw),
@@ -1954,7 +1902,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             ),
           ],
         ),
-      ),
+        const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Divider(height: 1, color: Color(0xFF1E2A3A)),
+        ),
+      ],
     );
   }
 
@@ -3455,23 +3407,23 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 ],
               ),
             )),
-            if (photos.length < 4)
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      _pickPhoto(photos);
-                      onChanged?.call();
-                    },
-                    child: Container(width: 48, height: 48, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.camera_solid, color: context.ksc.neutral500, size: 18)),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      _pickVideo(photos);
-                      onChanged?.call();
-                    },
-                    child: Container(width: 48, height: 48, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.video_solid, color: context.ksc.neutral500, size: 18)),
+                if (photos.length < 4)
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          _pickPhoto(photos);
+                          onChanged?.call();
+                        },
+                        child: Container(width: 48, height: 48, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.camera_solid, color: context.ksc.neutral500, size: 18)),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          _pickVideo(photos);
+                          onChanged?.call();
+                        },
+                        child: Container(width: 48, height: 48, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.video_solid, color: context.ksc.neutral500, size: 18)),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
@@ -3479,7 +3431,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       _pickAudio(photos);
                       onChanged?.call();
                     },
-                    child: Container(width: 48, height: 48, decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.neutral500, size: 18)),
+                    child: Container(width: 48, height: 48, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.neutral500, size: 18)),
                   ),
                 ],
               ),
