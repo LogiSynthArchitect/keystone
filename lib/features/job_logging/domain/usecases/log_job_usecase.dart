@@ -72,10 +72,10 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
     }
 
     // Validation: Amount charged must be greater than zero
-    if (params.amountCharged != null && params.amountCharged! <= 0) {
+    if (params.amountCharged != null && params.amountCharged! < 0) {
       throw const ValidationException(
-        message: 'Amount charged must be greater than zero.',
-        code: 'AMOUNT_ZERO_OR_NEGATIVE',
+        message: 'Amount charged cannot be negative.',
+        code: 'AMOUNT_NEGATIVE',
         field: 'amount_charged',
       );
     }

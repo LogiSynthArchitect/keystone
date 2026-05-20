@@ -245,7 +245,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         final amountText = _amountController.text.trim();
         if (amountText.isEmpty) return true;
         final amount = CurrencyFormatter.parseToPesewas(amountText);
-        return amount != null && amount > 0;
+        return amount != null && amount >= 0;
       case 4: return true;
       case 5: return true;
       default: return false;
