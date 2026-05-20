@@ -2500,47 +2500,28 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  // Action buttons
+                  // Action button
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Text("CANCEL",
-                              style: AppTextStyles.label.copyWith(
-                                color: context.ksc.neutral400,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.ksc.accent500,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                        child: Text(
+                          existingIndex != null ? "SAVE" : "ADD",
+                          style: AppTextStyles.label.copyWith(
+                            color: context.ksc.primary900,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.0,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.ksc.accent500,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                            ),
-                            child: Text(
-                              existingIndex != null ? "SAVE" : "ADD",
-                              style: AppTextStyles.label.copyWith(
-                                color: context.ksc.primary900,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
