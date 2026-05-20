@@ -11,9 +11,11 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/widgets/ks_step_indicator.dart';
+import '../../../../core/utils/service_icon_map.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
@@ -26,6 +28,7 @@ import '../../domain/entities/job_service_entity.dart';
 import '../../domain/entities/job_hardware_entity.dart';
 import '../../domain/entities/job_expense_entity.dart';
 import '../../../service_types/presentation/widgets/service_type_picker_v2.dart';
+import '../../../service_types/domain/entities/service_type_entity.dart';
 import '../../../inventory/domain/entities/inventory_item_entity.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../../recurring_jobs/presentation/providers/recurring_schedule_provider.dart';
@@ -142,6 +145,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   final _amountController       = TextEditingController();
   final _quotedAmountController = TextEditingController();
   final _notesController        = TextEditingController();
+  FocusNode? _quotedFocusNode;
+  FocusNode? _amountFocusNode;
   String? _matchedCustomerName;
   String? _matchedCustomerId;
 
@@ -162,6 +167,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   void initState() {
     super.initState();
     final preSelectedId = widget.preSelectedCustomerId;
+
+    _quotedFocusNode = currencyFocusNode(_quotedAmountController);
+    _amountFocusNode = currencyFocusNode(_amountController);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(logJobProvider.notifier).reset();
@@ -195,6 +203,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     _locationController.dispose();
     _amountController.dispose();
     _quotedAmountController.dispose();
+    _quotedFocusNode?.dispose();
+    _amountFocusNode?.dispose();
     _notesController.dispose();
     for (var p in _parts) { p.dispose(); }
     for (var s in _additionalServices) { s.dispose(); }
@@ -644,13 +654,28 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         const SizedBox(height: 8),
         Text("Other services performed during this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
         const SizedBox(height: 16),
-        ..._additionalServices.asMap().entries.map((entry) => _buildServiceRow(entry.key, entry.value)),
-        if (_additionalServices.length < 10)
-          TextButton.icon(
-            onPressed: () => setState(() => _additionalServices.add(_ServiceRow())),
-            icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
-            label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+        if (_additionalServices.isEmpty)
+          KsEmptyState(
+            icon: LineAwesomeIcons.tools_solid,
+            title: "NO ADDITIONAL SERVICES",
+            subtitle: "Tap the button below to add services performed during this visit",
+          )
+        else
+          ..._additionalServices.asMap().entries.map((entry) => _buildServiceCard(entry.key, entry.value)),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _showAdditionalServicesDrawer,
+            icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+            label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            ),
           ),
+        ),
       ],
     );
   }
@@ -780,11 +805,63 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       final repo = ref.read(customerRepositoryProvider);
       final customer = await repo.getCustomerByPhone(normalized);
       if (customer != null && mounted) {
-        setState(() {
-          _matchedCustomerName = customer.fullName;
-          _matchedCustomerId = customer.id;
-          _finalCustomerId = customer.id; // Pre-set the customer ID
-        });
+        final typedName = _customerController.text.trim().toLowerCase();
+        final matchedName = customer.fullName.toLowerCase();
+
+        if (typedName.isNotEmpty && typedName != matchedName) {
+          // Name mismatch — prompt user
+          final useExisting = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: context.ksc.primary800,
+              title: Text('CUSTOMER NAME MISMATCH',
+                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+              content: Text(
+                'Phone belongs to ${customer.fullName.toUpperCase()}.\n\n'
+                'You entered: ${_customerController.text.trim().toUpperCase()}\n\n'
+                'Use the existing customer name?',
+                style: AppTextStyles.body.copyWith(color: context.ksc.neutral400),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text('KEEP MY NAME',
+                    style: AppTextStyles.label.copyWith(color: context.ksc.neutral400)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text('USE EXISTING',
+                    style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          );
+
+          if (useExisting == true && mounted) {
+            setState(() {
+              _customerController.text = customer.fullName;
+              _matchedCustomerName = customer.fullName;
+              _matchedCustomerId = customer.id;
+              _finalCustomerId = customer.id;
+            });
+          } else if (mounted) {
+            setState(() {
+              _matchedCustomerName = null;
+              _matchedCustomerId = null;
+              _finalCustomerId = null;
+            });
+          }
+        } else {
+          // Name matches (or empty) — silently link
+          setState(() {
+            _matchedCustomerName = customer.fullName;
+            _matchedCustomerId = customer.id;
+            _finalCustomerId = customer.id;
+            if (typedName.isEmpty) {
+              _customerController.text = customer.fullName;
+            }
+          });
+        }
       } else if (mounted && _matchedCustomerName != null) {
         setState(() {
           _matchedCustomerName = null;
@@ -802,15 +879,93 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("PRICING", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text("Set the money side of this job", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
         const SizedBox(height: 32),
-        _buildDarkField(label: "Quoted Amount (GHS)", hint: "0.00", controller: _quotedAmountController, isNumeric: true, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))]),
-        const SizedBox(height: 24),
-        _buildDarkField(label: "Final Amount (GHS)", hint: "0.00", controller: _amountController, isNumeric: true, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))]),
-        const SizedBox(height: 24),
+        _buildPriceCard(
+          icon: LineAwesomeIcons.file_invoice_dollar_solid,
+          label: "Quoted Amount",
+          hint: "0.00",
+          controller: _quotedAmountController,
+          focusNode: _quotedFocusNode,
+        ),
+        const SizedBox(height: 16),
+        _buildPriceCard(
+          icon: LineAwesomeIcons.money_bill_wave_alt_solid,
+          label: "Final Amount",
+          hint: "0.00",
+          controller: _amountController,
+          focusNode: _amountFocusNode,
+        ),
+        const SizedBox(height: 32),
         Text("PAYMENT STATUS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
         _buildPaymentStatusRow(),
       ],
+    );
+  }
+
+  Widget _buildPriceCard({
+    required IconData icon,
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    FocusNode? focusNode,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.ksc.primary700),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: context.ksc.accent500.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 22, color: context.ksc.accent500),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label.toUpperCase(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.neutral500,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [CurrencyInputFormatter()],
+                  style: AppTextStyles.h2.copyWith(
+                    color: context.ksc.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  decoration: InputDecoration.collapsed(
+                    hintText: hint,
+                    hintStyle: AppTextStyles.h2.copyWith(
+                      color: context.ksc.neutral600,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text("GHS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 12)),
+        ],
+      ),
     );
   }
 
@@ -895,7 +1050,21 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("REPEAT THIS JOB", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
+                      Row(
+                        children: [
+                          Text("REPEAT THIS JOB", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message: "Auto-generate follow-up jobs on a schedule.\n"
+                                "Weekly = every 7 days\n"
+                                "Monthly = every 30 days\n"
+                                "Quarterly = every 90 days\n\n"
+                                "Works only after a customer is selected.",
+                            preferBelow: false,
+                            child: Icon(LineAwesomeIcons.question_circle_solid, size: 14, color: context.ksc.neutral500),
+                          ),
+                        ],
+                      ),
                       Text(_isRecurring ? "Next: $nextDueStr" : "Set up weekly / monthly / quarterly", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
                     ],
                   ),
@@ -1396,7 +1565,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
-                  child: _buildDarkField(label: "Price (GHS)", hint: "0.00", controller: service.priceController, isNumeric: true),
+                  child: _buildDarkField(label: "Price (GHS)", hint: "0.00", controller: service.priceController, isNumeric: true, inputFormatters: [CurrencyInputFormatter()]),
                 ),
               ],
             ),
@@ -1406,7 +1575,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     );
   }
 
-  Widget _buildHardwareRow(int index, _HardwareRow hw) {
+  Widget _buildHardwareRow(int index, _HardwareRow hw, {VoidCallback? onRemove}) {
     final showSuggestions = _hwSuggestionIndex == index && _hwSuggestions.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -1426,7 +1595,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 const Spacer(),
                 IconButton(
                   icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
-                  onPressed: () => setState(() => _hardwareItems.removeAt(index)),
+                  onPressed: onRemove ?? () => setState(() => _hardwareItems.removeAt(index)),
                 ),
               ],
             ),
@@ -1846,6 +2015,710 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     ) ?? false;
   }
 
+  void _showAdditionalServicesDrawer() {
+    final localServices = _additionalServices.map((s) {
+      final copy = _ServiceRow();
+      copy.serviceType = s.serviceType;
+      copy.qtyController.text = s.qtyController.text;
+      copy.priceController.text = s.priceController.text;
+      return copy;
+    }).toList();
+    bool dirty = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final typesAsync = ref.watch(serviceTypeProvider);
+            final types = typesAsync.valueOrNull ?? [];
+
+            // Group by category
+            final grouped = <String, List>{};
+            for (final t in types) {
+              grouped.putIfAbsent(t.category, () => []).add(t);
+            }
+            final categories = grouped.keys.toList()..sort();
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("ADDITIONAL SERVICES",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(
+                                localServices.isNotEmpty
+                                    ? "${localServices.length} service${localServices.length > 1 ? 's' : ''}"
+                                    : "Tap a service below to add it to this job",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          // Selected services section — vertical card layout
+                          if (localServices.isNotEmpty) ...[
+                            ...localServices.asMap().entries.map((entry) {
+                              final svc = entry.value;
+                              final qty = int.tryParse(svc.qtyController.text) ?? 1;
+                              final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
+                              final total = qty * unitPrice;
+                              // Look up the service type for its icon
+                              final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+                                  decoration: const BoxDecoration(
+                                    border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Row 1: Icon + Service Name + Remove
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            ServiceIconMap.resolve(svcType?.iconName),
+                                            size: 20,
+                                            color: context.ksc.accent500,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                                              style: AppTextStyles.body.copyWith(
+                                                color: context.ksc.white,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: Icon(LineAwesomeIcons.times_circle_solid, color: context.ksc.error500, size: 22),
+                                            onPressed: () {
+                                              localServices.removeAt(entry.key);
+                                              dirty = true;
+                                              setSheetState(() {});
+                                            },
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // Row 2: QTY + stepper × price field
+                                      Row(
+                                        children: [
+                                          Text("QTY",
+                                            style: AppTextStyles.caption.copyWith(
+                                              color: context.ksc.neutral600,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          _buildDrawerQtyStepper(svc.qtyController, () => setSheetState(() {})),
+                                          const SizedBox(width: 8),
+                                          Icon(LineAwesomeIcons.times_solid,
+                                            size: 12, color: context.ksc.neutral500),
+                                          const SizedBox(width: 8),
+                                          // Editable unit price — clean underline
+                                          Expanded(
+                                            child: TextField(
+                                              controller: svc.priceController,
+                                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                              inputFormatters: [CurrencyInputFormatter()],
+                                              onChanged: (_) => setSheetState(() {}),
+                                              style: AppTextStyles.body.copyWith(
+                                                color: context.ksc.accent500,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 14,
+                                              ),
+                                              decoration: InputDecoration(
+                                                hintText: "0.00",
+                                                hintStyle: AppTextStyles.body.copyWith(
+                                                  color: context.ksc.neutral600,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 14,
+                                                ),
+                                                isDense: true,
+                                                contentPadding: const EdgeInsets.only(bottom: 4),
+                                                enabledBorder: const UnderlineInputBorder(
+                                                  borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                                                ),
+                                                focusedBorder: const UnderlineInputBorder(
+                                                  borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text("GHS",
+                                            style: AppTextStyles.caption.copyWith(
+                                              color: context.ksc.neutral500,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      // Row 3: TOTAL
+                                      Row(
+                                        children: [
+                                          const Spacer(),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              Text("TOTAL",
+                                                style: AppTextStyles.caption.copyWith(
+                                                  color: context.ksc.neutral600,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 10,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                                                style: AppTextStyles.h3.copyWith(
+                                                  color: context.ksc.white,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                            const SizedBox(height: 16),
+                          ],
+                          // Category sections
+                          ...categories.map((cat) {
+                            final items = grouped[cat]!;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(cat.toUpperCase(),
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: context.ksc.neutral500,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 10,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                                ...items.map((type) {
+                                  final alreadyAdded = localServices.any((s) => s.serviceType == type.name);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: InkWell(
+                                      onTap: alreadyAdded ? null : () {
+                                        final row = _ServiceRow();
+                                        row.serviceType = type.name;
+                                        if (type.defaultPrice != null) {
+                                          row.priceController.text = (type.defaultPrice! / 100.0).toStringAsFixed(2);
+                                        }
+                                        localServices.add(row);
+                                        dirty = true;
+                                        setSheetState(() {});
+                                      },
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                        decoration: BoxDecoration(
+                                          color: alreadyAdded ? context.ksc.primary700.withValues(alpha: 0.3) : context.ksc.primary800,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: alreadyAdded ? context.ksc.neutral600 : context.ksc.primary700,
+                                            width: alreadyAdded ? 1.0 : 1.0,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              ServiceIconMap.resolve(type.iconName),
+                                              size: 18,
+                                              color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
+                                            ),
+                                            const SizedBox(width: 14),
+                                            Expanded(
+                                              child: Text(type.name.replaceAll('_', ' ').toUpperCase(),
+                                                style: AppTextStyles.body.copyWith(
+                                                  color: alreadyAdded ? context.ksc.neutral600 : context.ksc.white,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                            if (type.defaultPrice != null && type.defaultPrice! > 0)
+                                              Text(CurrencyFormatter.format(type.defaultPrice!),
+                                                style: AppTextStyles.caption.copyWith(
+                                                  color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                            if (alreadyAdded)
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 8),
+                                                child: Icon(LineAwesomeIcons.check_circle_solid, size: 16, color: context.ksc.neutral600),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 16),
+                              ],
+                            );
+                          }),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Pinned DONE button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _additionalServices
+                              ..clear()
+                              ..addAll(localServices);
+                          });
+                          Navigator.pop(ctx);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.ksc.accent500,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                        child: Text("DONE",
+                          style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Read-only summary card for a selected service in Drawer 1.
+  /// Tapping opens the edit drawer (Drawer 2).
+  Widget _buildAdditionalServiceSummaryCard({
+    required int index,
+    required _ServiceRow service,
+    required List<ServiceTypeEntity> types,
+    required VoidCallback onTap,
+    required VoidCallback onRemove,
+  }) {
+    final qty = int.tryParse(service.qtyController.text) ?? 1;
+    final unitPrice = CurrencyFormatter.parseToPesewas(service.priceController.text.trim()) ?? 0;
+    final total = qty * unitPrice;
+    final svcType = types.where((t) => t.name == service.serviceType).firstOrNull;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                ServiceIconMap.resolve(svcType?.iconName),
+                size: 20,
+                color: context.ksc.accent500,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      service.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                      style: AppTextStyles.body.copyWith(
+                        color: context.ksc.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Qty: $qty × ${CurrencyFormatter.format(unitPrice)}",
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.neutral500,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                    style: AppTextStyles.h3.copyWith(
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(LineAwesomeIcons.times_circle_solid, color: context.ksc.error500, size: 20),
+                onPressed: onRemove,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Drawer 2: Edit qty + price for a single service.
+  /// If [existingIndex] is null, the service is new (ADD mode).
+  /// If [existingIndex] is set, it's editing an existing service.
+  Future<void> _showServiceEditDrawer({
+    required _ServiceRow service,
+    required int? existingIndex,
+    required List<_ServiceRow> localServices,
+    required VoidCallback onChanged,
+  }) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final qty = int.tryParse(service.qtyController.text) ?? 1;
+            final unitPrice = CurrencyFormatter.parseToPesewas(service.priceController.text.trim()) ?? 0;
+            final total = qty * unitPrice;
+            final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
+            final svcType = types.where((t) => t.name == service.serviceType).firstOrNull;
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            existingIndex != null ? "EDIT SERVICE" : "ADD SERVICE",
+                            style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx, false),
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Service icon + name (read-only)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Icon(
+                          ServiceIconMap.resolve(svcType?.iconName),
+                          size: 24,
+                          color: context.ksc.accent500,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            service.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: context.ksc.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // Qty row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Text("QTY",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.neutral600,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildDrawerQtyStepper(service.qtyController, () => setSheetState(() {})),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Unit price field (underline only)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("UNIT PRICE (GHS)",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.neutral600,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: service.priceController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                inputFormatters: [CurrencyInputFormatter()],
+                                onChanged: (_) => setSheetState(() {}),
+                                style: AppTextStyles.body.copyWith(
+                                  color: context.ksc.accent500,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: "0.00",
+                                  hintStyle: AppTextStyles.body.copyWith(
+                                    color: context.ksc.neutral600,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16,
+                                  ),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.only(bottom: 4),
+                                  enabledBorder: const UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                                  ),
+                                  focusedBorder: const UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                                  ),
+                                  filled: false,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text("GHS",
+                              style: AppTextStyles.caption.copyWith(
+                                color: context.ksc.neutral500,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Total display
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        const Spacer(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text("TOTAL",
+                              style: AppTextStyles.caption.copyWith(
+                                color: context.ksc.neutral600,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 10,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                              style: AppTextStyles.h2.copyWith(
+                                color: context.ksc.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 24,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  // Action buttons
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: Text("CANCEL",
+                              style: AppTextStyles.label.copyWith(
+                                color: context.ksc.neutral400,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.ksc.accent500,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            ),
+                            child: Text(
+                              existingIndex != null ? "SAVE" : "ADD",
+                              style: AppTextStyles.label.copyWith(
+                                color: context.ksc.primary900,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      onChanged();
+    }
+  }
+
+  Widget _buildDrawerQtyStepper(TextEditingController controller, VoidCallback onChanged) {
+    final qty = int.tryParse(controller.text) ?? 1;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: () {
+            if (qty > 1) {
+              controller.text = (qty - 1).toString();
+              onChanged();
+            }
+          },
+          child: Icon(LineAwesomeIcons.minus_solid, size: 14, color: context.ksc.neutral500),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text('$qty',
+            style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 14),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            controller.text = (qty + 1).toString();
+            onChanged();
+          },
+          child: Icon(LineAwesomeIcons.plus_solid, size: 14, color: context.ksc.neutral500),
+        ),
+      ],
+    );
+  }
+
   void _showHardwareDrawer() {
     // Local working copy — only committed to parent on DONE
     final localItems = _hardwareItems.map((h) => h.copy()).toList();
@@ -1944,7 +2817,15 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                               padding: const EdgeInsets.only(bottom: 8),
                               child: entry.value.isFromInventory
                                   ? _buildInventoryHardwareCard(entry.key, entry.value)
-                                  : _buildHardwareRow(entry.key, entry.value),
+                                  : _buildHardwareRow(
+                                      entry.key,
+                                      entry.value,
+                                      onRemove: () {
+                                        localItems.removeAt(entry.key);
+                                        dirty = true;
+                                        setSheetState(() {});
+                                      },
+                                    ),
                             ),
                           ),
                           if (localItems.isNotEmpty) const SizedBox(height: 8),
