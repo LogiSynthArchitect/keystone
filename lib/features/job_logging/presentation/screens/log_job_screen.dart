@@ -2036,7 +2036,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             final typesAsync = ref.watch(serviceTypeProvider);
             final types = typesAsync.valueOrNull ?? [];
 
-            // Group by category
             final grouped = <String, List>{};
             for (final t in types) {
               grouped.putIfAbsent(t.category, () => []).add(t);
@@ -2092,152 +2091,33 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
                         children: [
-                          // Selected services section — vertical card layout
                           if (localServices.isNotEmpty) ...[
                             ...localServices.asMap().entries.map((entry) {
-                              final svc = entry.value;
-                              final qty = int.tryParse(svc.qtyController.text) ?? 1;
-                              final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
-                              final total = qty * unitPrice;
-                              // Look up the service type for its icon
-                              final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Container(
-                                  padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-                                  decoration: const BoxDecoration(
-                                    border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Row 1: Icon + Service Name + Remove
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            ServiceIconMap.resolve(svcType?.iconName),
-                                            size: 20,
-                                            color: context.ksc.accent500,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
-                                              style: AppTextStyles.body.copyWith(
-                                                color: context.ksc.white,
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 14,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: Icon(LineAwesomeIcons.times_circle_solid, color: context.ksc.error500, size: 22),
-                                            onPressed: () {
-                                              localServices.removeAt(entry.key);
-                                              dirty = true;
-                                              setSheetState(() {});
-                                            },
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 10),
-                                      // Row 2: QTY + stepper × price field
-                                      Row(
-                                        children: [
-                                          Text("QTY",
-                                            style: AppTextStyles.caption.copyWith(
-                                              color: context.ksc.neutral600,
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          _buildDrawerQtyStepper(svc.qtyController, () => setSheetState(() {})),
-                                          const SizedBox(width: 8),
-                                          Icon(LineAwesomeIcons.times_solid,
-                                            size: 12, color: context.ksc.neutral500),
-                                          const SizedBox(width: 8),
-                                          // Editable unit price — clean underline
-                                          Expanded(
-                                            child: TextField(
-                                              controller: svc.priceController,
-                                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                              inputFormatters: [CurrencyInputFormatter()],
-                                              onChanged: (_) => setSheetState(() {}),
-                                              style: AppTextStyles.body.copyWith(
-                                                color: context.ksc.accent500,
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 14,
-                                              ),
-                                              decoration: InputDecoration(
-                                                hintText: "0.00",
-                                                hintStyle: AppTextStyles.body.copyWith(
-                                                  color: context.ksc.neutral600,
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 14,
-                                                ),
-                                                isDense: true,
-                                                contentPadding: const EdgeInsets.only(bottom: 4),
-                                                enabledBorder: const UnderlineInputBorder(
-                                                  borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
-                                                ),
-                                                focusedBorder: const UnderlineInputBorder(
-                                                  borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text("GHS",
-                                            style: AppTextStyles.caption.copyWith(
-                                              color: context.ksc.neutral500,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Row 3: TOTAL
-                                      Row(
-                                        children: [
-                                          const Spacer(),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: [
-                                              Text("TOTAL",
-                                                style: AppTextStyles.caption.copyWith(
-                                                  color: context.ksc.neutral600,
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 10,
-                                                  letterSpacing: 0.5,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
-                                                style: AppTextStyles.h3.copyWith(
-                                                  color: context.ksc.white,
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 18,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              return _buildAdditionalServiceSummaryCard(
+                                index: entry.key,
+                                service: entry.value,
+                                types: types,
+                                onTap: () {
+                                  _showServiceEditDrawer(
+                                    service: entry.value,
+                                    existingIndex: entry.key,
+                                    localServices: localServices,
+                                    onChanged: () {
+                                      dirty = true;
+                                      setSheetState(() {});
+                                    },
+                                  );
+                                },
+                                onRemove: () {
+                                  localServices.removeAt(entry.key);
+                                  entry.value.dispose();
+                                  dirty = true;
+                                  setSheetState(() {});
+                                },
                               );
                             }),
                             const SizedBox(height: 16),
                           ],
-                          // Category sections
                           ...categories.map((cat) {
                             final items = grouped[cat]!;
                             return Column(
@@ -2265,9 +2145,16 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                         if (type.defaultPrice != null) {
                                           row.priceController.text = (type.defaultPrice! / 100.0).toStringAsFixed(2);
                                         }
-                                        localServices.add(row);
-                                        dirty = true;
-                                        setSheetState(() {});
+                                        _showServiceEditDrawer(
+                                          service: row,
+                                          existingIndex: null,
+                                          localServices: localServices,
+                                          onChanged: () {
+                                            localServices.add(row);
+                                            dirty = true;
+                                            setSheetState(() {});
+                                          },
+                                        );
                                       },
                                       borderRadius: BorderRadius.circular(6),
                                       child: Container(
@@ -2277,7 +2164,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                           borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
                                             color: alreadyAdded ? context.ksc.neutral600 : context.ksc.primary700,
-                                            width: alreadyAdded ? 1.0 : 1.0,
                                           ),
                                         ),
                                         child: Row(
@@ -2325,7 +2211,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       ),
                     ),
                   ),
-                  // Pinned DONE button
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                     child: SizedBox(
