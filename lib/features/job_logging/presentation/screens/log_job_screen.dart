@@ -923,74 +923,72 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     List<TextInputFormatter>? inputFormatters,
     ValueChanged<String>? onChanged,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.ksc.primary700),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: context.ksc.accent500.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 22, color: context.ksc.accent500),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          margin: const EdgeInsets.only(top: 2),
+          decoration: BoxDecoration(
+            color: context.ksc.accent500.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label.toUpperCase(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: context.ksc.neutral500,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 10,
-                  ),
+          child: Icon(icon, size: 18, color: context.ksc.accent500),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label.toUpperCase(),
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.neutral500,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 10,
                 ),
-                if (fieldHint != null) ...[
-                  const SizedBox(height: 2),
-                  Text(fieldHint,
-                    style: AppTextStyles.caption.copyWith(
-                      color: context.ksc.accent500.withValues(alpha: 0.7),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 9,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 6),
-                TextField(
-                  controller: controller,
-                  readOnly: readOnly,
-                  maxLength: maxLength,
-                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                  inputFormatters: inputFormatters,
-                  onChanged: onChanged,
-                  keyboardType: isNumeric ? TextInputType.phone : TextInputType.text,
-                  style: AppTextStyles.body.copyWith(
-                    color: readOnly ? context.ksc.neutral500 : context.ksc.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: InputDecoration.collapsed(
-                    hintText: hint,
-                    hintStyle: AppTextStyles.body.copyWith(
-                      color: context.ksc.neutral600,
-                      fontWeight: FontWeight.bold,
-                    ),
+              ),
+              if (fieldHint != null) ...[
+                const SizedBox(height: 2),
+                Text(fieldHint,
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.accent500.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 9,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: controller,
+                readOnly: readOnly,
+                maxLength: maxLength,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                inputFormatters: inputFormatters,
+                onChanged: onChanged,
+                keyboardType: isNumeric ? TextInputType.phone : TextInputType.text,
+                style: AppTextStyles.body.copyWith(
+                  color: readOnly ? context.ksc.neutral500 : context.ksc.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration.collapsed(
+                  hintText: hint,
+                  hintStyle: AppTextStyles.body.copyWith(
+                    color: context.ksc.neutral600,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Divider(height: 1, color: Color(0xFF2A3A4A)),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
