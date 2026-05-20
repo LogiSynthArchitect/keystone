@@ -238,7 +238,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         if (_customerController.text.trim().isEmpty) return false;
         if (hasCustomer) return true;
         final phone = _phoneController.text.trim();
-        return phone.length == 10 && phone.startsWith('0');
+        // Accept 10 digits (with 0) or 9 digits (without 0) — PhoneFormatter normalizes both
+        return (phone.length == 10 && phone.startsWith('0')) ||
+               (phone.length == 9 && !phone.startsWith('0'));
       case 3: return true;
       case 4: return true;
       case 5: return true;
@@ -385,8 +387,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
     if (_finalCustomerId == null) {
       final phone = _phoneController.text.trim();
-      if (phone.length != 10 || !phone.startsWith('0')) {
-        if (mounted) KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsSnackbarType.error);
+      final valid = (phone.length == 10 && phone.startsWith('0')) ||
+                    (phone.length == 9 && !phone.startsWith('0'));
+      if (!valid) {
+        if (mounted) KsSnackbar.show(context, message: "Enter a valid Ghana number (e.g. 024 123 4567)", type: KsSnackbarType.error);
         return;
       }
     }
@@ -996,6 +1000,14 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
   void _onPhoneChanged(String value) {
     _phoneLookupDebounce?.cancel();
+
+    // Auto-prepend '0' if user typed 9 digits without leading zero
+    // e.g. "241234567" → "0241234567" — PhoneFormatter normalizes both identically
+    if (value.length == 9 && !value.startsWith('0')) {
+      _phoneController.text = '0$value';
+      return;
+    }
+
     if (value.length == 10 && value.startsWith('0')) {
       _lastLookupPhone = value;
       _phoneLookupDebounce = Timer(const Duration(milliseconds: 300), () {
