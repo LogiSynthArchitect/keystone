@@ -137,6 +137,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   String _paymentStatus = 'unpaid';
   String? _leadSource;
   bool _isRecurring = false;
+  bool _serviceExpanded = true;
+  bool _additionalExpanded = true;
   String _recurringInterval = 'monthly';
 
   final _customerController     = TextEditingController();
@@ -638,84 +640,181 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   Widget _buildStep1() {
+    final mainServiceSummary = _serviceType != null
+        ? _serviceType!.replaceAll('_', ' ').toUpperCase()
+        : null;
+    final additionalSummary = _additionalServices.isNotEmpty
+        ? "${_additionalServices.length} service${_additionalServices.length > 1 ? 's' : ''}"
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("SERVICE PERFORMED", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("The main reason for this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 24),
-        ServiceTypePickerV2(
-          selected: _serviceType,
-          onSelected: (t) => setState(() => _serviceType = t),
+        _buildExpandableSection(
+          title: "SERVICE PERFORMED",
+          hint: "The main reason for this visit",
+          collapsedSummary: mainServiceSummary,
+          expanded: _serviceExpanded,
+          onToggle: () => setState(() => _serviceExpanded = !_serviceExpanded),
+          child: ServiceTypePickerV2(
+            selected: _serviceType,
+            onSelected: (t) => setState(() => _serviceType = t),
+          ),
         ),
-        const SizedBox(height: 48),
-        Text("ADDITIONAL SERVICES (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Other services performed during this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 16),
-        if (_additionalServices.isEmpty)
-          KsEmptyState(
-            icon: LineAwesomeIcons.tools_solid,
-            title: "NO ADDITIONAL SERVICES",
-            subtitle: "Tap the button below to add services performed during this visit",
-          )
-        else
-          ..._additionalServices.asMap().entries.map((entry) {
-            final svc = entry.value;
-            final qty = int.tryParse(svc.qtyController.text) ?? 1;
-            final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
-            final total = qty * unitPrice;
-            final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
-            final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: _showAdditionalServicesDrawer,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: context.ksc.primary800,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: context.ksc.primary700),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(ServiceIconMap.resolve(svcType?.iconName), size: 16, color: context.ksc.accent500),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
-                          style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, fontSize: 10),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+        _buildExpandableSection(
+          title: "ADDITIONAL SERVICES (OPTIONAL)",
+          hint: "Other services performed during this visit",
+          collapsedSummary: additionalSummary,
+          expanded: _additionalExpanded,
+          onToggle: () => setState(() => _additionalExpanded = !_additionalExpanded),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_additionalServices.isEmpty)
+                KsEmptyState(
+                  icon: LineAwesomeIcons.tools_solid,
+                  title: "NO ADDITIONAL SERVICES",
+                  subtitle: "Tap the button below to add services performed during this visit",
+                )
+              else
+                ..._additionalServices.asMap().entries.map((entry) {
+                  final svc = entry.value;
+                  final qty = int.tryParse(svc.qtyController.text) ?? 1;
+                  final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
+                  final total = qty * unitPrice;
+                  final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
+                  final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: _showAdditionalServicesDrawer,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: context.ksc.primary800,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: context.ksc.primary700),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(ServiceIconMap.resolve(svcType?.iconName), size: 16, color: context.ksc.accent500),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, fontSize: 10),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                              style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 10),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 10),
-                      ),
-                    ],
+                    ),
+                  );
+                }),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _showAdditionalServicesDrawer,
+                  icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+                  label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   ),
                 ),
               ),
-            );
-          }),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _showAdditionalServicesDrawer,
-            icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
-            label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildExpandableSection({
+    required String title,
+    required String hint,
+    required String? collapsedSummary,
+    required bool expanded,
+    required VoidCallback onToggle,
+    required Widget child,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(4),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: context.ksc.primary800,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: context.ksc.primary700),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    expanded ? LineAwesomeIcons.angle_down_solid : LineAwesomeIcons.angle_right_solid,
+                    size: 14,
+                    color: context.ksc.accent500,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                          ),
+                        ),
+                        if (!expanded && collapsedSummary != null)
+                          Text(collapsedSummary,
+                            style: AppTextStyles.caption.copyWith(
+                              color: context.ksc.neutral500,
+                              fontSize: 9,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (!expanded && collapsedSummary != null)
+                    Text(collapsedSummary.toUpperCase(),
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.accent500,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 9,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded) ...[
+            const SizedBox(height: 16),
+            Text(hint,
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.neutral500,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ],
+      ),
     );
   }
 
