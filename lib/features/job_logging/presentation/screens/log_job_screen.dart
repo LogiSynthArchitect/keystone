@@ -26,7 +26,7 @@ import '../../../customer_history/presentation/providers/customer_providers.dart
 import '../../../customer_history/domain/entities/customer_entity.dart';
 import '../providers/job_providers.dart';
 import '../../domain/entities/job_service_entity.dart';
-import '../../domain/entities/job_hardware_entity.dart';
+import '../../domain/entities/job_part_entity.dart';
 import '../../domain/entities/job_expense_entity.dart';
 import '../../../service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../../../service_types/domain/entities/service_type_entity.dart';
@@ -36,6 +36,30 @@ import '../../../recurring_jobs/presentation/providers/recurring_schedule_provid
 import '../../../job_templates/domain/entities/job_template_entity.dart';
 import '../../../job_templates/presentation/providers/job_template_provider.dart';
 import '../../../../core/router/route_names.dart';
+
+class _ItemRow {
+  String? inventoryItemId;
+  InventoryItemEntity? inventoryItem;
+  final nameController = TextEditingController();
+  final qtyController = TextEditingController(text: '1');
+
+  bool get isFromInventory => inventoryItem != null;
+  String get displayName => isFromInventory ? inventoryItem!.name : nameController.text.trim();
+
+  void dispose() {
+    nameController.dispose();
+    qtyController.dispose();
+  }
+
+  _ItemRow copy() {
+    final i = _ItemRow();
+    i.inventoryItemId = inventoryItemId;
+    i.inventoryItem = inventoryItem;
+    i.nameController.text = nameController.text;
+    i.qtyController.text = qtyController.text;
+    return i;
+  }
+}
 
 class _PartRow {
   final TextEditingController nameController = TextEditingController();
@@ -148,6 +172,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   Timer? _phoneLookupDebounce;
   String? _lastLookupPhone;
 
+  final List<_ItemRow> _items = [];
   final List<_PartRow> _parts = [];
   final List<_ServiceRow> _additionalServices = [];
   final List<_HardwareRow> _hardwareItems = [];
@@ -206,6 +231,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     _amountFocusNode?.dispose();
     _notesController.dispose();
     for (var p in _parts) { p.dispose(); }
+    for (var i in _items) { i.dispose(); }
     for (var s in _additionalServices) { s.dispose(); }
     for (var h in _hardwareItems) { h.dispose(); }
     for (var e in _expenses) { e.dispose(); }
@@ -341,19 +367,17 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       }
 
       for (final h in template.hardwareItems) {
-        final row = _HardwareRow();
-        row.domain = h['domain'] as String?;
-        row.category = h['category'] as String?;
+        final row = _ItemRow();
         row.nameController.text = h['name'] as String? ?? '';
         row.qtyController.text = (h['quantity'] as int? ?? 1).toString();
-        _hardwareItems.add(row);
+        _items.add(row);
       }
 
       for (final p in template.parts) {
-        final row = _PartRow();
+        final row = _ItemRow();
         row.nameController.text = p['part_name'] as String? ?? '';
         row.qtyController.text = (p['quantity'] as int? ?? 1).toString();
-        _parts.add(row);
+        _items.add(row);
       }
     });
   }
@@ -413,18 +437,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       paymentStatus: _paymentStatus,
       quotedPriceString: _quotedAmountController.text.trim(),
       leadSource: _leadSource,
-      parts: _parts.map((p) => (
-        p.nameController.text.trim(),
-        int.tryParse(p.qtyController.text.trim()) ?? 1,
+      parts: _items.map((i) => (
+        i.nameController.text.trim(),
+        int.tryParse(i.qtyController.text.trim()) ?? 1,
         0,
-        p.inventoryItemId,
+        i.inventoryItemId,
       )).toList(),
-      hardwareItems: _hardwareItems.map((h) => (
-        h.inventoryItemId,
-        h.nameController.text.trim(),
-        int.tryParse(h.qtyController.text.trim()) ?? 1,
-        h.inventoryItemId,
-      )).toList(),
+      hardwareItems: [],
       photos: [
         ..._beforePhotos.map((p) => (File(p.path), 'before', _inferMediaType(p.path))),
         ..._afterPhotos.map((p) => (File(p.path), 'after', _inferMediaType(p.path))),
@@ -448,29 +467,20 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         await repo.saveServices(job.id, services);
       }
 
-      if (_hardwareItems.isNotEmpty) {
-        final items = _hardwareItems.asMap().entries.map((e) {
+      if (_items.isNotEmpty) {
+        final parts = _items.asMap().entries.map((e) {
           final inv = e.value.inventoryItem;
-          return JobHardwareEntity(
+          return JobPartEntity(
             id: const Uuid().v4(),
             jobId: job.id,
-            domain: e.value.domain,
-            category: inv?.category ?? e.value.category,
-            brand: inv?.brand ?? '',
-            model: inv?.model ?? '',
-            keySpec: inv?.keySpec ?? '',
-            material: inv?.material ?? '',
-            finish: inv?.finish ?? '',
-            dimensions: inv?.dimensions ?? '',
+            partName: e.value.nameController.text.trim(),
             quantity: int.tryParse(e.value.qtyController.text.trim()) ?? 1,
-            unitSalePrice: inv?.defaultSalePrice,
-            unitCostPrice: inv?.defaultCostPrice,
-            notes: '',
-            sortOrder: e.key,
+            unitPrice: inv?.defaultSalePrice,
+            inventoryItemId: e.value.inventoryItemId,
             createdAt: DateTime.now(),
           );
         }).toList();
-        await repo.saveHardwareItems(job.id, items);
+        await repo.saveParts(job.id, parts);
       }
 
       if (_expenses.isNotEmpty) {
@@ -538,14 +548,12 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 'quantity': int.tryParse(s.qtyController.text.trim()) ?? 1,
                 'unit_price': CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
               }).toList(),
-              hardwareItems: _hardwareItems.map((h) => {
-                'domain': h.domain,
-                'category': h.category,
+              hardwareItems: _items.where((i) => i.isFromInventory).map((h) => {
                 'name': h.nameController.text.trim(),
                 'quantity': int.tryParse(h.qtyController.text.trim()) ?? 1,
                 'unit_sale_price': h.inventoryItem?.defaultSalePrice,
               }).toList(),
-              parts: _parts.map((p) => {
+              parts: _items.where((i) => !i.isFromInventory).map((p) => {
                 'part_name': p.nameController.text.trim(),
                 'quantity': int.tryParse(p.qtyController.text.trim()) ?? 1,
                 'unit_price': null,
@@ -1368,10 +1376,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   children: data.hardwareBrands.map((b) => GestureDetector(
                     onTap: () {
                       setState(() {
-                        if (_hardwareItems.isEmpty || _hardwareItems.last.nameController.text.isNotEmpty) {
-                          _hardwareItems.add(_HardwareRow());
+                        if (_items.isEmpty || _items.last.nameController.text.isNotEmpty) {
+                          _items.add(_ItemRow());
                         }
-                        _hardwareItems.last.nameController.text = b;
+                        _items.last.nameController.text = b;
                       });
                     },
                     child: Text(b.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, decoration: TextDecoration.underline)),
@@ -1387,10 +1395,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                   children: data.partNames.map((p) => GestureDetector(
                     onTap: () {
                       setState(() {
-                        if (_parts.isEmpty || _parts.last.nameController.text.isNotEmpty) {
-                          _parts.add(_PartRow());
+                        if (_items.isEmpty || _items.last.nameController.text.isNotEmpty) {
+                          _items.add(_ItemRow());
                         }
-                        _parts.last.nameController.text = p;
+                        _items.last.nameController.text = p;
                       });
                     },
                     child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, decoration: TextDecoration.underline)),
@@ -1444,7 +1452,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   Widget _buildStep6() {
-    final hwCount = _hardwareItems.length;
+    final itemCount = _items.length;
     final expCount = _expenses.length;
     final expTotal = _expenses.fold<int>(0, (sum, e) {
       return sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0);
@@ -1459,13 +1467,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           _buildCustomerHistorySuggestions(),
         const SizedBox(height: 24),
         _buildExtrasCard(
-          icon: Icon(LineAwesomeIcons.lock_solid, size: 16, color: context.ksc.accent500),
-          title: "Hardware Items",
-          subtitle: "Locks, cylinders, remotes",
-          trailing: hwCount > 0
-              ? _extrasCountTrailing("$hwCount item${hwCount > 1 ? 's' : ''}")
+          icon: Icon(LineAwesomeIcons.box_solid, size: 16, color: context.ksc.accent500),
+          title: "Items Used",
+          subtitle: "Hardware, parts & supplies",
+          trailing: itemCount > 0
+              ? _extrasCountTrailing("$itemCount item${itemCount > 1 ? 's' : ''}")
               : _extrasEmptyTrailing(),
-          onTap: () => _showHardwareDrawer(),
+          onTap: () => _showItemsDrawer(),
         ),
         _buildExtrasCard(
           icon: Icon(LineAwesomeIcons.coins_solid, size: 16, color: context.ksc.accent500),
@@ -1475,15 +1483,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               ? _extrasCountTrailing("$expCount item${expCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(expTotal))
               : _extrasEmptyTrailing(),
           onTap: () => _showExpensesDrawer(),
-        ),
-        _buildExtrasCard(
-          icon: Icon(LineAwesomeIcons.clipboard_list_solid, size: 16, color: context.ksc.accent500),
-          title: "Parts Used",
-          subtitle: "Parts and supplies",
-          trailing: partCount > 0
-              ? _extrasCountTrailing("$partCount item${partCount > 1 ? 's' : ''}")
-              : _extrasEmptyTrailing(),
-          onTap: () => _showPartsDrawer(),
         ),
         _buildExtrasCard(
           icon: Icon(LineAwesomeIcons.camera_solid, size: 16, color: context.ksc.accent500),
@@ -3264,6 +3263,533 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       ),
                     ),
                   ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showItemsDrawer() {
+    final localItems = _items.map((i) => i.copy()).toList();
+    bool dirty = false;
+
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final count = localItems.length;
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("ITEMS USED",
+                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 2),
+                              Text(
+                                count > 0
+                                    ? "$count item${count > 1 ? 's' : ''}"
+                                    : "No items added",
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (dirty) {
+                              final ok = await _confirmDrawerClose(ctx);
+                              if (!ok) return;
+                            }
+                            if (ctx.mounted) Navigator.pop(ctx, false);
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          if (localItems.isNotEmpty) ...[
+                            ...localItems.asMap().entries.map((entry) {
+                              return _buildItemSummaryCard(
+                                item: entry.value,
+                                onTap: () {
+                                  _showItemEditDrawer(
+                                    item: entry.value,
+                                    existingIndex: entry.key,
+                                    onChanged: () {
+                                      dirty = true;
+                                      setSheetState(() {});
+                                    },
+                                  );
+                                },
+                                onRemove: () {
+                                  localItems.removeAt(entry.key);
+                                  entry.value.dispose();
+                                  dirty = true;
+                                  setSheetState(() {});
+                                },
+                              );
+                            }),
+                            const SizedBox(height: 16),
+                          ],
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                _showItemSearchDrawer(
+                                  localItems: localItems,
+                                  onChanged: () {
+                                    dirty = true;
+                                    setSheetState(() {});
+                                  },
+                                );
+                              },
+                              icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+                              label: Text("ADD ITEM", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _items
+                              ..clear()
+                              ..addAll(localItems);
+                          });
+                          Navigator.pop(ctx, true);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.ksc.accent500,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                        child: Text("DONE",
+                          style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    ).then((committed) {
+      if (committed != true) {
+        for (final i in localItems) {
+          i.dispose();
+        }
+      }
+    });
+  }
+
+  Widget _buildItemSummaryCard({
+    required _ItemRow item,
+    required VoidCallback onTap,
+    required VoidCallback onRemove,
+  }) {
+    final qty = int.tryParse(item.qtyController.text) ?? 1;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                item.isFromInventory ? LineAwesomeIcons.lock_solid : LineAwesomeIcons.box_solid,
+                size: 20,
+                color: context.ksc.accent500,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.displayName.toUpperCase(),
+                      style: AppTextStyles.body.copyWith(
+                        color: context.ksc.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Qty: $qty · ${item.isFromInventory ? "From inventory" : "Manual entry"}",
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.neutral500,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(LineAwesomeIcons.times_circle_solid, color: context.ksc.error500, size: 20),
+                onPressed: onRemove,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showItemEditDrawer({
+    required _ItemRow item,
+    required int? existingIndex,
+    required VoidCallback onChanged,
+  }) {
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            existingIndex != null ? "EDIT ITEM" : "NEW ITEM",
+                            style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx, false),
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (item.isFromInventory) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          Icon(LineAwesomeIcons.lock_solid, size: 24, color: context.ksc.accent500),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              item.displayName.toUpperCase(),
+                              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text("From inventory",
+                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10),
+                      ),
+                    ),
+                  ] else ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: _buildDarkField(
+                        label: "Item Name", hint: "e.g. Mortise screw",
+                        controller: item.nameController,
+                        maxLength: 100,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Text("QTY",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildDrawerQtyStepper(item.qtyController, () => setSheetState(() {})),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.ksc.accent500,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        ),
+                        child: Text(
+                          existingIndex != null ? "SAVE" : "ADD",
+                          style: AppTextStyles.label.copyWith(
+                            color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    ).then((result) {
+      if (result == true) {
+        onChanged();
+      } else if (existingIndex == null) {
+        item.dispose();
+      }
+    });
+  }
+
+  void _showItemSearchDrawer({
+    required List<_ItemRow> localItems,
+    required VoidCallback onChanged,
+  }) {
+    final allInv = ref.read(inventoryProvider).valueOrNull ?? [];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      builder: (ctx) {
+        final searchCtrl = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final query = searchCtrl.text.toLowerCase().trim();
+            final filtered = query.isEmpty
+                ? allInv
+                : allInv.where((i) =>
+                    i.name.toLowerCase().contains(query) ||
+                    (i.brand?.toLowerCase().contains(query) ?? false)
+                  ).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(width: 40, height: 4,
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text("SELECT ITEM",
+                          style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900))),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: context.ksc.primary900,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: context.ksc.primary700),
+                      ),
+                      child: TextField(
+                        controller: searchCtrl,
+                        onChanged: (_) => setSheetState(() {}),
+                        style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
+                        cursorColor: context.ksc.accent500,
+                        decoration: InputDecoration(
+                          hintText: "Search inventory...",
+                          hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
+                          prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral500, size: 18),
+                          suffixIcon: searchCtrl.text.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () { searchCtrl.clear(); setSheetState(() {}); },
+                                  child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 18),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.45),
+                      child: filtered.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: KsEmptyState(
+                                icon: LineAwesomeIcons.box_solid,
+                                title: "NO ITEMS FOUND",
+                                subtitle: "Add items to your inventory first",
+                              ),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => Divider(height: 1, color: context.ksc.primary700),
+                              itemBuilder: (_, i) {
+                                final invItem = filtered[i];
+                                final alreadyAdded = localItems.any((li) =>
+                                  li.inventoryItemId == invItem.id);
+                                return InkWell(
+                                  onTap: alreadyAdded ? null : () {
+                                    final row = _ItemRow();
+                                    row.inventoryItem = invItem;
+                                    row.inventoryItemId = invItem.id;
+                                    row.nameController.text = invItem.name;
+                                    localItems.add(row);
+                                    onChanged();
+                                    Navigator.pop(ctx);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          invItem.itemType == 'hardware'
+                                              ? LineAwesomeIcons.lock_solid
+                                              : LineAwesomeIcons.box_solid,
+                                          size: 16, color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(invItem.name.toUpperCase(),
+                                                style: AppTextStyles.body.copyWith(
+                                                  color: alreadyAdded ? context.ksc.neutral600 : context.ksc.white,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (invItem.brand != null || invItem.category != null)
+                                                Text(
+                                                  [invItem.brand, invItem.category].nonNulls.join(' · '),
+                                                  style: AppTextStyles.caption.copyWith(
+                                                    color: alreadyAdded ? context.ksc.neutral600 : context.ksc.neutral500,
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (alreadyAdded)
+                                          Icon(LineAwesomeIcons.check_circle_solid, size: 16, color: context.ksc.neutral600)
+                                        else
+                                          Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final row = _ItemRow();
+                        _showItemEditDrawer(
+                          item: row,
+                          existingIndex: null,
+                          onChanged: () {
+                            localItems.add(row);
+                            onChanged();
+                          },
+                        );
+                      },
+                      icon: Icon(LineAwesomeIcons.edit_solid, size: 14, color: context.ksc.neutral500),
+                      label: Text("Add Manual Entry",
+                        style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
