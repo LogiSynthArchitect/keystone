@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -150,6 +151,8 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   FocusNode? _amountFocusNode;
   String? _matchedCustomerName;
   String? _matchedCustomerId;
+  Timer? _phoneLookupDebounce;
+  String? _lastLookupPhone;
 
   final List<_PartRow> _parts = [];
   final List<_ServiceRow> _additionalServices = [];
@@ -199,6 +202,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
   @override
   void dispose() {
+    _phoneLookupDebounce?.cancel();
     _customerController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
@@ -230,7 +234,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     switch (_currentStep) {
       case 0: return _serviceType != null;
       case 1: return true;
-      case 2: return _customerController.text.trim().isNotEmpty && (hasCustomer || _phoneController.text.trim().isNotEmpty);
+      case 2:
+        if (_customerController.text.trim().isEmpty) return false;
+        if (hasCustomer) return true;
+        final phone = _phoneController.text.trim();
+        return phone.length == 10 && phone.startsWith('0');
       case 3: return true;
       case 4: return true;
       case 5: return true;
@@ -893,13 +901,18 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   void _onPhoneChanged(String value) {
+    _phoneLookupDebounce?.cancel();
     if (value.length == 10 && value.startsWith('0')) {
-      _lookupCustomer(value);
+      _lastLookupPhone = value;
+      _phoneLookupDebounce = Timer(const Duration(milliseconds: 300), () {
+        _lookupCustomer(value);
+      });
     } else {
       if (_matchedCustomerName != null) {
         setState(() {
           _matchedCustomerName = null;
           _matchedCustomerId = null;
+          _finalCustomerId = null;
         });
       }
     }
@@ -910,6 +923,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       final normalized = PhoneFormatter.normalize(phone);
       final repo = ref.read(customerRepositoryProvider);
       final customer = await repo.getCustomerByPhone(normalized);
+
+      // Stale check — a newer lookup has since been triggered
+      if (_lastLookupPhone != phone) return;
+
       if (customer != null && mounted) {
         final typedName = _customerController.text.trim().toLowerCase();
         final matchedName = customer.fullName.toLowerCase();
