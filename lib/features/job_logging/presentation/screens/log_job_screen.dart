@@ -1507,10 +1507,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         ),
         _buildExtrasCard(
           icon: Icon(LineAwesomeIcons.camera_solid, size: 16, color: context.ksc.accent500),
-          title: "Photos",
-          subtitle: "Before & after photos",
+          title: "Media",
+          subtitle: "Photos, videos & audio recordings",
           trailing: photoCount > 0
-              ? _extrasCountTrailing("$photoCount photo${photoCount > 1 ? 's' : ''}")
+              ? _extrasCountTrailing("$photoCount item${photoCount > 1 ? 's' : ''}")
               : _extrasEmptyTrailing(),
           onTap: () => _showPhotosDrawer(),
         ),
@@ -2057,9 +2057,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                     child: filtered.isEmpty
                         ? Padding(
                             padding: const EdgeInsets.all(32),
-                            child: Center(
-                              child: Text("No hardware items found",
-                                style: AppTextStyles.body.copyWith(color: context.ksc.neutral500)),
+                            child: KsEmptyState(
+                              icon: LineAwesomeIcons.lock_solid,
+                              title: "NO HARDWARE ITEMS",
+                              subtitle: "Add hardware items to your inventory first",
                             ),
                           )
                         : ListView.separated(
@@ -2806,7 +2807,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                         children: [
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton.icon(
+                            child: OutlinedButton.icon(
                               onPressed: () {
                                 _showInventoryPicker(
                                   onItemSelected: (hw) {
@@ -2816,12 +2817,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                   },
                                 );
                               },
-                              icon: Icon(LineAwesomeIcons.search_solid, size: 16, color: context.ksc.primary900),
+                              icon: Icon(LineAwesomeIcons.search_solid, size: 16, color: context.ksc.accent500),
                               label: Text("SELECT FROM INVENTORY",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.ksc.accent500,
-                                elevation: 0,
+                                style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                               ),
@@ -3156,13 +3156,13 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("PHOTOS",
+                              Text("MEDIA",
                                 style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
                               const SizedBox(height: 2),
                               Text(
                                 photoCount > 0
-                                    ? "$photoCount photo${photoCount > 1 ? 's' : ''}"
-                                    : "No photos added",
+                                    ? "$photoCount item${photoCount > 1 ? 's' : ''}"
+                                    : "No media added",
                                 style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
                               ),
                             ],
