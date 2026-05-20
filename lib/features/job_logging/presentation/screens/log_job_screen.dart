@@ -138,7 +138,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   String? _leadSource;
   bool _isRecurring = false;
   bool _serviceExpanded = true;
-  bool _additionalExpanded = true;
   String _recurringInterval = 'monthly';
 
   final _customerController     = TextEditingController();
@@ -643,9 +642,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     final mainServiceSummary = _serviceType != null
         ? _serviceType!.replaceAll('_', ' ').toUpperCase()
         : null;
-    final additionalSummary = _additionalServices.isNotEmpty
-        ? "${_additionalServices.length} service${_additionalServices.length > 1 ? 's' : ''}"
-        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,81 +661,69 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 48),
         Text("ADDITIONAL SERVICES (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text("Other services performed during this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        _buildExpandableSection(
-          collapsedSummary: additionalSummary,
-          expanded: _additionalExpanded,
-          onToggle: () => setState(() => _additionalExpanded = !_additionalExpanded),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_additionalServices.isEmpty)
-                  KsEmptyState(
-                    icon: LineAwesomeIcons.tools_solid,
-                    title: "NO ADDITIONAL SERVICES",
-                    subtitle: "Tap the button below to add services performed during this visit",
-                  )
-                else
-                  ..._additionalServices.asMap().entries.map((entry) {
-                    final svc = entry.value;
-                    final qty = int.tryParse(svc.qtyController.text) ?? 1;
-                    final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
-                    final total = qty * unitPrice;
-                    final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
-                    final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: InkWell(
-                        onTap: _showAdditionalServicesDrawer,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: context.ksc.primary800,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: context.ksc.primary700),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(ServiceIconMap.resolve(svcType?.iconName), size: 16, color: context.ksc.accent500),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
-                                  style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, fontSize: 10),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 10),
-                              ),
-                            ],
-                          ),
+        const SizedBox(height: 16),
+        if (_additionalServices.isEmpty)
+          KsEmptyState(
+            icon: LineAwesomeIcons.tools_solid,
+            title: "NO ADDITIONAL SERVICES",
+            subtitle: "Tap the button below to add services performed during this visit",
+          )
+        else
+          ..._additionalServices.asMap().entries.map((entry) {
+            final svc = entry.value;
+            final qty = int.tryParse(svc.qtyController.text) ?? 1;
+            final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
+            final total = qty * unitPrice;
+            final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
+            final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                onTap: _showAdditionalServicesDrawer,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: context.ksc.primary800,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: context.ksc.primary700),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(ServiceIconMap.resolve(svcType?.iconName), size: 16, color: context.ksc.accent500),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                          style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, fontSize: 10),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    );
-                  }),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _showAdditionalServicesDrawer,
-                    icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
-                    label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                    ),
+                      Text(
+                        total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 10),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
+            );
+          }),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _showAdditionalServicesDrawer,
+            icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+            label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
           ),
         ),
