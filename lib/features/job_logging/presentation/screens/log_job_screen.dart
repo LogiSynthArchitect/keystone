@@ -1280,85 +1280,77 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       'quarterly' => DateFormatter.short(_jobDate.add(const Duration(days: 90))),
       _ => '',
     };
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: _isRecurring ? context.ksc.accent500.withValues(alpha: 0.5) : context.ksc.primary700),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            onTap: () => setState(() => _isRecurring = !_isRecurring),
-            child: Row(
-              children: [
-                Icon(
-                  _isRecurring ? LineAwesomeIcons.calendar_check_solid : LineAwesomeIcons.calendar_solid,
-                  color: _isRecurring ? context.ksc.accent500 : context.ksc.neutral500,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text("REPEAT THIS JOB", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
-                          const SizedBox(width: 6),
-                          Tooltip(
-                            message: "Auto-generate follow-up jobs on a schedule.\n"
-                                "Weekly = every 7 days\n"
-                                "Monthly = every 30 days\n"
-                                "Quarterly = every 90 days\n\n"
-                                "Works only after a customer is selected.",
-                            preferBelow: false,
-                            child: Icon(LineAwesomeIcons.question_circle_solid, size: 14, color: context.ksc.neutral500),
-                          ),
-                        ],
-                      ),
-                      Text(_isRecurring ? "Next: $nextDueStr" : "Set up weekly / monthly / quarterly", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-                    ],
-                  ),
-                ),
-                Switch(
-                  value: _isRecurring,
-                  onChanged: (v) => setState(() => _isRecurring = v),
-                  activeColor: context.ksc.accent500,
-                ),
-              ],
-            ),
-          ),
-          if (_isRecurring) ...[
-            const SizedBox(height: 16),
-            Row(
-              children: intervals.map((opt) {
-                final isSelected = _recurringInterval == opt.$1;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _recurringInterval = opt.$1),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary700,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
-                      ),
-                      child: Text(opt.$2, style: AppTextStyles.caption.copyWith(
-                        color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
-                        fontWeight: FontWeight.w900,
-                      )),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _isRecurring = !_isRecurring),
+          child: Row(
+            children: [
+              Icon(
+                _isRecurring ? LineAwesomeIcons.calendar_check_solid : LineAwesomeIcons.calendar_solid,
+                color: _isRecurring ? context.ksc.accent500 : context.ksc.neutral500,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text("REPEAT THIS JOB", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
+                        const SizedBox(width: 6),
+                        Tooltip(
+                          message: "Auto-generate follow-up jobs on a schedule.\n"
+                              "Weekly = every 7 days\n"
+                              "Monthly = every 30 days\n"
+                              "Quarterly = every 90 days\n\n"
+                              "Works only after a customer is selected.",
+                          preferBelow: false,
+                          child: Icon(LineAwesomeIcons.question_circle_solid, size: 14, color: context.ksc.neutral500),
+                        ),
+                      ],
                     ),
+                    Text(_isRecurring ? "Next: $nextDueStr" : "Set up weekly / monthly / quarterly", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _isRecurring,
+                onChanged: (v) => setState(() => _isRecurring = v),
+                activeColor: context.ksc.accent500,
+              ),
+            ],
+          ),
+        ),
+        if (_isRecurring) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: intervals.map((opt) {
+              final isSelected = _recurringInterval == opt.$1;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => setState(() => _recurringInterval = opt.$1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary700,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
+                    ),
+                    child: Text(opt.$2, style: AppTextStyles.caption.copyWith(
+                      color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
+                      fontWeight: FontWeight.w900,
+                    )),
                   ),
-                );
-              }).toList(),
-            ),
-          ],
+                ),
+              );
+            }).toList(),
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -1447,23 +1439,27 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
         _buildRecurringToggle(),
         const SizedBox(height: 48),
         Text("DATE & LOCATION", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 32),
+        const SizedBox(height: 8),
+        Text("When and where this job took place", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+        const SizedBox(height: 24),
         InkWell(
           onTap: () async {
             final picked = await showDatePicker(context: context, initialDate: _jobDate, firstDate: DateTime(2024), lastDate: DateTime.now());
             if (picked != null) setState(() => _jobDate = picked);
           },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
-            child: Row(children: [
+          child: Row(
+            children: [
               Icon(LineAwesomeIcons.calendar, size: 20, color: context.ksc.accent500),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold)),
-            ]),
+            ],
           ),
         ),
-        const SizedBox(height: 24),
+        const Padding(
+          padding: EdgeInsets.only(left: 34, top: 4),
+          child: Divider(height: 1, color: Color(0xFF2A3A4A)),
+        ),
+        const SizedBox(height: 32),
         _buildDarkField(label: "Location", hint: "East Legon, Accra", controller: _locationController, maxLength: 255),
       ],
     );
