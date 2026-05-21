@@ -5,7 +5,6 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -23,17 +22,15 @@ class PricingScreen extends ConsumerStatefulWidget {
 class _PricingScreenState extends ConsumerState<PricingScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
-  final Set<String> _expandedCategories = {};
+  String _activeCategory = 'All';
+  static const _allCategories = ['All', 'Residential', 'Automotive', 'Commercial', 'Security Systems', 'Specialty'];
 
-  @override
-  void initState() {
-    super.initState();
-    final types = ref.read(serviceTypeProvider).valueOrNull;
-    if (types != null) {
-      final categories = types.map((t) => t.category).toSet();
-      _expandedCategories.addAll(categories);
-    }
-  }
+  // Services considered "premium" (higher price indicator)
+  static const _premiumServices = {
+    'Master Key Systems', 'Safe Opening', 'Gate Automation',
+    'High-Security Locks', 'Access Control', 'Smart Lock Install',
+    'Transponder Key Programming', 'CCTV Installation', 'Electric Fence Installation',
+  };
 
   @override
   void dispose() {
@@ -50,21 +47,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
       appBar: KsAppBar(
         title: "SERVICE PRICING",
         showBack: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(72),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-            child: KsSearchBar(
-              hint: "Search services...",
-              controller: _searchController,
-              onChanged: (v) => setState(() => _searchQuery = v),
-              onClear: () {
-                _searchController.clear();
-                setState(() => _searchQuery = '');
-              },
-            ),
-          ),
-        ),
       ),
       body: state.when(
         loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
@@ -93,24 +75,100 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         ? types
         : types.where((t) => t.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
+    final categoryFiltered = _activeCategory == 'All'
+        ? filtered
+        : filtered.where((t) => t.category == _activeCategory).toList();
+
     final grouped = <String, List<ServiceTypeEntity>>{};
-    for (final type in filtered) {
+    for (final type in categoryFiltered) {
       grouped.putIfAbsent(type.category, () => []).add(type);
     }
     final categories = grouped.keys.toList()..sort();
 
     return Column(
       children: [
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF060607),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.ksc.primary700),
+            ),
+            child: TextField(
+              controller: _searchController,
+              style: TextStyle(color: context.ksc.white, fontSize: 14, fontWeight: FontWeight.w300),
+              cursorColor: context.ksc.accent500,
+              decoration: InputDecoration(
+                hintText: 'Search services...',
+                hintStyle: TextStyle(color: context.ksc.neutral600, fontSize: 14, fontWeight: FontWeight.w300),
+                prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral600, size: 16),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral600, size: 14),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            ),
+          ),
+        ),
+        // Filter chips
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            children: _allCategories.map((cat) {
+              final isActive = _activeCategory == cat;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => setState(() => _activeCategory = cat),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? context.ksc.accent500.withValues(alpha: 0.15)
+                          : context.ksc.primary800,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isActive ? context.ksc.accent500 : context.ksc.primary700,
+                      ),
+                    ),
+                    child: Text(
+                      cat.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                        color: isActive ? context.ksc.accent500 : context.ksc.neutral500,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
         const KsOfflineBanner(),
+        // List
         Expanded(
-          child: filtered.isEmpty
+          child: categoryFiltered.isEmpty
               ? KsEmptyState(
                   icon: _searchQuery.isEmpty ? LineAwesomeIcons.tags_solid : LineAwesomeIcons.search_minus_solid,
                   title: _searchQuery.isEmpty ? "NO SERVICES CONFIGURED" : "NO MATCHES",
                   subtitle: _searchQuery.isEmpty ? "Add service types to get started." : null,
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
                   itemCount: categories.length,
                   itemBuilder: (context, ci) => _buildCategorySection(categories[ci], grouped[categories[ci]]!),
                 ),
@@ -120,101 +178,122 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   }
 
   Widget _buildCategorySection(String category, List<ServiceTypeEntity> services) {
-    final isExpanded = _expandedCategories.contains(category);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isExpanded) {
-                _expandedCategories.remove(category);
-              } else {
-                _expandedCategories.add(category);
-              }
-            });
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: context.ksc.primary800,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              children: [
-                Icon(isExpanded ? LineAwesomeIcons.angle_down_solid : LineAwesomeIcons.angle_right_solid, color: context.ksc.accent500, size: 14),
-                const SizedBox(width: 8),
-                Text(
-                  category.toUpperCase(),
-                  style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+        const SizedBox(height: 12),
+        // Category header (gold, uppercase, always expanded)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            children: [
+              Text(
+                category.toUpperCase(),
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.accent500,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.5,
+                  fontSize: 11,
                 ),
-                const Spacer(),
-                Text(
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: context.ksc.primary800,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
                   "${services.length}",
-                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 10, color: context.ksc.neutral500, fontWeight: FontWeight.w600),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        if (isExpanded) ...[
-          const SizedBox(height: 4),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.25,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: services.length,
-            itemBuilder: (context, index) => _buildServiceCard(services[index]),
-          ),
-        ],
+        // Service items as list
+        ...services.map((service) => _buildServiceRow(service)),
       ],
     );
   }
 
-  Widget _buildServiceCard(ServiceTypeEntity service) {
+  Widget _buildServiceRow(ServiceTypeEntity service) {
+    final isPremium = _premiumServices.contains(service.name);
+    final hasPrice = service.defaultPrice != null;
+
     return GestureDetector(
       onTap: () => _openPriceSheet(service),
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         decoration: BoxDecoration(
-          color: context.ksc.primary800.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: context.ksc.primary700.withValues(alpha: 0.5)),
+          border: Border(
+            bottom: BorderSide(color: context.ksc.primary800, width: 1),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            Icon(
-              getLineAwesomeIcon(service.iconName),
-              color: context.ksc.accent500,
-              size: 28,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              service.name,
-              style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700, fontSize: 11),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              service.defaultPrice != null
-                  ? 'GHS ${(service.defaultPrice! / 100.0).toStringAsFixed(2)}'
-                  : '\u2014',
-              style: AppTextStyles.body.copyWith(
-                color: service.defaultPrice != null ? context.ksc.accent500 : context.ksc.neutral500,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
+            // Icon box
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: context.ksc.primary800,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isPremium ? context.ksc.accent500 : context.ksc.primary700,
+                  width: isPremium ? 1 : 1,
+                ),
               ),
+              child: Icon(
+                getLineAwesomeIcon(service.iconName),
+                color: isPremium ? context.ksc.accent500 : context.ksc.neutral400,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Name + category tag
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isPremium ? FontWeight.w500 : FontWeight.w300,
+                      color: context.ksc.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (isPremium)
+                    Text(
+                      'PREMIUM',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                        color: context.ksc.accent500,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Price
+            Text(
+              hasPrice ? 'GHS ${(service.defaultPrice! / 100.0).toStringAsFixed(0)}' : '\u2014',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: hasPrice ? context.ksc.accent500 : context.ksc.neutral600,
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Edit icon
+            Icon(
+              LineAwesomeIcons.pen_alt_solid,
+              size: 12,
+              color: context.ksc.neutral600,
             ),
           ],
         ),
