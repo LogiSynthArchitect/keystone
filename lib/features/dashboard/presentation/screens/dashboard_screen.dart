@@ -35,8 +35,13 @@ import '../../../job_logging/data/datasources/job_expenses_local_datasource.dart
 import '../../../job_logging/data/datasources/job_audit_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_photos_local_datasource.dart';
 import '../../../customer_history/data/datasources/customer_local_datasource.dart';
-import '../../../technician_profile/presentation/providers/profile_provider.dart';
+import '../../../customer_history/presentation/providers/customer_providers.dart';
+import '../../../inventory/presentation/providers/inventory_providers.dart';
+import '../../../knowledge_base/presentation/providers/notes_providers.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
+import '../../../recurring_jobs/presentation/providers/recurring_schedule_provider.dart';
+import '../../../job_templates/presentation/providers/job_template_provider.dart';
+import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../../../reminders/domain/models/reminder_model.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -97,16 +102,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final exists = await service.hasDemoData();
       if (exists) {
         await service.remove();
-        if (mounted) {
-          KsSnackbar.show(context, message: 'Demo data removed', type: KsSnackbarType.success);
-          ref.read(jobListProvider.notifier).load();
-        }
       } else {
         await service.seed();
-        if (mounted) {
-          KsSnackbar.show(context, message: 'Demo data seeded — 8 customers, 12 jobs, inventory, notes, & more', type: KsSnackbarType.success);
-          ref.read(jobListProvider.notifier).load();
-        }
+      }
+      if (mounted) {
+        // Invalidate ALL providers to refresh UI from Hive
+        ref.invalidate(jobListProvider);
+        ref.invalidate(customerListProvider);
+        ref.invalidate(inventoryProvider);
+        ref.invalidate(notesListProvider);
+        ref.invalidate(remindersProvider);
+        ref.invalidate(recurringScheduleProvider);
+        ref.invalidate(jobTemplateProvider);
+        KsSnackbar.show(
+          context,
+          message: exists ? 'Demo data removed' : 'Demo data seeded — 8 customers, 12 jobs, inventory, notes, & more',
+          type: KsSnackbarType.success,
+        );
       }
     } catch (e) {
       if (mounted) {
