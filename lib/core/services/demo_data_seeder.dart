@@ -36,6 +36,8 @@ import 'package:keystone/features/recurring_jobs/data/datasources/recurring_sche
 import 'package:keystone/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
 import 'package:keystone/features/job_templates/data/datasources/job_template_local_datasource.dart';
 import 'package:keystone/features/job_templates/data/models/job_template_model.dart';
+import 'package:keystone/features/service_types/data/datasources/service_type_local_datasource.dart';
+import 'package:keystone/features/service_types/data/models/service_type_model.dart';
 
 class DemoDataSeeder {
   final CustomerLocalDatasource _customerLocal;
@@ -55,6 +57,7 @@ class DemoDataSeeder {
   final KeyCodeLocalDatasource _keyCodeLocal;
   final RecurringScheduleLocalDatasource _recurringScheduleLocal;
   final JobTemplateLocalDatasource _jobTemplateLocal;
+  final ServiceTypeLocalDatasource _serviceTypeLocal;
 
   final String _userId;
 
@@ -84,6 +87,7 @@ class DemoDataSeeder {
     required KeyCodeLocalDatasource keyCodeLocal,
     required RecurringScheduleLocalDatasource recurringScheduleLocal,
     required JobTemplateLocalDatasource jobTemplateLocal,
+    required ServiceTypeLocalDatasource serviceTypeLocal,
     required String userId,
   })  : _customerLocal = customerLocal,
         _jobLocal = jobLocal,
@@ -101,8 +105,9 @@ class DemoDataSeeder {
         _followUpLocal = followUpLocal,
         _keyCodeLocal = keyCodeLocal,
         _recurringScheduleLocal = recurringScheduleLocal,
-        _jobTemplateLocal = jobTemplateLocal,
-        _userId = userId;
+       _jobTemplateLocal = jobTemplateLocal,
+       _serviceTypeLocal = serviceTypeLocal,
+       _userId = userId;
 
   static const _demoCustomerIds = [
     'demo_customer_001',
@@ -726,7 +731,58 @@ class DemoDataSeeder {
     }
     debugPrint('[KS:DEMO] Created 2 job templates');
 
+    // ── Service Type Pricing (set default prices on existing types) ──
+    await _seedServiceTypePricing();
+    debugPrint('[KS:DEMO] Service type pricing updated');
+
     debugPrint('[KS:DEMO] Demo data seeding complete');
+  }
+
+  Future<void> _seedServiceTypePricing() async {
+    // Map service type names to default prices in pesewas (GHS × 100)
+    const defaultPrices = {
+      'deadbolt_replacement': 15000,   // GHS 150
+      'car_key_programming':   25000,   // GHS 250
+      'smart_lock_installation': 25000, // GHS 250
+      'door_lock_installation': 15000,  // GHS 150
+      'door_lock_repair':     8000,     // GHS 80
+      'lockout_assistance':   6500,     // GHS 65
+      'safe_opening':         35000,    // GHS 350
+      'master_key_system':    50000,    // GHS 500
+      'cabinet_locks':        12000,    // GHS 120
+      'gate_automation':      45000,    // GHS 450
+      'window_lock_repair':   6000,     // GHS 60
+      'key_duplication':      1500,     // GHS 15
+      'lock_rekeying':        8000,     // GHS 80
+      'gate_remote_programming': 12000, // GHS 120
+      'emergency_lockout':    8000,     // GHS 80
+      'master_key_blank':     3000,     // GHS 30
+      'lock_lubrication':     4500,     // GHS 45
+      'remote_battery':        800,     // GHS 8
+    };
+
+    try {
+      final types = await _serviceTypeLocal.getServiceTypes();
+      for (final type in types) {
+        final price = defaultPrices[type.name];
+        if (price != null && type.defaultPrice == null) {
+          final updated = ServiceTypeModel(
+            id: type.id,
+            userId: type.userId,
+            name: type.name,
+            isDefault: type.isDefault,
+            category: type.category,
+            iconName: type.iconName,
+            defaultPrice: price,
+            createdAt: type.createdAt,
+            updatedAt: DateTime.now().toIso8601String(),
+          );
+          await _serviceTypeLocal.saveServiceType(updated);
+        }
+      }
+    } catch (e) {
+      debugPrint('[KS:DEMO] Failed to seed service type prices: $e');
+    }
   }
 
   Future<void> remove() async {

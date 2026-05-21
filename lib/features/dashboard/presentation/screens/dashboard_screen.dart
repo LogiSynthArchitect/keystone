@@ -22,6 +22,7 @@ import '../../../whatsapp_followup/data/datasources/follow_up_local_datasource.d
 import '../../../key_codes/data/datasources/key_code_local_datasource.dart';
 import '../../../recurring_jobs/data/datasources/recurring_schedule_local_datasource.dart';
 import '../../../job_templates/data/datasources/job_template_local_datasource.dart';
+import '../../../service_types/data/datasources/service_type_local_datasource.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -96,6 +97,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       keyCodeLocal: KeyCodeLocalDatasource(),
       recurringScheduleLocal: RecurringScheduleLocalDatasource(),
       jobTemplateLocal: JobTemplateLocalDatasource(),
+      serviceTypeLocal: ServiceTypeLocalDatasource(),
       userId: userId,
     );
 
