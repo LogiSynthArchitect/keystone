@@ -741,24 +741,45 @@ class DemoDataSeeder {
   Future<void> _seedServiceTypePricing() async {
     // Map service type names to default prices in pesewas (GHS × 100)
     const defaultPrices = {
-      'deadbolt_replacement': 15000,   // GHS 150
-      'car_key_programming':   25000,   // GHS 250
-      'smart_lock_installation': 25000, // GHS 250
-      'door_lock_installation': 15000,  // GHS 150
-      'door_lock_repair':     8000,     // GHS 80
-      'lockout_assistance':   6500,     // GHS 65
-      'safe_opening':         35000,    // GHS 350
-      'master_key_system':    50000,    // GHS 500
-      'cabinet_locks':        12000,    // GHS 120
-      'gate_automation':      45000,    // GHS 450
-      'window_lock_repair':   6000,     // GHS 60
-      'key_duplication':      1500,     // GHS 15
-      'lock_rekeying':        8000,     // GHS 80
-      'gate_remote_programming': 12000, // GHS 120
-      'emergency_lockout':    8000,     // GHS 80
-      'master_key_blank':     3000,     // GHS 30
-      'lock_lubrication':     4500,     // GHS 45
-      'remote_battery':        800,     // GHS 8
+      'Car Key Replacement':        25000,
+      'Transponder Key Programming': 25000,
+      'Car Lockout':                6500,
+      'Trunk/Boot Unlock':          5000,
+      'Key Fob Programming':        20000,
+      'Ignition Repair':            15000,
+      'Broken Key Extraction':      12000,
+      'Motorcycle Keys':            15000,
+      'House Lockout':              6500,
+      'Lock Installation':          15000,
+      'Lock Rekeying':              8000,
+      'Lock Repair':                8000,
+      'Key Duplication':            1500,
+      'Smart Lock Install':         25000,
+      'Garage Door Locks':          12000,
+      'Padlock Sales/Installation': 8000,
+      'Mailbox Locks':              6000,
+      'Window Locks':               6000,
+      'Commercial Lockout':         8000,
+      'Master Key Systems':         50000,
+      'Panic Bar Installation':     25000,
+      'Door Closer Install':        15000,
+      'Electric Strike Installation': 18000,
+      'High-Security Locks':        35000,
+      'File Cabinet Locks':         8000,
+      'Storefront Locks':           12000,
+      'CCTV Installation':          25000,
+      'Video Doorbell Installation': 15000,
+      'Access Control':             30000,
+      'Burglar Alarms':             20000,
+      'Intercom Systems':           25000,
+      'Electric Gate Motor Repair': 20000,
+      'Electric Fence Installation': 35000,
+      'Rolling Shutter Repair':      15000,
+      'Key Cutting':                1000,
+      'Safe Opening':               35000,
+      'Safe Installation':          25000,
+      'Gate Automation':            45000,
+      'Eviction Services':          30000,
     };
 
     try {
