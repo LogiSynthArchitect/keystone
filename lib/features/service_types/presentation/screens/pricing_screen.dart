@@ -6,6 +6,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
+import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/icon_helpers.dart';
@@ -26,6 +27,18 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   static const _allCategories = ['All', 'Residential', 'Automotive', 'Commercial', 'Security Systems', 'Specialty'];
 
   // Services considered "premium" (higher price indicator)
+  static String _categoryEmoji(String category) {
+    switch (category) {
+      case 'All': return '📍';
+      case 'Residential': return '🏠';
+      case 'Automotive': return '🚗';
+      case 'Commercial': return '🏢';
+      case 'Security Systems': return '📡';
+      case 'Specialty': return '⚡';
+      default: return '📋';
+    }
+  }
+
   static const _premiumServices = {
     'Master Key Systems', 'Safe Opening', 'Gate Automation',
     'High-Security Locks', 'Access Control', 'Smart Lock Install',
@@ -88,69 +101,77 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     return Column(
       children: [
         // Search bar
+        // Search bar — uses shared KsSearchBar component
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Container(
-            decoration: BoxDecoration(
-              color: context.ksc.primary900,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: context.ksc.primary700),
-            ),
-            child: TextField(
-              controller: _searchController,
-              style: TextStyle(color: context.ksc.white, fontSize: 14, fontWeight: FontWeight.w300),
-              cursorColor: context.ksc.accent500,
-              decoration: InputDecoration(
-                hintText: 'Search services...',
-                hintStyle: TextStyle(color: context.ksc.neutral600, fontSize: 14, fontWeight: FontWeight.w300),
-                prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral600, size: 16),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral600, size: 14),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-              onChanged: (v) => setState(() => _searchQuery = v),
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: KsSearchBar(
+            hint: 'Search ${types.length} services...',
+            controller: _searchController,
+            onChanged: (v) => setState(() => _searchQuery = v),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+            },
           ),
         ),
-        // Filter chips
+        // Compact filter chips with counts
         SizedBox(
-          height: 44,
+          height: 40,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             children: _allCategories.map((cat) {
               final isActive = _activeCategory == cat;
+              final count = cat == 'All' ? types.length : types.where((t) => t.category == cat).length;
+              final emoji = _categoryEmoji(cat);
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: GestureDetector(
                   onTap: () => setState(() => _activeCategory = cat),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? context.ksc.accent500.withValues(alpha: 0.15)
+                          ? context.ksc.accent500.withValues(alpha: 0.12)
                           : context.ksc.primary800,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: isActive ? context.ksc.accent500 : context.ksc.primary700,
                       ),
                     ),
-                    child: Text(
-                      cat.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
-                        color: isActive ? context.ksc.accent500 : context.ksc.neutral500,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 11)),
+                        const SizedBox(width: 4),
+                        Text(
+                          cat == 'All' ? 'ALL' : cat.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                            letterSpacing: 0.8,
+                            color: isActive ? context.ksc.accent500 : context.ksc.neutral500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? context.ksc.accent500.withValues(alpha: 0.2)
+                                : context.ksc.primary900,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: isActive ? context.ksc.accent500 : context.ksc.neutral600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

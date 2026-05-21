@@ -60,6 +60,9 @@ class _KsSearchBarState extends State<KsSearchBar> {
         color: context.ksc.primary800,
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: borderColor, width: borderWidth),
+        boxShadow: _isFocused
+            ? [BoxShadow(color: context.ksc.accent500.withValues(alpha: 0.12), blurRadius: 8, spreadRadius: 0)]
+            : null,
       ),
       child: TextField(
         controller: widget.controller,
