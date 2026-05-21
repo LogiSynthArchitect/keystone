@@ -7,6 +7,7 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/icon_helpers.dart';
@@ -24,6 +25,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _activeCategory = 'All';
+  bool _searchOpen = false;
   static const _allCategories = ['All', 'Residential', 'Automotive', 'Commercial', 'Security Systems', 'Specialty'];
 
   // Services considered "premium" (higher price indicator)
@@ -55,51 +57,14 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(serviceTypeProvider);
 
-    Widget? searchPanel;
-    if (state.valueOrNull != null) {
-      final types = state.valueOrNull!;
-      searchPanel = Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            KsSearchBar(
-              hint: 'Search ${types.length} services...',
-              controller: _searchController,
-              onChanged: (v) => setState(() => _searchQuery = v),
-              onClear: () {
-                _searchController.clear();
-                setState(() => _searchQuery = '');
-              },
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 32,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _categoryChips(types),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "SERVICE PRICING",
         showBack: true,
         searchable: true,
-        searchHint: 'Search...',
-        searchController: _searchController,
-        onSearchChanged: (v) => setState(() => _searchQuery = v),
-        onSearchClear: () {
-          _searchController.clear();
-          setState(() => _searchQuery = '');
-        },
-        searchPanel: searchPanel,
+        isSearchOpen: _searchOpen,
+        onSearchToggle: () => setState(() => _searchOpen = !_searchOpen),
       ),
       body: state.when(
         loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
@@ -118,7 +83,43 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
             ],
           ),
         ),
-        data: (types) => _buildBody(types),
+        data: (types) {
+          // Search content that slides in/out
+          final searchContent = Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: KsSearchBar(
+              hint: 'Search ${types.length} services...',
+              controller: _searchController,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+            ),
+          );
+
+          return Column(
+            children: [
+              // Filter chips — always visible, permanent header
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  children: _categoryChips(types),
+                ),
+              ),
+              // Search panel (animated) + list body
+              Expanded(
+                child: SearchPanelBody(
+                  isOpen: _searchOpen,
+                  searchContent: searchContent,
+                  child: _buildBody(types),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -191,20 +192,21 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     return Column(
       children: [
         const KsOfflineBanner(),
-        // List
-        Expanded(
-          child: categoryFiltered.isEmpty
-              ? KsEmptyState(
+        categoryFiltered.isEmpty
+            ? Expanded(
+                child: KsEmptyState(
                   icon: _searchQuery.isEmpty ? LineAwesomeIcons.tags_solid : LineAwesomeIcons.search_minus_solid,
                   title: _searchQuery.isEmpty ? "NO SERVICES CONFIGURED" : "NO MATCHES",
                   subtitle: _searchQuery.isEmpty ? "Add service types to get started." : null,
-                )
-              : ListView.builder(
+                ),
+              )
+            : Expanded(
+                child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                   itemCount: categories.length,
                   itemBuilder: (context, ci) => _buildCategorySection(categories[ci], grouped[categories[ci]]!),
                 ),
-        ),
+              ),
       ],
     );
   }

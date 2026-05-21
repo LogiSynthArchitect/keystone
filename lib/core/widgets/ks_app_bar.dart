@@ -5,7 +5,7 @@ import '../theme/app_text_styles.dart';
 import '../theme/ks_colors.dart';
 import '../providers/sync_status_provider.dart';
 
-class KsAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final Widget? titleWidget;
   final List<Widget>? actions;
@@ -13,11 +13,8 @@ class KsAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onBack;
   final Widget? bottom;
   final bool searchable;
-  final String searchHint;
-  final Widget? searchPanel;
-  final TextEditingController? searchController;
-  final ValueChanged<String>? onSearchChanged;
-  final VoidCallback? onSearchClear;
+  final bool isSearchOpen;
+  final VoidCallback? onSearchToggle;
 
   const KsAppBar({
     super.key,
@@ -28,73 +25,23 @@ class KsAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
     this.onBack,
     this.bottom,
     this.searchable = false,
-    this.searchHint = 'SEARCH...',
-    this.searchPanel,
-    this.searchController,
-    this.onSearchChanged,
-    this.onSearchClear,
+    this.isSearchOpen = false,
+    this.onSearchToggle,
   });
 
   @override
-  ConsumerState<KsAppBar> createState() => _KsAppBarState();
-
-  @override
-  Size get preferredSize {
-    double h = 56;
-    if (bottom != null) h += 48;
-    return Size.fromHeight(h);
-  }
-}
-
-class _KsAppBarState extends ConsumerState<KsAppBar> with SingleTickerProviderStateMixin {
-  bool _searchOpen = false;
-  late AnimationController _slideCtrl;
-  late Animation<double> _slideAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _slideCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _slideAnim = CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut);
-  }
-
-  @override
-  void dispose() {
-    _slideCtrl.dispose();
-    super.dispose();
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _searchOpen = !_searchOpen;
-      if (_searchOpen) {
-        _slideCtrl.forward();
-      } else {
-        _slideCtrl.reverse();
-        widget.searchController?.clear();
-        widget.onSearchClear?.call();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final pendingCount = ref.watch(syncStatusProvider);
-    final hasSearchIcon = widget.searchable || widget.onSearchChanged != null;
 
-    // Build search button as an action
     final actionWidgets = <Widget>[
-      if (hasSearchIcon)
+      if (searchable)
         IconButton(
           icon: Icon(
-            _searchOpen ? LineAwesomeIcons.times_solid : LineAwesomeIcons.search_solid,
-            color: _searchOpen ? context.ksc.accent500 : context.ksc.neutral500,
+            isSearchOpen ? LineAwesomeIcons.times_solid : LineAwesomeIcons.search_solid,
+            color: isSearchOpen ? context.ksc.accent500 : context.ksc.neutral500,
             size: 20,
           ),
-          onPressed: _toggleSearch,
+          onPressed: onSearchToggle,
         ),
       if (pendingCount > 0)
         Center(
@@ -124,7 +71,7 @@ class _KsAppBarState extends ConsumerState<KsAppBar> with SingleTickerProviderSt
             ),
           ),
         ),
-      ...?widget.actions,
+      ...?actions,
     ];
 
     return AppBar(
@@ -133,34 +80,30 @@ class _KsAppBarState extends ConsumerState<KsAppBar> with SingleTickerProviderSt
       elevation: 0,
       scrolledUnderElevation: 0.5,
       centerTitle: false,
-      title: widget.titleWidget ?? Text(
-        widget.title,
+      title: titleWidget ?? Text(
+        title,
         style: AppTextStyles.h3.copyWith(
           color: context.ksc.white,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.2,
         ),
       ),
-      leading: widget.showBack
+      leading: showBack
           ? IconButton(
               icon: const Icon(LineAwesomeIcons.angle_left_solid, size: 22),
-              onPressed: widget.onBack ?? () => Navigator.of(context).maybePop(),
+              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           : null,
-      automaticallyImplyLeading: widget.showBack,
+      automaticallyImplyLeading: showBack,
       actions: actionWidgets,
-      bottom: _searchOpen && widget.searchPanel != null
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: SizeTransition(
-                sizeFactor: _slideAnim,
-                axisAlignment: -1,
-                child: widget.searchPanel!,
-              ),
-            )
-          : widget.bottom != null
-              ? PreferredSize(preferredSize: const Size.fromHeight(48), child: widget.bottom!)
-              : null,
+      bottom: bottom != null ? PreferredSize(preferredSize: const Size.fromHeight(48), child: bottom!) : null,
     );
+  }
+
+  @override
+  Size get preferredSize {
+    double h = 56;
+    if (bottom != null) h += 48;
+    return Size.fromHeight(h);
   }
 }
