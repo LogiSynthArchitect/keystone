@@ -55,11 +55,51 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(serviceTypeProvider);
 
+    Widget? searchPanel;
+    if (state.valueOrNull != null) {
+      final types = state.valueOrNull!;
+      searchPanel = Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            KsSearchBar(
+              hint: 'Search ${types.length} services...',
+              controller: _searchController,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 32,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: _categoryChips(types),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: "SERVICE PRICING",
         showBack: true,
+        searchable: true,
+        searchHint: 'Search...',
+        searchController: _searchController,
+        onSearchChanged: (v) => setState(() => _searchQuery = v),
+        onSearchClear: () {
+          _searchController.clear();
+          setState(() => _searchQuery = '');
+        },
+        searchPanel: searchPanel,
       ),
       body: state.when(
         loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
@@ -83,6 +123,56 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     );
   }
 
+  List<Widget> _categoryChips(List<ServiceTypeEntity> types) {
+    return _allCategories.map((cat) {
+      final isActive = _activeCategory == cat;
+      final count = cat == 'All' ? types.length : types.where((t) => t.category == cat).length;
+      final emoji = _categoryEmoji(cat);
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: GestureDetector(
+          onTap: () => setState(() => _activeCategory = cat),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: isActive ? context.ksc.accent500.withValues(alpha: 0.12) : context.ksc.primary800,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 11)),
+                const SizedBox(width: 4),
+                Text(
+                  cat == 'All' ? 'ALL' : cat.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                    letterSpacing: 0.8,
+                    color: isActive ? context.ksc.accent500 : context.ksc.neutral500,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: isActive ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isActive ? context.ksc.accent500 : context.ksc.neutral600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   Widget _buildBody(List<ServiceTypeEntity> types) {
     final filtered = _searchQuery.isEmpty
         ? types
@@ -100,78 +190,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
     return Column(
       children: [
-        // Search
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: KsSearchBar(
-            hint: 'Search ${types.length} services...',
-            controller: _searchController,
-            onChanged: (v) => setState(() => _searchQuery = v),
-            onClear: () {
-              _searchController.clear();
-              setState(() => _searchQuery = '');
-            },
-          ),
-        ),
-        // Filter chips
-        SizedBox(
-          height: 36,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: _allCategories.map((cat) {
-              final isActive = _activeCategory == cat;
-              final count = cat == 'All' ? types.length : types.where((t) => t.category == cat).length;
-              final emoji = _categoryEmoji(cat);
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: GestureDetector(
-                  onTap: () => setState(() => _activeCategory = cat),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? context.ksc.accent500.withValues(alpha: 0.12)
-                          : context.ksc.primary800,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: isActive ? context.ksc.accent500 : context.ksc.primary700,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(emoji, style: const TextStyle(fontSize: 11)),
-                        const SizedBox(width: 4),
-                        Text(
-                          cat == 'All' ? 'ALL' : cat.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                            letterSpacing: 0.8,
-                            color: isActive ? context.ksc.accent500 : context.ksc.neutral500,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: isActive ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Text(
-                            '$count',
-                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isActive ? context.ksc.accent500 : context.ksc.neutral600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
         const KsOfflineBanner(),
         // List
         Expanded(
