@@ -40,6 +40,7 @@ import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../../knowledge_base/presentation/providers/notes_providers.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../../../recurring_jobs/presentation/providers/recurring_schedule_provider.dart';
+import '../../../service_types/presentation/providers/service_type_provider.dart';
 import '../../../job_templates/presentation/providers/job_template_provider.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../../../reminders/domain/models/reminder_model.dart';
@@ -114,6 +115,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.invalidate(remindersProvider);
         ref.invalidate(recurringScheduleProvider);
         ref.invalidate(jobTemplateProvider);
+        ref.invalidate(serviceTypeProvider);
         KsSnackbar.show(
           context,
           message: exists ? 'Demo data removed' : 'Demo data seeded — 8 customers, 12 jobs, inventory, notes, & more',
