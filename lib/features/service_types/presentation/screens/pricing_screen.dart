@@ -307,11 +307,14 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           ? (service.defaultPrice! / 100.0).toStringAsFixed(2)
           : '',
     );
+    // Common price presets in GHS
+    const pricePresets = [50, 80, 100, 150, 200, 250, 350, 500];
+    int? selectedPreset;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
+      backgroundColor: const Color(0xFF161618),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -325,153 +328,210 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                      // Drag handle
-                      Container(
-                        width: 40, height: 4,
-                        decoration: BoxDecoration(
-                          color: context.ksc.neutral600,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
+                    // Drag handle
+                    Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                        color: context.ksc.neutral600,
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                    const SizedBox(height: 16),
 
-                      // Header
-                      Text(
-                        'SET PRICE',
-                        style: AppTextStyles.h2.copyWith(
-                          color: context.ksc.accent500,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Icon circle
-                      Container(
-                        width: 64, height: 64,
-                        decoration: BoxDecoration(
-                          color: context.ksc.primary900,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: context.ksc.accent500, width: 2),
-                        ),
-                        child: Icon(
-                          getLineAwesomeIcon(service.iconName),
-                          color: context.ksc.accent500,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Service name
-                      Text(
-                        service.name.toUpperCase(),
-                        style: AppTextStyles.h3.copyWith(
-                          color: context.ksc.white,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Category badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: context.ksc.primary900,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: context.ksc.primary700),
-                        ),
-                        child: Text(
-                          service.category.toUpperCase(),
-                          style: AppTextStyles.caption.copyWith(
-                            color: context.ksc.neutral400,
+                    // Header row: SET PRICE + service name
+                    Row(
+                      children: [
+                        Icon(LineAwesomeIcons.pen_alt_solid, color: context.ksc.accent500, size: 14),
+                        const SizedBox(width: 8),
+                        Text(
+                          'SET PRICE',
+                          style: TextStyle(
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
+                            letterSpacing: 2,
+                            color: context.ksc.accent500,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Current price label
-                      Text(
-                        service.defaultPrice != null
-                            ? 'Current: GHS ${(service.defaultPrice! / 100.0).toStringAsFixed(2)}'
-                            : 'No price set',
-                        style: AppTextStyles.body.copyWith(
-                          color: context.ksc.neutral500,
+                        const Spacer(),
+                        Text(
+                          service.name,
+                          style: TextStyle(fontSize: 12, color: context.ksc.neutral500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Price input
-                      Container(
-                        decoration: BoxDecoration(
-                          color: context.ksc.primary900,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: context.ksc.primary700),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: Row(
-                          children: [
-                            Text(
-                              'GHS',
-                              style: AppTextStyles.h2.copyWith(
-                                color: context.ksc.neutral500,
+                    // Quick preset chips
+                    Text(
+                      'QUICK SELECT',
+                      style: TextStyle(fontSize: 10, color: context.ksc.neutral600, letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: pricePresets.map((p) {
+                        final isSelected = selectedPreset == p;
+                        return GestureDetector(
+                          onTap: () {
+                            selectedPreset = p;
+                            currentValue = '$p.00';
+                            controller.text = currentValue;
+                            setSheetState(() {});
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? context.ksc.accent500.withValues(alpha: 0.12)
+                                  : context.ksc.primary900,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
+                              ),
+                            ),
+                            child: Text(
+                              'GHS $p',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                color: isSelected ? context.ksc.accent500 : context.ksc.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Custom amount
+                    Text(
+                      'OR CUSTOM AMOUNT',
+                      style: TextStyle(fontSize: 10, color: context.ksc.neutral600, letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: context.ksc.primary900,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: context.ksc.primary700),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
+                        children: [
+                          Text(
+                            'GHS',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: context.ksc.neutral500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: controller,
+                              autofocus: true,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
                                 fontWeight: FontWeight.w700,
+                                color: context.ksc.white,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: controller,
-                                autofocus: true,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w900,
-                                  color: context.ksc.white,
-                                ),
-                                cursorColor: context.ksc.accent500,
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 12),
-                                ),
-                                onChanged: (v) {
-                                  currentValue = v;
-                                  setSheetState(() {});
-                                },
+                              cursorColor: context.ksc.accent500,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 10),
                               ),
+                              onChanged: (v) {
+                                currentValue = v;
+                                selectedPreset = null;
+                                setSheetState(() {});
+                              },
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Save button
-                      KsButton(
-                        label: 'SAVE CHANGES',
-                        onPressed: currentValue.isNotEmpty
-                            ? () {
-                                final pesewas = CurrencyFormatter.parseToPesewas(currentValue);
-                                ref.read(serviceTypeProvider.notifier).updateServiceTypePrice(service.id, pesewas);
-                                Navigator.pop(sheetContext);
-                              }
-                            : null,
-                        variant: KsButtonVariant.primary,
-                        fullWidth: true,
-                      ),
-                    ],
-                  ),
+                    // Save + Cancel buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(sheetContext),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: context.ksc.primary700),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'CANCEL',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.ksc.neutral500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: GestureDetector(
+                            onTap: currentValue.isNotEmpty
+                                ? () {
+                                    final pesewas = CurrencyFormatter.parseToPesewas(currentValue);
+                                    ref.read(serviceTypeProvider.notifier).updateServiceTypePrice(service.id, pesewas);
+                                    Navigator.pop(sheetContext);
+                                  }
+                                : null,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: currentValue.isNotEmpty
+                                    ? context.ksc.accent500
+                                    : context.ksc.accent500.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  currentValue.isNotEmpty
+                                      ? 'SAVE — GHS ${currentValue}'
+                                      : 'ENTER PRICE',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.5,
+                                    color: context.ksc.primary900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              );
-              },
+              ),
             );
           },
         );
+      },
+    );
   }
 }
