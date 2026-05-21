@@ -25,18 +25,19 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<List<KnowledgeNoteEntity>> getNotes({int limit = 25, int offset = 0, bool includeArchived = false}) async {
-    try {
-      final remoteModels = await _remote.getNotes(userId: _userId, limit: limit, offset: offset, includeArchived: includeArchived);
-      await _local.saveNotes(remoteModels);
-      return remoteModels.map((m) => m.toEntity()).toList();
-    } catch (e) {
-      // Offline: return local notes
-      var localModels = await _local.getNotes();
-      if (!includeArchived) {
-        localModels = localModels.where((m) => !m.isArchived).toList();
+    if (await _connectivity.isConnected) {
+      try {
+        final remoteModels = await _remote.getNotes(userId: _userId, limit: limit, offset: offset, includeArchived: includeArchived);
+        await _local.saveNotes(remoteModels);
+      } catch (e) {
+        debugPrint('[KS:NOTES] Remote fetch failed, serving from cache: $e');
       }
-      return localModels.map((m) => m.toEntity()).toList();
     }
+    var localModels = await _local.getNotes();
+    if (!includeArchived) {
+      localModels = localModels.where((m) => !m.isArchived).toList();
+    }
+    return localModels.map((m) => m.toEntity()).toList();
   }
 
   @override

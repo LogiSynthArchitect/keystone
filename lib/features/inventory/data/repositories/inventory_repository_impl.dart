@@ -91,8 +91,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<void> syncItems(String userId) async {
     try {
       final remoteModels = await _remote.getAll(userId);
-      await _local.clear();
-      await _local.saveAll(remoteModels);
+      if (remoteModels.isNotEmpty) {
+        await _local.clear();
+        await _local.saveAll(remoteModels);
+      }
     } catch (e) {
       debugPrint('[KS:INVENTORY] Sync failed: $e');
     }

@@ -36,7 +36,6 @@ class CustomerRepositoryImpl implements CustomerRepository {
         for (var m in models) {
           await _local.saveCustomer(m);
         }
-        return models.map((m) => m.toEntity()).toList();
       } catch (e) {
         debugPrint('[KS:CUSTOMERS] Remote fetch failed, serving from cache: $e');
       }
