@@ -100,10 +100,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
     return Column(
       children: [
-        // Search bar
-        // Search bar — uses shared KsSearchBar component
+        // Search
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: KsSearchBar(
             hint: 'Search ${types.length} services...',
             controller: _searchController,
@@ -114,12 +113,12 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
             },
           ),
         ),
-        // Compact filter chips with counts
+        // Filter chips
         SizedBox(
-          height: 40,
+          height: 36,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             children: _allCategories.map((cat) {
               final isActive = _activeCategory == cat;
               final count = cat == 'All' ? types.length : types.where((t) => t.category == cat).length;
@@ -129,7 +128,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                 child: GestureDetector(
                   onTap: () => setState(() => _activeCategory = cat),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
                       color: isActive
                           ? context.ksc.accent500.withValues(alpha: 0.12)
@@ -157,18 +156,12 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(
-                            color: isActive
-                                ? context.ksc.accent500.withValues(alpha: 0.2)
-                                : context.ksc.primary900,
+                            color: isActive ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900,
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
                             '$count',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: isActive ? context.ksc.accent500 : context.ksc.neutral600,
-                            ),
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isActive ? context.ksc.accent500 : context.ksc.neutral600),
                           ),
                         ),
                       ],
@@ -189,7 +182,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                   subtitle: _searchQuery.isEmpty ? "Add service types to get started." : null,
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                   itemCount: categories.length,
                   itemBuilder: (context, ci) => _buildCategorySection(categories[ci], grouped[categories[ci]]!),
                 ),
