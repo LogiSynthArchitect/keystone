@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/utils/service_icon_map.dart';
 import '../providers/service_type_provider.dart';
 
 class ServiceTypePickerV2 extends ConsumerWidget {
@@ -57,7 +58,7 @@ class ServiceTypePickerV2 extends ConsumerWidget {
                     opacity: enabled ? 1.0 : 0.4,
                     child: Row(
                       children: [
-                        Icon(LineAwesomeIcons.tools_solid, size: 20, color: isSelected ? context.ksc.accent500 : context.ksc.neutral500),
+                        Icon(ServiceIconMap.resolve(type.iconName), size: 20, color: isSelected ? context.ksc.accent500 : context.ksc.neutral500),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
