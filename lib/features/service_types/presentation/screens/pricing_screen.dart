@@ -92,7 +92,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF060607),
+              color: context.ksc.primary900,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: context.ksc.primary700),
             ),
@@ -314,7 +314,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF161618),
+      backgroundColor: context.ksc.primary800,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -410,56 +410,53 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Custom amount
+                    // Custom amount — clean, minimal
                     Text(
-                      'OR CUSTOM AMOUNT',
+                      'CUSTOM AMOUNT',
                       style: TextStyle(fontSize: 10, color: context.ksc.neutral600, letterSpacing: 1),
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: context.ksc.primary900,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: context.ksc.primary700),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: Row(
-                        children: [
-                          Text(
-                            'GHS',
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'GHS',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: context.ksc.neutral500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            autofocus: true,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: context.ksc.neutral500,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: context.ksc.white,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: controller,
-                              autofocus: true,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: context.ksc.white,
+                            cursorColor: context.ksc.accent500,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: context.ksc.primary700),
                               ),
-                              cursorColor: context.ksc.accent500,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: context.ksc.accent500),
                               ),
-                              onChanged: (v) {
-                                currentValue = v;
-                                selectedPreset = null;
-                                setSheetState(() {});
-                              },
                             ),
+                            onChanged: (v) {
+                              currentValue = v;
+                              selectedPreset = null;
+                              setSheetState(() {});
+                            },
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 20),
 

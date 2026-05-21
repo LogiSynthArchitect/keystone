@@ -1,0 +1,121 @@
+<h2>Service Pricing Page — Redesign Options</h2>
+<p class="subtitle">Pick the layout you prefer. Each has the same data, different visual hierarchy.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Compact List with Inline Edit</h3>
+      <div class="mockup" style="margin:12px 0">
+        <div style="background:#1a1a2e;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:#e0e0e0">
+          <div style="color:#d4a017;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px">RESIDENTIAL</div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a4e">
+            <span>🔧 Lock Installation</span>
+            <span style="color:#d4a017;font-weight:700">GHS 150.00</span>
+            <span style="color:#666">✎</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a4e">
+            <span>🔑 Key Duplication</span>
+            <span style="color:#d4a017;font-weight:700">GHS 15.00</span>
+            <span style="color:#666">✎</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a4e">
+            <span>🔐 Smart Lock Install</span>
+            <span style="color:#d4a017;font-weight:700">GHS 250.00</span>
+            <span style="color:#666">✎</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0">
+            <span>🔩 Lock Repair</span>
+            <span style="color:#d4a017;font-weight:700">GHS 80.00</span>
+            <span style="color:#666">✎</span>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>More items visible at once</li><li>Clear price + service pairing</li><li>Easy tap to edit prices</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Less visual (no icons)</li><li>Harder to scan by category</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Grid Cards with Price Badge</h3>
+      <div class="mockup" style="margin:12px 0">
+        <div style="background:#1a1a2e;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:#e0e0e0">
+          <div style="color:#d4a017;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px">RESIDENTIAL</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="background:#16213e;border-radius:6px;padding:10px;text-align:center;border:1px solid #2a2a4e">
+              <div style="font-size:20px;margin-bottom:4px">🔧</div>
+              <div style="font-size:10px;color:#ccc;margin-bottom:6px">Lock Installation</div>
+              <div style="background:#d4a017;color:#1a1a2e;border-radius:4px;padding:3px 8px;font-weight:800;font-size:11px;display:inline-block">GHS 150</div>
+            </div>
+            <div style="background:#16213e;border-radius:6px;padding:10px;text-align:center;border:1px solid #2a2a4e">
+              <div style="font-size:20px;margin-bottom:4px">🔑</div>
+              <div style="font-size:10px;color:#ccc;margin-bottom:6px">Key Duplication</div>
+              <div style="background:#d4a017;color:#1a1a2e;border-radius:4px;padding:3px 8px;font-weight:800;font-size:11px;display:inline-block">GHS 15</div>
+            </div>
+            <div style="background:#16213e;border-radius:6px;padding:10px;text-align:center;border:1px solid #2a2a4e">
+              <div style="font-size:20px;margin-bottom:4px">🔐</div>
+              <div style="font-size:10px;color:#ccc;margin-bottom:6px">Smart Lock Install</div>
+              <div style="background:#d4a017;color:#1a1a2e;border-radius:4px;padding:3px 8px;font-weight:800;font-size:11px;display:inline-block">GHS 250</div>
+            </div>
+            <div style="background:#16213e;border-radius:6px;padding:10px;text-align:center;border:1px solid #2a2a4e">
+              <div style="font-size:20px;margin-bottom:4px">🔩</div>
+              <div style="font-size:10px;color:#ccc;margin-bottom:6px">Lock Repair</div>
+              <div style="background:#d4a017;color:#1a1a2e;border-radius:4px;padding:3px 8px;font-weight:800;font-size:11px;display:inline-block">GHS 80</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Visual — icons help scanning</li><li>Compact grid fits many items</li><li>Price badges are prominent</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Tapping card to edit price is less obvious</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Price Range Explorer (Two Levels)</h3>
+      <div class="mockup" style="margin:12px 0">
+        <div style="background:#1a1a2e;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:#e0e0e0">
+          <div style="display:flex;margin-bottom:8px;gap:6px">
+            <div style="background:#2a2a4e;border-radius:20px;padding:4px 12px;font-size:10px;color:#d4a017;font-weight:700">💰 All</div>
+            <div style="background:#2a2a4e;border-radius:20px;padding:4px 12px;font-size:10px;color:#999">🔒 Residential</div>
+            <div style="background:#2a2a4e;border-radius:20px;padding:4px 12px;font-size:10px;color:#999">🚗 Automotive</div>
+            <div style="background:#2a2a4e;border-radius:20px;padding:4px 12px;font-size:10px;color:#999">🏢 Commercial</div>
+          </div>
+          <div style="margin-bottom:6px;font-size:11px;font-weight:700;color:#ccc">Popular Services</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div style="background:#16213e;border-radius:6px;padding:10px;text-align:center;border:1px solid #d4a01740">
+              <div style="font-size:18px;margin-bottom:2px">🔧</div>
+              <div style="font-size:9px;color:#ccc">Lock Install</div>
+              <div style="color:#d4a017;font-weight:800;font-size:11px">GHS 150</div>
+            </div>
+            <div style="background:#16213e;border-radius:6px;padding:10px;text-align:center;border:1px solid #2a2a4e">
+              <div style="font-size:18px;margin-bottom:2px">🔑</div>
+              <div style="font-size:9px;color:#ccc">Key Duplication</div>
+              <div style="color:#d4a017;font-weight:800;font-size:11px">GHS 15</div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#ccc;display:flex;justify-content:space-between">
+            <span>📂 Browse All Services</span>
+            <span style="color:#666">›</span>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Quick access to popular services</li><li>Filter tabs improve navigation</li><li>Explorer feel — browse by category</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More taps to see everything</li><li>More complex implementation</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<h3 style="margin-top:24px">Which direction do you prefer?</h3>
+<p class="subtitle">Click one to select, then tell me in terminal. We can refine from there.</p>
