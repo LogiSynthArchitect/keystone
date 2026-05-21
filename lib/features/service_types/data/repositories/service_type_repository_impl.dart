@@ -72,8 +72,27 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
     try {
       final remoteModels = await _remote.getServiceTypes();
       if (remoteModels.isNotEmpty) {
+        // Preserve local defaultPrice when remote has null
+        final localModels = await _local.getServiceTypes();
         await _local.clear();
-        await _local.saveServiceTypes(remoteModels);
+        final merged = remoteModels.map((remote) {
+          final local = localModels.where((l) => l.name == remote.name).firstOrNull;
+          if (local != null && local.defaultPrice != null && remote.defaultPrice == null) {
+            return ServiceTypeModel(
+              id: remote.id,
+              userId: remote.userId,
+              name: remote.name,
+              isDefault: remote.isDefault,
+              category: remote.category,
+              iconName: remote.iconName,
+              defaultPrice: local.defaultPrice,
+              createdAt: remote.createdAt,
+              updatedAt: DateTime.now().toIso8601String(),
+            );
+          }
+          return remote;
+        }).toList();
+        await _local.saveServiceTypes(merged);
       }
     } catch (e) {
       debugPrint('[KS:SERVICE_TYPES] Sync failed: $e');
