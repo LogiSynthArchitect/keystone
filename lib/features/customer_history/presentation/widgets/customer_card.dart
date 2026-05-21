@@ -43,7 +43,6 @@ class CustomerCard extends StatelessWidget {
                   Container(
                     width: 44,
                     height: 44,
-                    margin: const EdgeInsets.only(top: -40),
                     decoration: BoxDecoration(
                       color: context.ksc.primary900,
                       borderRadius: BorderRadius.circular(8),
