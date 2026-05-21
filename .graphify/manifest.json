@@ -1,0 +1,1910 @@
+{
+  "/home/cybocrime/workspace/projects/keystone/android/app/build.gradle.kts": {
+    "mtime": 1779215005054.8826,
+    "hash": "9170933434c4750ea48385049f3d932c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/kotlin/com/keystone/keystone/MainActivity.kt": {
+    "mtime": 1773013160043.3113,
+    "hash": "d5ceb3de734ec204b634479b625be22e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/build.gradle.kts": {
+    "mtime": 1773013160043.8289,
+    "hash": "f11f360aed44d4f6871b398346af14f0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/settings.gradle.kts": {
+    "mtime": 1778685660555.9966,
+    "hash": "094e3cafe85d4dbf756dfe0bd754c6cb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/backups/prod_data_20260513_022644.sql": {
+    "mtime": 1778639235953.74,
+    "hash": "a1026d67d970c651b25611f5f3a9732d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/backups/prod_full_backup_20260513_022807.sql": {
+    "mtime": 1778639332984.549,
+    "hash": "d7d1ba1ef8b918b3c778d6c2c1ebf3e8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/integration_test/log_job_flow_test.dart": {
+    "mtime": 1773641489985.4338,
+    "hash": "3912bb4a8f504dc5a57a0e0b93c79f69"
+  },
+  "/home/cybocrime/workspace/projects/keystone/integration_test/offline_sync_flow_test.dart": {
+    "mtime": 1773736859472.246,
+    "hash": "7923ced69de634708296a88aa94678dd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/app.dart": {
+    "mtime": 1779215005054.8826,
+    "hash": "62716783fa95949fe7f96b881e98259e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/analytics/analytics_constants.dart": {
+    "mtime": 1773040023804.57,
+    "hash": "d2815319163634dde396793d415a0599"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/analytics/ks_analytics.dart": {
+    "mtime": 1774771762147.9297,
+    "hash": "f03441683ccbeabe499af7aabbfcd87c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/constants/app_constants.dart": {
+    "mtime": 1778664437256.3176,
+    "hash": "94e2d768d1a7196c4dc328b1ea0ecd01"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/constants/app_enums.dart": {
+    "mtime": 1774798520398.6953,
+    "hash": "764e001e535b5d6c074e98a200f9a6f6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/constants/cache_constants.dart": {
+    "mtime": 1778767174598.989,
+    "hash": "a46029801aa5ba16a468abf6c4bb8798"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/constants/supabase_constants.dart": {
+    "mtime": 1779215005054.8826,
+    "hash": "83ad6b0fbcd2a95123a68e970c1482a9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/constants/whatsapp_constants.dart": {
+    "mtime": 1778664437257.3176,
+    "hash": "827bc35fa7b6eafeb9d25dcf480453cd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/errors/app_exception.dart": {
+    "mtime": 1773040083029.4058,
+    "hash": "f25e3deddedde73ec178bc3c1e81b3d7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/errors/auth_exception.dart": {
+    "mtime": 1773040083053.406,
+    "hash": "87afa979235c4d068ea2df098417322b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/errors/duplicate_customer_exception.dart": {
+    "mtime": 1774808329017.8147,
+    "hash": "b6fa2c91d478a945fda2aa3908a4c2da"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/errors/network_exception.dart": {
+    "mtime": 1773040083035.4058,
+    "hash": "4a6c3434a357c5224df8cc27df2c2d15"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/errors/storage_exception.dart": {
+    "mtime": 1773040083040.4058,
+    "hash": "3bfa5312e22da39bdcad86f2d2b709ad"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/errors/validation_exception.dart": {
+    "mtime": 1773040083046.4058,
+    "hash": "edf154bdaa88d94833dd3a9891fa64df"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/models/user_permissions.dart": {
+    "mtime": 1779215005054.8826,
+    "hash": "9beeb1b0887edc94e2f86722794c3197"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/network/connectivity_service.dart": {
+    "mtime": 1779215005054.8826,
+    "hash": "5b2981077d690ab8995b872ed3886433"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/network/supabase_client.dart": {
+    "mtime": 1773040174867.4568,
+    "hash": "0e134147d8ab0089db84edd149c5f3a0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/auth_provider.dart": {
+    "mtime": 1779215005055.8826,
+    "hash": "6a731b1a2140d55b8c9a29b03486a8c1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/connectivity_provider.dart": {
+    "mtime": 1773659881897.5186,
+    "hash": "7adc5b86873c771ad1f85b7868241445"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/permissions_provider.dart": {
+    "mtime": 1774869000337.3386,
+    "hash": "7b35e5bc539b08bde2c2ef303846a550"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/shared_feature_providers.dart": {
+    "mtime": 1779215005055.8826,
+    "hash": "0fe9383296ce34386ca1f5342797a6b6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/supabase_provider.dart": {
+    "mtime": 1773040174886.457,
+    "hash": "ca3ba4a1e2e343cd2deb2e410e9eac63"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/sync_status_provider.dart": {
+    "mtime": 1773691304720.1282,
+    "hash": "6302de4e237ef39d612a90d3a52fce85"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/providers/theme_provider.dart": {
+    "mtime": 1774014350989.978,
+    "hash": "dc67583880fa19fb574d1a05a2bc6aa1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/router/app_router.dart": {
+    "mtime": 1779222506496.736,
+    "hash": "c3aef1bf5be9a22e22c28292d92a98f5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/router/route_names.dart": {
+    "mtime": 1779215005055.8826,
+    "hash": "ecc6b487d1cfff11557e61e82df789d7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/router/route_transitions.dart": {
+    "mtime": 1778878331289.0293,
+    "hash": "ad7533ec5f6da8dd58ba0c65ca379a47"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/cloudinary_service.dart": {
+    "mtime": 1778952083890.899,
+    "hash": "d44cc13babd5b84049631805aa950e7b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/data_export_service.dart": {
+    "mtime": 1779215005055.8826,
+    "hash": "3e32cb89cee5df032a1122356a0d4974"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/demo_data_service.dart": {
+    "mtime": 1779216823224.9912,
+    "hash": "9c85d37de68075a6247101d642cb6a56"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/internal_auth/biometric_service.dart": {
+    "mtime": 1778692442351.8557,
+    "hash": "8a36d34b9f7ccd9a38bed304e9325d1b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/internal_auth/internal_auth_service.dart": {
+    "mtime": 1778942057486.6016,
+    "hash": "aee7e5f6673308d263bc2c197dbbecba"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/internal_auth/models/auth_method.dart": {
+    "mtime": 1778692433973.7769,
+    "hash": "7d9248a9fce929d7f7c8499f9ac0bd79"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/internal_auth/models/unlock_result.dart": {
+    "mtime": 1778739982439.9612,
+    "hash": "3f9a9f2d2752c44cc63d32e7ad0e2362"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/internal_auth/pin_service.dart": {
+    "mtime": 1778692860895.7898,
+    "hash": "56bd4ceb1ff3864cccc39ba5f0736ccc"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/internal_auth/secure_vault_service.dart": {
+    "mtime": 1778692439196.826,
+    "hash": "3e451d9428547714a708ab8e4e2fa480"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/invoice_pdf_generator.dart": {
+    "mtime": 1778780745332.2593,
+    "hash": "09cd0184c3ad0bf10be0cb88b86445e1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/local_notification_service.dart": {
+    "mtime": 1778944281134.5598,
+    "hash": "b8fef021de936b56ca469aa6af3866be"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/pending_media_upload_service.dart": {
+    "mtime": 1778941695417.6357,
+    "hash": "bfcb91fd685705a8928dc4e65e419b17"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/services/receipt_pdf_generator.dart": {
+    "mtime": 1778784939997.1545,
+    "hash": "f87897641b3aaf4cf0985a48e679e5ac"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/storage/hive_service.dart": {
+    "mtime": 1779215005056.8826,
+    "hash": "402d5458e90ce5d2722179a1606dc051"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/theme/app_colors.dart": {
+    "mtime": 1773039782438.99,
+    "hash": "2f5b99dad4d872ba1bc2d7c59590a639"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/theme/app_spacing.dart": {
+    "mtime": 1773039811350.4365,
+    "hash": "570437f550faaae57c7ffcd9c4153ba9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/theme/app_text_styles.dart": {
+    "mtime": 1774014733786.9788,
+    "hash": "fe593c08c50be3e4a4286ae9696249c9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/theme/app_theme.dart": {
+    "mtime": 1779215005056.8826,
+    "hash": "ffb84fe8e7fb0d2452bf76aa9e601b3b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/theme/ks_colors.dart": {
+    "mtime": 1779222506496.736,
+    "hash": "1c952a1efd6bde0cfd8a4246a1fb67da"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/usecases/use_case.dart": {
+    "mtime": 1773056816179.1106,
+    "hash": "4056f8592abcbf230f580b1dc5910b1c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/currency_formatter.dart": {
+    "mtime": 1779225003516.3025,
+    "hash": "1badc5223d7fdda758440c6342db5cbf"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/date_formatter.dart": {
+    "mtime": 1779215005056.8826,
+    "hash": "13032aee281800ee77ba0cd1ae104c5f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/icon_helpers.dart": {
+    "mtime": 1778752557419.9612,
+    "hash": "30aa7b5d6a1f37570c1319a56355919e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/mock_data_generator.dart": {
+    "mtime": 1775082381622.877,
+    "hash": "aac7b71b00ce6fd42d502133472bcb63"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/phone_formatter.dart": {
+    "mtime": 1773661953142.8884,
+    "hash": "8243d16dd4b578487323d5d1632a85bc"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/service_icon_map.dart": {
+    "mtime": 1779227058259.8625,
+    "hash": "31ac7ce44f8cdb081425dc850f3b0c70"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/slug_generator.dart": {
+    "mtime": 1773043971198.4954,
+    "hash": "e40bc8ebbe32786c4034d4ad8c8f3aa5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/utils/whatsapp_launcher.dart": {
+    "mtime": 1774735643222.2231,
+    "hash": "d2f57233d3a7145ceebd3406e78204de"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/cover_image_widget.dart": {
+    "mtime": 1778927993436.1628,
+    "hash": "10879c8a52a58be1309dd0da2ca03cd7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_app_bar.dart": {
+    "mtime": 1779222506496.736,
+    "hash": "0cb3899b917c6605aa60e125447d4c67"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_avatar.dart": {
+    "mtime": 1774014770118.2637,
+    "hash": "41e18150f2ea49276410681ec29a5fd9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_badge.dart": {
+    "mtime": 1774014785050.3809,
+    "hash": "abfc4b283d46978d2979e7963f839175"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_banner.dart": {
+    "mtime": 1774030953206.5542,
+    "hash": "28f38fb6026078b74a5304511ebcbe5c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_bottom_nav.dart": {
+    "mtime": 1779215005056.8826,
+    "hash": "664a7068e55e32acbc3cc41b3643dfc7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_button.dart": {
+    "mtime": 1779215005056.8826,
+    "hash": "fe8876d3e9ba7c5e125c0945f358dc17"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_card.dart": {
+    "mtime": 1774014873318.0278,
+    "hash": "4edfcb5cde9f6a0f13335ca62932cd52"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_confirm_dialog.dart": {
+    "mtime": 1774014885741.867,
+    "hash": "6534b45c9517b3f71d48c4acfab6e4f3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_divider.dart": {
+    "mtime": 1774014895306.743,
+    "hash": "269bee8b08044852571f6c8c042bd2a2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_empty_state.dart": {
+    "mtime": 1779215005056.8826,
+    "hash": "4674f5e784536b1ed3a57b1580ca6e26"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_filter_sheet.dart": {
+    "mtime": 1779168615132.364,
+    "hash": "3d471f98866349211022b33ff6e10712"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_loading_indicator.dart": {
+    "mtime": 1774014913074.5127,
+    "hash": "295adac5e019e398938080e70dc699e3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_logo.dart": {
+    "mtime": 1774014951384.709,
+    "hash": "019b5272b710d0e49695f13f2e4ae380"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_logo_animated.dart": {
+    "mtime": 1774014943360.6462,
+    "hash": "4291e7479030915d96a65ae0650f4d25"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_offline_banner.dart": {
+    "mtime": 1774014960123.777,
+    "hash": "55ce29cfd5c6e797d1ac2620ed49b9e0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_search_bar.dart": {
+    "mtime": 1779215005057.8826,
+    "hash": "6a152fc46aba4fefde1b004f57c03cdd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_skeleton_loader.dart": {
+    "mtime": 1774014993133.9114,
+    "hash": "4c02af908e1fc64f81bb27a675945053"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_snackbar.dart": {
+    "mtime": 1774015002805.8743,
+    "hash": "5f8d869679bf18d2dfa38388cee45aeb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_step_indicator.dart": {
+    "mtime": 1779212218185.2944,
+    "hash": "e1efd41799cc271e931a2782f28b9b95"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_tag_chip.dart": {
+    "mtime": 1774015020289.8074,
+    "hash": "f686c1feddae7b884b9e83c146bd92b7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/ks_text_field.dart": {
+    "mtime": 1774033431369.6755,
+    "hash": "dd05f2ee47358a2a9bf6a9e8f5898893"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/privacy_overlay.dart": {
+    "mtime": 1778715922400.7854,
+    "hash": "733d8396d96142ec34a3967b93f3e9ca"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/core/widgets/sync_status_indicator.dart": {
+    "mtime": 1778664437262.318,
+    "hash": "271773033453bf8df181851f3bcbbd94"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/activity_timeline/presentation/providers/timeline_provider.dart": {
+    "mtime": 1774853662130.2568,
+    "hash": "f8e0c2370ba1d695d057deab9cda2b66"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/activity_timeline/presentation/screens/timeline_screen.dart": {
+    "mtime": 1779215005057.8826,
+    "hash": "edf37998ff3964c4447215823f0100cd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/analytics/domain/models/analytics_models.dart": {
+    "mtime": 1779215005057.8826,
+    "hash": "357a21f93f5ea0a8518e6e0c2a74eeea"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/analytics/presentation/providers/analytics_provider.dart": {
+    "mtime": 1779215005057.8826,
+    "hash": "4ab4bc33df72f1dacd9b7796d40db15c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/analytics/presentation/screens/analytics_screen.dart": {
+    "mtime": 1779215005058.8826,
+    "hash": "b6646b8aee601fcbcf7c5915de940788"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/data/datasources/auth_remote_datasource.dart": {
+    "mtime": 1779215005058.8826,
+    "hash": "16fd30c3cf929b5ffbd839ed221ad6c0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/data/models/user_model.dart": {
+    "mtime": 1773055501726.3572,
+    "hash": "c7b39cd357b7ee02aef9ce4505f959cd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/data/repositories/auth_repository_impl.dart": {
+    "mtime": 1778664437266.3184,
+    "hash": "6ab914e56f66bb7826309d5b43ec998f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/domain/entities/user_entity.dart": {
+    "mtime": 1773054542340.762,
+    "hash": "bfdcba5aa303adadb64b384ee568b4aa"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/domain/repositories/auth_repository.dart": {
+    "mtime": 1773054644414.858,
+    "hash": "7929fed847e688f88701a489c2446d88"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/domain/usecases/logout_usecase.dart": {
+    "mtime": 1773488968685.7852,
+    "hash": "d13c6c43c06aad190615242287c29aea"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/domain/usecases/request_otp_usecase.dart": {
+    "mtime": 1773056590164.47,
+    "hash": "5f21e9048ae69190645a4296113c91ec"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/domain/usecases/verify_otp_usecase.dart": {
+    "mtime": 1773330161311.1882,
+    "hash": "6d01127c2dcea410d97064f4f9020bd3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/providers/auth_notifier.dart": {
+    "mtime": 1779215005058.8826,
+    "hash": "9bd4f78d9241104f590f05f0a753bca3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/biometric_enroll_sheet.dart": {
+    "mtime": 1778692878861.9587,
+    "hash": "50a317eb157e5e8bc691c21e9e024b3b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/forgot_access_screen.dart": {
+    "mtime": 1778708495173.7795,
+    "hash": "d7b35b4f15dffd119701bd58cfd00bbe"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/initial_sync_screen.dart": {
+    "mtime": 1778944966929.9521,
+    "hash": "b53c8767c72d9b8ae09405c0aeb0f141"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/landing_screen.dart": {
+    "mtime": 1774015062150.896,
+    "hash": "df5a826127b1d09e3da7ce3822037d67"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/locked_screen.dart": {
+    "mtime": 1778692547554.8445,
+    "hash": "c0241de2b2654d362b64c6ccdfdad0f1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/min_version_gate_screen.dart": {
+    "mtime": 1778946153784.8162,
+    "hash": "1dd7c34bedb1d7a5f85168e181e1a944"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/onboarding_screen.dart": {
+    "mtime": 1779215005058.8826,
+    "hash": "ccabcb633ce177762f0af2afd250196d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/otp_verify_screen.dart": {
+    "mtime": 1775035865392.9128,
+    "hash": "e01a45daae485d6f01771b72bfb8e881"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/phone_entry_screen.dart": {
+    "mtime": 1779215005058.8826,
+    "hash": "90b54bf224f1d3e3bf84c8cbbae9a6ce"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/pin_entry_screen.dart": {
+    "mtime": 1778715160640.2524,
+    "hash": "389f146776a781f3a4d5a43a3cf7a13a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/setup_screen.dart": {
+    "mtime": 1774854016038.3506,
+    "hash": "e4ff0ea90893b932272a698fe6273ea1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/stale_data_screen.dart": {
+    "mtime": 1778872452790.9004,
+    "hash": "adf0a6bf15912649b0c4b635e157a300"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/transition_screen.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "4f4e4c307623b8a97bdd10e13babf4ce"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/screens/upgrade_account_screen.dart": {
+    "mtime": 1779038694718.614,
+    "hash": "387190268140b1a2a242a854a7d460f8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/widgets/auth_header.dart": {
+    "mtime": 1774015199256.2617,
+    "hash": "21e1e7fd1e5fbe6d9b5ce5497661b1d0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/widgets/name_step_view.dart": {
+    "mtime": 1774031457328.1487,
+    "hash": "f9e7da34b6c4f8ff490b096bfe1955b5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/widgets/onboarding_bottom_bar.dart": {
+    "mtime": 1774031610176.089,
+    "hash": "b8f05a0911c14546d218013fc2d455eb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/auth/presentation/widgets/onboarding_step_indicator.dart": {
+    "mtime": 1774015234156.5427,
+    "hash": "e00b62a6a63b78f779860fb62c37295e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/data/datasources/customer_local_datasource.dart": {
+    "mtime": 1778664437267.3184,
+    "hash": "e344adbed3ea0c43d6982dd2632b9ec8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/data/datasources/customer_remote_datasource.dart": {
+    "mtime": 1779217720260.3208,
+    "hash": "0016e0571ff77cb153b52fc436b29477"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/data/models/customer_model.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "23f6dfe112dff4da8fcb67807881085d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/data/models/key_code_entry_model.dart": {
+    "mtime": 1774798855376.0154,
+    "hash": "f6c9d76aa9d6e41b281ba5c91facd989"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/data/repositories/customer_repository_impl.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "04ba98484cd173f4b84568a25a3212b4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/entities/customer_audit_entry_entity.dart": {
+    "mtime": 1775056730877.948,
+    "hash": "d895d9dd4dbeea63c926234cb89d4e50"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/entities/customer_entity.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "666285b1fc1f9d5fa11dc6df0820153b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/entities/key_code_entry_entity.dart": {
+    "mtime": 1774808337477.8823,
+    "hash": "89bb2bedbfdad3003d99623a5b9f5b47"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/repositories/customer_repository.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "c89f10671eed6c5fd58fdb29dea02863"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/create_customer_usecase.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "062e1d9df265581cd5127b4c6b8be09b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/delete_customer_usecase.dart": {
+    "mtime": 1773056590184.4702,
+    "hash": "bbcaec8a3d3909dbbcdf38740c2c976d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/get_customer_by_phone_usecase.dart": {
+    "mtime": 1773439160587.8425,
+    "hash": "bc36dd74552da0da4b95aeb1726f9dee"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/get_customer_usecase.dart": {
+    "mtime": 1773056590183.337,
+    "hash": "e0b8624713fe9cb7eec187d304543ee4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/get_customers_usecase.dart": {
+    "mtime": 1773056590181.4592,
+    "hash": "04f16491325428f0fed6deeb37a2a827"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/merge_customers_usecase.dart": {
+    "mtime": 1778822292609.039,
+    "hash": "12acfeebc4d37238fce2b0fd37fa7a45"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/sync_offline_customers_usecase.dart": {
+    "mtime": 1773474306426.592,
+    "hash": "5b6114270d7fd1567a9973d4572d4e33"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/domain/usecases/update_customer_usecase.dart": {
+    "mtime": 1773672997277.6692,
+    "hash": "33024e6a85189e33911ead34c02785fb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/providers/customer_providers.dart": {
+    "mtime": 1779215005059.8826,
+    "hash": "16d39c6845ae8dfad0db75b1861a605b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/screens/add_customer_screen.dart": {
+    "mtime": 1779215005060.8826,
+    "hash": "9047375503874b1e9083364b0350c4ab"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/screens/customer_detail_screen.dart": {
+    "mtime": 1779215005060.8826,
+    "hash": "73cfc4b79d3a8d856ba1e28eb5d9c83f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/screens/customer_list_screen.dart": {
+    "mtime": 1779215005060.8826,
+    "hash": "129325aa922bdeff2b78f05efa4be1db"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/screens/edit_customer_screen.dart": {
+    "mtime": 1779215005060.8826,
+    "hash": "963a6f9af240f91e4cb84e86150716f0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/widgets/contact_import_sheet.dart": {
+    "mtime": 1778794750392.19,
+    "hash": "779ad7aff5952a8abe74c87ec3eeff2d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/widgets/customer_card.dart": {
+    "mtime": 1779215005060.8826,
+    "hash": "408a718f16144f9e4f18b881a917104e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/customer_history/presentation/widgets/merge_customer_sheet.dart": {
+    "mtime": 1778822398769.2034,
+    "hash": "f42b7ad117cda91bb5e85216dae643e9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/dashboard/presentation/screens/dashboard_screen.dart": {
+    "mtime": 1779216925506.2483,
+    "hash": "da07b40d3dd65f241d346ab885334a34"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/hub/presentation/screens/hub_screen.dart": {
+    "mtime": 1779171229060.8801,
+    "hash": "276dcc4b3f97b68ea41716224f2e0651"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/datasources/inventory_local_datasource.dart": {
+    "mtime": 1778993255923.9893,
+    "hash": "43c1597fe14b2afc3b99cecffebadd2e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/datasources/inventory_remote_datasource.dart": {
+    "mtime": 1778838700353.166,
+    "hash": "c97cfd9602de8d47e5a3187cc8361359"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/datasources/inventory_restocks_local_datasource.dart": {
+    "mtime": 1778993257057.9998,
+    "hash": "9789549b9c08ed1d2757b8520533cf5a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/datasources/inventory_restocks_remote_datasource.dart": {
+    "mtime": 1778838709902.247,
+    "hash": "b77c2199a44c45c85fa8343b142b6c69"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/datasources/inventory_stock_adjustments_local_datasource.dart": {
+    "mtime": 1778993256481.9944,
+    "hash": "c1384892e4a397da15eb8b6d0eaa246b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/datasources/inventory_stock_adjustments_remote_datasource.dart": {
+    "mtime": 1778838705219.2073,
+    "hash": "485c05db9c3e40653b1f0b59aab10f52"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/models/inventory_item_model.dart": {
+    "mtime": 1778928075909.927,
+    "hash": "2c2baee52f6763c5ce5623ed84af4041"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/models/restock_model.dart": {
+    "mtime": 1778841728282.2905,
+    "hash": "7f829b9737c6dca5c4c376717660c1de"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/models/stock_adjustment_model.dart": {
+    "mtime": 1778838673947.9421,
+    "hash": "249245787dc3a0a62ae508284534beb7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/data/repositories/inventory_repository_impl.dart": {
+    "mtime": 1778841914571.5955,
+    "hash": "75c2a8af1952c96cb98f27d82ddc9b14"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/entities/inventory_item_entity.dart": {
+    "mtime": 1778928265754.6858,
+    "hash": "4ecc172007d3ce716dff36c8a91ebbf2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/entities/restock_entity.dart": {
+    "mtime": 1778867176599.157,
+    "hash": "1f8f1c238c0c4e6c33f049f364d4d4bd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/entities/stock_adjustment_entity.dart": {
+    "mtime": 1778867170306.103,
+    "hash": "f1f81d09e9c1155e60a634cf524da1ff"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/repositories/inventory_repository.dart": {
+    "mtime": 1778841912460.556,
+    "hash": "2658a604cb578512ab4bd2b73d3f2870"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/usecases/create_inventory_item_usecase.dart": {
+    "mtime": 1778779056889.7087,
+    "hash": "fb15d6a2d9aee5ff4b3dec7a44a5e51a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/usecases/delete_inventory_item_usecase.dart": {
+    "mtime": 1778779058960.7266,
+    "hash": "89300de9b47d986091d5ec38b521e154"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/usecases/get_inventory_items_usecase.dart": {
+    "mtime": 1778838763573.623,
+    "hash": "be8df4ffc9cd9272ae95453d701a78e3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/domain/usecases/update_inventory_item_usecase.dart": {
+    "mtime": 1778779057949.7178,
+    "hash": "10af009e373953173e933925bee5faee"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/presentation/providers/inventory_providers.dart": {
+    "mtime": 1778841916856.6382,
+    "hash": "0cb389d7c50dab78d1ba93d4c0af3fc0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/inventory/presentation/screens/inventory_screen.dart": {
+    "mtime": 1779202045959.2856,
+    "hash": "625a4162af5488a80f8cff3499e34df4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_audit_local_datasource.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "61bfdde8095f587973c03ac305376e17"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_audit_remote_datasource.dart": {
+    "mtime": 1774802786757.6536,
+    "hash": "b14108e4897e0da141a9773f6ab7c71b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_expenses_local_datasource.dart": {
+    "mtime": 1778781100422.3193,
+    "hash": "047ef483938c19088afc5e3e34a181f5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_expenses_remote_datasource.dart": {
+    "mtime": 1778781103164.343,
+    "hash": "83c6d715b52ab1d8be5c938886135561"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_hardware_local_datasource.dart": {
+    "mtime": 1778993254229.9734,
+    "hash": "285da1bea9e3585cdcb88d90e431d1eb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_hardware_remote_datasource.dart": {
+    "mtime": 1778774821977.6008,
+    "hash": "d3209db1c847df3992fa8d6590c71d56"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_local_datasource.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "f41b09d2210a9dcf2c5ea21e2ae74569"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_parts_local_datasource.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "c406050f990ca8a83d3da9a81b7302bb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_parts_remote_datasource.dart": {
+    "mtime": 1774802740515.1848,
+    "hash": "4cc467b3e9e2d3468b3c3d831f063e81"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_photos_local_datasource.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "8213500e5348ecd36a748adf00b0b08c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_photos_remote_datasource.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "280121be0db35866654dc1cf9fb05b20"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_remote_datasource.dart": {
+    "mtime": 1774854211580.651,
+    "hash": "e7f3b4a8542a02743e751cc5a605ea0c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_services_local_datasource.dart": {
+    "mtime": 1778993253667.9683,
+    "hash": "8926a07adecfa9c73afdd1e0d1dd8cf0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/datasources/job_services_remote_datasource.dart": {
+    "mtime": 1778774815573.5461,
+    "hash": "6e9d8c1d58ccc8137f6e40260def8e9a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/correction_request_model.dart": {
+    "mtime": 1773691621598.1436,
+    "hash": "2201d33b2a81520e37f7a1e44274a14d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_audit_entry_model.dart": {
+    "mtime": 1774798835291.8127,
+    "hash": "90ae4f03875a513d017719e75ff6fee8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_expense_model.dart": {
+    "mtime": 1778781098294.301,
+    "hash": "c8adcfeaf03ee90c3092dd5d950f84e2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_hardware_model.dart": {
+    "mtime": 1778774802205.4316,
+    "hash": "711c8a441da42789e4bee8ed901d7f01"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_model.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "5eb18739387771d46d50e1c79671e424"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_part_model.dart": {
+    "mtime": 1779215005061.8826,
+    "hash": "4bae6e15d9bfaa3b201ddc5767229c0b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_photo_model.dart": {
+    "mtime": 1779222506497.736,
+    "hash": "65630521501c34cad4d6ad09b223c995"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/models/job_service_model.dart": {
+    "mtime": 1778774796863.386,
+    "hash": "89b7d0948604a7055cced4f45dce7b71"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/repositories/correction_request_repository_impl.dart": {
+    "mtime": 1778664437274.319,
+    "hash": "28498282524ef009578befa4d2340a7e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/data/repositories/job_repository_impl.dart": {
+    "mtime": 1779222506497.736,
+    "hash": "3bb92faac74a37bd4935f147c123bb06"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/correction_request_entity.dart": {
+    "mtime": 1779215005062.8826,
+    "hash": "8082f872da4d00b2657ed764527c8176"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_audit_entry_entity.dart": {
+    "mtime": 1779215005062.8826,
+    "hash": "a50f9bcf95169b50be13b8a47a61290e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_entity.dart": {
+    "mtime": 1779215005062.8826,
+    "hash": "1db14c053c8004c0f557973da0974d86"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_expense_entity.dart": {
+    "mtime": 1778867152241.9475,
+    "hash": "4b52ce6f06f7ea51601df09304390405"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_hardware_entity.dart": {
+    "mtime": 1778788965583.9937,
+    "hash": "eb5feda72776dfadce6d5da2a7ad75d2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_part_entity.dart": {
+    "mtime": 1779215005062.8826,
+    "hash": "3b56b8644e16122edf583a90bd6229b4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_photo_entity.dart": {
+    "mtime": 1779215005062.8826,
+    "hash": "c75210ba94717bdeb3064ddf063d3da8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/entities/job_service_entity.dart": {
+    "mtime": 1778793149998.2075,
+    "hash": "c229e095a247866fef2c3231ae4c76f9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/repositories/correction_request_repository.dart": {
+    "mtime": 1773691335187.418,
+    "hash": "408a2a4eb2956f806c325a5e946410be"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/repositories/job_repository.dart": {
+    "mtime": 1779215005062.8826,
+    "hash": "016d1196617216da1631988a6c605802"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/archive_job_usecase.dart": {
+    "mtime": 1773601383129.0808,
+    "hash": "871f93407a15264e9463c26640de5d5f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/edit_job_usecase.dart": {
+    "mtime": 1774802944620.2544,
+    "hash": "daf075013a64c0620c9254054058194f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/get_job_usecase.dart": {
+    "mtime": 1774803640098.3062,
+    "hash": "99def90899a0fdedb99185956213e70b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/get_jobs_usecase.dart": {
+    "mtime": 1773602061262.1248,
+    "hash": "8b2e1a20c892c419621ea3dc70dde5a6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/log_job_usecase.dart": {
+    "mtime": 1779297146227.5283,
+    "hash": "95b6547483c99f71626a201203e7df72"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/log_job_with_customer_usecase.dart": {
+    "mtime": 1779215005063.8826,
+    "hash": "af42fc252a2e897b7cd5a55fd3d78c11"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/request_correction_usecase.dart": {
+    "mtime": 1773688409263.8828,
+    "hash": "3fea4b2cee8634a7c201f2e89fa52e7f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/sync_offline_jobs_usecase.dart": {
+    "mtime": 1773056590175.4702,
+    "hash": "ca4bd76bf09346ce22f7c3d9c7472042"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/update_job_usecase.dart": {
+    "mtime": 1779222496243.634,
+    "hash": "7fd4ec3ebd4b5e5cc0d31ac8458b8bd0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/domain/usecases/update_payment_status_usecase.dart": {
+    "mtime": 1774830724186.7004,
+    "hash": "a310ddb7d768b4ddf7ad380e9fb795bc"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/providers/job_providers.dart": {
+    "mtime": 1779222506497.736,
+    "hash": "75236639994f3bf8606d8b0100c67d90"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/screens/admin_requests_screen.dart": {
+    "mtime": 1774800193647.5317,
+    "hash": "412cf710ebfb6b67ccfa50077e4e4b69"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/screens/edit_job_screen.dart": {
+    "mtime": 1779222506498.736,
+    "hash": "8a7f05c68dd28e86dba9cfd2693fca1b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/screens/job_detail_screen.dart": {
+    "mtime": 1779216231181.8547,
+    "hash": "ba924e4fba2671e6ae02abdce4e9a53e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/screens/job_list_screen.dart": {
+    "mtime": 1779215005063.8826,
+    "hash": "b4a8452b7f098d138dbf188ee2bf69b2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/screens/log_job_screen.dart": {
+    "mtime": 1779319853467.3245,
+    "hash": "5e05b662ad9089b9763e38df1ff8b0b2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/widgets/job_card.dart": {
+    "mtime": 1779215005064.8826,
+    "hash": "d088e8c110747a87342a1fdf8ed26861"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_logging/presentation/widgets/service_type_picker.dart": {
+    "mtime": 1774798103665.354,
+    "hash": "d9f426f5662b5a4b81f677d65137c53f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/data/datasources/job_template_local_datasource.dart": {
+    "mtime": 1778993258848.0164,
+    "hash": "e060240928357f28263ff210f0d3adcf"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/data/models/job_template_model.dart": {
+    "mtime": 1778785074560.9739,
+    "hash": "e437965906041d58af3773ee82c34b83"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/data/repositories/job_template_repository_impl.dart": {
+    "mtime": 1778785077831.034,
+    "hash": "6e56d03aa38920b68ee04629573e5a5d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/domain/entities/job_template_entity.dart": {
+    "mtime": 1778785071366.9155,
+    "hash": "66fa140dae1ed15e5efc3fb104dd1c8b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/domain/repositories/job_template_repository.dart": {
+    "mtime": 1778785076444.0085,
+    "hash": "556ef5b6c1e3aab50ae47c9348b25d90"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/presentation/providers/job_template_provider.dart": {
+    "mtime": 1778785085365.1719,
+    "hash": "941fcaf71ec75a5f499bec10d31be37a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/job_templates/presentation/screens/job_templates_screen.dart": {
+    "mtime": 1779172808452.3438,
+    "hash": "d23f3a4e48c468551fa8587e1e786c3c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/data/datasources/key_code_local_datasource.dart": {
+    "mtime": 1774808358960.0544,
+    "hash": "1927bdce10f3433bcf8e38dbcc166352"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/data/datasources/key_code_remote_datasource.dart": {
+    "mtime": 1774808374197.1763,
+    "hash": "6270c9fd9237fa373f662855dbb5e56c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/data/models/key_code_entry_model.dart": {
+    "mtime": 1774808352757.0046,
+    "hash": "91480185dbfd2498f0f61fd8b5939667"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/data/repositories/key_code_repository_impl.dart": {
+    "mtime": 1774910484655.2595,
+    "hash": "f4f5269b10910bb9de74cae89dfa3678"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/domain/repositories/key_code_repository.dart": {
+    "mtime": 1774808343154.9277,
+    "hash": "cacb79f45d647a5a280a57a19e52f434"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/domain/usecases/create_key_code_usecase.dart": {
+    "mtime": 1774808421408.5542,
+    "hash": "83669b944550d2becd137029643be1ee"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/domain/usecases/delete_key_code_usecase.dart": {
+    "mtime": 1774808432481.6428,
+    "hash": "c365383f188206fd5683300e4f65474a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/domain/usecases/get_key_codes_usecase.dart": {
+    "mtime": 1774808412373.482,
+    "hash": "7ee4360674d4c21394ddb6a4e677a6ce"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/domain/usecases/update_key_code_usecase.dart": {
+    "mtime": 1774808427364.6018,
+    "hash": "7e5455941fd81e29b65d71dfcdada0c9"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/presentation/providers/key_code_provider.dart": {
+    "mtime": 1774808863467.093,
+    "hash": "4071b62f7dcce04044636125af21a485"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/presentation/screens/edit_key_code_screen.dart": {
+    "mtime": 1778664437283.3196,
+    "hash": "fb1a6e395f5ddec2a4f4f5efa7765a56"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/key_codes/presentation/screens/key_codes_screen.dart": {
+    "mtime": 1779215005064.8826,
+    "hash": "cc5e107b98df9353073e74271d83b4f2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/data/datasources/knowledge_note_local_datasource.dart": {
+    "mtime": 1779215005064.8826,
+    "hash": "2f2fd4034327e1f76f06f05aa318cf84"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/data/datasources/knowledge_note_remote_datasource.dart": {
+    "mtime": 1773654058187.0798,
+    "hash": "2764b7e3935c63e1267184e1ea398be1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/data/models/knowledge_note_model.dart": {
+    "mtime": 1779215005064.8826,
+    "hash": "01db2d8bea62bf66761063adf952ed3a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/data/models/note_job_link_model.dart": {
+    "mtime": 1774798888141.346,
+    "hash": "8c092d9f34abf9375446453062251661"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/data/repositories/knowledge_note_repository_impl.dart": {
+    "mtime": 1778664437285.3198,
+    "hash": "af9fad508e1e4bb8a5d3b3934caeab9f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/entities/knowledge_note_entity.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "b2423c5c428c75f560e1028942223f10"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/entities/note_job_link_entity.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "9de00f015b3dc1d40355565a52b89a61"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/repositories/knowledge_note_repository.dart": {
+    "mtime": 1773954624135.3691,
+    "hash": "1bc06a59102b355082178b79975f40e3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/usecases/archive_note_usecase.dart": {
+    "mtime": 1773056590188.4705,
+    "hash": "f355cd23644bbd7147d988b11766303e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/usecases/create_note_usecase.dart": {
+    "mtime": 1774798038697.833,
+    "hash": "0d02976db3d69dc482c74a96b96be475"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/usecases/get_notes_usecase.dart": {
+    "mtime": 1773656121236.0256,
+    "hash": "1fc16439042780b4249d15b94aab105d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/usecases/sync_pending_notes_usecase.dart": {
+    "mtime": 1773954631207.419,
+    "hash": "54670936a06cdcfe155b6bd3593d1cdd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/domain/usecases/update_note_usecase.dart": {
+    "mtime": 1774826236625.685,
+    "hash": "bb37d9d2dfa8bab2f68ddc5012ebbe7e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/providers/notes_providers.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "8d2306195e512bb9dd0e84c9b2a7046e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/screens/add_note_screen.dart": {
+    "mtime": 1778664437287.32,
+    "hash": "ff904b37f504a3cd55a16d420bc168ac"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/screens/edit_note_screen.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "5abbfa9cdb585331871007eddcddb423"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/screens/note_detail_screen.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "299cebff4eb6f42f7a6dabcae325bf6a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/screens/notes_list_screen.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "76be6e6de304d5dbb22710fc3cd1393a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/widgets/note_card.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "919926fa5f6097e184f2733ac26fd30e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/knowledge_base/presentation/widgets/tag_input_field.dart": {
+    "mtime": 1774031088972.4944,
+    "hash": "23471a9389d14d0292f528ef679a0fa5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/data/datasources/note_link_local_datasource.dart": {
+    "mtime": 1774828023493.1528,
+    "hash": "b4150e570d8538e5b602381c0995c0e6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/data/datasources/note_link_remote_datasource.dart": {
+    "mtime": 1774826313315.4019,
+    "hash": "7c8a5f622dbdc4641b5ba3dcfd5eaefe"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/data/models/note_job_link_model.dart": {
+    "mtime": 1774826295319.2336,
+    "hash": "e1d54dcc9198964281a63ce4be94d86c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/data/repositories/note_link_repository_impl.dart": {
+    "mtime": 1774826324688.5098,
+    "hash": "5c1cbaedc1b28a326cd1b99ba9df0367"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/domain/repositories/note_link_repository.dart": {
+    "mtime": 1774826287538.161,
+    "hash": "83bb9155aa1bec99d128f8185f0726e8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/domain/usecases/create_note_link_usecase.dart": {
+    "mtime": 1774826337516.634,
+    "hash": "9d24fa913aa7e9f69760a1ff50a60259"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/domain/usecases/delete_note_link_usecase.dart": {
+    "mtime": 1774826341864.676,
+    "hash": "3fec9011326e4b9adccacb28e655aced"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/domain/usecases/get_links_for_job_usecase.dart": {
+    "mtime": 1774826332608.5864,
+    "hash": "0f9db5bcff6b939218aba3f2a18e34bb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/domain/usecases/get_links_for_note_usecase.dart": {
+    "mtime": 1774826328907.5505,
+    "hash": "c409b365741986909f75ccb50ff24895"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/presentation/providers/note_link_provider.dart": {
+    "mtime": 1774826357033.823,
+    "hash": "7ddb8832108df698c0609195d7cd47ce"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/note_links/presentation/screens/note_job_link_screen.dart": {
+    "mtime": 1779215005065.8826,
+    "hash": "c132332d04bd0688098e2bbd44236a32"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/recurring_jobs/data/datasources/recurring_schedule_local_datasource.dart": {
+    "mtime": 1778993258313.0112,
+    "hash": "c92c1dcc16825811a67670b26d2ba302"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart": {
+    "mtime": 1778785791805.9739,
+    "hash": "0f3a83820a482da92020a5f38057ae7c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/recurring_jobs/presentation/providers/recurring_schedule_provider.dart": {
+    "mtime": 1778785959797.5342,
+    "hash": "305ee312bbdfb3b0d0f6a53f37b90d3b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/recurring_jobs/presentation/screens/recurring_schedules_screen.dart": {
+    "mtime": 1779185026583.8413,
+    "hash": "d95b80e493831305cd9612b8f61de942"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/data/models/reminder_model.dart": {
+    "mtime": 1775056797987.6577,
+    "hash": "16a01601cadf3dd5a900f5653356c983"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/data/repositories/reminder_repository_impl.dart": {
+    "mtime": 1775056806788.7507,
+    "hash": "b8f2d41a10e35ce0a8779c6aab2d9014"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/domain/entities/reminder_entity.dart": {
+    "mtime": 1775056792867.6035,
+    "hash": "f1881fe01c229c296e15283a0c01ac0c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/domain/models/reminder_model.dart": {
+    "mtime": 1779215005066.8826,
+    "hash": "61cc27d17b6ee65fe781609e41f0b8c5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/domain/models/reminder_thresholds.dart": {
+    "mtime": 1778788721971.857,
+    "hash": "25cb0b8306bcd50e53ea485217cf02a5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/domain/repositories/reminder_repository.dart": {
+    "mtime": 1775056801394.6938,
+    "hash": "61b126e4f056dfe9f200ad50b42f1fee"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/presentation/providers/reminders_provider.dart": {
+    "mtime": 1779215005066.8826,
+    "hash": "ff24a841648762df1d01aee242a45448"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/presentation/screens/reminder_settings_screen.dart": {
+    "mtime": 1778788745594.967,
+    "hash": "e5361264b84b593bdfb3bcd5fdadcf9e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/reminders/presentation/screens/reminders_screen.dart": {
+    "mtime": 1779215005066.8826,
+    "hash": "f53356f1f0358d222b901af0709368c5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/search/presentation/providers/search_provider.dart": {
+    "mtime": 1774852588966.8616,
+    "hash": "6454e42de7c4361c177624a46069e1bd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/search/presentation/screens/search_screen.dart": {
+    "mtime": 1779215005066.8826,
+    "hash": "04c658bfe0f8d453258bc517f023af33"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/data/datasources/service_type_local_datasource.dart": {
+    "mtime": 1779215005067.8826,
+    "hash": "35823ee21023c50e39c495c1b591ebf2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/data/datasources/service_type_remote_datasource.dart": {
+    "mtime": 1774806782086.9934,
+    "hash": "abf63290491807fe2b3a47cfaf53a68a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/data/models/service_type_model.dart": {
+    "mtime": 1779215005067.8826,
+    "hash": "6c612a7c7a3b64f8e5fde67106ebc28d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/data/repositories/service_type_repository_impl.dart": {
+    "mtime": 1779215005067.8826,
+    "hash": "3a4c276e433e7df0fd01586e3cef1b27"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/entities/service_type_entity.dart": {
+    "mtime": 1779215005068.8826,
+    "hash": "3eba12a9c0f90faed7289b05eaf908f1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/repositories/service_type_repository.dart": {
+    "mtime": 1774800608987.0422,
+    "hash": "e9a967f3999f9172b643b4da0ff7a8d6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/usecases/create_service_type_usecase.dart": {
+    "mtime": 1774806893173.9348,
+    "hash": "a6ab58cc8a2df87e9186ac170780962a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/usecases/delete_service_type_usecase.dart": {
+    "mtime": 1774800756595.4893,
+    "hash": "b9649c8e9e3bc6b50c19e76332c0f400"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/usecases/get_service_types_usecase.dart": {
+    "mtime": 1774798705115.4995,
+    "hash": "17a330218615f771a498244cf5ac2dd1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/usecases/seed_default_service_types_usecase.dart": {
+    "mtime": 1779215005068.8826,
+    "hash": "d297624d3d00db69bfc1dba6a1e88c6e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/domain/usecases/update_service_type_usecase.dart": {
+    "mtime": 1774800719267.118,
+    "hash": "5f3962baa4e8dce2bd80f992e8a8cb1a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/presentation/providers/service_type_provider.dart": {
+    "mtime": 1779215005068.8826,
+    "hash": "6b25b7123c64359d657d2af9653eef0d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/presentation/screens/pricing_screen.dart": {
+    "mtime": 1779193523823.361,
+    "hash": "0318f9816cbe1ae73d918bb69582a190"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/presentation/screens/service_types_screen.dart": {
+    "mtime": 1779215005069.8826,
+    "hash": "9f24c39d4458c6f5b5c9d12b6dc2a799"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/service_types/presentation/widgets/service_type_picker_v2.dart": {
+    "mtime": 1779227079931.062,
+    "hash": "3c3c8baa2396adc4c6ae685d410052ad"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/data/datasources/profile_local_datasource.dart": {
+    "mtime": 1774768172776.4836,
+    "hash": "6c5846b9ee528804e12d3b31f10dd469"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/data/datasources/profile_remote_datasource.dart": {
+    "mtime": 1779215005069.8826,
+    "hash": "85eb78cf9aac2a39d292f7a3d8c35e62"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/data/models/profile_model.dart": {
+    "mtime": 1774797647503.6028,
+    "hash": "a1ddf20af463e98a1d5860212cf47830"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/data/repositories/profile_repository_impl.dart": {
+    "mtime": 1774797861581.3713,
+    "hash": "1e9ad62b10164c839c8dfad14d1c7da6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/domain/entities/profile_entity.dart": {
+    "mtime": 1774800133255.0212,
+    "hash": "af7c13cdac14ec235bc525d5b8c5cb5e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/domain/repositories/profile_repository.dart": {
+    "mtime": 1773393270394.7788,
+    "hash": "fb3e91f325097bdba554077898dd217f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/domain/usecases/get_profile_usecase.dart": {
+    "mtime": 1773056590193.4705,
+    "hash": "92ec40cc1768ab07725c44f346f82cc8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/domain/usecases/share_profile_usecase.dart": {
+    "mtime": 1773056816187.1108,
+    "hash": "53761f0d49b8a24bb6b9f044d968f02c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/domain/usecases/update_profile_usecase.dart": {
+    "mtime": 1773673513883.088,
+    "hash": "9383a3dbe91e6e6f24491e53d7096552"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/presentation/providers/profile_provider.dart": {
+    "mtime": 1774769359101.4333,
+    "hash": "c8386811a6a9c945501e93e50790d49e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/presentation/providers/public_profile_provider.dart": {
+    "mtime": 1774051761163.2017,
+    "hash": "15d354095cca580ea36af7d6039549e3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/presentation/screens/edit_profile_screen.dart": {
+    "mtime": 1779215005069.8826,
+    "hash": "6ec3d60178ce9de9de20cac0478e965a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/presentation/screens/permissions_screen.dart": {
+    "mtime": 1779215005069.8826,
+    "hash": "19dbe4d23aa18ade256b7621dd29e753"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/presentation/screens/profile_screen.dart": {
+    "mtime": 1779215005069.8826,
+    "hash": "3ee95c0d563af38ad7c99339ddb20d30"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/technician_profile/presentation/screens/public_profile_screen.dart": {
+    "mtime": 1779215005070.8826,
+    "hash": "98fd2e1f6e04507b98eb986b1907eb71"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/data/datasources/follow_up_local_datasource.dart": {
+    "mtime": 1779215005070.8826,
+    "hash": "8d44e4e6701ca2a12af313ed638c53be"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/data/datasources/follow_up_remote_datasource.dart": {
+    "mtime": 1774866690609.226,
+    "hash": "5015824fd3f5a9a40580cba3f5a53452"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/data/models/follow_up_model.dart": {
+    "mtime": 1774797071487.059,
+    "hash": "05870bd3b60fd529e9b5af05e1713488"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/data/repositories/follow_up_repository_impl.dart": {
+    "mtime": 1774868636832.7222,
+    "hash": "2614aa0413c97c772fafef8d19224f55"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/domain/entities/follow_up_entity.dart": {
+    "mtime": 1774797032922.6719,
+    "hash": "0b270c8a0f04bc2d934ac3ff0cba6400"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/domain/repositories/follow_up_repository.dart": {
+    "mtime": 1774866700829.3254,
+    "hash": "c2f08d5c184cd404e9901171f229113d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/domain/usecases/build_followup_message_usecase.dart": {
+    "mtime": 1773056590190.287,
+    "hash": "be08bf8377b3febe90d9dbe0e4e83ae2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/domain/usecases/send_followup_usecase.dart": {
+    "mtime": 1773672955758.332,
+    "hash": "9d1fae29936820b67f29433834303761"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/presentation/providers/editable_followup_provider.dart": {
+    "mtime": 1774799507758.597,
+    "hash": "39bd69641ce12df9fad245e21e5d6bd7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/presentation/providers/follow_up_provider.dart": {
+    "mtime": 1778664437297.3208,
+    "hash": "3b21914670e19e2cce3d32426022d3c5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/presentation/widgets/follow_up_button.dart": {
+    "mtime": 1779215005070.8826,
+    "hash": "e39881e0b87487e48751f08cde446e40"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/features/whatsapp_followup/presentation/widgets/follow_up_message_preview.dart": {
+    "mtime": 1778664437298.3208,
+    "hash": "19fcaf9c5891c53ebb43f30ee0b774b1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/main.dart": {
+    "mtime": 1779215005070.8826,
+    "hash": "a513d1e9c6c0140a8be1c2f6b993b4c6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/lib/main_web.dart": {
+    "mtime": 1778664437298.3208,
+    "hash": "ecb9aa4b2a8da76df6c1ca2792932bc8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/functions/dev-bypass/index.ts": {
+    "mtime": 1779179245328.112,
+    "hash": "44c31bf2500494f5357702fdd14de3b1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/functions/send-login-otp/index.ts": {
+    "mtime": 1779001209322.675,
+    "hash": "feea5138ee67ecb82dbb09591356de7d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/functions/send-password-reset/index.ts": {
+    "mtime": 1778708377818.7048,
+    "hash": "844f5a73170e7104cf746a6c6a92a502"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/functions/verify-password-reset/index.ts": {
+    "mtime": 1778950574423.4634,
+    "hash": "0f8ce1ffe6fd982e47f16e75ea68d2df"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260316013206_remote_schema.sql": {
+    "mtime": 1773624875973.0784,
+    "hash": "c1f3e02057b2a21bc15ac6e1cb43b292"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260316013944_fix_follow_ups_rls.sql": {
+    "mtime": 1773625190739.196,
+    "hash": "5ab84ef4883c31eef76b738d3e2e2777"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260316153225_dirc_003_sync_fixes.sql": {
+    "mtime": 1773745060723.8489,
+    "hash": "5e2f94ca24efb75bb1cf78b2545505d8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260316185330_add_correction_requests_table.sql": {
+    "mtime": 1773687243180.9724,
+    "hash": "f4340f58b52b4a7d0d9e99beca3c0dad"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260316200000_admin_rls_policies.sql": {
+    "mtime": 1773692092035.6843,
+    "hash": "88058de7f8a09daf150c9672627e1855"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260319205221_fix_batch_sync_jobs_local_id.sql": {
+    "mtime": 1773953570966.8567,
+    "hash": "4239a11f092607d29e480e6a4c9beb43"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260330000000_v2_security_fixes.sql": {
+    "mtime": 1774910984407.5347,
+    "hash": "8bfbe9669e44f465771feb68968a3512"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260330000001_v2_security_fixes_wave2.sql": {
+    "mtime": 1774912839369.0764,
+    "hash": "4c329c47ba7414d54698ec553e590694"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260330000002_v2_security_fixes_wave3.sql": {
+    "mtime": 1774938323765.2878,
+    "hash": "4cd4aa435f422eddea8b56c3c196f928"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260331000000_v2_missing_schema.sql": {
+    "mtime": 1774938298399.0608,
+    "hash": "1e5087a334e5a47009e4d6db2ac2af79"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260401000000_v2_complete_schema.sql": {
+    "mtime": 1775079355047.3704,
+    "hash": "ff6b16f4d89a75c95c60f5d63c905a2f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260513000000_v2_production_launch.sql": {
+    "mtime": 1778637968159.2612,
+    "hash": "f3233ec895944738866838a1254c14e8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260513000002_phone_status_rpc.sql": {
+    "mtime": 1778716648287.7705,
+    "hash": "2c9c87f432ffca00acd29671a0b5f1e3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260514000000_service_types_category_icon.sql": {
+    "mtime": 1778753834485.2415,
+    "hash": "9ceac157c4bca1b38e8fc99e28afa436"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260515000000_job_status_timestamps.sql": {
+    "mtime": 1778771659094.478,
+    "hash": "cd4f9bf35d7d3139f590b60e50ff69f6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260516000000_app_config.sql": {
+    "mtime": 1778946093922.27,
+    "hash": "ac5b43a22a147c1a8bbeefee9bdc99c8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260516000000_job_services_hardware.sql": {
+    "mtime": 1778774777748.2224,
+    "hash": "12e5b815fe37eb12f5d8b4f793be0b29"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260517000000_service_default_price.sql": {
+    "mtime": 1778778499638.9065,
+    "hash": "e9788a3439c0753ed9611480d3ddd14f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260518000000_inventory_items.sql": {
+    "mtime": 1778779034837.5186,
+    "hash": "92f163af9a3e0b41c5af9743da52cfe6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260519000000_job_expenses.sql": {
+    "mtime": 1778781095010.2727,
+    "hash": "fffe103ee00977d830e24c6172c7a258"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260520000000_job_templates.sql": {
+    "mtime": 1778785069354.8787,
+    "hash": "e05037683be49ae4bc03f0eb26a2814a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260521000000_recurring_job_schedules.sql": {
+    "mtime": 1778785784469.9456,
+    "hash": "be34511137840bdd890d081e4fb9eaea"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260522000000_lead_source.sql": {
+    "mtime": 1778786587466.6873,
+    "hash": "1c0eb8d750df695d9b3e11cd13e275ed"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260523000000_inventory_gaps.sql": {
+    "mtime": 1778838637903.6365,
+    "hash": "76b203fbfa0f71a1b1f1fabd3c882c36"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260524000000_inventory_refinements.sql": {
+    "mtime": 1778841699214.817,
+    "hash": "9e4bc24558980fabcc3bb85322970545"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260525000000_cascade_fixes.sql": {
+    "mtime": 1778873669863.4814,
+    "hash": "1bad35d349709478f04f12fb66f1804e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260528000000_media_type.sql": {
+    "mtime": 1778879955435.9512,
+    "hash": "31d84d84f05ed48d6e240e1cbce91f69"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/migrations/20260529000000_cover_image_url.sql": {
+    "mtime": 1778927688976.342,
+    "hash": "68aa43f1dab013dfae3aeb8b99c1890d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/supabase/migrations/20260319205221_fix_batch_sync_jobs_local_id.sql": {
+    "mtime": 1773953541332.6072,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/supabase/supabase/migrations/20260319205704_remote_schema.sql": {
+    "mtime": 1773953925648.8428,
+    "hash": "ea502a9cf946eaac4487fce948084ef0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/core/models/user_permissions_test.dart": {
+    "mtime": 1779215005071.8826,
+    "hash": "e29b31cf00b9c37916b31b827d0690c4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/core/services/cloudinary_service_test.dart": {
+    "mtime": 1778923915431.131,
+    "hash": "8b89f1f9dc30efb58d1560dd22562831"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/core/utils/currency_formatter_test.dart": {
+    "mtime": 1773665084657.8115,
+    "hash": "38fbd9d35c7e5d4ab5450da44c035b14"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/core/utils/date_formatter_test.dart": {
+    "mtime": 1773645628820.0615,
+    "hash": "aa079e02e42baa34a38d5b660a0dd549"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/core/utils/phone_formatter_test.dart": {
+    "mtime": 1773645393573.1638,
+    "hash": "d6d1e272c37a90ac1848b9e165ee9d71"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/activity_timeline/presentation/providers/timeline_provider_test.dart": {
+    "mtime": 1778642172510.3057,
+    "hash": "b6fdf11e10ac977db77b1d1bb3afcb36"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/analytics/domain/models/analytics_models_test.dart": {
+    "mtime": 1779215005071.8826,
+    "hash": "b93d15b5e2ba52ac93417d1dc67e479d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/auth/domain/usecases/request_otp_usecase_test.dart": {
+    "mtime": 1773659226267.9395,
+    "hash": "f8ece28a05da8d45fbaa19db67e88d2e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/auth/domain/usecases/verify_otp_usecase_test.dart": {
+    "mtime": 1773659103018.5447,
+    "hash": "2995edca6570a72edb0d71d3714c1e59"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/customer_history/data/repositories/customer_repository_duplicate_test.dart": {
+    "mtime": 1774808977967.1467,
+    "hash": "86901f33048dbbe0098fe8f9df66c1b6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/customer_history/data/repositories/customer_repository_impl_test.dart": {
+    "mtime": 1773658857833.4185,
+    "hash": "9a9769d46b894c4bbd240bb72f63122e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/customer_history/domain/usecases/create_customer_usecase_test.dart": {
+    "mtime": 1773659107324.5996,
+    "hash": "8082cc4b4766341e0519e0281f376392"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/customer_history/domain/usecases/get_customers_usecase_test.dart": {
+    "mtime": 1773659111613.6543,
+    "hash": "17dc597c45e3a05c7beb7bf5f164487d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/data/repositories/correction_request_repository_impl_test.dart": {
+    "mtime": 1773960294548.2837,
+    "hash": "b7797e4894591dbf24c5958d035ec767"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/data/repositories/job_repository_impl_test.dart": {
+    "mtime": 1773658890906.84,
+    "hash": "a71a57193e25e6acd883911396d8b2d3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/domain/usecases/edit_job_usecase_test.dart": {
+    "mtime": 1774804882301.0452,
+    "hash": "c4e588c2971df6baacee1273e3579fc6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/domain/usecases/log_job_usecase_test.dart": {
+    "mtime": 1774799746927.756,
+    "hash": "b83162e83da081ef297a5f8b05fb2c67"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/domain/usecases/sync_offline_jobs_usecase_test.dart": {
+    "mtime": 1773659116484.7163,
+    "hash": "6c389c8b1364e89039a48ba8e1b5fd9c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/domain/usecases/update_job_usecase_test.dart": {
+    "mtime": 1773658913423.1272,
+    "hash": "6129006b4c559917cf02519d260f9dfd"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/domain/usecases/update_payment_status_usecase_test.dart": {
+    "mtime": 1774831350671.4534,
+    "hash": "dd50ce993a956739ea480947b426b0cb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/presentation/screens/log_job_wizard_test.dart": {
+    "mtime": 1779215005072.8826,
+    "hash": "d75d9ad187d9cf109f01e85203e02c91"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/job_logging/presentation/widgets/job_card_test.dart": {
+    "mtime": 1773659122661.7952,
+    "hash": "0db2ddf5280131c82887c71e465f2f76"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/key_codes/data/repositories/key_code_encryption_test.dart": {
+    "mtime": 1774808937216.7454,
+    "hash": "c5ba2572df9e5d6aed6fbf2047da2673"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/knowledge_base/domain/usecases/archive_note_usecase_test.dart": {
+    "mtime": 1773659127602.8582,
+    "hash": "cb500962df6ea2f8041925d0f670e7b0"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/knowledge_base/domain/usecases/create_note_usecase_test.dart": {
+    "mtime": 1773659132208.9167,
+    "hash": "d150d0ebd9d5f4d6ab9fa9589b19b244"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/knowledge_base/domain/usecases/update_note_usecase_test.dart": {
+    "mtime": 1774826528094.4802,
+    "hash": "8687c19a988c428d20060e5211374ecf"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/note_links/data/repositories/note_link_repository_test.dart": {
+    "mtime": 1774826546365.6572,
+    "hash": "a544f8261dfa2d578577cde4dc7a0c5d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/reminders/presentation/providers/reminders_provider_test.dart": {
+    "mtime": 1774852764748.7188,
+    "hash": "8398b819289c2933405b8a9cab6940ad"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/search/presentation/providers/job_list_filters_test.dart": {
+    "mtime": 1774852754595.6658,
+    "hash": "e19c6ed2918e28777e089c2cf07d2c06"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/service_types/data/repositories/service_type_repository_impl_test.dart": {
+    "mtime": 1774807332074.6206,
+    "hash": "f17450e4045af1dc1b653e503b638416"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/technician_profile/domain/usecases/update_profile_usecase_test.dart": {
+    "mtime": 1773659137087.979,
+    "hash": "04e42fa183bb9882d5603142ac2f2393"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/whatsapp_followup/domain/entities/follow_up_response_status_test.dart": {
+    "mtime": 1774873221051.4463,
+    "hash": "6c1e9fec4d6e1728ed2cb8abce51e4f6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/whatsapp_followup/domain/usecases/build_followup_message_usecase_test.dart": {
+    "mtime": 1773658988200.0806,
+    "hash": "acee873d8dc5fedf6a7b747a645d0c59"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/whatsapp_followup/domain/usecases/send_followup_usecase_test.dart": {
+    "mtime": 1773676374023.4426,
+    "hash": "7e29f808cc85d43be906328e152144c8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/features/whatsapp_followup/presentation/widgets/follow_up_button_test.dart": {
+    "mtime": 1773659058262.9739,
+    "hash": "318581e2de8acc21debf436a4581d18f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/helpers/mocks.dart": {
+    "mtime": 1774804972100.7837,
+    "hash": "9f56da6b6e2b45f9653ceaf9a924a451"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/validation_verification_test.dart": {
+    "mtime": 1774800133255.0212,
+    "hash": "44714e9d12cae270acebb4a3abb3b4b3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/test/widget_test.dart": {
+    "mtime": 1773040388427.0005,
+    "hash": "0cbcc2ba82354277fcb4da6a0872a865"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.github/copilot-instructions.md": {
+    "mtime": 1779202661077.0342,
+    "hash": "f7545d0a33be7acd4361ec389cb93ba1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.github/workflows/deploy.yml": {
+    "mtime": 1778664437253.3174,
+    "hash": "f74556c7d23b7e3fa662f698e6e56d63"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.graphify/GRAPH_REPORT.md": {
+    "mtime": 1779168018218.0144,
+    "hash": "a7ee00be3ccd490f7ac070c210a32025"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.graphify/graph.html": {
+    "mtime": 1779168073972.4172,
+    "hash": "c0df82c3bd8a731f0e2deaa36bebc650"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.opencode/plans/onboarding_service_taxonomy.md": {
+    "mtime": 1778751017089.3918,
+    "hash": "c5028a74926320116fd6c0ce2c044634"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.playwright-mcp/page-2026-05-13T10-40-00-694Z.yml": {
+    "mtime": 1778668800711.584,
+    "hash": "18380b3e948b8cbbd674db35fae62c74"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.playwright-mcp/page-2026-05-17T06-07-43-172Z.yml": {
+    "mtime": 1778998063172.8481,
+    "hash": "a57e2b88b32c85eb204cbfc516eddcf1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.playwright-mcp/page-2026-05-17T07-01-57-468Z.yml": {
+    "mtime": 1779001317476.7786,
+    "hash": "bd0a20d4d38f69e0c436449f2f2fabc5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/111576-1779211057/content/clarify.html": {
+    "mtime": 1779211075719.4583,
+    "hash": "55d3c0243598892c9c28a65bf825e5d8"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/111576-1779211057/content/expenses-parts-drawers.html": {
+    "mtime": 1779211312769.5671,
+    "hash": "26a856b6e7739a37608ab231897ba5ba"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/111576-1779211057/content/extras-layout.html": {
+    "mtime": 1779211177845.25,
+    "hash": "f76a40bb1f6f4fc795ae2368132ab7c1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/111576-1779211057/content/hardware-drawer.html": {
+    "mtime": 1779211293445.3784,
+    "hash": "c80f5890a744ef97bda46b0f092bfa18"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/111576-1779211057/content/main-tab.html": {
+    "mtime": 1779211249058.945,
+    "hash": "aacdcd4a6a4901bf6b0460d5628512cf"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/111576-1779211057/content/photos-notes-drawers.html": {
+    "mtime": 1779211324382.6804,
+    "hash": "7b2bde68a232f3510b8a5b40e7830843"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/143816-1779212011/content/options.html": {
+    "mtime": 1779212033650.8564,
+    "hash": "f703d0edbeba3583ced6a14f58160c53"
+  },
+  "/home/cybocrime/workspace/projects/keystone/.superpowers/brainstorm/400667-1779221611/content/six-step-wizard.html": {
+    "mtime": 1779221632595.6309,
+    "hash": "44eae14428efa8dab5b5fa0185b4b249"
+  },
+  "/home/cybocrime/workspace/projects/keystone/CLAUDE.md": {
+    "mtime": 1779205904281.2852,
+    "hash": "33c6e2e8fadc149983019bed587b06a6"
+  },
+  "/home/cybocrime/workspace/projects/keystone/CONTRIBUTING.md": {
+    "mtime": 1774088159548.405,
+    "hash": "939c881acbb57b1b5f681654185111e5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/README.md": {
+    "mtime": 1778664437255.3176,
+    "hash": "c326fc095aaf06f6781eb9c6c33f6ce3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/SYSTEM_FLOW.md": {
+    "mtime": 1778877638727.105,
+    "hash": "6e2010db3b34c833ee2bad4d40abefaf"
+  },
+  "/home/cybocrime/workspace/projects/keystone/analysis_options.yaml": {
+    "mtime": 1773013160031.2124,
+    "hash": "66d03d7647c8e438164feaf5b922d44a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/backups/prod_backup_1778639245.txt": {
+    "mtime": 1778639251428.8691,
+    "hash": "5701275cddacb495cd8e63cbaeab67f7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/dev_bypass.md": {
+    "mtime": 1779034853559.4583,
+    "hash": "6477f5219b8b0074bdad8432be5bbd68"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/plans/2026-05-19-inventory-stepper-redesign.md": {
+    "mtime": 1779196324832.758,
+    "hash": "2518ac9d924c400d6d89ba56d2e4c840"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/plans/2026-05-19-pricing-screen-redesign.md": {
+    "mtime": 1779192161551.97,
+    "hash": "8d29fec3236d73b315b398e717ebaf15"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/plans/2026-05-29-extras-tab-drawer-redesign.md": {
+    "mtime": 1779211528259.6707,
+    "hash": "6de1161f5290031db43b883061c89600"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/plans/2026-05-30-additional-services-drawer-redesign.md": {
+    "mtime": 1779285586483.0867,
+    "hash": "bafe99fc46814b358623b9f42fa85e52"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/specs/2026-05-19-pricing-screen-redesign.md": {
+    "mtime": 1779191789521.839,
+    "hash": "28039796dd462220848e14c082207be4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/specs/2026-05-19-profile-screen-refresh-design.md": {
+    "mtime": 1779190573077.73,
+    "hash": "0b6dfdfa4506db0e9cb97bf13ea32e51"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/specs/2026-05-29-compact-progress-indicator.md": {
+    "mtime": 1779212187483.046,
+    "hash": "da919757400d2497f5ebb237840a024c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/specs/2026-05-29-extras-tab-drawer-redesign.md": {
+    "mtime": 1779211389695.318,
+    "hash": "c4dc376714fd6049163afaccdfaffe5a"
+  },
+  "/home/cybocrime/workspace/projects/keystone/docs/superpowers/specs/2026-05-30-additional-services-drawer-redesign.md": {
+    "mtime": 1779285472968.8657,
+    "hash": "25c72c3be590c9c1656fe74dbf654ab4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/flutter_native_splash.yaml": {
+    "mtime": 1773962496707.429,
+    "hash": "c15ee74821fa936df09efc6eb7d1151f"
+  },
+  "/home/cybocrime/workspace/projects/keystone/git_clean_patterns.txt": {
+    "mtime": 1778664408701.122,
+    "hash": "33d13c6b26cf220171ed6738fc195df5"
+  },
+  "/home/cybocrime/workspace/projects/keystone/git_clean_v2.txt": {
+    "mtime": 1778664462794.281,
+    "hash": "735160846b7f915974a7767282942d8d"
+  },
+  "/home/cybocrime/workspace/projects/keystone/pubspec.yaml": {
+    "mtime": 1779215005071.8826,
+    "hash": "c09efa3e7113d30f7f759b067c96d4a3"
+  },
+  "/home/cybocrime/workspace/projects/keystone/web/index.html": {
+    "mtime": 1778664437303.3303,
+    "hash": "5d9cb1fdaf6a2bdade0a0f1e6eab4a80"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-hdpi/android12splash.png": {
+    "mtime": 1773747777953.8335,
+    "hash": "b1046fc45ce43da8f1dbb6758c87b236"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-hdpi/splash.png": {
+    "mtime": 1773747777639.8303,
+    "hash": "b1046fc45ce43da8f1dbb6758c87b236"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-mdpi/android12splash.png": {
+    "mtime": 1773747777876.8328,
+    "hash": "bdec2388cef7ff686ee55850809c0e9b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-mdpi/splash.png": {
+    "mtime": 1773747777606.83,
+    "hash": "bdec2388cef7ff686ee55850809c0e9b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-night-hdpi/android12splash.png": {
+    "mtime": 1773747778206.8362,
+    "hash": "b1046fc45ce43da8f1dbb6758c87b236"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-night-mdpi/android12splash.png": {
+    "mtime": 1773747778232.8364,
+    "hash": "bdec2388cef7ff686ee55850809c0e9b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-night-xhdpi/android12splash.png": {
+    "mtime": 1773747778296.837,
+    "hash": "03a315cf62cd87be50143c11c4991d2c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-night-xxhdpi/android12splash.png": {
+    "mtime": 1773747778870.8428,
+    "hash": "054b4e47c584b9eba4c28deefea37ca4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-night-xxxhdpi/android12splash.png": {
+    "mtime": 1773747778866.8428,
+    "hash": "e5ca9bf7716797fbbfe9fe3cd2c060d2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-v21/background.png": {
+    "mtime": 1773747778810.8423,
+    "hash": "d23ce0aec56df51c3f8447a1683deabb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-xhdpi/android12splash.png": {
+    "mtime": 1773747777974.8337,
+    "hash": "03a315cf62cd87be50143c11c4991d2c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-xhdpi/splash.png": {
+    "mtime": 1773747777671.8306,
+    "hash": "03a315cf62cd87be50143c11c4991d2c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-xxhdpi/android12splash.png": {
+    "mtime": 1773747778811.8423,
+    "hash": "054b4e47c584b9eba4c28deefea37ca4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-xxhdpi/splash.png": {
+    "mtime": 1773747777763.8315,
+    "hash": "054b4e47c584b9eba4c28deefea37ca4"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-xxxhdpi/android12splash.png": {
+    "mtime": 1773747778811.8423,
+    "hash": "e5ca9bf7716797fbbfe9fe3cd2c060d2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable-xxxhdpi/splash.png": {
+    "mtime": 1773747777745.8315,
+    "hash": "e5ca9bf7716797fbbfe9fe3cd2c060d2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable/background.png": {
+    "mtime": 1773747778805.8423,
+    "hash": "d23ce0aec56df51c3f8447a1683deabb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/drawable/splash_logo.png": {
+    "mtime": 1773172681643.48,
+    "hash": "395fce12d45ab4f30d8add02887e941b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+    "mtime": 1773183753954.6248,
+    "hash": "2d2eb9d3726473d1c499c86c95133a84"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
+    "mtime": 1773183753955.327,
+    "hash": "2d2eb9d3726473d1c499c86c95133a84"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+    "mtime": 1773183753934.449,
+    "hash": "d2ad8a9e145dfcb48ee4f55a962c4b0c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
+    "mtime": 1773183753934.8691,
+    "hash": "d2ad8a9e145dfcb48ee4f55a962c4b0c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+    "mtime": 1773183753974.2634,
+    "hash": "6ca5bcdf53e7052a3795be3ce45cd4bb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
+    "mtime": 1773183753975.2634,
+    "hash": "6ca5bcdf53e7052a3795be3ce45cd4bb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+    "mtime": 1773183753998.264,
+    "hash": "8cbfcfd9f707e73fd18546b5575e7b48"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
+    "mtime": 1773183754000.264,
+    "hash": "8cbfcfd9f707e73fd18546b5575e7b48"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+    "mtime": 1773183754024.2642,
+    "hash": "9e569a2cb59ac2bea723be0a8793ea1b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
+    "mtime": 1773183754028.2644,
+    "hash": "9e569a2cb59ac2bea723be0a8793ea1b"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/flags/gh.svg": {
+    "mtime": 1773226945163.7947,
+    "hash": "637bbffe73e30978a110d429bf94b3eb"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/logo/keyhole.svg": {
+    "mtime": 1773392790448.6147,
+    "hash": "79ea4ecb6744d0a17d2abf51bbfe4013"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/logo/keystone_block.svg": {
+    "mtime": 1773392790448.1802,
+    "hash": "611f0ac7a5bca93861606bdcfc482f79"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/logo/keystone_logo.svg": {
+    "mtime": 1774036996147.2646,
+    "hash": "6960e5258dca215b44330cbc1e4076f7"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/logo/left_arm.svg": {
+    "mtime": 1773392790447.5303,
+    "hash": "419023119e30bc6ebd37e303519a62f2"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/logo/right_arm.svg": {
+    "mtime": 1773392790448.0251,
+    "hash": "1c80fa9849724a087f2b45952f58bee1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/assets/splash_logo.png": {
+    "mtime": 1773183454876.9849,
+    "hash": "d33f3a30103e8c3a567aec21a684990e"
+  },
+  "/home/cybocrime/workspace/projects/keystone/keystone_landing.png": {
+    "mtime": 1778668807195.6338,
+    "hash": "c3cc76fc93045ce0203b3917f90bee74"
+  },
+  "/home/cybocrime/workspace/projects/keystone/web/favicon.png": {
+    "mtime": 1778664437302.321,
+    "hash": "5dcef449791fa27946b3d35ad8803796"
+  },
+  "/home/cybocrime/workspace/projects/keystone/web/icons/Icon-192.png": {
+    "mtime": 1778664437303.1758,
+    "hash": "ac9a721a12bbc803b44f645561ecb1e1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/web/icons/Icon-512.png": {
+    "mtime": 1778664437303.3303,
+    "hash": "96e752610906ba2a93c65f8abe1645f1"
+  },
+  "/home/cybocrime/workspace/projects/keystone/web/icons/Icon-maskable-192.png": {
+    "mtime": 1778664437303.3303,
+    "hash": "c457ef57daa1d16f64b27b786ec2ea3c"
+  },
+  "/home/cybocrime/workspace/projects/keystone/web/icons/Icon-maskable-512.png": {
+    "mtime": 1778664437303.3303,
+    "hash": "301a7604d45b3e739efc881eb04896ea"
+  }
+}

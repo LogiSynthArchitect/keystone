@@ -12,7 +12,16 @@ import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/services/demo_data_service.dart';
+import '../../../../core/services/demo_data_seeder.dart';
+import '../../../inventory/data/datasources/inventory_local_datasource.dart';
+import '../../../inventory/data/datasources/inventory_restocks_local_datasource.dart';
+import '../../../inventory/data/datasources/inventory_stock_adjustments_local_datasource.dart';
+import '../../../knowledge_base/data/datasources/knowledge_note_local_datasource.dart';
+import '../../../note_links/data/datasources/note_link_local_datasource.dart';
+import '../../../whatsapp_followup/data/datasources/follow_up_local_datasource.dart';
+import '../../../key_codes/data/datasources/key_code_local_datasource.dart';
+import '../../../recurring_jobs/data/datasources/recurring_schedule_local_datasource.dart';
+import '../../../job_templates/data/datasources/job_template_local_datasource.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -24,6 +33,7 @@ import '../../../job_logging/data/datasources/job_hardware_local_datasource.dart
 import '../../../job_logging/data/datasources/job_parts_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_expenses_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_audit_local_datasource.dart';
+import '../../../job_logging/data/datasources/job_photos_local_datasource.dart';
 import '../../../customer_history/data/datasources/customer_local_datasource.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
@@ -62,14 +72,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return;
     }
 
-    final service = DemoDataService(
+    final service = DemoDataSeeder(
       customerLocal: CustomerLocalDatasource(),
       jobLocal: JobLocalDatasource(),
       servicesLocal: JobServicesLocalDatasource(),
       hardwareLocal: JobHardwareLocalDatasource(),
       partsLocal: JobPartsLocalDatasource(),
       expensesLocal: JobExpensesLocalDatasource(),
+      photosLocal: JobPhotosLocalDatasource(),
       auditLocal: JobAuditLocalDatasource(),
+      inventoryLocal: InventoryLocalDatasource(),
+      restocksLocal: InventoryRestocksLocalDatasource(),
+      stockAdjustmentsLocal: InventoryStockAdjustmentsLocalDatasource(),
+      notesLocal: KnowledgeNoteLocalDatasource(),
+      noteLinkLocal: NoteLinkLocalDatasource(),
+      followUpLocal: FollowUpLocalDatasource(),
+      keyCodeLocal: KeyCodeLocalDatasource(),
+      recurringScheduleLocal: RecurringScheduleLocalDatasource(),
+      jobTemplateLocal: JobTemplateLocalDatasource(),
       userId: userId,
     );
 
@@ -84,7 +104,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       } else {
         await service.seed();
         if (mounted) {
-          KsSnackbar.show(context, message: 'Demo data seeded — 5 customers, 8 jobs', type: KsSnackbarType.success);
+          KsSnackbar.show(context, message: 'Demo data seeded — 8 customers, 12 jobs, inventory, notes, & more', type: KsSnackbarType.success);
           ref.read(jobListProvider.notifier).load();
         }
       }
