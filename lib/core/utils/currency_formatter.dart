@@ -41,6 +41,9 @@ class CurrencyFormatter {
 /// - Allows only digits and one decimal point
 /// - Limits decimal places to 2
 class CurrencyInputFormatter extends TextInputFormatter {
+  /// Max integer digits to prevent overflow (GHS 999,999).
+  static const int _maxIntegerDigits = 6;
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -56,6 +59,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
     bool hasDot = false;
     int decimalDigits = 0;
     bool afterDot = false;
+    int integerDigits = 0;
     for (int i = 0; i < text.length; i++) {
       final ch = text[i];
       if (ch == '.') {
@@ -71,7 +75,10 @@ class CurrencyInputFormatter extends TextInputFormatter {
             filtered.write(ch);
           }
         } else {
-          filtered.write(ch);
+          if (integerDigits < _maxIntegerDigits) {
+            integerDigits++;
+            filtered.write(ch);
+          }
         }
       }
     }

@@ -14,7 +14,7 @@ export FLUTTER_ROOT=/home/cybocrime/Tools/flutter
 
 doppler run --project keystone --config prd -- bash -c '
   export ANDROID_HOME=/home/cybocrime/Tools/android-sdk
-  /home/cybocrime/Tools/flutter/bin/flutter run -d 192.168.162.30:5555 \
+  /home/cybocrime/Tools/flutter/bin/flutter run -d 12642404CG011025 \
     --dart-define=SUPABASE_URL=$SUPABASE_URL \
     --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
     --dart-define=CLOUDINARY_NAME=$CLOUDINARY_NAME \

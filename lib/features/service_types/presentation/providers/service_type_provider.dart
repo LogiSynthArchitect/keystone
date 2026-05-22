@@ -76,13 +76,42 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
     }
   }
 
-  Future<void> updateServiceTypePrice(String id, int? defaultPrice) async {
+  /// Save price locally. Returns true if local save succeeded.
+  /// Does NOT update screen state — caller is responsible for
+  /// calling [applyPriceUpdate] after any UI animation.
+  Future<bool> savePriceOnly(String id, int? defaultPrice) async {
+    final current = state.valueOrNull;
+    if (current == null) return false;
+    final index = current.indexWhere((t) => t.id == id);
+    if (index == -1) return false;
+    final updated = current[index].copyWith(defaultPrice: defaultPrice);
+
+    try {
+      await _ref.read(updateServiceTypeUsecaseProvider).call(UpdateServiceTypeParams(updated));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Apply a price update to the in-memory state AFTER user-facing
+  /// animation (success moment) has completed.
+  void applyPriceUpdate(String id, int? defaultPrice) {
     final current = state.valueOrNull;
     if (current == null) return;
     final index = current.indexWhere((t) => t.id == id);
     if (index == -1) return;
     final updated = current[index].copyWith(defaultPrice: defaultPrice);
-    await updateServiceType(updated);
+    final updatedList = [...current];
+    updatedList[index] = updated;
+    state = AsyncValue.data(updatedList);
+  }
+
+  /// Convenience — saves AND applies in one call (for callers that
+  /// don't need animation sequencing).
+  Future<void> updateServiceTypePrice(String id, int? defaultPrice) async {
+    await savePriceOnly(id, defaultPrice);
+    applyPriceUpdate(id, defaultPrice);
   }
 
   Future<void> deleteServiceType(String id) async {

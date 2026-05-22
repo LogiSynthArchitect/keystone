@@ -69,6 +69,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       backgroundColor: context.ksc.primary800,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -86,10 +87,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               });
             },
             onClear: () {
-              setState(() {
-                _filter = 'all';
-                _locationFilter = 'all';
-              });
+              draftType = 'all';
+              draftLocation = 'all';
+              setInnerState(() {});
             },
             children: [
               KsFilterChipGroup(

@@ -20,16 +20,16 @@ NoirLuxe is a dark, gold-accented design system that exudes exclusivity and refi
 ## Typography
 
 - **Headline Font**: Dancing Script
-- **Body Font**: Inter
+- **Body Font**: BarlowSemiCondensed
 - **Mono Font**: JetBrains Mono
 
 - **h1**: Dancing Script 40px bold, 1.2 line height
 - **h2**: Dancing Script 32px bold, 1.25 line height
 - **h3**: Dancing Script 24px regular, 1.3 line height
-- **h4**: Inter 18px medium, 1.4 line height
-- **body**: Inter 15px light, 1.6 line height
-- **small**: Inter 13px regular, 1.5 line height
-- **tiny**: Inter 11px regular, 1.4 line height
+- **h4**: BarlowSemiCondensed 18px bold (700), 1.4 line height
+- **body**: BarlowSemiCondensed 15px semi-bold (600), 1.6 line height
+- **small**: BarlowSemiCondensed 13px medium (500), 1.5 line height
+- **tiny**: BarlowSemiCondensed 11px medium (500), 1.4 line height
 - **mono**: JetBrains Mono 13px regular, 1.6 line height
 
 ---
@@ -68,7 +68,7 @@ Base unit: 4px
 
 All buttons use 8px rounded corners (radius-md).
 
-- **Primary (Gold)**: Gold (#C9A84C) fill, near-black (#0C0C0E) text, no border, Inter medium (500) with 0.5px letter-spacing. Hover brightens the fill and adds a soft gold glow (glow-gold-sm). Active state slightly dims brightness. Available in small (12px text, 32px tall, 6px 16px padding), medium (14px text, 40px tall, 8px 24px padding), and large (15px text, 48px tall, 12px 32px padding).
+- **Primary (Gold)**: Gold (#C9A84C) fill, near-black (#0C0C0E) text, no border, Inter bold (700) with 0.5px letter-spacing. Hover brightens the fill and adds a soft gold glow (glow-gold-sm). Active state slightly dims brightness. Available in small (12px text, 32px tall, 6px 16px padding), medium (14px text, 40px tall, 8px 24px padding), and large (15px text, 48px tall, 12px 32px padding).
 - **Secondary**: Transparent fill, gold text, 1px gold border. Hover tints the background to faint gold (#C9A84C at 8% opacity).
 - **Ghost**: Transparent fill, content-secondary text, no border. Hover tints the background to faint warm-white (#F2F0EB at 5% opacity).
 - **Destructive**: Red (#EF4444) fill, white (#FFFFFF) text, no border. Hover brightens the fill.
@@ -82,16 +82,16 @@ Disabled buttons drop to 0.35 opacity with a disabled cursor and no glow effects
 
 ### Inputs
 
-Inputs sit on a sunken surface (#060607) with 8px rounded corners, 10px 16px padding, and Inter 15px light (300) text in content-primary. The border is 1px in the default border color.
+Inputs sit on a sunken surface (#060607) with 8px rounded corners, 10px 16px padding, and BarlowSemiCondensed 15px semi-bold (600) text in content-primary. The border is 1px in the default border color.
 
 In the default state there is no shadow. On hover the border strengthens to border-strong. On focus the border turns gold with a soft gold glow (glow-gold-sm). In the error state the border turns red (error) with a 6px red (#EF4444) glow at 20% opacity. When disabled the border returns to default and opacity drops to 0.35.
 
-Labels are Inter 12px medium (500) uppercase with 1px letter-spacing in content-tertiary with 8px bottom margin. Helper text is Inter 12px light (300) in content-tertiary with 4px top margin; error helper text uses the error color.
+Labels are BarlowSemiCondensed 12px bold (700) uppercase with 1px letter-spacing in content-tertiary with 8px bottom margin. Helper text is BarlowSemiCondensed 12px regular (400) in content-tertiary with 4px top margin; error helper text uses the error color.
 
 ### Chips
 
 - **Filter**: Transparent fill, content-secondary text, 1px default border, pill-shaped, 4px 14px padding. When active the background fills with faint gold (#C9A84C at 10% opacity), the border turns gold, and text turns gold.
-- **Status**: Pill-shaped, 11px medium (500) uppercase text with 0.5px letter-spacing, 4px 12px padding. Active shows #4ADE80 at 10% opacity fill with #4ADE80 text. Pending shows #FBBF24 at 10% opacity fill with #FBBF24 text. Expired shows #EF4444 at 10% opacity fill with #EF4444 text. Premium shows #C9A84C at 12% opacity fill with #C9A84C text.
+- **Status**: Pill-shaped, 11px bold (700) uppercase text with 0.5px letter-spacing, 4px 12px padding. Active shows #4ADE80 at 10% opacity fill with #4ADE80 text. Pending shows #FBBF24 at 10% opacity fill with #FBBF24 text. Expired shows #EF4444 at 10% opacity fill with #EF4444 text. Premium shows #C9A84C at 12% opacity fill with #C9A84C text.
 
 ### Lists
 
@@ -119,7 +119,7 @@ Overlay surface (#1E1E21) background with content-primary text at 12px, 4px roun
 4. **Don't** use bright white (#FFFFFF); always use warm-white (#F2F0EB) for text.
 5. **Do** use Dancing Script only for headings and display text, never for body copy.
 6. **Don't** combine gold glow with colored semantic states -- let each speak alone.
-7. **Do** keep typography light-weight (300-400) for body text to maintain elegance.
+7. **Do** maintain consistent weight hierarchy: section labels bold (700), body text semi-bold (600), secondary text medium (500).
 8. **Do** use generous letter-spacing on uppercase labels to convey luxury.
 9. **Don't** crowd elements; luxury demands whitespace and breathing room.
 10. **Do** ensure gold text passes WCAG AA contrast (minimum 4.5:1) against dark surfaces.

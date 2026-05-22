@@ -5,10 +5,15 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
+import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
+import '../../../../core/widgets/ks_watermark.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/icon_helpers.dart';
 import '../providers/service_type_provider.dart';
@@ -26,26 +31,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   String _searchQuery = '';
   String _activeCategory = 'All';
   bool _searchOpen = false;
-  static const _allCategories = ['All', 'Residential', 'Automotive', 'Commercial', 'Security Systems', 'Specialty'];
+  List<ServiceTypeEntity>? _types;
 
-  // Services considered "premium" (higher price indicator)
-  static String _categoryEmoji(String category) {
-    switch (category) {
-      case 'All': return '📍';
-      case 'Residential': return '🏠';
-      case 'Automotive': return '🚗';
-      case 'Commercial': return '🏢';
-      case 'Security Systems': return '📡';
-      case 'Specialty': return '⚡';
-      default: return '📋';
-    }
-  }
-
-  static const _premiumServices = {
-    'Master Key Systems', 'Safe Opening', 'Gate Automation',
-    'High-Security Locks', 'Access Control', 'Smart Lock Install',
-    'Transponder Key Programming', 'CCTV Installation', 'Electric Fence Installation',
-  };
+  bool get _hasActiveFilter => _activeCategory != 'All';
 
   @override
   void dispose() {
@@ -65,8 +53,20 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         searchable: true,
         isSearchOpen: _searchOpen,
         onSearchToggle: () => setState(() => _searchOpen = !_searchOpen),
+        goldStyle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              LineAwesomeIcons.filter_solid,
+              color: _hasActiveFilter ? context.ksc.accent500 : context.ksc.primary900,
+              size: 22,
+            ),
+            onPressed: () => _showFilterSheet(context, types: _types),
+          ),
+        ],
       ),
-      body: state.when(
+      body: KsWatermark(
+        child: state.when(
         loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
         error: (err, _) => Center(
           child: Column(
@@ -84,6 +84,8 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           ),
         ),
         data: (types) {
+          _types = types;
+
           // Search content that slides in/out
           final searchContent = Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -100,15 +102,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
           return Column(
             children: [
-              // Filter chips — always visible, permanent header
-              SizedBox(
-                height: 40,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  children: _categoryChips(types),
-                ),
-              ),
               // Search panel (animated) + list body
               Expanded(
                 child: SearchPanelBody(
@@ -121,57 +114,92 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           );
         },
       ),
+    ),
     );
   }
 
-  List<Widget> _categoryChips(List<ServiceTypeEntity> types) {
-    return _allCategories.map((cat) {
-      final isActive = _activeCategory == cat;
-      final count = cat == 'All' ? types.length : types.where((t) => t.category == cat).length;
-      final emoji = _categoryEmoji(cat);
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: GestureDetector(
-          onTap: () => setState(() => _activeCategory = cat),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: isActive ? context.ksc.accent500.withValues(alpha: 0.12) : context.ksc.primary800,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(emoji, style: const TextStyle(fontSize: 11)),
-                const SizedBox(width: 4),
-                Text(
-                  cat == 'All' ? 'ALL' : cat.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    letterSpacing: 0.8,
-                    color: isActive ? context.ksc.accent500 : context.ksc.neutral500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: isActive ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: isActive ? context.ksc.accent500 : context.ksc.neutral600),
-                  ),
-                ),
-              ],
-            ),
+  void _showFilterSheet(BuildContext context, {List<ServiceTypeEntity>? types}) {
+    String draftCategory = _activeCategory;
+
+    // Derive categories from actual data, with "All" first
+    final dynamicCats = types
+        ?.map((t) => t.category)
+        .toSet()
+        .where((c) => c.isNotEmpty)
+        .toList();
+    dynamicCats?.sort();
+
+    final allCats = {'All': types?.length ?? 0};
+    if (types != null) {
+      for (final c in dynamicCats ?? <String>[]) {
+        allCats[c] = types.where((t) => t.category == c).length;
+      }
+    }
+
+    const catIcons = <String, String>{
+      'All': '📍',
+      'Residential': '🏠',
+      'Automotive': '🚗',
+      'Commercial': '🏢',
+      'Security Systems': '📡',
+      'Specialty': '⚡',
+    };
+
+    const catDesc = <String, String>{
+      'All': 'Clear all filters',
+      'Residential': 'Home & apartment services',
+      'Automotive': 'Vehicle lock & key',
+      'Commercial': 'Business & office',
+      'Security Systems': 'CCTV, alarms, access',
+      'Specialty': 'Safe, gate, high-security',
+    };
+
+    final selectedCat = draftCategory;
+    final selectedCount = selectedCat == 'All'
+        ? types?.length
+        : types?.where((t) => t.category == selectedCat).length;
+    final activeLabel = selectedCat == 'All' ? null : selectedCat;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      enableDrag: false,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setInnerState) => PopScope(
+            canPop: false,
+            child: KsFilterSheet(
+            title: "FILTER BY CATEGORY",
+            totalCount: selectedCount,
+            activeLabel: activeLabel,
+            onApply: () {
+              setState(() => _activeCategory = draftCategory);
+            },
+            onClear: () {
+              draftCategory = 'All';
+              setInnerState(() {});
+            },
+            children: [
+              KsFilterChipGroup(
+                label: "CATEGORY",
+                selected: draftCategory,
+                onSelect: (v) => setInnerState(() => draftCategory = v ?? 'All'),
+                options: allCats.entries.map((e) => KsFilterOption(
+                  value: e.key,
+                  display: e.key == 'All' ? 'All Services' : e.key,
+                  icon: catIcons[e.key] ?? '📋',
+                  count: e.value,
+                  description: catDesc[e.key],
+                )).toList(),
+              ),
+            ],
           ),
         ),
       );
-    }).toList();
+    },
+  );
   }
 
   Widget _buildBody(List<ServiceTypeEntity> types) {
@@ -216,18 +244,18 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        // Category header (gold, uppercase, always expanded)
+        // Category header (gold, uppercase) — label spec: 12px w700, ls 1.0
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Row(
             children: [
               Text(
                 category.toUpperCase(),
-                style: AppTextStyles.caption.copyWith(
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
                   color: context.ksc.accent500,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
-                  fontSize: 11,
                 ),
               ),
               const SizedBox(width: 8),
@@ -239,7 +267,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                 ),
                 child: Text(
                   "${services.length}",
-                  style: TextStyle(fontSize: 10, color: context.ksc.neutral500, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 11, color: context.ksc.neutral500, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -252,13 +280,14 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   }
 
   Widget _buildServiceRow(ServiceTypeEntity service) {
-    final isPremium = _premiumServices.contains(service.name);
+    // Premium tier: priced ≥ GHS 250 or marked premium in data
+    final isPremium = (service.defaultPrice ?? 0) >= 25000;
     final hasPrice = service.defaultPrice != null;
 
     return GestureDetector(
       onTap: () => _openPriceSheet(service),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(color: context.ksc.primary800, width: 1),
@@ -293,8 +322,8 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                   Text(
                     service.name,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isPremium ? FontWeight.w500 : FontWeight.w300,
+                      fontSize: 15,
+                      fontWeight: isPremium ? FontWeight.w700 : FontWeight.w600,
                       color: context.ksc.white,
                     ),
                     maxLines: 1,
@@ -304,8 +333,8 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                     Text(
                       'PREMIUM',
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                fontWeight: FontWeight.w600,
                         letterSpacing: 1,
                         color: context.ksc.accent500,
                       ),
@@ -315,9 +344,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
             ),
             // Price
             Text(
-              hasPrice ? 'GHS ${(service.defaultPrice! / 100.0).toStringAsFixed(0)}' : '\u2014',
+              hasPrice ? CurrencyFormatter.formatShort(service.defaultPrice!) : '\u2014',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: hasPrice ? context.ksc.accent500 : context.ksc.neutral600,
               ),
@@ -336,9 +365,10 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   }
 
   void _openPriceSheet(ServiceTypeEntity service) {
+    final originalPesewas = service.defaultPrice;
     final controller = TextEditingController(
-      text: service.defaultPrice != null
-          ? (service.defaultPrice! / 100.0).toStringAsFixed(2)
+      text: originalPesewas != null
+          ? (originalPesewas / 100.0).toStringAsFixed(2)
           : '',
     );
     // Common price presets in GHS
@@ -354,213 +384,369 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
       ),
       builder: (sheetContext) {
         String currentValue = controller.text;
+        final isSavingNotifier = ValueNotifier(false);
+        int _step = 0; // 0 = set price, 1 = confirm
 
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Drag handle
-                    Container(
-                      width: 36, height: 4,
-                      decoration: BoxDecoration(
-                        color: context.ksc.neutral600,
-                        borderRadius: BorderRadius.circular(2),
+        bool isDirty() {
+          final newPesewas = CurrencyFormatter.parseToPesewas(currentValue);
+          return newPesewas != originalPesewas;
+        }
+
+        Future<bool> _confirmDiscard() async {
+          final result = await KsConfirmDialog.show(
+            sheetContext,
+            title: 'Discard Changes?',
+            message: 'You have unsaved price changes.',
+            confirmLabel: 'Discard',
+            cancelLabel: 'Keep Editing',
+            isDanger: true,
+            onConfirm: () {},
+          );
+          return result ?? false;
+        }
+
+        Future<void> _close() async {
+          if (sheetContext.mounted) Navigator.pop(sheetContext);
+        }
+
+        Future<void> _save() async {
+          final newPesewas = CurrencyFormatter.parseToPesewas(currentValue);
+
+          // Validate: must be > 0
+          if (newPesewas == null || newPesewas <= 0) {
+            KsSnackbar.show(sheetContext,
+                message: 'Price must be greater than 0',
+                type: KsSnackbarType.error);
+            return;
+          }
+
+          // Skip if unchanged
+          if (newPesewas == originalPesewas) {
+            Navigator.pop(sheetContext);
+            return;
+          }
+
+          // Show loading state
+          isSavingNotifier.value = true;
+
+          // Save locally — returns true if local save worked
+          final saved = await ref.read(serviceTypeProvider.notifier)
+              .savePriceOnly(service.id, newPesewas);
+
+          if (!saved) {
+            isSavingNotifier.value = false;
+            if (sheetContext.mounted) {
+              KsSnackbar.show(sheetContext,
+                  message: 'Failed to save price. Try again.',
+                  type: KsSnackbarType.error);
+            }
+            return;
+          }
+
+          // Show success animation
+          if (sheetContext.mounted) {
+            await KsSuccessMoment.show(
+              sheetContext,
+              title: 'Price Updated',
+              subtitle: '${service.name} → ${CurrencyFormatter.formatShort(newPesewas)}',
+            );
+          }
+
+          // Apply state update + close
+          ref.read(serviceTypeProvider.notifier).applyPriceUpdate(service.id, newPesewas);
+          if (sheetContext.mounted) Navigator.pop(sheetContext);
+        }
+
+        // ── Step 0: Set Price ──
+        List<Widget> _buildSetPriceStep(ServiceTypeEntity svc, BuildContext ctx, void Function(VoidCallback) ss) {
+          return [
+            // Header: SET PRICE + service name
+            Row(
+              children: [
+                Icon(LineAwesomeIcons.pen_alt_solid, color: context.ksc.accent500, size: 16),
+                const SizedBox(width: 8),
+                Text('SET PRICE',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: context.ksc.accent500),
+                ),
+                const Spacer(),
+                Text(svc.name,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.ksc.neutral500),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Quick preset chips — pill-shaped
+            Text('QUICK SELECT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.ksc.neutral500, letterSpacing: 1.0)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              children: pricePresets.map((p) {
+                final isSel = selectedPreset == p;
+                return GestureDetector(
+                  onTap: () {
+                    selectedPreset = p;
+                    currentValue = '$p.00';
+                    controller.text = currentValue;
+                    ss(() {});
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSel ? context.ksc.accent500.withValues(alpha: 0.10) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9999),
+                      border: Border.all(
+                        color: isSel ? context.ksc.accent500 : context.ksc.primary700,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    child: Text('GHS $p',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: isSel ? FontWeight.w800 : FontWeight.w800,
+                        color: isSel ? context.ksc.accent500 : context.ksc.white,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
 
-                    // Header row: SET PRICE + service name
-                    Row(
-                      children: [
-                        Icon(LineAwesomeIcons.pen_alt_solid, color: context.ksc.accent500, size: 14),
-                        const SizedBox(width: 8),
-                        Text(
-                          'SET PRICE',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2,
-                            color: context.ksc.accent500,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          service.name,
-                          style: TextStyle(fontSize: 12, color: context.ksc.neutral500),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+            // Custom amount — underline input
+            Text('CUSTOM AMOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.ksc.neutral500, letterSpacing: 1.0)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text('GHS', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: context.ksc.neutral500)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    autofocus: true,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: context.ksc.white),
+                    cursorColor: context.ksc.accent500,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: context.ksc.primary700),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: context.ksc.accent500),
+                      ),
                     ),
-                    const SizedBox(height: 20),
+                    onChanged: (v) {
+                      currentValue = v;
+                      selectedPreset = null;
+                      ss(() {});
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-                    // Quick preset chips
-                    Text(
-                      'QUICK SELECT',
-                      style: TextStyle(fontSize: 10, color: context.ksc.neutral600, letterSpacing: 1),
+            // Buttons: CANCEL (secondary) | CONTINUE (primary)
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _close,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: context.ksc.accent500),
+                      ),
+                      child: Center(
+                        child: Text('CANCEL',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: context.ksc.accent500),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: pricePresets.map((p) {
-                        final isSelected = selectedPreset == p;
-                        return GestureDetector(
-                          onTap: () {
-                            selectedPreset = p;
-                            currentValue = '$p.00';
-                            controller.text = currentValue;
-                            setSheetState(() {});
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? context.ksc.accent500.withValues(alpha: 0.12)
-                                  : context.ksc.primary900,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
-                              ),
-                            ),
-                            child: Text(
-                              'GHS $p',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                color: isSelected ? context.ksc.accent500 : context.ksc.white,
-                              ),
-                            ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: currentValue.isNotEmpty ? () {
+                      final parsed = CurrencyFormatter.parseToPesewas(currentValue);
+                      if (parsed == null || parsed <= 0) {
+                        KsSnackbar.show(ctx, message: 'Price must be greater than 0', type: KsSnackbarType.error);
+                        return;
+                      }
+                      ss(() => _step = 1);
+                    } : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: currentValue.isNotEmpty ? context.ksc.accent500 : context.ksc.accent500.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: currentValue.isNotEmpty ? [
+                          BoxShadow(
+                            color: context.ksc.accent500.withValues(alpha: 0.15),
+                            blurRadius: 6,
+                            offset: const Offset(0, 0),
                           ),
-                        );
-                      }).toList(),
+                        ] : null,
+                      ),
+                      child: Center(child: Text(
+                        currentValue.isNotEmpty ? 'CONTINUE — GHS ${currentValue}' : 'ENTER PRICE',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: context.ksc.primary900),
+                      )),
                     ),
-                    const SizedBox(height: 20),
+                  ),
+                ),
+              ],
+            ),
+          ];
+        }
 
-                    // Custom amount — clean, minimal
-                    Text(
-                      'CUSTOM AMOUNT',
-                      style: TextStyle(fontSize: 10, color: context.ksc.neutral600, letterSpacing: 1),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          'GHS',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: context.ksc.neutral500,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: controller,
-                            autofocus: true,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: context.ksc.white,
-                            ),
-                            cursorColor: context.ksc.accent500,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: context.ksc.primary700),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: context.ksc.accent500),
-                              ),
-                            ),
-                            onChanged: (v) {
-                              currentValue = v;
-                              selectedPreset = null;
-                              setSheetState(() {});
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+        // ── Step 1: Confirm Price ──
+        List<Widget> _buildConfirmStep(ServiceTypeEntity svc, BuildContext ctx, void Function(VoidCallback) ss) {
+          final newPesewas = CurrencyFormatter.parseToPesewas(currentValue) ?? 0;
+          return [
+            // Confirm icon
+            Icon(LineAwesomeIcons.check_circle_solid, color: context.ksc.accent500, size: 32),
+            const SizedBox(height: 16),
 
-                    // Save + Cancel buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => Navigator.pop(sheetContext),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: context.ksc.primary700),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'CANCEL',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: context.ksc.neutral500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: GestureDetector(
-                            onTap: currentValue.isNotEmpty
-                                ? () {
-                                    final pesewas = CurrencyFormatter.parseToPesewas(currentValue);
-                                    ref.read(serviceTypeProvider.notifier).updateServiceTypePrice(service.id, pesewas);
-                                    Navigator.pop(sheetContext);
-                                  }
-                                : null,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: currentValue.isNotEmpty
-                                    ? context.ksc.accent500
-                                    : context.ksc.accent500.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  currentValue.isNotEmpty
-                                      ? 'SAVE — GHS ${currentValue}'
-                                      : 'ENTER PRICE',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                    color: context.ksc.primary900,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            // Label
+            Text('CONFIRM PRICE',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: context.ksc.accent500),
+            ),
+            const SizedBox(height: 20),
+
+            // Service name
+            Text(svc.name,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: context.ksc.white),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            // Price display — clean, transparent, underline
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: context.ksc.primary700),
                 ),
               ),
-            );
+              child: Column(
+                children: [
+                  if (originalPesewas != null && newPesewas != originalPesewas) ...[
+                    Text('Current: ${CurrencyFormatter.formatShort(originalPesewas)}',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.ksc.neutral500, decoration: TextDecoration.lineThrough),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Text(CurrencyFormatter.formatShort(newPesewas),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: context.ksc.accent500),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Buttons: EDIT (secondary) | SAVE (primary)
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => ss(() => _step = 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: context.ksc.accent500),
+                      ),
+                      child: Center(child: Text('EDIT', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: context.ksc.accent500))),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ListenableBuilder(
+                    listenable: isSavingNotifier,
+                    builder: (_, __) {
+                      final saving = isSavingNotifier.value;
+                      return GestureDetector(
+                        onTap: saving ? null : _save,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: saving ? context.ksc.accent500.withValues(alpha: 0.35) : context.ksc.accent500,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: saving ? null : [
+                              BoxShadow(
+                                color: context.ksc.accent500.withValues(alpha: 0.15),
+                                blurRadius: 6,
+                                offset: const Offset(0, 0),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: saving
+                              ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.primary900))
+                              : Text('SAVE — GHS ${CurrencyFormatter.formatShort(newPesewas)}',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: context.ksc.primary900),
+                                ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ];
+        }
+
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            if (isDirty()) {
+              final discard = await _confirmDiscard();
+              if (discard && sheetContext.mounted) Navigator.pop(sheetContext);
+            } else {
+              if (sheetContext.mounted) Navigator.pop(sheetContext);
+            }
           },
+          child: StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag handle
+                      Container(
+                        width: 36, height: 4,
+                        decoration: BoxDecoration(
+                          color: context.ksc.neutral600,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      if (_step == 0) ..._buildSetPriceStep(service, sheetContext, setSheetState),
+                      if (_step == 1) ..._buildConfirmStep(service, sheetContext, setSheetState),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );

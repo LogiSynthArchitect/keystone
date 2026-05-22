@@ -58,6 +58,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       backgroundColor: context.ksc.primary800,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
       builder: (ctx) {
@@ -75,9 +76,10 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               provider.setLeadSourceFilter(draftLeadSourceFilter);
             },
             onClear: () {
-              provider.setFilter('all');
-              provider.setPropertyFilter(null);
-              provider.setLeadSourceFilter(null);
+              draftFilterType = 'all';
+              draftPropertyFilter = null;
+              draftLeadSourceFilter = null;
+              setInnerState(() {});
             },
             children: [
               KsFilterChipGroup(

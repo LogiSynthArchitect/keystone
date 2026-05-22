@@ -24,45 +24,22 @@ class KsSearchBar extends StatefulWidget {
   State<KsSearchBar> createState() => _KsSearchBarState();
 }
 
-class _KsSearchBarState extends State<KsSearchBar> with SingleTickerProviderStateMixin {
+class _KsSearchBarState extends State<KsSearchBar> {
   late FocusNode _focusNode;
-  late AnimationController _underlineController;
-  late Animation<double> _underlineWidth;
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    _focusNode.addListener(_onFocusChange);
+    _focusNode.addListener(() {
+      if (mounted) setState(() => _isFocused = _focusNode.hasFocus);
+    });
     _isFocused = _focusNode.hasFocus;
-
-    _underlineController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _underlineWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _underlineController, curve: Curves.easeOut),
-    );
-
-    if (_isFocused) _underlineController.value = 1.0;
-  }
-
-  void _onFocusChange() {
-    if (_isFocused != _focusNode.hasFocus) {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    }
-  }
-
-  @override
-  void didUpdateWidget(KsSearchBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Trigger underline animation when text changes (has content = stays focused)
   }
 
   @override
   void dispose() {
-    _underlineController.dispose();
     if (widget.focusNode == null) _focusNode.dispose();
     super.dispose();
   }
@@ -72,64 +49,38 @@ class _KsSearchBarState extends State<KsSearchBar> with SingleTickerProviderStat
     final hasText = widget.controller?.text.isNotEmpty == true;
     final iconColor = _isFocused || hasText ? context.ksc.accent500 : context.ksc.neutral500;
 
-    // Animate underline when focus changes
-    if (_isFocused && !_underlineController.isCompleted) {
-      _underlineController.forward();
-    } else if (!_isFocused && _underlineController.isCompleted) {
-      _underlineController.reverse();
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            Icon(LineAwesomeIcons.search_solid, color: iconColor, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: widget.controller,
-                onChanged: (v) {
+    return TextField(
+      controller: widget.controller,
+      onChanged: (v) {
+        setState(() {});
+        widget.onChanged?.call(v);
+      },
+      focusNode: _focusNode,
+      autofocus: widget.autofocus,
+      style: TextStyle(color: context.ksc.white, fontSize: 14, fontWeight: FontWeight.w300),
+      cursorColor: context.ksc.accent500,
+      decoration: InputDecoration(
+        hintText: widget.hint,
+        hintStyle: TextStyle(color: context.ksc.neutral600, fontSize: 13, fontWeight: FontWeight.w300),
+        prefixIcon: Icon(LineAwesomeIcons.search_solid, color: iconColor, size: 16),
+        suffixIcon: hasText && widget.onClear != null
+            ? GestureDetector(
+                onTap: () {
+                  widget.controller?.clear();
+                  widget.onClear?.call();
                   setState(() {});
-                  widget.onChanged?.call(v);
                 },
-                focusNode: _focusNode,
-                autofocus: widget.autofocus,
-                style: TextStyle(color: context.ksc.white, fontSize: 14, fontWeight: FontWeight.w300),
-                cursorColor: context.ksc.accent500,
-                decoration: InputDecoration(
-                  hintText: widget.hint,
-                  hintStyle: TextStyle(color: context.ksc.neutral600, fontSize: 13, fontWeight: FontWeight.w300),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  isDense: true,
-                  suffixIcon: hasText && widget.onClear != null
-                      ? GestureDetector(
-                          onTap: () {
-                            widget.controller?.clear();
-                            widget.onClear?.call();
-                            setState(() {});
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 14),
-                        )
-                      : null,
-                ),
-              ),
-            ),
-          ],
-        ),
-        AnimatedBuilder(
-          animation: _underlineWidth,
-          builder: (context, child) {
-            return FractionallySizedBox(
-              widthFactor: _underlineWidth.value,
-              child: Container(height: 1.5, color: context.ksc.accent500),
-            );
-          },
-        ),
-      ],
+                child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 14),
+              )
+            : null,
+        border: UnderlineInputBorder(borderSide: BorderSide(color: context.ksc.primary700, width: 1)),
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: context.ksc.primary700, width: 1)),
+        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: context.ksc.accent500, width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        isDense: true,
+        filled: false,
+        fillColor: Colors.transparent,
+      ),
     );
   }
 }

@@ -65,6 +65,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       backgroundColor: context.ksc.primary800,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.radiusMd)),
@@ -80,8 +81,8 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                 Navigator.of(ctx).pop();
               },
               onClear: () {
-                ref.read(jobListProvider.notifier).clearFilters();
-                Navigator.of(ctx).pop();
+                draft = const JobListFilters();
+                setLocalState(() {});
               },
               children: [
                 KsFilterChipGroup(

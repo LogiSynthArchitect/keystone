@@ -6,7 +6,7 @@ class AppTextStyles {
   static TextStyle get display => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 32,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w900,
         letterSpacing: -0.5,
         height: 1.2,
         color: Color(0xFFFFFFFF), // white
@@ -24,7 +24,7 @@ class AppTextStyles {
   static TextStyle get h2 => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 20,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w900,
         letterSpacing: -0.2,
         height: 1.3,
         color: Color(0xFFFFFFFF), // white
@@ -33,7 +33,7 @@ class AppTextStyles {
   static TextStyle get h3 => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 17,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w900,
         letterSpacing: 0,
         height: 1.4,
         color: Color(0xFFFFFFFF), // white
@@ -42,7 +42,7 @@ class AppTextStyles {
   static TextStyle get bodyLarge => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: 0,
         height: 1.5,
         color: Color(0xFFFFFFFF), // white
@@ -51,7 +51,7 @@ class AppTextStyles {
   static TextStyle get body => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 14,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w700,
         letterSpacing: 0,
         height: 1.5,
         color: Color(0xFFFFFFFF), // white
@@ -60,7 +60,7 @@ class AppTextStyles {
   static TextStyle get bodyMedium => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: 0,
         height: 1.5,
         color: Color(0xFFFFFFFF), // white
@@ -69,7 +69,7 @@ class AppTextStyles {
   static TextStyle get caption => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 12,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         letterSpacing: 0.5,
         height: 1.4,
         color: Color(0xFF9E9E9E), // neutral400
@@ -78,7 +78,7 @@ class AppTextStyles {
   static TextStyle get captionMedium => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 12,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w900,
         letterSpacing: 0.5,
         height: 1.4,
         color: Color(0xFF737373), // neutral500
@@ -87,7 +87,7 @@ class AppTextStyles {
   static TextStyle get label => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 14,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w900,
         letterSpacing: 1.0,
         height: 1.2,
         color: Color(0xFFD4A017), // accent500
@@ -96,7 +96,7 @@ class AppTextStyles {
   static TextStyle get labelSmall => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 12,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w900,
         letterSpacing: 1.0,
         height: 1.2,
         color: Color(0xFFD4A017), // accent500
@@ -115,7 +115,7 @@ class AppTextStyles {
   static TextStyle get amountSmall => const TextStyle(
         fontFamily: 'BarlowSemiCondensed',
         fontSize: 16,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w900,
         letterSpacing: 0,
         height: 1.2,
         color: Color(0xFFFFFFFF), // white

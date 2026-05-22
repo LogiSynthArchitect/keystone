@@ -42,6 +42,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       backgroundColor: context.ksc.primary800,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
       builder: (ctx) {
@@ -50,7 +51,10 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
           builder: (context, setInnerState) => KsFilterSheet(
             title: "FILTER NOTES",
             onApply: () => ref.read(notesListProvider.notifier).filterByCategory(draftCategory),
-            onClear: () => ref.read(notesListProvider.notifier).filterByCategory(null),
+            onClear: () {
+              draftCategory = null;
+              setInnerState(() {});
+            },
             children: [
               KsFilterChipGroup(
                 label: "CATEGORY",

@@ -15,6 +15,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool searchable;
   final bool isSearchOpen;
   final VoidCallback? onSearchToggle;
+  final bool goldStyle; // gold background + dot pattern
 
   const KsAppBar({
     super.key,
@@ -27,6 +28,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.searchable = false,
     this.isSearchOpen = false,
     this.onSearchToggle,
+    this.goldStyle = false,
   });
 
   @override
@@ -38,59 +40,36 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
         IconButton(
           icon: Icon(
             isSearchOpen ? LineAwesomeIcons.times_solid : LineAwesomeIcons.search_solid,
-            color: isSearchOpen ? context.ksc.accent500 : context.ksc.neutral500,
+            color: goldStyle
+                ? context.ksc.primary900
+                : (isSearchOpen ? context.ksc.accent500 : context.ksc.neutral500),
             size: 20,
           ),
           onPressed: onSearchToggle,
         ),
-      if (pendingCount > 0)
-        Center(
-          child: Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: context.ksc.accent500.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(LineAwesomeIcons.sync_solid, size: 12, color: context.ksc.accent500),
-                const SizedBox(width: 6),
-                Text(
-                  '$pendingCount PENDING',
-                  style: AppTextStyles.caption.copyWith(
-                    color: context.ksc.accent500,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ...?actions,
     ];
 
+    final bgColor = goldStyle ? context.ksc.accent500 : context.ksc.primary900;
+    final fgColor = goldStyle ? context.ksc.primary900 : context.ksc.white;
+
     return AppBar(
-      backgroundColor: context.ksc.primary900,
-      foregroundColor: context.ksc.white,
+      backgroundColor: bgColor,
+      foregroundColor: fgColor,
       elevation: 0,
       scrolledUnderElevation: 0.5,
       centerTitle: false,
       title: titleWidget ?? Text(
         title,
         style: AppTextStyles.h3.copyWith(
-          color: context.ksc.white,
+          color: fgColor,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.2,
         ),
       ),
       leading: showBack
           ? IconButton(
-              icon: const Icon(LineAwesomeIcons.angle_left_solid, size: 22),
+              icon: Icon(LineAwesomeIcons.angle_left_solid, size: 22, color: fgColor),
               onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           : null,
