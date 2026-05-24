@@ -290,7 +290,9 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                           child: Row(
                             children: [
                               Icon(
-                                a.type == AttachmentType.audio ? LineAwesomeIcons.microphone_solid : LineAwesomeIcons.file_pdf_solid,
+                                a.type == AttachmentType.audio ? LineAwesomeIcons.microphone_solid :
+                                a.type == AttachmentType.image ? LineAwesomeIcons.image_solid :
+                                LineAwesomeIcons.file_pdf_solid,
                                 size: 18,
                                 color: context.ksc.accent500,
                               ),
@@ -327,6 +329,12 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                         icon: LineAwesomeIcons.microphone_solid,
                         label: "RECORD AUDIO",
                         onTap: _startRecording,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildActionButton(
+                        icon: LineAwesomeIcons.image_solid,
+                        label: "ADD IMAGE",
+                        onTap: _pickImage,
                       ),
                       const SizedBox(height: 8),
                       _buildActionButton(
@@ -601,29 +609,49 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     });
 
     try {
-      final supabase = ref.read(supabaseClientProvider);
-      final userId = supabase.auth.currentUser?.id ?? 'unknown';
-      final fileName = '${const Uuid().v4()}.m4a';
-      final path = 'note-attachments/$userId/$fileName';
-
-      await supabase.storage.from('note-attachments').upload(path, file);
-      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(path);
-
+      final saved = await _saveFileLocally(file, '.m4a');
       final attachment = NoteAttachment(
         id: const Uuid().v4(),
         type: AttachmentType.audio,
-        url: publicUrl,
+        url: saved,
         name: 'Audio recording ${DateTime.now().toString().substring(0, 16)}',
         size: fileSize,
         mimeType: 'audio/mp4',
         duration: _recordingDuration,
         createdAt: DateTime.now(),
       );
-
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not upload audio", type: KsSnackbarType.error);
+        KsSnackbar.show(context, message: "Could not save audio", type: KsSnackbarType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 80);
+    if (picked == null) return;
+    final file = File(picked.path);
+    final fileSize = await file.length();
+
+    setState(() => _isUploading = true);
+    try {
+      final saved = await _saveFileLocally(file, '.jpg');
+      final attachment = NoteAttachment(
+        id: const Uuid().v4(),
+        type: AttachmentType.image,
+        url: saved,
+        name: picked.name,
+        size: fileSize,
+        mimeType: 'image/jpeg',
+        createdAt: DateTime.now(),
+      );
+      setState(() => _attachments.add(attachment));
+    } catch (e) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Could not save image", type: KsSnackbarType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -648,31 +676,33 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     setState(() => _isUploading = true);
 
     try {
-      final supabase = ref.read(supabaseClientProvider);
-      final userId = supabase.auth.currentUser?.id ?? 'unknown';
-      final storagePath = 'note-attachments/$userId/${const Uuid().v4()}.pdf';
-
-      await supabase.storage.from('note-attachments').upload(storagePath, file);
-      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(storagePath);
-
+      final saved = await _saveFileLocally(file, '.pdf');
       final attachment = NoteAttachment(
         id: const Uuid().v4(),
         type: AttachmentType.document,
-        url: publicUrl,
+        url: saved,
         name: fileName,
         size: fileSize,
         mimeType: 'application/pdf',
         createdAt: DateTime.now(),
       );
-
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not upload PDF", type: KsSnackbarType.error);
+        KsSnackbar.show(context, message: "Could not save PDF", type: KsSnackbarType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
+  }
+
+  /// Copies [file] to a local app directory and returns the file:// URI as string.
+  Future<String> _saveFileLocally(File file, String extension) async {
+    final dir = Directory('${(await getApplicationDocumentsDirectory()).path}/note_attachments');
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final destPath = '${dir.path}/${const Uuid().v4()}$extension';
+    await file.copy(destPath);
+    return 'file://$destPath';
   }
 
   String _formatSize(int bytes) {

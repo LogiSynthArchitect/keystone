@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -436,7 +437,9 @@ class _ImageAttachmentTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: context.ksc.primary700),
           image: DecorationImage(
-            image: NetworkImage(attachment.url),
+            image: attachment.url.startsWith('file://')
+                ? FileImage(File(attachment.url.replaceFirst('file://', ''))) as ImageProvider
+                : NetworkImage(attachment.url),
             fit: BoxFit.cover,
           ),
         ),
