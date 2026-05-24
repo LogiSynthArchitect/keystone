@@ -9,6 +9,7 @@ import '../../data/datasources/knowledge_note_local_datasource.dart';
 import '../../data/datasources/knowledge_note_remote_datasource.dart';
 import '../../data/repositories/knowledge_note_repository_impl.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
+import '../../domain/entities/note_attachment.dart';
 import '../../domain/repositories/knowledge_note_repository.dart';
 import '../../domain/usecases/create_note_usecase.dart';
 import '../../domain/usecases/get_notes_usecase.dart';
@@ -228,6 +229,7 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
     required String description,
     required List<String> tags,
     String? serviceType,
+    List<NoteAttachment>? attachments,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -241,6 +243,7 @@ class AddNoteNotifier extends StateNotifier<AddNoteState> {
         description: description,
         tags: tags,
         serviceType: serviceType,
+        attachments: attachments,
       ));
       state = state.copyWith(isLoading: false, saved: true);
       KsAnalytics.log(AnalyticsEvents.noteSaved, properties: {

@@ -1,6 +1,7 @@
 import '../../../../core/errors/validation_exception.dart';
 import '../../../../core/usecases/use_case.dart';
 import '../entities/knowledge_note_entity.dart';
+import '../entities/note_attachment.dart';
 import '../repositories/knowledge_note_repository.dart';
 
 class CreateNoteParams {
@@ -10,6 +11,7 @@ class CreateNoteParams {
   final List<String> tags;
   final String? photoUrl;
   final String? serviceType;
+  final List<NoteAttachment>? attachments;
 
   const CreateNoteParams({
     required this.userId,
@@ -18,6 +20,7 @@ class CreateNoteParams {
     this.tags = const [],
     this.photoUrl,
     this.serviceType,
+    this.attachments,
   });
 }
 
@@ -57,6 +60,7 @@ class CreateNoteUsecase implements UseCase<KnowledgeNoteEntity, CreateNoteParams
       tags: params.tags.map((t) => t.toLowerCase().replaceAll(' ', '_')).toList(),
       photoUrl: params.photoUrl,
       serviceType: params.serviceType,
+      attachments: params.attachments ?? const [],
       isArchived: false,
       createdAt: now,
       updatedAt: now,

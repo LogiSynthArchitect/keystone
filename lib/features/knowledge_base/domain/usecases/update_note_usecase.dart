@@ -41,6 +41,7 @@ class UpdateNoteUsecase implements UseCase<KnowledgeNoteEntity, UpdateNoteParams
       tags: note.tags.map((t) => t.toLowerCase().replaceAll(' ', '_')).toList(),
       photoUrl: note.photoUrl,
       serviceType: note.serviceType,
+      attachments: note.attachments,
       isArchived: note.isArchived,
       lastEditedAt: DateTime.now(),
       createdAt: note.createdAt,

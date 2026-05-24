@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
@@ -18,6 +22,7 @@ import '../../../../core/services/cloudinary_service.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
+import '../../domain/entities/note_attachment.dart';
 
 class EditNoteScreen extends ConsumerStatefulWidget {
   final String noteId;
@@ -35,6 +40,13 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   String? _photoUrl;
   bool _isUploadingPhoto = false;
   bool _initialised = false;
+  List<NoteAttachment> _attachments = [];
+
+  final _recorder = AudioRecorder();
+  bool _isRecording = false;
+  int _recordingDuration = 0;
+  Timer? _recordingTimer;
+  bool _isUploading = false;
 
   static const _serviceTypes = [
     'car_lock_programming',
@@ -47,6 +59,8 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _recordingTimer?.cancel();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -57,12 +71,14 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     _tags                       = List.from(note.tags);
     _serviceType                = note.serviceType;
     _photoUrl                   = note.photoUrl;
+    _attachments                = List.from(note.attachments);
     _initialised = true;
   }
 
   bool get _isDirty =>
       _titleController.text.trim().isNotEmpty ||
-      _descriptionController.text.trim().isNotEmpty;
+      _descriptionController.text.trim().isNotEmpty ||
+      _attachments.isNotEmpty;
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
@@ -86,6 +102,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
       tags: _tags,
       serviceType: _serviceType,
       photoUrl: _photoUrl,
+      attachments: _attachments,
     );
     final result = await ref.read(editNoteProvider.notifier).save(updated);
     if (!mounted) return;
@@ -240,6 +257,73 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                       ],
                     ),
 
+                    const SizedBox(height: 32),
+                    // ATTACHMENTS SECTION
+                    Text("ATTACHMENTS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    if (_attachments.isNotEmpty) ...[
+                      ..._attachments.map((a) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: context.ksc.primary800,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: context.ksc.primary700),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                a.type == AttachmentType.audio ? LineAwesomeIcons.microphone_solid : LineAwesomeIcons.file_pdf_solid,
+                                size: 18,
+                                color: context.ksc.accent500,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  a.name,
+                                  style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (a.size != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Text(
+                                    _formatSize(a.size!),
+                                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                                  ),
+                                ),
+                              GestureDetector(
+                                onTap: () => setState(() => _attachments.remove(a)),
+                                child: Icon(LineAwesomeIcons.times_circle_solid, size: 20, color: context.ksc.error500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_isRecording)
+                      _buildRecordingIndicator()
+                    else ...[
+                      _buildActionButton(
+                        icon: LineAwesomeIcons.microphone_solid,
+                        label: "RECORD AUDIO",
+                        onTap: _startRecording,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildActionButton(
+                        icon: LineAwesomeIcons.file_pdf_solid,
+                        label: "ATTACH PDF",
+                        onTap: _pickPdf,
+                      ),
+                    ],
+                    if (_isUploading) ...[
+                      const SizedBox(height: 16),
+                      const Center(child: CircularProgressIndicator(color: Color(0xFFD4A84B))),
+                    ],
+
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -307,6 +391,222 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
+  }
+
+  Widget _buildRecordingIndicator() {
+    final minutes = _recordingDuration ~/ 60;
+    final seconds = _recordingDuration % 60;
+    final timeStr = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: context.ksc.error500),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                "RECORDING",
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.error500,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            timeStr,
+            style: AppTextStyles.h1.copyWith(
+              color: context.ksc.white,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'monospace',
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _stopRecording,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: context.ksc.error500,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: const Icon(Icons.stop, color: Colors.white, size: 28),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: context.ksc.accent500),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: context.ksc.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startRecording() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Microphone permission denied", type: KsSnackbarType.error);
+      }
+      return;
+    }
+
+    final tempDir = await getTemporaryDirectory();
+    final filePath = '${tempDir.path}/${const Uuid().v4()}.m4a';
+
+    await _recorder.start(RecordConfig(encoder: AudioEncoder.aacLc), path: filePath);
+
+    setState(() {
+      _isRecording = true;
+      _recordingDuration = 0;
+    });
+
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _recordingDuration++);
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    _recordingTimer?.cancel();
+    final filePath = await _recorder.stop();
+    if (filePath == null) {
+      setState(() => _isRecording = false);
+      return;
+    }
+
+    final file = File(filePath);
+    final fileSize = await file.length();
+
+    setState(() {
+      _isRecording = false;
+      _isUploading = true;
+    });
+
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final userId = supabase.auth.currentUser?.id ?? 'unknown';
+      final fileName = '${const Uuid().v4()}.m4a';
+      final path = 'note-attachments/$userId/$fileName';
+
+      await supabase.storage.from('note-attachments').upload(path, file);
+      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(path);
+
+      final attachment = NoteAttachment(
+        id: const Uuid().v4(),
+        type: AttachmentType.audio,
+        url: publicUrl,
+        name: 'Audio recording ${DateTime.now().toString().substring(0, 16)}',
+        size: fileSize,
+        mimeType: 'audio/mp4',
+        duration: _recordingDuration,
+        createdAt: DateTime.now(),
+      );
+
+      setState(() => _attachments.add(attachment));
+    } catch (e) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Could not upload audio", type: KsSnackbarType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final pickedFile = result.files.first;
+    final filePath = pickedFile.path;
+    if (filePath == null) return;
+
+    final file = File(filePath);
+    final fileSize = await file.length();
+    final fileName = pickedFile.name;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final userId = supabase.auth.currentUser?.id ?? 'unknown';
+      final storagePath = 'note-attachments/$userId/${const Uuid().v4()}.pdf';
+
+      await supabase.storage.from('note-attachments').upload(storagePath, file);
+      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(storagePath);
+
+      final attachment = NoteAttachment(
+        id: const Uuid().v4(),
+        type: AttachmentType.document,
+        url: publicUrl,
+        name: fileName,
+        size: fileSize,
+        mimeType: 'application/pdf',
+        createdAt: DateTime.now(),
+      );
+
+      setState(() => _attachments.add(attachment));
+    } catch (e) {
+      if (mounted) {
+        KsSnackbar.show(context, message: "Could not upload PDF", type: KsSnackbarType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   Widget _buildField({
