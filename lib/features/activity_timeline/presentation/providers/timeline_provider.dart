@@ -84,11 +84,16 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
         }
       }
 
-      // Build job lookup for descriptions
-      final jobMap = <String, JobEntity>{
-        for (final j in HiveService.jobs.values)
-          j.id: JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity()
-      };
+      // Build job lookup for descriptions — skip bad entries
+      final jobMap = <String, JobEntity>{};
+      for (final j in HiveService.jobs.values) {
+        try {
+          final job = JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity();
+          jobMap[job.id] = job;
+        } catch (err) {
+          debugPrint('[KS:TIMELINE] Skipping bad job entry: $err');
+        }
+      }
 
       // Sort all by time, newest first
       allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -107,6 +112,7 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
 
       state = TimelineState(events: events, loadedCount: initialCount, totalCount: total);
     } catch (e) {
+      debugPrint('[KS:TIMELINE] Load failed: $e');
       state = const TimelineState(errorMessage: 'Could not load activity.');
     }
   }
@@ -125,10 +131,16 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
         }
       }
 
-      final jobMap = <String, JobEntity>{
-        for (final j in HiveService.jobs.values)
-          j.id: JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity()
-      };
+      // Build job lookup for descriptions — skip bad entries
+      final jobMap = <String, JobEntity>{};
+      for (final j in HiveService.jobs.values) {
+        try {
+          final job = JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity();
+          jobMap[job.id] = job;
+        } catch (err) {
+          debugPrint('[KS:TIMELINE] Skipping bad job entry: $err');
+        }
+      }
 
       allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       final newCount = state.loadedCount + 50 > state.totalCount
