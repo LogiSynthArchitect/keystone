@@ -108,7 +108,7 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
 
   TimelineEvent _toEvent(JobAuditEntryEntity entry, Map<String, JobEntity> jobMap) {
     final job = jobMap[entry.jobId];
-    final jobLabel = job?.serviceType ?? 'Job';
+    final jobLabel = job?.serviceType ?? '(deleted job)';
     final type = _parseType(entry.action, entry.newValues);
     final description = _buildDescription(type, jobLabel, entry);
 
@@ -162,5 +162,5 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
   }
 }
 
-final timelineProvider = StateNotifierProvider.autoDispose<TimelineNotifier, TimelineState>(
+final timelineProvider = StateNotifierProvider<TimelineNotifier, TimelineState>(
   (_) => TimelineNotifier());
