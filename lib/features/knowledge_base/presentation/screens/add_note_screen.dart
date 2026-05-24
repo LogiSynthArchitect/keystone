@@ -679,15 +679,29 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   }
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
+    FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+      );
+    } catch (e) {
+      debugPrint('[KS:KB] FilePicker failed: $e');
+      if (mounted) {
+        KsSnackbar.show(context, message: "File picker unavailable on this device",
+            type: KsSnackbarType.error);
+      }
+      return;
+    }
 
     if (result == null || result.files.isEmpty) return;
     final pickedFile = result.files.first;
     final filePath = pickedFile.path;
     if (filePath == null) return;
+
+    // Normalise extension to lowercase
+    final ext = (pickedFile.name.contains('.')
+        ? '.${pickedFile.name.split('.').last.toLowerCase()}'
+        : '.pdf');
 
     final file = File(filePath);
     final fileSize = await file.length();
@@ -696,20 +710,20 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     setState(() => _isUploading = true);
 
     try {
-      final saved = await _saveFileLocally(file, '.pdf');
+      final saved = await _saveFileLocally(file, ext);
       final attachment = NoteAttachment(
         id: const Uuid().v4(),
         type: AttachmentType.document,
         url: saved,
         name: fileName,
         size: fileSize,
-        mimeType: 'application/pdf',
+        mimeType: ext == '.pdf' ? 'application/pdf' : 'application/octet-stream',
         createdAt: DateTime.now(),
       );
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not save PDF",
+        KsSnackbar.show(context, message: "Could not save file",
             type: KsSnackbarType.error);
       }
     } finally {
