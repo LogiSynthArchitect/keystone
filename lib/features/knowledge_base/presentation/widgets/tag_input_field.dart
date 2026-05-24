@@ -40,29 +40,31 @@ class _TagInputFieldState extends State<TagInputField> {
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.only(bottom: 4),
           decoration: BoxDecoration(
             color: context.ksc.primary800,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: context.ksc.primary700),
+            border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (widget.tags.isNotEmpty) ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: widget.tags.map((tag) => _TagChip(
-                    label: tag,
-                    onRemove: () {
-                      widget.onChanged(
-                        widget.tags.where((t) => t != tag).toList(),
-                      );
-                    },
-                  )).toList(),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, top: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: widget.tags.map((tag) => _TagChip(
+                      label: tag,
+                      onRemove: () {
+                        widget.onChanged(
+                          widget.tags.where((t) => t != tag).toList(),
+                        );
+                      },
+                    )).toList(),
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
               ],
               TextField(
                 controller: _controller,
@@ -72,11 +74,11 @@ class _TagInputFieldState extends State<TagInputField> {
                 decoration: InputDecoration(
                   hintText: "Add tag, press Enter",
                   hintStyle: TextStyle(color: context.ksc.neutral500),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  filled: true,
-                  fillColor: Colors.transparent,
                 ),
               ),
             ],

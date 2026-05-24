@@ -660,8 +660,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         Container(
           decoration: BoxDecoration(
             color: context.ksc.primary800,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: context.ksc.primary700),
+            border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1.5)),
           ),
           child: TextField(
             controller: controller,
@@ -677,10 +676,11 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: context.ksc.neutral500),
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
               border: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isDense: true,
             ),
           ),
         ),
