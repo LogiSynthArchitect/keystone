@@ -91,7 +91,15 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
       allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       final recent = allEntries.take(50).toList();
 
-      final events = recent.map((entry) => _toEvent(entry, jobMap)).toList();
+      // Convert each entry — skip conversions that fail
+      final events = <TimelineEvent>[];
+      for (final entry in recent) {
+        try {
+          events.add(_toEvent(entry, jobMap));
+        } catch (err) {
+          debugPrint('[KS:TIMELINE] Skipping bad event conversion: $err');
+        }
+      }
 
       state = TimelineState(events: events);
     } catch (e) {
