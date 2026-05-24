@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -473,9 +472,9 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             ),
             const SizedBox(height: 12),
             _buildActionButton(
-              icon: LineAwesomeIcons.file_pdf_solid,
-              label: "ATTACH PDF",
-              onTap: _pickPdf,
+              icon: LineAwesomeIcons.file_alt_solid,
+              label: "ADD TEXT NOTE",
+              onTap: _addTextNote,
             ),
           ],
           if (_isUploading) ...[
@@ -678,52 +677,72 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     }
   }
 
-  Future<void> _pickPdf() async {
-    FilePickerResult? result;
-    try {
-      result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
-      );
-    } catch (e) {
-      debugPrint('[KS:KB] FilePicker failed: $e');
-      if (mounted) {
-        KsSnackbar.show(context, message: "File picker unavailable on this device",
-            type: KsSnackbarType.error);
-      }
-      return;
-    }
-
-    if (result == null || result.files.isEmpty) return;
-    final pickedFile = result.files.first;
-    final filePath = pickedFile.path;
-    if (filePath == null) return;
-
-    // Normalise extension to lowercase
-    final ext = (pickedFile.name.contains('.')
-        ? '.${pickedFile.name.split('.').last.toLowerCase()}'
-        : '.pdf');
-
-    final file = File(filePath);
-    final fileSize = await file.length();
-    final fileName = pickedFile.name;
+  Future<void> _addTextNote() async {
+    final controller = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.ksc.primary800,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+          side: BorderSide(color: context.ksc.primary700),
+        ),
+        title: Text('ADD TEXT NOTE',
+            style: AppTextStyles.h3.copyWith(
+                color: context.ksc.white, fontWeight: FontWeight.w900)),
+        content: TextField(
+          controller: controller,
+          maxLines: 6,
+          autofocus: true,
+          style: AppTextStyles.body.copyWith(color: context.ksc.white),
+          decoration: InputDecoration(
+            hintText: 'Type your note here...',
+            hintStyle: TextStyle(color: context.ksc.neutral500),
+            border: OutlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.primary700)),
+            enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.primary700)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CANCEL',
+                style: AppTextStyles.label.copyWith(
+                    color: context.ksc.neutral400)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: Text('SAVE',
+                style: AppTextStyles.label.copyWith(
+                    color: context.ksc.accent500,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (text == null || text.isEmpty) return;
 
     setState(() => _isUploading = true);
-
     try {
-      final saved = await _saveFileLocally(file, ext);
+      // Write text to a local temp file and save it
+      final tempFile = File('${(await getTemporaryDirectory()).path}/${const Uuid().v4()}.txt');
+      await tempFile.writeAsString(text);
+      final saved = await _saveFileLocally(tempFile, '.txt');
       final attachment = NoteAttachment(
         id: const Uuid().v4(),
         type: AttachmentType.document,
         url: saved,
-        name: fileName,
-        size: fileSize,
-        mimeType: ext == '.pdf' ? 'application/pdf' : 'application/octet-stream',
+        name: 'Text note ${DateTime.now().toString().substring(0, 10)}',
+        size: text.length,
+        mimeType: 'text/plain',
         createdAt: DateTime.now(),
       );
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not save file",
+        KsSnackbar.show(context, message: "Could not save note",
             type: KsSnackbarType.error);
       }
     } finally {
