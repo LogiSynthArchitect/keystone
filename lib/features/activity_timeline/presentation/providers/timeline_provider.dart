@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keystone/core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/data/models/job_audit_entry_model.dart';
@@ -69,10 +70,17 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
   Future<void> load() async {
     state = const TimelineState(isLoading: true);
     try {
-      // Read all audit entries from Hive directly
-      final allEntries = HiveService.jobAuditLog.values
-          .map((e) => JobAuditEntryModel.fromJson(Map<String, dynamic>.from(e)).toEntity())
-          .toList();
+      // Read all audit entries from Hive — skip bad entries instead of crashing
+      final allEntries = <JobAuditEntryEntity>[];
+      for (final e in HiveService.jobAuditLog.values) {
+        try {
+          allEntries.add(
+            JobAuditEntryModel.fromJson(Map<String, dynamic>.from(e)).toEntity(),
+          );
+        } catch (err) {
+          debugPrint('[KS:TIMELINE] Skipping bad audit entry: $err');
+        }
+      }
 
       // Build job lookup for descriptions
       final jobMap = <String, JobEntity>{
