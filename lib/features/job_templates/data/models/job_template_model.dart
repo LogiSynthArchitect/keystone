@@ -35,9 +35,9 @@ class JobTemplateModel {
         name: json['name'] as String,
         serviceType: json['service_type'] as String,
         notes: json['notes'] as String?,
-        services: json['services_json'] as List<dynamic>? ?? [],
-        hardwareItems: json['hardware_json'] as List<dynamic>? ?? [],
-        parts: json['parts_json'] as List<dynamic>? ?? [],
+        services: json['services_json'] as List<dynamic>? ?? (json['services'] as List<dynamic>? ?? []),
+        hardwareItems: json['hardware_json'] as List<dynamic>? ?? (json['hardwareItems'] as List<dynamic>? ?? []),
+        parts: json['parts_json'] as List<dynamic>? ?? (json['parts'] as List<dynamic>? ?? []),
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
@@ -62,13 +62,13 @@ class JobTemplateModel {
     serviceType: serviceType,
     notes: notes,
     services: services
-        .map((e) => TemplateServiceItem.fromJson(e as Map<String, dynamic>))
+        .map((e) => TemplateServiceItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),
     hardwareItems: hardwareItems
-        .map((e) => TemplateHardwareItem.fromJson(e as Map<String, dynamic>))
+        .map((e) => TemplateHardwareItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),
     parts: parts
-        .map((e) => TemplatePartItem.fromJson(e as Map<String, dynamic>))
+        .map((e) => TemplatePartItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),

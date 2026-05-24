@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../data/datasources/job_template_local_datasource.dart';
@@ -29,6 +30,7 @@ class JobTemplateNotifier extends StateNotifier<AsyncValue<List<JobTemplateEntit
       final templates = await _ref.read(jobTemplateRepositoryProvider).getTemplates(userId);
       state = AsyncValue.data(templates);
     } catch (e, st) {
+      debugPrint('[KS:TEMPLATES] loadTemplates error: $e\n$st');
       state = AsyncValue.error(e, st);
     }
   }

@@ -54,14 +54,12 @@ class JobTemplateRepositoryImpl implements JobTemplateRepository {
     if (_remote == null) return;
     try {
       final remoteModels = await _remote!.getTemplates(userId);
+      // Only merge remote templates — never delete local ones.
+      // The old clean-up (delete local not in remote) was destructive:
+      // most users have no cloud templates, so remote returns empty,
+      // and ALL local templates get wiped on every navigation.
       for (final remote in remoteModels) {
         await _local.saveTemplate(remote);
-      }
-      // Clean up local templates not in remote (deleted on other devices)
-      final localIds = (await _local.getAll()).map((m) => m.id).toSet();
-      final remoteIds = remoteModels.map((m) => m.id).toSet();
-      for (final localId in localIds.difference(remoteIds)) {
-        await _local.deleteTemplate(localId);
       }
     } catch (e) {
       debugPrint('[KS:TEMPLATES] Remote sync failed: $e');

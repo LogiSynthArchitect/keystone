@@ -401,6 +401,91 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     });
   }
 
+  Future<void> _saveAsTemplate() async {
+    // Must have a service type selected
+    if (_serviceType == null || _serviceType!.isEmpty) {
+      KsSnackbar.show(context, message: 'Select a service type first.', type: KsSnackbarType.error);
+      return;
+    }
+
+    final nameCtrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.ksc.primary800,
+        title: Text('SAVE AS TEMPLATE', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          style: AppTextStyles.body.copyWith(color: context.ksc.white),
+          decoration: InputDecoration(
+            hintText: "e.g. Deadbolt replacement",
+            hintStyle: TextStyle(color: context.ksc.neutral500),
+            border: OutlineInputBorder(borderSide: BorderSide(color: context.ksc.primary700)),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('CANCEL', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+          TextButton(onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()), child: Text('SAVE', style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.bold))),
+        ],
+      ),
+    );
+
+    if (name == null || name.isEmpty || !mounted) return;
+
+    final userId = ref.read(currentUserProvider).valueOrNull?.id;
+    if (userId == null) {
+      KsSnackbar.show(context, message: 'Not signed in.', type: KsSnackbarType.error);
+      return;
+    }
+
+    final template = JobTemplateEntity(
+      id: const Uuid().v4(),
+      userId: userId,
+      name: name,
+      serviceType: _serviceType ?? '',
+      notes: _notesController.text.trim(),
+      services: _additionalServices.asMap().entries.map((e) {
+        final s = e.value;
+        return TemplateServiceItem(
+          id: '${const Uuid().v4()}-svc-${e.key}',
+          serviceType: s.serviceType ?? '',
+          quantity: int.tryParse(s.qtyController.text.trim()) ?? 1,
+          unitPrice: CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
+          sortOrder: e.key,
+        );
+      }).toList(),
+      hardwareItems: _items.where((i) => i.isFromInventory).toList().asMap().entries.map((e) {
+        final h = e.value;
+        return TemplateHardwareItem(
+          id: '${const Uuid().v4()}-hw-${e.key}',
+          name: h.nameController.text.trim(),
+          quantity: int.tryParse(h.qtyController.text.trim()) ?? 1,
+          unitSalePrice: h.inventoryItem?.defaultSalePrice,
+          inventoryItemId: h.inventoryItemId,
+        );
+      }).toList(),
+      parts: _items.where((i) => !i.isFromInventory).toList().asMap().entries.map((e) {
+        final p = e.value;
+        return TemplatePartItem(
+          id: '${const Uuid().v4()}-part-${e.key}',
+          name: p.nameController.text.trim(),
+          quantity: int.tryParse(p.qtyController.text.trim()) ?? 1,
+          unitPrice: null,
+          inventoryItemId: p.inventoryItemId,
+        );
+      }).toList(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    await ref.read(jobTemplateProvider.notifier).saveTemplate(template);
+
+    if (mounted) {
+      KsSnackbar.show(context, message: 'Template saved', type: KsSnackbarType.success);
+    }
+  }
+
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
     return await showDialog<bool>(
@@ -3992,23 +4077,88 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return Container(
       width: double.infinity,
       color: context.ksc.primary700,
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       child: SafeArea(
         top: false,
-        child: InkWell(
-          onTap: canGo && !isLoading ? _nextStep : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isLastStep ? 'SAVE JOB RECORD' : 'NEXT STEP',
-                style: AppTextStyles.h2.copyWith(color: canGo ? context.ksc.white : context.ksc.neutral500.withValues(alpha: 0.3), fontWeight: FontWeight.w900, letterSpacing: 1.5)
+        child: isLastStep
+            ? Row(
+                children: [
+                  // SAVE AS TEMPLATE
+                  Expanded(
+                    child: InkWell(
+                      onTap: _saveAsTemplate,
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'SAVE AS TEMPLATE',
+                          style: AppTextStyles.label.copyWith(
+                            color: context.ksc.accent500,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // SAVE JOB RECORD
+                  Expanded(
+                    flex: 2,
+                    child: InkWell(
+                      onTap: canGo && !isLoading ? _nextStep : null,
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: canGo ? context.ksc.accent500 : context.ksc.neutral600.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'SAVE JOB RECORD',
+                              style: AppTextStyles.label.copyWith(
+                                color: canGo ? context.ksc.primary900 : context.ksc.neutral500.withValues(alpha: 0.3),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            if (isLoading) ...[
+                              const SizedBox(width: 8),
+                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.primary900)),
+                            ] else ...[
+                              const SizedBox(width: 8),
+                              Icon(LineAwesomeIcons.check_solid, size: 16, color: canGo ? context.ksc.primary900 : context.ksc.neutral500.withValues(alpha: 0.3)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : InkWell(
+                onTap: canGo && !isLoading ? _nextStep : null,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'NEXT STEP',
+                      style: AppTextStyles.h2.copyWith(color: canGo ? context.ksc.white : context.ksc.neutral500.withValues(alpha: 0.3), fontWeight: FontWeight.w900, letterSpacing: 1.5)
+                    ),
+                    if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
+                    else Icon(LineAwesomeIcons.arrow_right_solid, color: canGo ? context.ksc.accent500 : context.ksc.neutral600),
+                  ],
+                ),
               ),
-              if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
-              else Icon(isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid, color: canGo ? context.ksc.accent500 : context.ksc.neutral600),
-            ],
-          ),
-        ),
       ),
     );
   }

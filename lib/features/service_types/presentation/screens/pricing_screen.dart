@@ -221,21 +221,25 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     return Column(
       children: [
         const KsOfflineBanner(),
-        categoryFiltered.isEmpty
-            ? Expanded(
-                child: KsEmptyState(
-                  icon: _searchQuery.isEmpty ? LineAwesomeIcons.tags_solid : LineAwesomeIcons.search_minus_solid,
-                  title: _searchQuery.isEmpty ? "NO SERVICES CONFIGURED" : "NO MATCHES",
-                  subtitle: _searchQuery.isEmpty ? "Add service types to get started." : null,
-                ),
-              )
-            : Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                  itemCount: categories.length,
-                  itemBuilder: (context, ci) => _buildCategorySection(categories[ci], grouped[categories[ci]]!),
-                ),
-              ),
+        Expanded(
+          child: types.isEmpty
+              ? const KsEmptyState(
+                  icon: LineAwesomeIcons.tags_solid,
+                  title: "NO SERVICES CONFIGURED",
+                  subtitle: "Add service types to get started.",
+                )
+              : categoryFiltered.isEmpty
+                  ? const KsEmptyState(
+                      icon: LineAwesomeIcons.search_minus_solid,
+                      title: "NO MATCHES",
+                      subtitle: "Try a different search or filter",
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                      itemCount: categories.length,
+                      itemBuilder: (context, ci) => _buildCategorySection(categories[ci], grouped[categories[ci]]!),
+                    ),
+        ),
       ],
     );
   }

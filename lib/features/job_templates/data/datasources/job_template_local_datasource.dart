@@ -7,7 +7,7 @@ class JobTemplateLocalDatasource {
 
   Future<List<JobTemplateModel>> getAll() async {
     return _box.values
-        .map((json) => JobTemplateModel.fromJson(Map<String, dynamic>.from(json)))
+        .map((json) => JobTemplateModel.fromJson(Map<String, dynamic>.from(json as Map)))
         .toList();
   }
 
@@ -24,7 +24,7 @@ class JobTemplateLocalDatasource {
   Future<void> renameTemplate(String id, String newName) async {
     final existing = _box.get(id);
     if (existing != null) {
-      final json = Map<String, dynamic>.from(existing);
+      final json = Map<String, dynamic>.from(existing as Map);
       json['name'] = newName;
       json['updated_at'] = DateTime.now().toIso8601String();
       await _box.put(id, json);

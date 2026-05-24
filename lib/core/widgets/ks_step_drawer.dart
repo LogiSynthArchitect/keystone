@@ -39,6 +39,7 @@ class KsStepDrawer extends StatefulWidget {
   final String nextLabel;
   final String saveLabel;
   final VoidCallback? onClose;
+  final bool readOnly;
 
   const KsStepDrawer({
     super.key,
@@ -52,6 +53,7 @@ class KsStepDrawer extends StatefulWidget {
     this.nextLabel = 'NEXT',
     this.saveLabel = 'SAVE',
     this.onClose,
+    this.readOnly = false,
   });
 
   @override
@@ -103,6 +105,10 @@ class _KsStepDrawerState extends State<KsStepDrawer>
 
   void _handleBottomTap() {
     if (!_canProceed) return;
+    if (widget.readOnly) {
+      widget.onSave?.call();
+      return;
+    }
     if (_isComplete) {
       widget.onSave?.call();
     } else if (_isLastSubStep) {
@@ -298,7 +304,7 @@ class _KsStepDrawerState extends State<KsStepDrawer>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _isComplete ? widget.saveLabel : widget.nextLabel,
+                        widget.readOnly ? "CLOSE" : (_isComplete ? widget.saveLabel : widget.nextLabel),
                         style: AppTextStyles.body.copyWith(
                           color: _canProceed
                               ? context.ksc.primary900

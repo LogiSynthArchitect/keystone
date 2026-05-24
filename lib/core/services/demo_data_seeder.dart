@@ -27,6 +27,7 @@ import 'package:keystone/features/inventory/data/models/stock_adjustment_model.d
 import 'package:keystone/features/inventory/domain/entities/inventory_item_entity.dart';
 import 'package:keystone/features/knowledge_base/data/datasources/knowledge_note_local_datasource.dart';
 import 'package:keystone/features/knowledge_base/data/models/knowledge_note_model.dart';
+import 'package:keystone/features/knowledge_base/data/models/note_attachment_model.dart';
 import 'package:keystone/features/note_links/data/datasources/note_link_local_datasource.dart';
 import 'package:keystone/features/note_links/data/models/note_job_link_model.dart';
 import 'package:keystone/features/whatsapp_followup/data/datasources/follow_up_local_datasource.dart';
@@ -37,6 +38,10 @@ import 'package:keystone/features/recurring_jobs/data/datasources/recurring_sche
 import 'package:keystone/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
 import 'package:keystone/features/job_templates/data/datasources/job_template_local_datasource.dart';
 import 'package:keystone/features/job_templates/data/models/job_template_model.dart';
+import 'package:keystone/features/job_templates/domain/entities/template_service_item.dart';
+import 'package:keystone/features/job_templates/domain/entities/template_hardware_item.dart';
+import 'package:keystone/features/job_templates/domain/entities/template_part_item.dart';
+import 'package:keystone/features/job_templates/domain/entities/job_template_entity.dart';
 import 'package:keystone/features/service_types/data/datasources/service_type_local_datasource.dart';
 import 'package:keystone/features/service_types/data/models/service_type_model.dart';
 
@@ -68,7 +73,7 @@ class DemoDataSeeder {
   final Set<String> _createdKeyCodeIds = {};
   final Set<String> _createdReminderIds = {};
   final Set<String> _createdRecurringScheduleIds = {};
-  final Set<String> _createdTemplateIds = {};
+
 
   DemoDataSeeder({
     required CustomerLocalDatasource customerLocal,
@@ -151,6 +156,11 @@ class DemoDataSeeder {
     'demo_inventory_012',
   ];
 
+  static const List<String> _demoTemplateIds = [
+    'demo_template_001',
+    'demo_template_002',
+  ];
+
   Future<bool> hasDemoData() async {
     final job = await _jobLocal.getJob('demo_job_001');
     return job != null;
@@ -160,7 +170,7 @@ class DemoDataSeeder {
     debugPrint('[KS:DEMO] Seeding demo data...');
     final now = DateTime.now();
     final rng = Random(42);
-    final uuid = const Uuid();
+    const uuid = Uuid();
 
     // ── Customers ──────────────────────────────────────────
     final customerData = [
@@ -586,9 +596,39 @@ class DemoDataSeeder {
     ];
 
     String? lastEditedAt;
+    List<Map<String, dynamic>>? attachments;
     for (final (title, desc, tags, mediaType) in noteData) {
       if (rng.nextBool()) {
         lastEditedAt = now.subtract(Duration(days: rng.nextInt(14))).toIso8601String();
+      }
+      // Add sample attachments to first note (PDF) and fourth note (audio)
+      if (title.startsWith('Yale Deadbolt')) {
+        attachments = [
+          NoteAttachmentModel(
+            id: uuid.v4(),
+            type: 'document',
+            url: 'https://example.com/samples/yale-210-manual.pdf',
+            name: 'Yale 210 Installation Manual.pdf',
+            size: 245760,
+            mimeType: 'application/pdf',
+            createdAt: now.toIso8601String(),
+          ).toJson(),
+        ];
+      } else if (title.startsWith('Lock Lubrication')) {
+        attachments = [
+          NoteAttachmentModel(
+            id: uuid.v4(),
+            type: 'audio',
+            url: 'https://example.com/samples/lubrication-tips.m4a',
+            name: 'Lubrication Tips Audio.m4a',
+            size: 512000,
+            mimeType: 'audio/mp4',
+            duration: 120,
+            createdAt: now.toIso8601String(),
+          ).toJson(),
+        ];
+      } else {
+        attachments = null;
       }
       final note = KnowledgeNoteModel(
         id: uuid.v4(),
@@ -597,6 +637,7 @@ class DemoDataSeeder {
         description: desc,
         tags: tags,
         mediaType: mediaType,
+        attachments: attachments ?? const [],
         isArchived: false,
         isPinned: rng.nextBool(),
         lastEditedAt: lastEditedAt,
@@ -681,54 +722,53 @@ class DemoDataSeeder {
     debugPrint('[KS:DEMO] Created 2 recurring schedules');
 
     // ── Job Templates (2) ─────────────────────────────────
-    final templateData = [
-      (
-        'Standard Deadbolt Install',
-        'deadbolt_replacement',
-        'Standard residential deadbolt installation template',
-        [
-          {'service_type': 'deadbolt_replacement', 'quantity': 1, 'unit_price': 35000},
-          {'service_type': 'key_duplication', 'quantity': 2, 'unit_price': 5000},
-        ],
-        [
-          {'category': 'deadbolt', 'brand': 'Yale', 'model': '210', 'quantity': 1, 'sale_price': 35000},
-        ],
-        [
-          {'part_name': 'Deadbolt latch', 'quantity': 1, 'unit_price': 2500},
-          {'part_name': 'Screws (set)', 'quantity': 1, 'unit_price': 500},
-        ],
+    final templateEntities = [
+      JobTemplateModel.fromEntity(
+        JobTemplateEntity(
+          id: _demoTemplateIds[0],
+          userId: _userId,
+          name: 'Standard Deadbolt Install',
+          serviceType: 'deadbolt_replacement',
+          notes: 'Standard residential deadbolt installation template',
+          services: [
+            const TemplateServiceItem(id: 'demo_tpl_svc_001', serviceType: 'deadbolt_replacement', quantity: 1, unitPrice: 35000),
+            const TemplateServiceItem(id: 'demo_tpl_svc_002', serviceType: 'key_duplication', quantity: 2, unitPrice: 5000),
+          ],
+          hardwareItems: [
+            const TemplateHardwareItem(id: 'demo_tpl_hw_001', name: 'Yale 210 Deadbolt', quantity: 1, unitSalePrice: 35000),
+          ],
+          parts: [
+            const TemplatePartItem(id: 'demo_tpl_part_001', name: 'Deadbolt latch', quantity: 1, unitPrice: 2500),
+            const TemplatePartItem(id: 'demo_tpl_part_002', name: 'Screws (set)', quantity: 1, unitPrice: 500),
+          ],
+          createdAt: now.subtract(const Duration(days: 14)),
+          updatedAt: now.subtract(const Duration(days: 14)),
+        ),
       ),
-      (
-        'Car Key Programming',
-        'car_key_programming',
-        'Standard car key programming template',
-        [
-          {'service_type': 'car_key_programming', 'quantity': 1, 'unit_price': 150000},
-        ],
-        [
-          {'category': 'key_blank', 'brand': 'Generic', 'model': 'Transponder', 'quantity': 1, 'sale_price': 30000},
-        ],
-        [
-          {'part_name': 'Transponder chip', 'quantity': 1, 'unit_price': 15000},
-        ],
+      JobTemplateModel.fromEntity(
+        JobTemplateEntity(
+          id: _demoTemplateIds[1],
+          userId: _userId,
+          name: 'Car Key Programming',
+          serviceType: 'car_key_programming',
+          notes: 'Standard car key programming template',
+          services: [
+            const TemplateServiceItem(id: 'demo_tpl_svc_003', serviceType: 'car_key_programming', quantity: 1, unitPrice: 150000),
+          ],
+          hardwareItems: [
+            const TemplateHardwareItem(id: 'demo_tpl_hw_002', name: 'Generic Transponder', quantity: 1, unitSalePrice: 30000),
+          ],
+          parts: [
+            const TemplatePartItem(id: 'demo_tpl_part_003', name: 'Transponder chip', quantity: 1, unitPrice: 15000),
+          ],
+          createdAt: now.subtract(const Duration(days: 14)),
+          updatedAt: now.subtract(const Duration(days: 14)),
+        ),
       ),
     ];
 
-    for (final (name, svcType, note, svcs, hwItems, pItems) in templateData) {
-      final template = JobTemplateModel(
-        id: uuid.v4(),
-        userId: _userId,
-        name: name,
-        serviceType: svcType,
-        notes: note,
-        services: svcs,
-        hardwareItems: hwItems,
-        parts: pItems,
-        createdAt: now.subtract(const Duration(days: 14)).toIso8601String(),
-        updatedAt: now.toIso8601String(),
-      );
+    for (final template in templateEntities) {
       await _jobTemplateLocal.saveTemplate(template);
-      _createdTemplateIds.add(template.id);
     }
     debugPrint('[KS:DEMO] Created 2 job templates');
 
@@ -869,8 +909,8 @@ class DemoDataSeeder {
       await _recurringScheduleLocal.delete(schedId);
     }
 
-    // Remove job templates
-    for (final tId in _createdTemplateIds) {
+    // Remove job templates (fixed IDs — survives app restarts)
+    for (final tId in _demoTemplateIds) {
       await _jobTemplateLocal.deleteTemplate(tId);
     }
 

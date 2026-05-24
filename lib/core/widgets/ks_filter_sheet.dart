@@ -157,6 +157,7 @@ class KsFilterSheet extends StatefulWidget {
   final VoidCallback onClear;
   final int? totalCount;
   final String? activeLabel; // shown as tag chip (e.g. "Residential")
+  final double heightFraction; // max fraction of screen height to occupy
 
   const KsFilterSheet({
     super.key,
@@ -166,6 +167,7 @@ class KsFilterSheet extends StatefulWidget {
     required this.onClear,
     this.totalCount,
     this.activeLabel,
+    this.heightFraction = 0.45,
   });
 
   @override
@@ -183,11 +185,15 @@ class _KsFilterSheetState extends State<KsFilterSheet> {
   Widget build(BuildContext context) {
     final theme = context.ksc;
 
+    final maxHeight = MediaQuery.of(context).size.height * widget.heightFraction;
+
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             // ── Drag handle ──
             Padding(
@@ -309,15 +315,16 @@ class _KsFilterSheetState extends State<KsFilterSheet> {
                             letterSpacing: 1.0,
                           ),
                         ),
-                        Icon(LineAwesomeIcons.arrow_right_solid,
-                            color: theme.primary900, size: 20),
-                      ],
+          Icon(LineAwesomeIcons.arrow_right_solid,
+                              color: theme.primary900, size: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
