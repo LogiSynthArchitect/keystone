@@ -52,11 +52,15 @@ class TimelineState {
   final List<TimelineEvent> events;
   final bool isLoading;
   final String? errorMessage;
+  final int loadedCount;
+  final int totalCount;
 
   const TimelineState({
     this.events = const [],
     this.isLoading = false,
     this.errorMessage,
+    this.loadedCount = 0,
+    this.totalCount = 0,
   });
 }
 
@@ -86,13 +90,14 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
           j.id: JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity()
       };
 
-      // Convert audit entries to timeline events, take most recent 50
+      // Sort all by time, newest first
       allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final recent = allEntries.take(50).toList();
+      final total = allEntries.length;
+      final initialCount = total > 50 ? 50 : total;
 
       // Convert each entry — skip conversions that fail
       final events = <TimelineEvent>[];
-      for (final entry in recent) {
+      for (final entry in allEntries.take(initialCount)) {
         try {
           events.add(_toEvent(entry, jobMap));
         } catch (err) {
@@ -100,9 +105,49 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
         }
       }
 
-      state = TimelineState(events: events);
+      state = TimelineState(events: events, loadedCount: initialCount, totalCount: total);
     } catch (e) {
       state = const TimelineState(errorMessage: 'Could not load activity.');
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.loadedCount >= state.totalCount) return;
+    try {
+      final allEntries = <JobAuditEntryEntity>[];
+      for (final e in HiveService.jobAuditLog.values) {
+        try {
+          allEntries.add(
+            JobAuditEntryModel.fromJson(Map<String, dynamic>.from(e)).toEntity(),
+          );
+        } catch (err) {
+          debugPrint('[KS:TIMELINE] Skipping bad audit entry: $err');
+        }
+      }
+
+      final jobMap = <String, JobEntity>{
+        for (final j in HiveService.jobs.values)
+          j.id: JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity()
+      };
+
+      allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final newCount = state.loadedCount + 50 > state.totalCount
+          ? state.totalCount
+          : state.loadedCount + 50;
+
+      // Convert each entry — skip conversions that fail
+      final events = <TimelineEvent>[];
+      for (final entry in allEntries.take(newCount)) {
+        try {
+          events.add(_toEvent(entry, jobMap));
+        } catch (err) {
+          debugPrint('[KS:TIMELINE] Skipping bad event conversion: $err');
+        }
+      }
+
+      state = TimelineState(events: events, loadedCount: newCount, totalCount: state.totalCount);
+    } catch (e) {
+      debugPrint('[KS:TIMELINE] loadMore failed: $e');
     }
   }
 

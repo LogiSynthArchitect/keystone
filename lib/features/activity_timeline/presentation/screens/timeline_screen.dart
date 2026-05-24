@@ -37,21 +37,39 @@ class TimelineScreen extends ConsumerWidget {
               ? Center(child: Text(state.errorMessage!, style: AppTextStyles.body.copyWith(color: context.ksc.error500)))
               : state.events.isEmpty
                   ? _EmptyState()
-                  : _EventList(events: state.events),
+                  : _EventList(
+                      events: state.events,
+                      hasMore: state.loadedCount < state.totalCount,
+                      onLoadMore: () => ref.read(timelineProvider.notifier).loadMore(),
+                    ),
     );
   }
 }
 
 class _EventList extends StatelessWidget {
   final List<TimelineEvent> events;
-  const _EventList({required this.events});
+  final bool hasMore;
+  final VoidCallback? onLoadMore;
+  const _EventList({required this.events, this.hasMore = false, this.onLoadMore});
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.huge),
-      itemCount: events.length,
+      itemCount: events.length + (hasMore ? 1 : 0),
       itemBuilder: (context, i) {
+        if (i == events.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: TextButton.icon(
+                onPressed: onLoadMore,
+                icon: Icon(LineAwesomeIcons.angle_double_down_solid, size: 14, color: context.ksc.accent500),
+                label: Text('LOAD OLDER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: context.ksc.accent500, letterSpacing: 1)),
+              ),
+            ),
+          );
+        }
         final event = events[i];
         final showDate = i == 0 || !_sameDay(events[i - 1].timestamp, event.timestamp);
         return Column(
