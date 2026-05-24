@@ -37,10 +37,13 @@ class TimelineScreen extends ConsumerWidget {
               ? Center(child: Text(state.errorMessage!, style: AppTextStyles.body.copyWith(color: context.ksc.error500)))
               : state.events.isEmpty
                   ? _EmptyState()
-                  : _EventList(
-                      events: state.events,
-                      hasMore: state.loadedCount < state.totalCount,
-                      onLoadMore: () => ref.read(timelineProvider.notifier).loadMore(),
+                  : RefreshIndicator(
+                      onRefresh: () => ref.read(timelineProvider.notifier).load(),
+                      child: _EventList(
+                        events: state.events,
+                        hasMore: state.loadedCount < state.totalCount,
+                        onLoadMore: () => ref.read(timelineProvider.notifier).loadMore(),
+                      ),
                     ),
     );
   }
@@ -131,58 +134,76 @@ class _EventTile extends StatelessWidget {
       onTap: () => context.push(RouteNames.jobDetail(event.jobId)),
       child: Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Timeline line + dot
-            Column(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-                ),
-              ],
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: context.ksc.primary800,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                ),
-                child: Row(
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Timeline line + dot
+              SizedBox(
+                width: 24,
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            event.type.label,
-                            style: AppTextStyles.captionMedium.copyWith(
-                              color: dot,
-                              letterSpacing: 0.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            event.description,
-                            style: AppTextStyles.body.copyWith(color: context.ksc.white),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
                     ),
-                    Text(
-                      _timeString(event.timestamp),
-                      style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
+                    Expanded(
+                      child: Container(
+                        width: 1,
+                        color: context.ksc.primary700.withValues(alpha: 0.4),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              // Content — no background container
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              event.type.label,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: dot,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            _timeString(event.timestamp),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: context.ksc.neutral600,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        event.description,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.ksc.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
