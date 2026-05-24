@@ -1,4 +1,5 @@
 import '../../domain/entities/knowledge_note_entity.dart';
+import 'note_attachment_model.dart';
 
 class KnowledgeNoteModel {
   final String id;
@@ -10,6 +11,7 @@ class KnowledgeNoteModel {
   final String? coverImageUrl;
   final String? serviceType;
   final String mediaType;
+  final List<Map<String, dynamic>> attachments;
   final bool isArchived;
   final bool isPinned;
   final String? lastEditedAt;
@@ -27,6 +29,7 @@ class KnowledgeNoteModel {
     this.coverImageUrl,
     this.serviceType,
     this.mediaType = 'image',
+    this.attachments = const [],
     required this.isArchived,
     this.isPinned = false,
     this.lastEditedAt,
@@ -46,6 +49,10 @@ class KnowledgeNoteModel {
         coverImageUrl: json['cover_image_url'] as String?,
         serviceType: json['service_type'] as String?,
         mediaType: json['media_type'] as String? ?? 'image',
+        attachments: (json['attachments'] as List<dynamic>?)
+                ?.map((a) => Map<String, dynamic>.from(a as Map))
+                .toList() ??
+            const [],
         isArchived: json['is_archived'] as bool,
         isPinned: json['is_pinned'] as bool? ?? false,
         lastEditedAt: json['last_edited_at'] as String?,
@@ -64,6 +71,7 @@ class KnowledgeNoteModel {
         'cover_image_url': coverImageUrl,
         'service_type': serviceType,
         'media_type': mediaType,
+        'attachments': attachments,
         'is_archived': isArchived,
         'is_pinned': isPinned,
         'last_edited_at': lastEditedAt,
@@ -83,6 +91,7 @@ class KnowledgeNoteModel {
         coverImageUrl: entity.coverImageUrl,
         serviceType: entity.serviceType,
         mediaType: entity.mediaType,
+        attachments: entity.attachments.map((a) => NoteAttachmentModel.fromEntity(a).toJson()).toList(),
         isArchived: entity.isArchived,
         isPinned: entity.isPinned,
         lastEditedAt: entity.lastEditedAt?.toIso8601String(),
@@ -101,6 +110,7 @@ class KnowledgeNoteModel {
     String? coverImageUrl,
     String? serviceType,
     String? mediaType,
+    List<Map<String, dynamic>>? attachments,
     bool? isArchived,
     bool? isPinned,
     String? lastEditedAt,
@@ -118,6 +128,7 @@ class KnowledgeNoteModel {
         coverImageUrl: coverImageUrl ?? this.coverImageUrl,
         serviceType: serviceType ?? this.serviceType,
         mediaType: mediaType ?? this.mediaType,
+        attachments: attachments ?? this.attachments,
         isArchived: isArchived ?? this.isArchived,
         isPinned: isPinned ?? this.isPinned,
         lastEditedAt: lastEditedAt ?? this.lastEditedAt,
@@ -136,6 +147,7 @@ class KnowledgeNoteModel {
         coverImageUrl: coverImageUrl,
         serviceType: serviceType,
         mediaType: mediaType,
+        attachments: attachments.map((a) => NoteAttachmentModel.fromJson(a).toEntity()).toList(),
         isArchived: isArchived,
         isPinned: isPinned,
         lastEditedAt: lastEditedAt != null ? DateTime.parse(lastEditedAt!) : null,

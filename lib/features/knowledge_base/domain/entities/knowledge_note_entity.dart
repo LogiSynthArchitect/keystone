@@ -1,3 +1,5 @@
+import 'note_attachment.dart';
+
 class KnowledgeNoteEntity {
   final String id;
   final String userId;
@@ -8,6 +10,7 @@ class KnowledgeNoteEntity {
   final String? coverImageUrl;
   final String? serviceType;
   final String mediaType;
+  final List<NoteAttachment> attachments;
   final bool isArchived;
   final bool isPinned;
   final DateTime? lastEditedAt;
@@ -24,6 +27,7 @@ class KnowledgeNoteEntity {
     this.coverImageUrl,
     this.serviceType,
     this.mediaType = 'image',
+    this.attachments = const [],
     required this.isArchived,
     this.isPinned = false,
     this.lastEditedAt,
@@ -35,6 +39,8 @@ class KnowledgeNoteEntity {
   bool get hasTags  => tags.isNotEmpty;
   bool get isVideo => mediaType == 'video';
   bool get isAudio => mediaType == 'audio';
+  bool get isDocument => mediaType == 'document';
+  bool get hasAttachments => attachments.isNotEmpty;
   bool get hasCover => coverImageUrl != null && coverImageUrl!.isNotEmpty;
   String? get displayImage => coverImageUrl ?? photoUrl;
 
@@ -48,6 +54,7 @@ class KnowledgeNoteEntity {
     String? coverImageUrl,
     String? serviceType,
     String? mediaType,
+    List<NoteAttachment>? attachments,
     bool? isArchived,
     bool? isPinned,
     DateTime? lastEditedAt,
@@ -64,6 +71,7 @@ class KnowledgeNoteEntity {
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       serviceType: serviceType ?? this.serviceType,
       mediaType: mediaType ?? this.mediaType,
+      attachments: attachments ?? this.attachments,
       isArchived: isArchived ?? this.isArchived,
       isPinned: isPinned ?? this.isPinned,
       lastEditedAt: lastEditedAt ?? this.lastEditedAt,
