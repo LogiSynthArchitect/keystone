@@ -14,6 +14,7 @@ import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../providers/notes_providers.dart';
+import 'add_note_screen.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../widgets/note_card.dart';
 
@@ -209,7 +210,12 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(RouteNames.addNote),
+        onPressed: () async {
+          final note = await AddNoteScreen.show(context);
+          if (note != null && context.mounted) {
+            ref.read(notesListProvider.notifier).addNote(note);
+          }
+        },
         backgroundColor: context.ksc.accent500,
         foregroundColor: context.ksc.primary900,
         elevation: 0,

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,25 +10,36 @@ import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
 import '../../domain/entities/note_attachment.dart';
+import '../../domain/entities/knowledge_note_entity.dart';
 
 class AddNoteScreen extends ConsumerStatefulWidget {
   const AddNoteScreen({super.key});
+
+  /// Shows the add note sheet as a modal bottom sheet. Returns the created [KnowledgeNoteEntity] or null.
+  static Future<KnowledgeNoteEntity?> show(BuildContext context) {
+    return showModalBottomSheet<KnowledgeNoteEntity>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      builder: (_) => const AddNoteScreen(),
+    );
+  }
+
   @override
   ConsumerState<AddNoteScreen> createState() => _AddNoteScreenState();
 }
 
 class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
-  int _currentStep = 0;
-  final int _totalSteps = 3;
-
-  final _titleController       = TextEditingController();
+  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   List<String> _tags = [];
   String? _serviceType;
@@ -67,201 +77,160 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       _serviceType != null ||
       _attachments.isNotEmpty;
 
-  bool get _canMoveForward {
-    if (_currentStep == 0) {
+  bool _canAdvance(int step, int subStep) {
+    if (step == 0) {
       return _titleController.text.trim().length >= 3 &&
-             _descriptionController.text.trim().length >= 10;
+          _descriptionController.text.trim().length >= 10;
     }
     return true;
   }
 
-  void _nextStep() {
-    if (_currentStep < _totalSteps - 1) {
-      HapticFeedback.mediumImpact();
-      setState(() => _currentStep++);
-    } else {
-      _onSave();
-    }
+  void _handleBack() {
+    _confirmDiscard().then((ok) {
+      if (ok && context.mounted) Navigator.of(context).pop();
+    });
   }
 
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
-    } else {
-      _confirmDiscard().then((ok) {
-        if (ok && mounted) Navigator.of(context).pop();
-      });
-    }
+  void _handleClose() {
+    _confirmDiscard().then((ok) {
+      if (ok && context.mounted) Navigator.of(context).pop();
+    });
   }
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
     return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: context.ksc.primary700),
-        ),
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        content: Text('You have unsaved notes. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400)),
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: context.ksc.primary800,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+              side: BorderSide(color: context.ksc.primary700),
+            ),
+            title: Text('DISCARD CHANGES?',
+                style: AppTextStyles.h3.copyWith(
+                    color: context.ksc.white, fontWeight: FontWeight.w900)),
+            content: Text('You have unsaved notes. Leave anyway?',
+                style:
+                    AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('KEEP EDITING',
+                    style: AppTextStyles.label.copyWith(
+                        color: context.ksc.neutral400)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('DISCARD',
+                    style: AppTextStyles.label.copyWith(
+                        color: context.ksc.error500,
+                        fontWeight: FontWeight.w900)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.w900)),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   Future<void> _onSave() async {
     HapticFeedback.heavyImpact();
     final note = await ref.read(addNoteProvider.notifier).save(
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      tags: _tags,
-      serviceType: _serviceType,
-      attachments: _attachments.isNotEmpty ? _attachments : null,
-    );
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          tags: _tags,
+          serviceType: _serviceType,
+          attachments: _attachments.isNotEmpty ? _attachments : null,
+        );
     if (!mounted) return;
     if (note != null) {
-      ref.read(notesListProvider.notifier).addNote(note);
-      context.pop();
-      KsSnackbar.show(context, message: "Note saved", type: KsSnackbarType.success);
+      Navigator.of(context).pop(note);
+      KsSnackbar.show(context, message: "Note saved",
+          type: KsSnackbarType.success);
     } else {
       final error = ref.read(addNoteProvider).errorMessage;
-      KsSnackbar.show(context, message: error ?? "Could not save note", type: KsSnackbarType.error);
+      KsSnackbar.show(context, message: error ?? "Could not save note",
+          type: KsSnackbarType.error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(addNoteProvider);
-    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        _previousStep();
+    return KsStepDrawer(
+      showBackArrow: true,
+      title: "ADD NOTE",
+      steps: const [
+        KsStep(
+          label: 'NOTE CONTENT',
+          icon: LineAwesomeIcons.edit_solid,
+          tip: 'Give your note a clear title and describe the steps.',
+          imageAsset: 'assets/icons/3d/transparent/66b0f8-pencil.png',
+        ),
+        KsStep(
+          label: 'TAGS & CATEGORY',
+          icon: LineAwesomeIcons.tags_solid,
+          tip: 'Tags help you find this note later by keywords.',
+          imageAsset: 'assets/icons/3d/transparent/628100-notebook.png',
+        ),
+        KsStep(
+          label: 'ATTACHMENTS',
+          icon: LineAwesomeIcons.paperclip_solid,
+          tip: 'Add audio recordings or PDF documents to your note.',
+          imageAsset: 'assets/icons/3d/transparent/135b84-file-fav.png',
+        ),
+      ],
+      onBack: _handleBack,
+      onClose: _handleClose,
+      nextLabel: "NEXT",
+      saveLabel: "SAVE NOTE",
+      canAdvance: _canAdvance,
+      onSave: _onSave,
+      stepContent: (step, subStep, setSheetState) {
+        // Use the drawer's setState for UI updates triggered by callbacks
+        switch (step) {
+          case 0:
+            return _buildStep1();
+          case 1:
+            return _buildStep2();
+          case 2:
+            return _buildStep3(setSheetState);
+          default:
+            return const SizedBox.shrink();
+        }
       },
-      child: Scaffold(
-        backgroundColor: context.ksc.primary900,
-        appBar: KsAppBar(
-          title: "ADD NEW NOTE",
-          showBack: true,
-          onBack: _previousStep,
-        ),
-        body: Column(
-          children: [
-            const KsOfflineBanner(),
-            _buildStepIndicator(),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: SingleChildScrollView(
-                  key: ValueKey<int>(_currentStep),
-                  padding: const EdgeInsets.all(24.0),
-                  child: _buildCurrentStep(),
-                ),
-              ),
-            ),
-            if (!keyboardVisible) _buildBottomAction(state.isLoading),
-          ],
-        ),
-      ),
     );
-  }
-
-  Widget _buildStepIndicator() {
-    final stepLabels = ["NOTE CONTENT", "TAGS", "ATTACHMENTS"];
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        border: Border(bottom: BorderSide(color: context.ksc.primary700)),
-      ),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          final isActive = index == _currentStep;
-          final isCompleted = index < _currentStep;
-          return Expanded(
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isActive ? context.ksc.accent500 : (isCompleted ? context.ksc.accent500.withValues(alpha: 0.2) : context.ksc.primary900),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: isActive ? context.ksc.accent500 : context.ksc.primary700),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "${index + 1}",
-                      style: AppTextStyles.caption.copyWith(
-                        color: isActive ? context.ksc.primary900 : (isCompleted ? context.ksc.accent500 : context.ksc.neutral500),
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ),
-                if (isActive) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    stepLabels[index],
-                    style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0),
-                  ),
-                ],
-                if (index < _totalSteps - 1)
-                  Expanded(child: Divider(color: context.ksc.primary700, indent: 8, endIndent: 8)),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildCurrentStep() {
-    switch (_currentStep) {
-      case 0: return _buildStep1();
-      case 1: return _buildStep2();
-      case 2: return _buildStep3();
-      default: return const SizedBox.shrink();
-    }
   }
 
   Widget _buildStep1() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("YOUR NOTE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Write down the problem and how you fixed it.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        const SizedBox(height: 32),
-        _buildDarkField(
-          label: "Note Title",
-          hint: "e.g. Rekeying Kwikset Deadbolt",
-          controller: _titleController,
-          fieldHint: "A short title helps you find this note later.",
-          maxLength: 200,
-        ),
-        const SizedBox(height: 24),
-        _buildDarkField(
-          label: "Description",
-          hint: "Step by step notes, tips, what worked...",
-          maxLines: 5,
-          controller: _descriptionController,
-          fieldHint: "Write your full notes here — steps, tips, what worked.",
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("YOUR NOTE",
+              style: AppTextStyles.h2.copyWith(
+                  color: context.ksc.white, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          Text("Write down the problem and how you fixed it.",
+              style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+          const SizedBox(height: 24),
+          _buildDarkField(
+            label: "Note Title",
+            hint: "e.g. Rekeying Kwikset Deadbolt",
+            controller: _titleController,
+            fieldHint: "A short title helps you find this note later.",
+            maxLength: 200,
+          ),
+          const SizedBox(height: 20),
+          _buildDarkField(
+            label: "Description",
+            hint: "Step by step notes, tips, what worked...",
+            maxLines: 5,
+            controller: _descriptionController,
+            fieldHint: "Write your full notes here — steps, tips, what worked.",
+          ),
+        ],
+      ),
     );
   }
 
@@ -273,132 +242,176 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       'smart_lock_installation',
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("ORGANISE YOUR NOTE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Add tags and a category to find this note easily later.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        const SizedBox(height: 32),
-        Text("TAGS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-        const SizedBox(height: 8),
-        TagInputField(tags: _tags, onChanged: (tags) => setState(() => _tags = tags)),
-        const SizedBox(height: 32),
-        Text("SERVICE CATEGORY (OPTIONAL)", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: v1Types.map((type) {
-            final label = type.replaceAll('_', ' ').toUpperCase();
-            final isSelected = _serviceType == type;
-            return GestureDetector(
-              onTap: () => setState(() => _serviceType = isSelected ? null : type),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
-                    width: 1.5,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("ORGANISE YOUR NOTE",
+              style: AppTextStyles.h2.copyWith(
+                  color: context.ksc.white, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          Text("Add tags and a category to find this note easily later.",
+              style:
+                  AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+          const SizedBox(height: 24),
+          Text("TAGS",
+              style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.neutral500,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0)),
+          const SizedBox(height: 8),
+          TagInputField(
+              tags: _tags, onChanged: (tags) => setState(() => _tags = tags)),
+          const SizedBox(height: 24),
+          Text("SERVICE CATEGORY (OPTIONAL)",
+              style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.neutral500,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: v1Types.map((type) {
+              final label = type.replaceAll('_', ' ').toUpperCase();
+              final isSelected = _serviceType == type;
+              return GestureDetector(
+                onTap: () => setState(
+                    () => _serviceType = isSelected ? null : type),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? context.ksc.accent500.withValues(alpha: 0.1)
+                        : context.ksc.primary800,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: isSelected
+                          ? context.ksc.accent500
+                          : context.ksc.primary700,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Text(
+                    label,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isSelected
+                          ? context.ksc.accent500
+                          : context.ksc.neutral400,
+                      fontWeight:
+                          isSelected ? FontWeight.w900 : FontWeight.w700,
+                    ),
                   ),
                 ),
-                child: Text(
-                  label,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
-                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                  )
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStep3() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("ATTACHMENTS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Add audio recordings or PDF documents to your note.", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        const SizedBox(height: 32),
-        if (_attachments.isNotEmpty) ...[
-          Text("CURRENT ATTACHMENTS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+  Widget _buildStep3(StateSetter setSheetState) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("ATTACHMENTS",
+              style: AppTextStyles.h2.copyWith(
+                  color: context.ksc.white, fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          ..._attachments.map((a) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: context.ksc.primary800,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: context.ksc.primary700),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    a.type == AttachmentType.audio ? LineAwesomeIcons.microphone_solid : LineAwesomeIcons.file_pdf_solid,
-                    size: 18,
-                    color: context.ksc.accent500,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      a.name,
-                      style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
-                      overflow: TextOverflow.ellipsis,
+          Text("Add audio recordings or PDF documents to your note.",
+              style:
+                  AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
+          const SizedBox(height: 24),
+          if (_attachments.isNotEmpty) ...[
+            Text("CURRENT ATTACHMENTS",
+                style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.neutral500,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0)),
+            const SizedBox(height: 8),
+            ..._attachments.map((a) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: context.ksc.primary800,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: context.ksc.primary700),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          a.type == AttachmentType.audio
+                              ? LineAwesomeIcons.microphone_solid
+                              : LineAwesomeIcons.file_pdf_solid,
+                          size: 18,
+                          color: context.ksc.accent500,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            a.name,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                                color: context.ksc.white,
+                                fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (a.size != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              _formatSize(a.size!),
+                              style: AppTextStyles.caption.copyWith(
+                                  color: context.ksc.neutral500),
+                            ),
+                          ),
+                        GestureDetector(
+                          onTap: () => setSheetState(() => _attachments.remove(a)),
+                          child: Icon(LineAwesomeIcons.times_circle_solid,
+                              size: 20, color: context.ksc.error500),
+                        ),
+                      ],
                     ),
                   ),
-                  if (a.size != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Text(
-                        _formatSize(a.size!),
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                      ),
-                    ),
-                  GestureDetector(
-                    onTap: () => setState(() => _attachments.remove(a)),
-                    child: Icon(LineAwesomeIcons.times_circle_solid, size: 20, color: context.ksc.error500),
-                  ),
-                ],
-              ),
+                )),
+            const SizedBox(height: 24),
+          ],
+          if (_isRecording)
+            _buildRecordingIndicator()
+          else ...[
+            _buildActionButton(
+              icon: LineAwesomeIcons.microphone_solid,
+              label: "RECORD AUDIO",
+              onTap: _startRecording,
             ),
-          )),
-          const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            _buildActionButton(
+              icon: LineAwesomeIcons.file_pdf_solid,
+              label: "ATTACH PDF",
+              onTap: _pickPdf,
+            ),
+          ],
+          if (_isUploading) ...[
+            const SizedBox(height: 24),
+            const Center(child: CircularProgressIndicator(color: Color(0xFFD4A84B))),
+          ],
         ],
-        if (_isRecording)
-          _buildRecordingIndicator()
-        else ...[
-          _buildActionButton(
-            icon: LineAwesomeIcons.microphone_solid,
-            label: "RECORD AUDIO",
-            onTap: _startRecording,
-          ),
-          const SizedBox(height: 12),
-          _buildActionButton(
-            icon: LineAwesomeIcons.file_pdf_solid,
-            label: "ATTACH PDF",
-            onTap: _pickPdf,
-          ),
-        ],
-        if (_isUploading) ...[
-          const SizedBox(height: 24),
-          const Center(child: CircularProgressIndicator(color: Color(0xFFD4A84B))),
-        ],
-      ],
+      ),
     );
   }
 
   Widget _buildRecordingIndicator() {
     final minutes = _recordingDuration ~/ 60;
     final seconds = _recordingDuration % 60;
-    final timeStr = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final timeStr =
+        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -494,7 +507,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Microphone permission denied", type: KsSnackbarType.error);
+        KsSnackbar.show(context, message: "Microphone permission denied",
+            type: KsSnackbarType.error);
       }
       return;
     }
@@ -502,16 +516,18 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     final tempDir = await getTemporaryDirectory();
     final filePath = '${tempDir.path}/${const Uuid().v4()}.m4a';
 
-    await _recorder.start(RecordConfig(encoder: AudioEncoder.aacLc), path: filePath);
+    await _recorder.start(RecordConfig(encoder: AudioEncoder.aacLc),
+        path: filePath);
 
     setState(() {
       _isRecording = true;
       _recordingDuration = 0;
     });
 
-    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _recordingDuration++);
-    });
+    _recordingTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) {
+          if (mounted) setState(() => _recordingDuration++);
+        });
   }
 
   Future<void> _stopRecording() async {
@@ -537,7 +553,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       final path = 'note-attachments/$userId/$fileName';
 
       await supabase.storage.from('note-attachments').upload(path, file);
-      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(path);
+      final publicUrl =
+          supabase.storage.from('note-attachments').getPublicUrl(path);
 
       final attachment = NoteAttachment(
         id: const Uuid().v4(),
@@ -553,7 +570,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not upload audio", type: KsSnackbarType.error);
+        KsSnackbar.show(context, message: "Could not upload audio",
+            type: KsSnackbarType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -583,7 +601,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       final storagePath = 'note-attachments/$userId/${const Uuid().v4()}.pdf';
 
       await supabase.storage.from('note-attachments').upload(storagePath, file);
-      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(storagePath);
+      final publicUrl =
+          supabase.storage.from('note-attachments').getPublicUrl(storagePath);
 
       final attachment = NoteAttachment(
         id: const Uuid().v4(),
@@ -598,7 +617,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not upload PDF", type: KsSnackbarType.error);
+        KsSnackbar.show(context, message: "Could not upload PDF",
+            type: KsSnackbarType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -609,41 +629,6 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  Widget _buildBottomAction(bool isLoading) {
-    final isLastStep = _currentStep == _totalSteps - 1;
-    final canGo = _canMoveForward;
-
-    return Container(
-      width: double.infinity,
-      color: context.ksc.primary700,
-      padding: const EdgeInsets.all(24.0),
-      child: SafeArea(
-        top: false,
-        child: InkWell(
-          onTap: canGo && !isLoading ? _nextStep : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isLastStep ? 'SAVE KNOWLEDGE NOTE' : 'NEXT STEP',
-                style: AppTextStyles.h2.copyWith(
-                  color: canGo ? context.ksc.white : context.ksc.neutral500,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                )
-              ),
-              if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
-              else Icon(
-                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
-                color: canGo ? context.ksc.accent500 : context.ksc.primary700
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildDarkField({
@@ -657,10 +642,19 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+        Text(label.toUpperCase(),
+            style: AppTextStyles.caption.copyWith(
+                color: context.ksc.neutral500,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0)),
         if (fieldHint != null) ...[
           const SizedBox(height: 4),
-          Text(fieldHint, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500.withValues(alpha: 0.7), fontWeight: FontWeight.w600, fontSize: 10, letterSpacing: 0.5)),
+          Text(fieldHint,
+              style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.accent500.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                  letterSpacing: 0.5)),
         ],
         const SizedBox(height: 8),
         Container(
@@ -674,8 +668,11 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             maxLines: maxLines,
             maxLength: maxLength,
             maxLengthEnforcement: MaxLengthEnforcement.enforced,
-            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-            style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+            buildCounter: (context,
+                {required currentLength, required isFocused, maxLength}) =>
+                null,
+            style: AppTextStyles.bodyLarge.copyWith(
+                color: context.ksc.white, fontWeight: FontWeight.w700),
             cursorColor: context.ksc.accent500,
             decoration: InputDecoration(
               hintText: hint,
