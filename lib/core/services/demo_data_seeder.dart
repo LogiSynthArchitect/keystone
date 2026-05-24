@@ -24,6 +24,7 @@ import 'package:keystone/features/inventory/data/datasources/inventory_stock_adj
 import 'package:keystone/features/inventory/data/models/inventory_item_model.dart';
 import 'package:keystone/features/inventory/data/models/restock_model.dart';
 import 'package:keystone/features/inventory/data/models/stock_adjustment_model.dart';
+import 'package:keystone/features/inventory/domain/entities/inventory_item_entity.dart';
 import 'package:keystone/features/knowledge_base/data/datasources/knowledge_note_local_datasource.dart';
 import 'package:keystone/features/knowledge_base/data/models/knowledge_note_model.dart';
 import 'package:keystone/features/note_links/data/datasources/note_link_local_datasource.dart';
@@ -427,24 +428,24 @@ class DemoDataSeeder {
       ('Spring set', 'part', 'spring', 800, 1500, 20, 10),
       ('Transponder chip', 'part', 'electronics', 15000, 30000, 5, 3),
       ('Dial mechanism', 'part', 'safe', 20000, 45000, 3, 2),
-      ('Master key blank', 'part', 'key_blank', 500, 1200, 30, 10),
-      ('Mortise cylinder', 'part', 'mortise_lock', 12000, 25000, 4, 2),
-      ('Yale deadbolt 210', 'hardware', 'deadbolt', 15000, 35000, 8, 5),
-      ('Abus padlock 83/45', 'hardware', 'padlock', 8000, 18000, 12, 5),
-      ('Master Lock M1', 'hardware', 'padlock', 5000, 12000, 6, 5),
-      ('Cisa mortise K4', 'hardware', 'mortise_lock', 25000, 55000, 2, 3),
-      ('Mul-T-Lock MT5+', 'hardware', 'mortise_lock', 30000, 65000, 1, 2),
-      ('Gate remote universal', 'hardware', 'gate', 10000, 25000, 15, 10),
+      ('Master key blank', 'consumable', 'key_blank', 500, 1200, 30, 10),
+      ('Mortise cylinder', 'lock', 'mortise_lock', 12000, 25000, 4, 2),
+      ('Yale deadbolt 210', 'lock', 'deadbolt', 15000, 35000, 8, 5),
+      ('Abus padlock 83/45', 'lock', 'padlock', 8000, 18000, 12, 5),
+      ('Master Lock M1', 'lock', 'padlock', 5000, 12000, 6, 5),
+      ('Cisa mortise K4', 'lock', 'mortise_lock', 25000, 55000, 2, 3),
+      ('Mul-T-Lock MT5+', 'lock', 'mortise_lock', 30000, 65000, 1, 2),
+      ('Gate remote universal', 'electronic', 'gate', 10000, 25000, 15, 10),
     ];
 
     for (int i = 0; i < inventoryItems.length; i++) {
-      final (name, itemType, category, cost, sale, qty, threshold) = inventoryItems[i];
+      final (name, itemCat, oldCategory, cost, sale, qty, threshold) = inventoryItems[i];
       final item = InventoryItemModel(
         id: _demoInventoryIds[i],
         userId: _userId,
-        itemType: itemType,
+        category: InventoryItemCategory.fromDb(itemCat),
         name: name,
-        category: category,
+        attributes: {'type': oldCategory},
         defaultCostPrice: cost,
         defaultSalePrice: sale,
         quantity: qty,
@@ -461,9 +462,9 @@ class DemoDataSeeder {
         final lowItem = InventoryItemModel(
           id: _demoInventoryIds[i],
           userId: _userId,
-          itemType: itemType,
+          category: InventoryItemCategory.fromDb(itemCat),
           name: name,
-          category: category,
+          attributes: {'type': oldCategory},
           defaultCostPrice: cost,
           defaultSalePrice: sale,
           quantity: threshold - 1,

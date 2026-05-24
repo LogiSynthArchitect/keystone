@@ -1,0 +1,375 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+  h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; color: #C9A84C; }
+  .subtitle { color: #888; font-size: 12px; margin-bottom: 24px; text-align: center; max-width: 600px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1000px; margin: 0 auto; }
+
+  .card { border-radius: 12px; overflow: hidden; border: 1px solid #2a2a2a; background: #0C0C0E; }
+
+  /* ── Phone frame ── */
+  .phone { position: relative; height: 340px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  
+  /* Mock content — same on all */
+  .mock-content { position: relative; z-index: 2; text-align: center; padding: 20px; width: 100%; }
+  .mock-bar { height: 28px; margin: 0 20px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; position: relative; z-index: 2; }
+  .mock-bar .t { font-size: 11px; font-weight: 600; color: #F2F0EB; letter-spacing: 1px; }
+  .mock-bar .i { display: flex; gap: 8px; }
+  .mock-bar .i span { width: 14px; height: 14px; border-radius: 50%; background: #2a2a2a; }
+  .mock-row { height: 12px; background: rgba(255,255,255,0.05); border-radius: 4px; margin: 8px 20px; position: relative; z-index: 2; }
+  .mock-row-s { width: 60%; }
+  .mock-row-xs { width: 35%; }
+
+  .card-body { padding: 12px 16px 16px; }
+  .card-body .name { font-size: 13px; font-weight: 700; color: #C9A84C; margin-bottom: 4px; }
+  .card-body .desc { font-size: 11px; color: #888; line-height: 1.5; }
+  .tag { display: inline-block; font-size: 9px; font-weight: 700; background: rgba(201,168,76,0.1); color: #C9A84C; padding: 2px 8px; border-radius: 3px; margin-top: 6px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 1 — ART DECO SUNBURST       */
+  /* ═══════════════════════════════════ */
+  .artdeco-sunburst { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.35; }
+  .artdeco-sunburst svg { width: 240px; height: 240px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 2 — MOROCCAN STAR           */
+  /* ═══════════════════════════════════ */
+  .moroccan-star { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.30; }
+  .moroccan-star svg { width: 200px; height: 200px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 3 — DAMASK / FLEUR-DE-LIS   */
+  /* ═══════════════════════════════════ */
+  .damask { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.25; }
+  .damask svg { width: 180px; height: 240px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 4 — COMPASS ROSE            */
+  /* ═══════════════════════════════════ */
+  .compass-rose { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.35; }
+  .compass-rose svg { width: 200px; height: 200px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 5 — FILIGREE CORNERS        */
+  /* ═══════════════════════════════════ */
+  .filigree { position: absolute; inset: 0; z-index: 1; opacity: 0.25; }
+  .filigree svg { width: 100%; height: 100%; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 6 — ART DECO ARCH           */
+  /* ═══════════════════════════════════ */
+  .artdeco-arch { position: absolute; inset: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: center; opacity: 0.30; padding-top: 10px; }
+  .artdeco-arch svg { width: 260px; height: 120px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 7 — BAROQUE MANDALA         */
+  /* ═══════════════════════════════════ */
+  .baroque-mandala { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.25; }
+  .baroque-mandala svg { width: 180px; height: 180px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 8 — KEYSTONE CREST          */
+  /* ═══════════════════════════════════ */
+  .keystone-crest { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.35; }
+  .keystone-crest svg { width: 160px; height: 200px; }
+
+  /* ═══════════════════════════════════ */
+  /* PATTERN 9 — GEOMETRIC TILES         */
+  /* ═══════════════════════════════════ */
+  .geo-tiles { position: absolute; inset: 0; z-index: 1; opacity: 0.20; }
+  .geo-tiles svg { width: 100%; height: 100%; }
+
+  .note { margin-top: 32px; max-width: 700px; background: #161618; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; text-align: center; }
+  .note h3 { font-size: 12px; font-weight: 700; color: #C9A84C; margin-bottom: 8px; letter-spacing: 1px; }
+  .note p { font-size: 12px; color: #888; line-height: 1.6; }
+</style>
+
+<h1>✦ ORNAMENTAL PATTERNS</h1>
+<p class="subtitle">Intricate gold decorative motifs placed as subtle watermarks BEHIND content areas — not covering the whole page. Each is a single emblem, not a repeating tile.</p>
+
+<div class="grid">
+
+  <!-- 1. ART DECO SUNBURST -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="artdeco-sunburst">
+        <svg viewBox="0 0 240 240" fill="none" stroke="#C9A84C" stroke-width="0.5">
+          <!-- Concentric arcs -->
+          <path d="M120 40 A80 80 0 0 1 200 120" opacity="0.6"/>
+          <path d="M120 50 A70 70 0 0 1 190 120" opacity="0.4"/>
+          <path d="M120 60 A60 60 0 0 1 180 120" opacity="0.3"/>
+          <!-- Sunburst rays -->
+          <line x1="120" y1="120" x2="120" y2="15" opacity="0.5"/>
+          <line x1="120" y1="120" x2="180" y2="30" opacity="0.4"/>
+          <line x1="120" y1="120" x2="210" y2="75" opacity="0.4"/>
+          <line x1="120" y1="120" x2="225" y2="120" opacity="0.5"/>
+          <line x1="120" y1="120" x2="120" y2="12" opacity="0.3"/>
+          <line x1="120" y1="120" x2="195" y2="18" opacity="0.3"/>
+          <line x1="120" y1="120" x2="220" y2="50" opacity="0.3"/>
+          <line x1="120" y1="120" x2="228" y2="95" opacity="0.3"/>
+          <!-- Small circle center -->
+          <circle cx="120" cy="120" r="8" opacity="0.5"/>
+          <circle cx="120" cy="120" r="3" fill="#C9A84C" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Art Deco Sunburst</div>
+      <div class="desc">Concentric arcs with radiating sun rays. Classic Gatsby-era luxury motif. Center-aligned behind content.</div>
+      <div class="tag">Ornamental</div>
+    </div>
+  </div>
+
+  <!-- 2. MOROCCAN STAR -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="moroccan-star">
+        <svg viewBox="0 0 200 200" fill="none" stroke="#C9A84C" stroke-width="0.6">
+          <!-- 8-pointed star -->
+          <polygon points="100,5 122,78 195,78 138,125 158,195 100,150 42,195 62,125 5,78 78,78" opacity="0.5"/>
+          <!-- Inner star -->
+          <polygon points="100,35 113,78 155,78 122,108 135,150 100,125 65,150 78,108 45,78 87,78" opacity="0.3"/>
+          <!-- Center circle -->
+          <circle cx="100" cy="100" r="15" opacity="0.3"/>
+          <circle cx="100" cy="100" r="5" fill="#C9A84C" opacity="0.4"/>
+          <!-- Outer ring -->
+          <circle cx="100" cy="100" r="85" stroke-width="0.4" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Moroccan Star</div>
+      <div class="desc">8-pointed geometric star with nested rings. Intricate Islamic geometry. Precision and craftsmanship.</div>
+      <div class="tag">Geometric</div>
+    </div>
+  </div>
+
+  <!-- 3. FLEUR-DE-LIS / DAMASK -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="damask">
+        <svg viewBox="0 0 180 240" fill="none" stroke="#C9A84C" stroke-width="0.6">
+          <!-- Central fleur -->
+          <path d="M90 30 C110 30 120 50 90 70 C60 50 70 30 90 30Z" opacity="0.5"/>
+          <path d="M90 60 C110 70 130 90 120 110 C105 120 95 110 90 100 C85 110 75 120 60 110 C50 90 70 70 90 60Z" opacity="0.4"/>
+          <path d="M90 100 L90 200" opacity="0.3"/>
+          <path d="M50 170 C50 160 70 150 90 165 C110 150 130 160 130 170" opacity="0.4"/>
+          <!-- Side leaves -->
+          <path d="M70 100 C50 90 30 100 40 115 C50 125 65 115 70 100Z" opacity="0.3"/>
+          <path d="M110 100 C130 90 150 100 140 115 C130 125 115 115 110 100Z" opacity="0.3"/>
+          <!-- Bottom flourish -->
+          <path d="M60 200 C60 210 80 215 90 220 C100 215 120 210 120 200" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Fleur-de-Lis / Damask</div>
+      <div class="desc">Traditional floral heraldic motif. Ornate, royal, timeless. Used in luxury fabric patterns for centuries.</div>
+      <div class="tag">Heraldic</div>
+    </div>
+  </div>
+
+  <!-- 4. COMPASS ROSE -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="compass-rose">
+        <svg viewBox="0 0 200 200" fill="none" stroke="#C9A84C" stroke-width="0.5">
+          <!-- Main cross -->
+          <polygon points="100,10 110,90 190,100 110,110 100,190 90,110 10,100 90,90" opacity="0.5"/>
+          <!-- Diagonal cross -->
+          <polygon points="100,35 125,75 165,100 125,125 100,165 75,125 35,100 75,75" opacity="0.3"/>
+          <!-- Outer ring -->
+          <circle cx="100" cy="100" r="85" stroke-width="0.4" opacity="0.3"/>
+          <circle cx="100" cy="100" r="78" stroke-width="0.3" opacity="0.2"/>
+          <!-- Center -->
+          <circle cx="100" cy="100" r="10" opacity="0.4"/>
+          <circle cx="100" cy="100" r="3" fill="#C9A84C" opacity="0.4"/>
+          <!-- Tick marks at cardinal points -->
+          <line x1="100" y1="10" x2="100" y2="0" opacity="0.5"/>
+          <line x1="100" y1="200" x2="100" y2="190" opacity="0.5"/>
+          <line x1="10" y1="100" x2="0" y2="100" opacity="0.5"/>
+          <line x1="200" y1="100" x2="190" y2="100" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Compass Rose</div>
+      <div class="desc">Nautical navigation star with double cross and ring. Direction, purpose, precision. Locksmiths navigate to their work.</div>
+      <div class="tag">Symbolic</div>
+    </div>
+  </div>
+
+  <!-- 5. FILIGREE CORNER FRAMES -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="filigree">
+        <svg viewBox="0 0 380 340" fill="none" stroke="#C9A84C" stroke-width="0.5">
+          <!-- Top-left corner -->
+          <path d="M20 60 C20 35 35 20 60 20 L160 20" opacity="0.4"/>
+          <path d="M20 80 C20 45 45 20 80 20" opacity="0.3"/>
+          <circle cx="40" cy="40" r="12" opacity="0.3"/>
+          <circle cx="40" cy="40" r="6" opacity="0.4"/>
+          <!-- Top-right corner -->
+          <path d="M360 60 C360 35 345 20 320 20 L220 20" opacity="0.4"/>
+          <path d="M360 80 C360 45 335 20 300 20" opacity="0.3"/>
+          <circle cx="340" cy="40" r="12" opacity="0.3"/>
+          <circle cx="340" cy="40" r="6" opacity="0.4"/>
+          <!-- Bottom-left corner -->
+          <path d="M20 280 C20 305 35 320 60 320 L160 320" opacity="0.4"/>
+          <path d="M20 260 C20 295 45 320 80 320" opacity="0.3"/>
+          <circle cx="40" cy="300" r="12" opacity="0.3"/>
+          <circle cx="40" cy="300" r="6" opacity="0.4"/>
+          <!-- Bottom-right corner -->
+          <path d="M360 280 C360 305 345 320 320 320 L220 320" opacity="0.4"/>
+          <path d="M360 260 C360 295 335 320 300 320" opacity="0.3"/>
+          <circle cx="340" cy="300" r="12" opacity="0.3"/>
+          <circle cx="340" cy="300" r="6" opacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Filigree Corner Frames</div>
+      <div class="desc">Ornate scrollwork in all four corners. Only visible at edges — content stays clean. Like a decorative picture frame.</div>
+      <div class="tag">Ornamental</div>
+    </div>
+  </div>
+
+  <!-- 6. ART DECO ARCH -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="artdeco-arch">
+        <svg viewBox="0 0 260 120" fill="none" stroke="#C9A84C" stroke-width="0.6">
+          <!-- Central arch -->
+          <path d="M30 120 L30 70 C30 20 230 20 230 70 L230 120" opacity="0.5"/>
+          <!-- Inner arch -->
+          <path d="M55 120 L55 72 C55 37 205 37 205 72 L205 120" opacity="0.3"/>
+          <!-- Keystone at top -->
+          <path d="M115 20 L120 10 L125 20 L120 30Z" opacity="0.5"/>
+          <!-- Arch fill lines -->
+          <line x1="30" y1="120" x2="55" y2="120" opacity="0.3"/>
+          <line x1="230" y1="120" x2="205" y2="120" opacity="0.3"/>
+          <!-- Stepped sides - Art Deco style -->
+          <path d="M30 100 L40 100 L40 90 L50 90 L50 80 L60 80" opacity="0.3"/>
+          <path d="M230 100 L220 100 L220 90 L210 90 L210 80 L200 80" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Art Deco Arch</div>
+      <div class="desc">Triumphal arch with keystone and stepped sides. Only at the top — frames the header. Architectural grandeur.</div>
+      <div class="tag">Architectural</div>
+    </div>
+  </div>
+
+  <!-- 7. BAROQUE MANDALA -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="baroque-mandala">
+        <svg viewBox="0 0 180 180" fill="none" stroke="#C9A84C" stroke-width="0.5">
+          <!-- Outer ring of petals -->
+          <circle cx="90" cy="90" r="80" opacity="0.3"/>
+          <path d="M90 10 C110 20 130 50 130 90 C130 130 110 160 90 170 C70 160 50 130 50 90 C50 50 70 20 90 10Z" opacity="0.3"/>
+          <!-- Inner ring of petals -->
+          <circle cx="90" cy="90" r="55" opacity="0.3"/>
+          <path d="M90 35 C100 45 120 65 120 90 C120 115 100 135 90 145 C80 135 60 115 60 90 C60 65 80 45 90 35Z" opacity="0.4"/>
+          <!-- Center rosette -->
+          <circle cx="90" cy="90" r="25" opacity="0.4"/>
+          <circle cx="90" cy="90" r="18" opacity="0.3"/>
+          <!-- Spokes -->
+          <line x1="90" y1="10" x2="90" y2="35" opacity="0.3"/>
+          <line x1="90" y1="145" x2="90" y2="170" opacity="0.3"/>
+          <line x1="10" y1="90" x2="35" y2="90" opacity="0.3"/>
+          <line x1="145" y1="90" x2="170" y2="90" opacity="0.3"/>
+          <line x1="33" y1="33" x2="55" y2="55" opacity="0.2"/>
+          <line x1="147" y1="33" x2="125" y2="55" opacity="0.2"/>
+          <line x1="33" y1="147" x2="55" y2="125" opacity="0.2"/>
+          <line x1="147" y1="147" x2="125" y2="125" opacity="0.2"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Baroque Mandala</div>
+      <div class="desc">Concentric petal rings with radial spokes and center rosette. Meditative symmetry. Ornate, intricate, balanced.</div>
+      <div class="tag">Ornamental</div>
+    </div>
+  </div>
+
+  <!-- 8. KEYSTONE CREST -->
+  <div class="card">
+    <div class="phone">
+      <div class="mock-bar"><span class="t">SERVICE PRICING</span><div class="i"><span></span><span></span></div></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row"></div>
+      <div class="mock-row mock-row-s"></div>
+      <div class="mock-row mock-row-xs"></div>
+      <div class="keystone-crest">
+        <svg viewBox="0 0 160 200" fill="none" stroke="#C9A84C" stroke-width="0.6">
+          <!-- Shield shape -->
+          <path d="M30 10 L130 10 L130 100 C130 150 80 190 80 190 C80 190 30 150 30 100Z" opacity="0.4"/>
+          <!-- Inner shield -->
+          <path d="M45 22 L115 22 L115 95 C115 135 80 170 80 170 C80 170 45 135 45 95Z" opacity="0.3"/>
+          <!-- Horizontal band across shield -->
+          <line x1="30" y1="70" x2="130" y2="70" opacity="0.3"/>
+          <!-- Key icon inside shield -->
+          <circle cx="80" cy="50" r="10" opacity="0.4"/>
+          <line x1="80" y1="60" x2="80" y2="95" opacity="0.4"/>
+          <line x1="75" y1="70" x2="85" y2="70" opacity="0.3"/>
+          <line x1="73" y1="78" x2="87" y2="78" opacity="0.3"/>
+          <line x1="76" y1="86" x2="84" y2="86" opacity="0.3"/>
+          <!-- Scroll ribbon at bottom -->
+          <path d="M40 140 L80 150 L120 140 L120 145 L80 155 L40 145Z" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="name">Keystone Crest</div>
+      <div class="desc">Custom shield emblem with key icon and scroll ribbon. Brand-level mark. Makes the page feel owned and crafted.</div>
+      <div class="tag">Brand crest</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <h3>✦ MY RECOMMENDATION</h3>
+  <p><strong style="color:#F2F0EB">#4 Compass Rose</strong> — The navigation star connects to locksmiths' directional work. Strong geometric form. Recognizable but subtle at 10%.</p>
+  <p style="margin-top:8px;"><strong style="color:#F2F0EB">#4 Art Deco Sunburst</strong> — Most cohesive with NoirLuxe's gold + dark aesthetic. Gatsby-era luxury. The concentric arcs echo a lock's internal mechanisms.</p>
+  <p style="margin-top:8px; color:#666;">All patterns are placed as a single central watermark — NOT a repeating tile. They sit behind content, not over it.</p>
+</div>

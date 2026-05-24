@@ -34,7 +34,11 @@ import '../../../inventory/domain/entities/inventory_item_entity.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../../recurring_jobs/presentation/providers/recurring_schedule_provider.dart';
 import '../../../job_templates/domain/entities/job_template_entity.dart';
+import '../../../job_templates/domain/entities/template_service_item.dart';
+import '../../../job_templates/domain/entities/template_hardware_item.dart';
+import '../../../job_templates/domain/entities/template_part_item.dart';
 import '../../../job_templates/presentation/providers/job_template_provider.dart';
+import '../../../job_templates/presentation/widgets/template_picker_sheet.dart';
 import '../../../../core/router/route_names.dart';
 
 class _ItemRow {
@@ -155,6 +159,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   String _status = 'in_progress';
   String _paymentStatus = 'unpaid';
   String? _leadSource;
+  String? _fromTemplateId; // tracks which template was applied; cleared on manual edit
   bool _isRecurring = false;
   bool _serviceExpanded = true;
   String _recurringInterval = 'monthly';
@@ -351,32 +356,46 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     );
   }
 
+  Future<void> _pickTemplate() async {
+    final template = await TemplatePickerSheet.show(context);
+    if (template != null && mounted) {
+      _applyTemplate(template);
+    }
+  }
+
   void _applyTemplate(JobTemplateEntity template) {
     setState(() {
+      _fromTemplateId = template.id;
       _serviceType = template.serviceType;
       _notesController.text = template.notes ?? '';
 
       for (final s in template.services) {
         final row = _ServiceRow();
-        row.serviceType = s['service_type'] as String?;
-        row.qtyController.text = (s['quantity'] as int? ?? 1).toString();
-        if (s['unit_price'] != null) {
-          row.priceController.text = ((s['unit_price'] as int) / 100.0).toStringAsFixed(2);
+        row.serviceType = s.serviceType;
+        row.qtyController.text = s.quantity.toString();
+        if (s.unitPrice != null) {
+          row.priceController.text = (s.unitPrice! / 100.0).toStringAsFixed(2);
         }
         _additionalServices.add(row);
       }
 
       for (final h in template.hardwareItems) {
         final row = _ItemRow();
-        row.nameController.text = h['name'] as String? ?? '';
-        row.qtyController.text = (h['quantity'] as int? ?? 1).toString();
+        row.nameController.text = h.name;
+        row.qtyController.text = h.quantity.toString();
+        if (h.inventoryItemId != null) {
+          row.inventoryItemId = h.inventoryItemId;
+        }
         _items.add(row);
       }
 
       for (final p in template.parts) {
         final row = _ItemRow();
-        row.nameController.text = p['part_name'] as String? ?? '';
-        row.qtyController.text = (p['quantity'] as int? ?? 1).toString();
+        row.nameController.text = p.name;
+        row.qtyController.text = p.quantity.toString();
+        if (p.inventoryItemId != null) {
+          row.inventoryItemId = p.inventoryItemId;
+        }
         _items.add(row);
       }
     });
@@ -543,20 +562,35 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               name: name,
               serviceType: _serviceType ?? '',
               notes: _notesController.text.trim(),
-              services: _additionalServices.map((s) => {
-                'service_type': s.serviceType,
-                'quantity': int.tryParse(s.qtyController.text.trim()) ?? 1,
-                'unit_price': CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
+              services: _additionalServices.asMap().entries.map((e) {
+                final s = e.value;
+                return TemplateServiceItem(
+                  id: '${const Uuid().v4()}-svc-${e.key}',
+                  serviceType: s.serviceType ?? '',
+                  quantity: int.tryParse(s.qtyController.text.trim()) ?? 1,
+                  unitPrice: CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
+                  sortOrder: e.key,
+                );
               }).toList(),
-              hardwareItems: _items.where((i) => i.isFromInventory).map((h) => {
-                'name': h.nameController.text.trim(),
-                'quantity': int.tryParse(h.qtyController.text.trim()) ?? 1,
-                'unit_sale_price': h.inventoryItem?.defaultSalePrice,
+              hardwareItems: _items.where((i) => i.isFromInventory).toList().asMap().entries.map((e) {
+                final h = e.value;
+                return TemplateHardwareItem(
+                  id: '${const Uuid().v4()}-hw-${e.key}',
+                  name: h.nameController.text.trim(),
+                  quantity: int.tryParse(h.qtyController.text.trim()) ?? 1,
+                  unitSalePrice: h.inventoryItem?.defaultSalePrice,
+                  inventoryItemId: h.inventoryItemId,
+                );
               }).toList(),
-              parts: _items.where((i) => !i.isFromInventory).map((p) => {
-                'part_name': p.nameController.text.trim(),
-                'quantity': int.tryParse(p.qtyController.text.trim()) ?? 1,
-                'unit_price': null,
+              parts: _items.where((i) => !i.isFromInventory).toList().asMap().entries.map((e) {
+                final p = e.value;
+                return TemplatePartItem(
+                  id: '${const Uuid().v4()}-part-${e.key}',
+                  name: p.nameController.text.trim(),
+                  quantity: int.tryParse(p.qtyController.text.trim()) ?? 1,
+                  unitPrice: null,
+                  inventoryItemId: p.inventoryItemId,
+                );
               }).toList(),
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
@@ -612,6 +646,28 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
           title: "ADD NEW JOB",
           showBack: true,
           onBack: _previousStep,
+          actions: [
+            GestureDetector(
+              onTap: _pickTemplate,
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: context.ksc.accent500,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'TEMPLATES',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                    color: context.ksc.primary900,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         body: Column(
           children: [
@@ -669,7 +725,10 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: ServiceTypePickerV2(
               selected: _serviceType,
-              onSelected: (t) => setState(() => _serviceType = t),
+              onSelected: (t) => setState(() {
+                _serviceType = t;
+                _fromTemplateId = null;
+              }),
             ),
           ),
         ),
@@ -1651,7 +1710,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
               onChanged: (v) {
                 final items = ref.read(inventoryProvider).valueOrNull ?? [];
                 final matches = items.where((i) =>
-                  i.itemType == 'part' &&
+                  i.category == InventoryItemCategory.consumable &&
                   i.name.toLowerCase().contains(v.toLowerCase())
                 ).take(5).toList();
                 setState(() {
@@ -1733,7 +1792,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 onChanged: (v) {
                   final items = ref.read(inventoryProvider).valueOrNull ?? [];
                   final matches = items.where((i) =>
-                    i.itemType == 'hardware' &&
+                    i.category == InventoryItemCategory.lock &&
                     i.name.toLowerCase().contains(v.toLowerCase())
                   ).take(5).toList();
                   setState(() {
@@ -1898,7 +1957,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   /// Bottom sheet to pick hardware from inventory.
   void _showInventoryPicker({void Function(_HardwareRow item)? onItemSelected}) {
     final items = ref.read(inventoryProvider).valueOrNull ?? [];
-    final hardwareItems = items.where((i) => i.itemType == 'hardware' && !i.isArchived).toList();
+    final hardwareItems = items.where((i) => i.category == InventoryItemCategory.lock && !i.isArchived).toList();
 
     showModalBottomSheet(
       context: context,
@@ -1915,7 +1974,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                 : hardwareItems.where((i) =>
                     i.name.toLowerCase().contains(query) ||
                     (i.brand?.toLowerCase().contains(query) ?? false) ||
-                    (i.category?.toLowerCase().contains(query) ?? false)
+                    i.category.displayName.toLowerCase().contains(query)
                   ).toList();
 
             return Padding(
@@ -3729,7 +3788,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                     child: Row(
                                       children: [
                                         Icon(
-                                          invItem.itemType == 'hardware'
+                                          invItem.category == InventoryItemCategory.lock
                                               ? LineAwesomeIcons.lock_solid
                                               : LineAwesomeIcons.box_solid,
                                           size: 16, color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
@@ -3746,9 +3805,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                                 ),
                                                 maxLines: 1, overflow: TextOverflow.ellipsis,
                                               ),
-                                              if (invItem.brand != null || invItem.category != null)
+                                              if (invItem.brand != null)
                                                 Text(
-                                                  [invItem.brand, invItem.category].nonNulls.join(' · '),
+                                                  [invItem.brand, invItem.category.displayName].nonNulls.join(' · '),
                                                   style: AppTextStyles.caption.copyWith(
                                                     color: alreadyAdded ? context.ksc.neutral600 : context.ksc.neutral500,
                                                     fontSize: 10,

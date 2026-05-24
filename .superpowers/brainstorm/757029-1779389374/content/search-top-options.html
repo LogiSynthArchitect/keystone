@@ -1,0 +1,88 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 20px; }
+  h2 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 12px; font-weight: 300; margin-bottom: 20px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin: 20px 0 10px; }
+  .badge-a { background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+  .badge-b { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+  .badge-c { background: rgba(74,222,128,0.15); color: #4ADE80; border: 1px solid rgba(74,222,128,0.3); }
+  .section { max-width: 400px; margin: 0 auto 32px; background: #161618; border-radius: 12px; padding: 16px; border: 1px solid #2a2a2a; }
+  .row { display: flex; align-items: center; gap: 8px; }
+</style>
+
+<h2>Search & Top Area — Options</h2>
+<p class="subtitle">The search bar + filter chip region of the Service Pricing page</p>
+
+<!-- CURRENT -->
+<div class="badge badge-a">CURRENT — Basic Search + Chips</div>
+<div class="section">
+  <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;display:flex;align-items:center;margin-bottom:10px">
+    <span style="color:#555;margin-right:10px">🔍</span>
+    <span style="color:#555;font-size:13px;font-weight:300">Search services...</span>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div style="background:rgba(201,168,76,0.15);border:1px solid #C9A84C;border-radius:20px;padding:5px 12px;font-size:10px;color:#C9A84C;font-weight:600">ALL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:20px;padding:5px 12px;font-size:10px;color:#888;font-weight:500">RESIDENTIAL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:20px;padding:5px 12px;font-size:10px;color:#888;font-weight:500">AUTOMOTIVE</div>
+  </div>
+  <div style="color:#666;font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">Scrollable horizontal chips. No count badges. Basic.</div>
+</div>
+
+<!-- Option A: Segmented Tabs + Inline Search -->
+<div class="badge badge-b">A — Segmented Tabs + Search Inside</div>
+<div class="section">
+  <div style="background:#0C0C0E;border-radius:8px;padding:4px;display:flex;margin-bottom:10px">
+    <div style="flex:1;background:#C9A84C;color:#0C0C0E;text-align:center;padding:8px;border-radius:6px;font-size:11px;font-weight:600">ALL (39)</div>
+    <div style="flex:1;text-align:center;padding:8px;font-size:11px;color:#888;font-weight:500">RESIDENTIAL (8)</div>
+    <div style="flex:1;text-align:center;padding:8px;font-size:11px;color:#888;font-weight:500">AUTO (8)</div>
+    <div style="flex:1;text-align:center;padding:8px;font-size:11px;color:#888;font-weight:500">COMMERCIAL</div>
+  </div>
+  <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;display:flex;align-items:center">
+    <span style="color:#555;margin-right:10px">🔍</span>
+    <span style="color:#555;font-size:13px;font-weight:300">Search services...</span>
+  </div>
+  <div style="color:#666;font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">Segmented control replaces chips. Count badges on each tab. Search below. Less scrolling.</div>
+</div>
+
+<!-- Option B: Search as Hero + Compact Chips -->
+<div class="badge badge-c">B — Hero Search + Compact Category Bar</div>
+<div class="section">
+  <div style="background:#0C0C0E;border:1px solid #C9A84C;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 0 12px rgba(201,168,76,0.08)">
+    <div style="display:flex;align-items:center">
+      <span style="color:#C9A84C;margin-right:10px">🔍</span>
+      <input style="flex:1;background:none;border:none;color:#F2F0EB;font-size:15px;font-weight:300;outline:none" placeholder="Search 39 services..." value="">
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div style="background:rgba(201,168,76,0.12);border:1px solid #C9A84C;border-radius:6px;padding:4px 10px;font-size:10px;color:#C9A84C;font-weight:600">📍 ALL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:4px 10px;font-size:10px;color:#888;font-weight:500">🏠 RESIDENTIAL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:4px 10px;font-size:10px;color:#888;font-weight:500">🚗 AUTO</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:4px 10px;font-size:10px;color:#888;font-weight:500">🏢 COMMERCIAL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:4px 10px;font-size:10px;color:#888;font-weight:500">📡 SECURITY</div>
+  </div>
+  <div style="color:#666;font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">Search has gold border + subtle glow (premium feel). Chips have emoji icons. Squarer corners (6px).</div>
+</div>
+
+<!-- Option C: Minimal — Just Search, Chips as Inline Badges -->
+<div class="badge" style="background:rgba(201,168,76,0.15);color:#C9A84C;border:1px solid rgba(201,168,76,0.3)">C — Minimal: Search Only + Category Dropdown</div>
+<div class="section">
+  <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;display:flex;align-items:center;margin-bottom:10px">
+    <span style="color:#555;margin-right:10px">🔍</span>
+    <input style="flex:1;background:none;border:none;color:#F2F0EB;font-size:14px;font-weight:300;outline:none" placeholder="Search services...">
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:11px;color:#888;letter-spacing:1px;font-weight:500">FILTER:</span>
+    <div style="flex:1;background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#F2F0EB;font-weight:400">All Categories</span>
+      <span style="color:#555;font-size:10px">▼</span>
+    </div>
+    <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:8px 12px;font-size:11px;color:#C9A84C;font-weight:600">39</div>
+  </div>
+  <div style="color:#666;font-size:10px;margin-top:8px;padding-top:8px;border-top:1px solid #1a1a1a">Dropdown instead of chips. Cleanest look. Total count badge. More scrolling space.</div>
+</div>
+
+<div style="max-width:400px;margin:32px auto 0;padding-top:16px;border-top:1px solid #2a2a2a">
+  <p style="font-size:12px;color:#888;font-weight:300">Which direction? Or mix elements?</p>
+</div>

@@ -4,7 +4,15 @@
   body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 16px; }
   .gold { color: #C9A84C; }
   .muted { color: #888; }
-  h2 { font-family: 'Dancing Script', cursive; font-size: 28px; color: #F2F0EB; margin-bottom: 16px; }
+  
+  /* App bar */
+  .app-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; padding: 4px 0; }
+  .app-bar h2 { font-family: 'Dancing Script', cursive; font-size: 28px; color: #F2F0EB; }
+  .app-bar-actions { display: flex; align-items: center; gap: 12px; }
+  .filter-icon { font-size: 22px; cursor: pointer; padding: 4px; transition: all 0.15s; }
+  .filter-icon.active { color: #C9A84C; }
+  .filter-icon.inactive { color: #555; }
+  
   .subtitle { color: #888; font-size: 13px; margin-bottom: 20px; font-weight: 300; }
   
   .screen { max-width: 400px; margin: 0 auto; }
@@ -16,25 +24,20 @@
   .search-bar input::placeholder { color: #666; }
   .search-icon { color: #555; margin-right: 10px; font-size: 14px; }
   
-  /* Category header */
-  .category { margin-bottom: 8px; }
-  .category-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px 8px; border-bottom: 1px solid #1a1a1a; }
-  .category-header .name { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #C9A84C; }
-  .category-header .count { font-size: 11px; color: #555; font-weight: 400; }
-  
-  /* Service item */
+  /* Service item — flat list, no category headers */
   .service-item { display: flex; align-items: center; padding: 12px 4px; border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: background 0.15s; }
   .service-item:hover { background: rgba(242,240,235,0.03); }
-  .service-icon { width: 36px; height: 36px; background: #161618; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-right: 12px; border: 1px solid #2a2a2a; }
-  .service-info { flex: 1; }
+  .service-icon { width: 36px; height: 36px; background: #161618; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-right: 12px; border: 1px solid #2a2a2a; flex-shrink: 0; }
+  .service-icon.premium { border-color: #C9A84C; box-shadow: 0 0 8px rgba(201,168,76,0.1); }
+  .service-info { flex: 1; min-width: 0; }
   .service-name { font-size: 14px; font-weight: 300; color: #F2F0EB; }
   .service-category-tag { font-size: 10px; color: #666; font-weight: 400; margin-top: 2px; }
-  .service-price { font-size: 15px; font-weight: 600; color: #C9A84C; margin-right: 8px; }
-  .service-edit { color: #555; font-size: 14px; padding: 4px; }
-  
-  /* Premium card variant */
-  .service-item.premium .service-icon { border-color: #C9A84C; box-shadow: 0 0 8px rgba(201,168,76,0.1); }
-  .service-item.premium .service-price { color: #C9A84C; font-weight: 700; }
+  .service-price { font-size: 15px; font-weight: 600; color: #C9A84C; margin-right: 8px; flex-shrink: 0; }
+  .service-edit { color: #555; font-size: 14px; padding: 4px; flex-shrink: 0; }
+
+  /* Active filter label — shown below title when filter is on */
+  .active-filter-label { display: inline-flex; align-items: center; gap: 6px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; padding: 4px 10px; font-size: 10px; color: #C9A84C; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 16px; }
+  .active-filter-label .clear { color: #888; cursor: pointer; margin-left: 4px; font-size: 12px; }
   
   /* Add button */
   .add-btn { width: 100%; padding: 14px; background: #C9A84C; color: #0C0C0E; border: none; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; margin-top: 20px; }
@@ -45,125 +48,143 @@
   .badge-a { background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
   .badge-b { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
   .badge-c { background: rgba(74,222,128,0.15); color: #4ADE80; border: 1px solid rgba(74,222,128,0.3); }
+  
+  /* Drawer styles — filter drawer */
+  .drawer-overlay { max-width: 400px; margin: 24px auto 0; border-top: 1px solid #1a1a1a; padding-top: 24px; }
+  .drawer-handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 20px; }
+  .filter-drawer { background: #161618; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; }
+  .filter-drawer h4 { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #C9A84C; margin-bottom: 12px; }
+  .filter-chip { padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+  .filter-chip.active { background: rgba(201,168,76,0.12); border: 1px solid #C9A84C; color: #C9A84C; }
+  .filter-chip.inactive { background: #0C0C0E; border: 1px solid #2a2a2a; color: #888; }
+  .filter-chip .count { margin-left: auto; font-size: 10px; color: #555; }
+  .filter-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .filter-actions .btn { flex: 1; padding: 10px; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; text-align: center; border: none; }
+  .btn-apply { background: #C9A84C; color: #0C0C0E; }
+  .btn-clear { background: transparent; border: 1px solid #2a2a2a !important; color: #888; }
 </style>
 
 <div class="screen">
 
-  <div class="option-badge badge-a">DESIGN A — Compact List</div>
-  <h2>Service Pricing</h2>
+  <!-- NEW: Pricing page with filter icon (matching customer pattern) -->
+  <div class="option-badge badge-a">PRICING — Filter Icon + Drawer</div>
+
+  <!-- App bar with search icon + filter icon -->
+  <div class="app-bar">
+    <h2>Service Pricing</h2>
+    <div class="app-bar-actions">
+      <span class="filter-icon active" title="Filter active (Residential)">🔍</span>
+      <span class="filter-icon active" title="Filter active">⚙️</span>
+    </div>
+  </div>
+
+  <!-- Active filter indicator — shown when filter is enabled -->
+  <div class="active-filter-label">
+    🏠 Filter: Residential
+    <span class="clear">✕</span>
+  </div>
+
   <p class="subtitle">Tap any price to edit. Gold indicates premium services.</p>
 
   <!-- Search -->
   <div class="search-bar">
     <span class="search-icon">🔍</span>
-    <input type="text" placeholder="Search services..." value="Lock">
+    <input type="text" placeholder="Search services..." value="">
   </div>
 
-  <!-- Category: Residential -->
-  <div class="category">
-    <div class="category-header">
-      <span class="name">Residential</span>
-      <span class="count">8 services</span>
+  <!-- Flat service list — no inline category headers -->
+  <div class="service-item">
+    <div class="service-icon">🔐</div>
+    <div class="service-info">
+      <div class="service-name">Smart Lock Install</div>
+      <div class="service-category-tag">Electronic • Residential</div>
     </div>
-    <div class="service-item premium">
-      <div class="service-icon">🔐</div>
-      <div class="service-info">
-        <div class="service-name">Smart Lock Install</div>
-        <div class="service-category-tag">Electronic • Premium</div>
-      </div>
-      <span class="service-price">GHS 250</span>
-      <span class="service-edit">✎</span>
-    </div>
-    <div class="service-item">
-      <div class="service-icon">🔧</div>
-      <div class="service-info">
-        <div class="service-name">Lock Installation</div>
-        <div class="service-category-tag">Deadbolt • Standard</div>
-      </div>
-      <span class="service-price">GHS 150</span>
-      <span class="service-edit">✎</span>
-    </div>
-    <div class="service-item">
-      <div class="service-icon">🔑</div>
-      <div class="service-info">
-        <div class="service-name">Key Duplication</div>
-        <div class="service-category-tag">Standard</div>
-      </div>
-      <span class="service-price">GHS 15</span>
-      <span class="service-edit">✎</span>
-    </div>
-    <div class="service-item">
-      <div class="service-icon">🔩</div>
-      <div class="service-info">
-        <div class="service-name">Lock Repair</div>
-        <div class="service-category-tag">Standard</div>
-      </div>
-      <span class="service-price">GHS 80</span>
-      <span class="service-edit">✎</span>
-    </div>
+    <span class="service-price">GHS 250</span>
+    <span class="service-edit">✎</span>
   </div>
-
-  <!-- Category: Automotive -->
-  <div class="category">
-    <div class="category-header">
-      <span class="name">Automotive</span>
-      <span class="count">8 services</span>
+  <div class="service-item">
+    <div class="service-icon">🔧</div>
+    <div class="service-info">
+      <div class="service-name">Lock Installation</div>
+      <div class="service-category-tag">Deadbolt • Residential</div>
     </div>
-    <div class="service-item premium">
-      <div class="service-icon">🚗</div>
-      <div class="service-info">
-        <div class="service-name">Car Key Replacement</div>
-        <div class="service-category-tag">Transponder • Premium</div>
-      </div>
-      <span class="service-price">GHS 250</span>
-      <span class="service-edit">✎</span>
+    <span class="service-price">GHS 150</span>
+    <span class="service-edit">✎</span>
+  </div>
+  <div class="service-item">
+    <div class="service-icon">🔑</div>
+    <div class="service-info">
+      <div class="service-name">Key Duplication</div>
+      <div class="service-category-tag">Residential</div>
     </div>
-    <div class="service-item">
-      <div class="service-icon">🔑</div>
-      <div class="service-info">
-        <div class="service-name">Key Fob Programming</div>
-        <div class="service-category-tag">Electronic</div>
-      </div>
-      <span class="service-price">GHS 200</span>
-      <span class="service-edit">✎</span>
+    <span class="service-price">GHS 15</span>
+    <span class="service-edit">✎</span>
+  </div>
+  <div class="service-item premium">
+    <div class="service-icon premium">🚗</div>
+    <div class="service-info">
+      <div class="service-name">Car Key Replacement</div>
+      <div class="service-category-tag">Transponder • Premium</div>
     </div>
+    <span class="service-price">GHS 250</span>
+    <span class="service-edit">✎</span>
+  </div>
+  <div class="service-item">
+    <div class="service-icon">🔩</div>
+    <div class="service-info">
+      <div class="service-name">Lock Repair</div>
+      <div class="service-category-tag">Residential</div>
+    </div>
+    <span class="service-price">GHS 80</span>
+    <span class="service-edit">✎</span>
+  </div>
+  <div class="service-item">
+    <div class="service-icon">🔑</div>
+    <div class="service-info">
+      <div class="service-name">Key Fob Programming</div>
+      <div class="service-category-tag">Electronic • Automotive</div>
+    </div>
+    <span class="service-price">GHS 200</span>
+    <span class="service-edit">✎</span>
   </div>
 
   <button class="add-btn">+ ADD SERVICE</button>
 </div>
 
-<div style="max-width:400px;margin:32px auto 0;border-top:1px solid #1a1a1a;padding-top:24px">
-  <div class="option-badge badge-b">DESIGN B — Grid Cards</div>
-  
-  <div class="category">
-    <div class="category-header">
-      <span class="name">Residential</span>
-      <span class="count">8</span>
+<!-- Filter Drawer Section — simulates bottom sheet -->
+<div class="drawer-overlay">
+  <div class="option-badge badge-a">FILTER DRAWER — Bottom Sheet</div>
+  <div class="drawer-handle"></div>
+  <div class="filter-drawer">
+    <h4>Filter by Category</h4>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="filter-chip inactive">
+        <span>📍</span> All <span class="count">36</span>
+      </div>
+      <div class="filter-chip active">
+        <span>🏠</span> Residential <span class="count">14</span>
+      </div>
+      <div class="filter-chip inactive">
+        <span>🚗</span> Automotive <span class="count">8</span>
+      </div>
+      <div class="filter-chip inactive">
+        <span>🏢</span> Commercial <span class="count">6</span>
+      </div>
+      <div class="filter-chip inactive">
+        <span>📡</span> Security Systems <span class="count">5</span>
+      </div>
+      <div class="filter-chip inactive">
+        <span>⚡</span> Specialty <span class="count">3</span>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="background:#161618;border:1px solid #C9A84C;border-radius:8px;padding:16px;text-align:center">
-        <div style="font-size:24px;margin-bottom:8px">🔐</div>
-        <div style="font-size:11px;font-weight:300;color:#F2F0EB;margin-bottom:8px">Smart Lock Install</div>
-        <div style="background:#C9A84C;color:#0C0C0E;border-radius:4px;padding:4px 10px;font-weight:700;font-size:13px;display:inline-block">GHS 250</div>
-      </div>
-      <div style="background:#161618;border:1px solid #2a2a2a;border-radius:8px;padding:16px;text-align:center">
-        <div style="font-size:24px;margin-bottom:8px">🔧</div>
-        <div style="font-size:11px;font-weight:300;color:#F2F0EB;margin-bottom:8px">Lock Installation</div>
-        <div style="background:#C9A84C;color:#0C0C0E;border-radius:4px;padding:4px 10px;font-weight:700;font-size:13px;display:inline-block">GHS 150</div>
-      </div>
-      <div style="background:#161618;border:1px solid #2a2a2a;border-radius:8px;padding:16px;text-align:center">
-        <div style="font-size:24px;margin-bottom:8px">🔑</div>
-        <div style="font-size:11px;font-weight:300;color:#F2F0EB;margin-bottom:8px">Key Duplication</div>
-        <div style="background:#C9A84C;color:#0C0C0E;border-radius:4px;padding:4px 10px;font-weight:700;font-size:13px;display:inline-block">GHS 15</div>
-      </div>
-      <div style="background:#161618;border:1px solid #2a2a2a;border-radius:8px;padding:16px;text-align:center">
-        <div style="font-size:24px;margin-bottom:8px">🔩</div>
-        <div style="font-size:11px;font-weight:300;color:#F2F0EB;margin-bottom:8px">Lock Repair</div>
-        <div style="background:#C9A84C;color:#0C0C0E;border-radius:4px;padding:4px 10px;font-weight:700;font-size:13px;display:inline-block">GHS 80</div>
-      </div>
+    <div class="filter-actions">
+      <button class="btn btn-clear">CLEAR</button>
+      <button class="btn btn-apply">APPLY</button>
     </div>
   </div>
 </div>
+
+<div style="max-width:400px;margin:32px auto 0;border-top:1px solid #1a1a1a;padding-top:24px">
 
 <div style="max-width:400px;margin:32px auto 0;padding-top:8px">
   <div class="option-badge badge-c">DESIGN C — Price Explorer</div>

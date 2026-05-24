@@ -161,6 +161,20 @@ class InventoryRepositoryImpl implements InventoryRepository {
   }) async {
     final totalCost = quantity * unitCost;
 
+    // Fetch current item for weighted average cost calculation
+    final existing = await _local.getById(itemId);
+    final oldQty = existing?.quantity ?? 0;
+    final oldCost = existing?.defaultCostPrice ?? 0;
+
+    // Weighted average cost: (old_qty × old_cost + new_qty × new_cost) / total_qty
+    final newQty = oldQty + quantity;
+    final int newAvgCost;
+    if (oldQty == 0 || oldCost == 0) {
+      newAvgCost = unitCost;
+    } else {
+      newAvgCost = ((oldQty * oldCost) + (quantity * unitCost)) ~/ newQty;
+    }
+
     final restock = RestockModel(
       id: const Uuid().v4(),
       itemId: itemId,
@@ -181,6 +195,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       referenceId: restock.id,
     );
 
+    // Update the item's defaultCostPrice to the new weighted average
+    final updatedWithCost = updated.copyWith(
+      defaultCostPrice: newAvgCost,
+      updatedAt: DateTime.now(),
+    );
+    await updateItem(updatedWithCost);
+
     if (await _connectivity.isConnected) {
       try {
         await _restockRemote.create(restock.toJson());
@@ -189,7 +210,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       }
     }
 
-    return updated;
+    return updatedWithCost;
   }
 
   @override

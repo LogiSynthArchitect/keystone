@@ -36,4 +36,5 @@ class SupabaseConstants {
   static const String inventoryRestocksTable   = 'inventory_restocks';
   static const String inventoryStockAdjustmentsTable = 'inventory_stock_adjustments';
   static const String jobExpensesTable         = 'job_expenses';
+  static const String jobTemplatesTable        = 'job_templates';
 }

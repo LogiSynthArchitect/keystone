@@ -12,6 +12,7 @@ import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
+import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/widgets/ks_watermark.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -58,7 +59,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           IconButton(
             icon: Icon(
               LineAwesomeIcons.filter_solid,
-              color: _hasActiveFilter ? context.ksc.accent500 : context.ksc.primary900,
+              color: _hasActiveFilter ? context.ksc.accent500 : context.ksc.neutral400,
               size: 22,
             ),
             onPressed: () => _showFilterSheet(context, types: _types),
@@ -244,86 +245,96 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        // Category header (gold, uppercase) — label spec: 12px w700, ls 1.0
+        // Category header — divider underline style, thick gold
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          padding: const EdgeInsets.only(bottom: 8),
           child: Row(
             children: [
               Text(
                 category.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
                   color: context.ksc.accent500,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: context.ksc.primary800,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  "${services.length}",
-                  style: TextStyle(fontSize: 11, color: context.ksc.neutral500, fontWeight: FontWeight.w700),
+              const Spacer(),
+              Text(
+                "${services.length} ${services.length == 1 ? 'SERVICE' : 'SERVICES'}",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: context.ksc.neutral500,
                 ),
               ),
             ],
           ),
         ),
-        // Service items as list
-        ...services.map((service) => _buildServiceRow(service)),
+        // Gold-tinted full-width divider
+        Container(height: 1, color: context.ksc.accent500.withValues(alpha: 0.25)),
+        const SizedBox(height: 10),
+        // Service items as full-width compact cards
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Column(
+            children: [
+              for (final service in services) ...[
+                _buildCompactCard(service),
+                const SizedBox(height: 8),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildServiceRow(ServiceTypeEntity service) {
-    // Premium tier: priced ≥ GHS 250 or marked premium in data
+  Widget _buildCompactCard(ServiceTypeEntity service) {
+    // Premium tier: priced ≥ GHS 250
     final isPremium = (service.defaultPrice ?? 0) >= 25000;
     final hasPrice = service.defaultPrice != null;
 
     return GestureDetector(
       onTap: () => _openPriceSheet(service),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: context.ksc.primary800, width: 1),
-          ),
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.ksc.primary700),
         ),
         child: Row(
           children: [
             // Icon box
             Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: context.ksc.primary800,
-                borderRadius: BorderRadius.circular(8),
+                color: context.ksc.primary900,
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isPremium ? context.ksc.accent500 : context.ksc.primary700,
-                  width: isPremium ? 1 : 1,
                 ),
               ),
               child: Icon(
                 getLineAwesomeIcon(service.iconName),
                 color: isPremium ? context.ksc.accent500 : context.ksc.neutral400,
-                size: 16,
+                size: 15,
               ),
             ),
-            const SizedBox(width: 12),
-            // Name + category tag
+            const SizedBox(width: 10),
+            // Name + premium label
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     service.name,
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: isPremium ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
                       color: context.ksc.white,
                     ),
                     maxLines: 1,
@@ -333,8 +344,8 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                     Text(
                       'PREMIUM',
                       style: TextStyle(
-                        fontSize: 11,
-                fontWeight: FontWeight.w600,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 1,
                         color: context.ksc.accent500,
                       ),
@@ -346,17 +357,10 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
             Text(
               hasPrice ? CurrencyFormatter.formatShort(service.defaultPrice!) : '\u2014',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
                 color: hasPrice ? context.ksc.accent500 : context.ksc.neutral600,
               ),
-            ),
-            const SizedBox(width: 8),
-            // Edit icon
-            Icon(
-              LineAwesomeIcons.pen_alt_solid,
-              size: 12,
-              color: context.ksc.neutral600,
             ),
           ],
         ),
@@ -385,54 +389,50 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
       builder: (sheetContext) {
         String currentValue = controller.text;
         final isSavingNotifier = ValueNotifier(false);
-        int _step = 0; // 0 = set price, 1 = confirm
 
-        bool isDirty() {
+        bool _hasPriceChanged() {
           final newPesewas = CurrencyFormatter.parseToPesewas(currentValue);
-          return newPesewas != originalPesewas;
+          return newPesewas != null && newPesewas != originalPesewas;
         }
 
-        Future<bool> _confirmDiscard() async {
-          final result = await KsConfirmDialog.show(
-            sheetContext,
-            title: 'Discard Changes?',
-            message: 'You have unsaved price changes.',
-            confirmLabel: 'Discard',
-            cancelLabel: 'Keep Editing',
+        Future<void> _confirmDiscard(BuildContext discardCtx) async {
+          if (!_hasPriceChanged()) {
+            if (discardCtx.mounted) Navigator.pop(discardCtx);
+            return;
+          }
+          final discard = await KsConfirmDialog.show(
+            discardCtx,
+            title: 'DISCARD CHANGES',
+            message: 'Price changes have not been saved. Discard them?',
+            confirmLabel: 'DISCARD',
+            cancelLabel: 'KEEP EDITING',
             isDanger: true,
             onConfirm: () {},
           );
-          return result ?? false;
+          if (discard == true && discardCtx.mounted) {
+            Navigator.pop(discardCtx);
+          }
         }
 
         Future<void> _close() async {
-          if (sheetContext.mounted) Navigator.pop(sheetContext);
+          await _confirmDiscard(sheetContext);
         }
 
         Future<void> _save() async {
           final newPesewas = CurrencyFormatter.parseToPesewas(currentValue);
-
-          // Validate: must be > 0
           if (newPesewas == null || newPesewas <= 0) {
             KsSnackbar.show(sheetContext,
                 message: 'Price must be greater than 0',
                 type: KsSnackbarType.error);
             return;
           }
-
-          // Skip if unchanged
           if (newPesewas == originalPesewas) {
             Navigator.pop(sheetContext);
             return;
           }
-
-          // Show loading state
           isSavingNotifier.value = true;
-
-          // Save locally — returns true if local save worked
           final saved = await ref.read(serviceTypeProvider.notifier)
               .savePriceOnly(service.id, newPesewas);
-
           if (!saved) {
             isSavingNotifier.value = false;
             if (sheetContext.mounted) {
@@ -442,8 +442,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
             }
             return;
           }
-
-          // Show success animation
           if (sheetContext.mounted) {
             await KsSuccessMoment.show(
               sheetContext,
@@ -451,8 +449,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
               subtitle: '${service.name} → ${CurrencyFormatter.formatShort(newPesewas)}',
             );
           }
-
-          // Apply state update + close
           ref.read(serviceTypeProvider.notifier).applyPriceUpdate(service.id, newPesewas);
           if (sheetContext.mounted) Navigator.pop(sheetContext);
         }
@@ -460,24 +456,8 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         // ── Step 0: Set Price ──
         List<Widget> _buildSetPriceStep(ServiceTypeEntity svc, BuildContext ctx, void Function(VoidCallback) ss) {
           return [
-            // Header: SET PRICE + service name
-            Row(
-              children: [
-                Icon(LineAwesomeIcons.pen_alt_solid, color: context.ksc.accent500, size: 16),
-                const SizedBox(width: 8),
-                Text('SET PRICE',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: context.ksc.accent500),
-                ),
-                const Spacer(),
-                Text(svc.name,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.ksc.neutral500),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Quick preset chips — pill-shaped
+            const SizedBox(height: 8),
+            // Quick preset chips
             Text('QUICK SELECT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.ksc.neutral500, letterSpacing: 1.0)),
             const SizedBox(height: 12),
             Wrap(
@@ -512,8 +492,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
               }).toList(),
             ),
             const SizedBox(height: 24),
-
-            // Custom amount — underline input
+            // Custom amount
             Text('CUSTOM AMOUNT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.ksc.neutral500, letterSpacing: 1.0)),
             const SizedBox(height: 8),
             Row(
@@ -547,62 +526,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // Buttons: CANCEL (secondary) | CONTINUE (primary)
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _close,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: context.ksc.accent500),
-                      ),
-                      child: Center(
-                        child: Text('CANCEL',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: context.ksc.accent500),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: GestureDetector(
-                    onTap: currentValue.isNotEmpty ? () {
-                      final parsed = CurrencyFormatter.parseToPesewas(currentValue);
-                      if (parsed == null || parsed <= 0) {
-                        KsSnackbar.show(ctx, message: 'Price must be greater than 0', type: KsSnackbarType.error);
-                        return;
-                      }
-                      ss(() => _step = 1);
-                    } : null,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: currentValue.isNotEmpty ? context.ksc.accent500 : context.ksc.accent500.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: currentValue.isNotEmpty ? [
-                          BoxShadow(
-                            color: context.ksc.accent500.withValues(alpha: 0.15),
-                            blurRadius: 6,
-                            offset: const Offset(0, 0),
-                          ),
-                        ] : null,
-                      ),
-                      child: Center(child: Text(
-                        currentValue.isNotEmpty ? 'CONTINUE — GHS ${currentValue}' : 'ENTER PRICE',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: context.ksc.primary900),
-                      )),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            const SizedBox(height: 16),
           ];
         }
 
@@ -610,24 +534,12 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         List<Widget> _buildConfirmStep(ServiceTypeEntity svc, BuildContext ctx, void Function(VoidCallback) ss) {
           final newPesewas = CurrencyFormatter.parseToPesewas(currentValue) ?? 0;
           return [
-            // Confirm icon
-            Icon(LineAwesomeIcons.check_circle_solid, color: context.ksc.accent500, size: 32),
-            const SizedBox(height: 16),
-
-            // Label
-            Text('CONFIRM PRICE',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.0, color: context.ksc.accent500),
-            ),
-            const SizedBox(height: 20),
-
-            // Service name
+            const SizedBox(height: 4),
             Text(svc.name,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: context.ksc.white),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-
-            // Price display — clean, transparent, underline
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -651,101 +563,53 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Buttons: EDIT (secondary) | SAVE (primary)
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => ss(() => _step = 0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: context.ksc.accent500),
-                      ),
-                      child: Center(child: Text('EDIT', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: context.ksc.accent500))),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ListenableBuilder(
-                    listenable: isSavingNotifier,
-                    builder: (_, __) {
-                      final saving = isSavingNotifier.value;
-                      return GestureDetector(
-                        onTap: saving ? null : _save,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: saving ? context.ksc.accent500.withValues(alpha: 0.35) : context.ksc.accent500,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: saving ? null : [
-                              BoxShadow(
-                                color: context.ksc.accent500.withValues(alpha: 0.15),
-                                blurRadius: 6,
-                                offset: const Offset(0, 0),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: saving
-                              ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.primary900))
-                              : Text('SAVE — GHS ${CurrencyFormatter.formatShort(newPesewas)}',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: context.ksc.primary900),
-                                ),
+            // Loading indicator for save
+            ListenableBuilder(
+              listenable: isSavingNotifier,
+              builder: (_, __) {
+                return isSavingNotifier.value
+                    ? const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
+                          width: 18, height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFD4A017),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+                      )
+                    : const SizedBox.shrink();
+              },
             ),
           ];
         }
 
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, _) async {
-            if (didPop) return;
-            if (isDirty()) {
-              final discard = await _confirmDiscard();
-              if (discard && sheetContext.mounted) Navigator.pop(sheetContext);
-            } else {
-              if (sheetContext.mounted) Navigator.pop(sheetContext);
-            }
-          },
-          child: StatefulBuilder(
-            builder: (context, setSheetState) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Drag handle
-                      Container(
-                        width: 36, height: 4,
-                        decoration: BoxDecoration(
-                          color: context.ksc.neutral600,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      if (_step == 0) ..._buildSetPriceStep(service, sheetContext, setSheetState),
-                      if (_step == 1) ..._buildConfirmStep(service, sheetContext, setSheetState),
-                    ],
-                  ),
-                ),
-              );
-            },
+        return KsStepDrawer(
+          title: "SET PRICE",
+          steps: const [
+            KsStep(label: 'PRICE', icon: LineAwesomeIcons.pen_alt_solid, subSteps: 2,
+              tip: 'Set the price for this service',
+              imageAsset: 'assets/icons/3d/transparent/b801dc-3d-coin.png'),
+            KsStep(label: 'CONFIRM', icon: LineAwesomeIcons.check_solid,
+              tip: 'Review and save the updated price',
+              imageAsset: 'assets/icons/3d/transparent/1b714e-tick.png'),
+          ],
+          showBackArrow: true,
+          onBack: _close,
+          onClose: () => _confirmDiscard(sheetContext),
+          nextLabel: "CONTINUE",
+          saveLabel: "SAVE",
+          canAdvance: (step, subStep) => step == 0 ? currentValue.isNotEmpty : true,
+          onSave: _save,
+          stepContent: (step, subStep, setSheetState) => Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (step == 0) ..._buildSetPriceStep(service, sheetContext, setSheetState),
+                if (step == 1) ..._buildConfirmStep(service, sheetContext, setSheetState),
+              ],
+            ),
           ),
         );
       },

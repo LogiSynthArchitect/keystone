@@ -1,9 +1,39 @@
+enum InventoryItemCategory {
+  key,
+  lock,
+  automotive,
+  electronic,
+  safe,
+  consumable;
+
+  String get displayName {
+    switch (this) {
+      case InventoryItemCategory.key: return 'KEY';
+      case InventoryItemCategory.lock: return 'LOCK';
+      case InventoryItemCategory.automotive: return 'AUTO';
+      case InventoryItemCategory.electronic: return 'ELECTRONIC';
+      case InventoryItemCategory.safe: return 'SAFE';
+      case InventoryItemCategory.consumable: return 'CONSUMABLE';
+    }
+  }
+
+  String get dbValue => name;
+
+  static InventoryItemCategory fromDb(String value) {
+    return InventoryItemCategory.values.firstWhere(
+      (c) => c.dbValue == value,
+      orElse: () => InventoryItemCategory.consumable,
+    );
+  }
+}
+
 class InventoryItemEntity {
   final String id;
   final String userId;
-  final String itemType;
+  final InventoryItemCategory category;
   final String name;
-  final String? category;
+  final Map<String, dynamic> attributes;
+  // Legacy fields — kept for backward compat with existing data
   final String? brand;
   final String? model;
   final String? keySpec;
@@ -25,9 +55,9 @@ class InventoryItemEntity {
   const InventoryItemEntity({
     required this.id,
     required this.userId,
-    required this.itemType,
+    required this.category,
     required this.name,
-    this.category,
+    this.attributes = const {},
     this.brand,
     this.model,
     this.keySpec,
@@ -54,9 +84,9 @@ class InventoryItemEntity {
   InventoryItemEntity copyWith({
     String? id,
     String? userId,
-    String? itemType,
+    InventoryItemCategory? category,
     String? name,
-    String? category,
+    Map<String, dynamic>? attributes,
     String? brand,
     String? model,
     String? keySpec,
@@ -78,9 +108,9 @@ class InventoryItemEntity {
     return InventoryItemEntity(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      itemType: itemType ?? this.itemType,
-      name: name ?? this.name,
       category: category ?? this.category,
+      name: name ?? this.name,
+      attributes: attributes ?? this.attributes,
       brand: brand ?? this.brand,
       model: model ?? this.model,
       keySpec: keySpec ?? this.keySpec,

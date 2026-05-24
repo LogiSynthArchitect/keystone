@@ -1,0 +1,117 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 20px; }
+  h2 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 12px; font-weight: 300; margin-bottom: 24px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin: 24px 0 10px; }
+  .b-a { background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+  .b-b { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+  .b-c { background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+  .b-d { background: rgba(74,222,128,0.15); color: #4ADE80; border: 1px solid rgba(74,222,128,0.3); }
+  .section { max-width: 400px; margin: 0 auto 32px; background: #161618; border-radius: 12px; padding: 24px 16px; border: 1px solid #2a2a2a; }
+  .label { font-size: 10px; color: #666; letter-spacing: 1px; margin-bottom: 8px; font-weight: 500; }
+
+  /* Search bar animation demo */
+  .search { transition: all 0.3s ease; }
+  .search-idle { background: #0C0C0E; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; }
+  .search-idle .icon { color: #555; margin-right: 10px; font-size: 14px; }
+  .search-idle .text { color: #555; font-size: 13px; font-weight: 300; }
+
+  .animation-label { color: #C9A84C; font-size: 9px; font-weight: 600; letter-spacing: 1px; }
+</style>
+
+<h2>Search Bar — Animation & Look</h2>
+<p class="subtitle">Four concepts for the search animation and interaction feel</p>
+
+<!-- A: Expand on Focus -->
+<div class="b-a badge">A — Expand on Focus</div>
+<div class="section">
+  <div class="label">IDLE STATE</div>
+  <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;display:flex;align-items:center;width:160px;transition:all 0.3s">
+    <span style="color:#555;margin-right:8px;font-size:12px">🔍</span>
+    <span style="color:#555;font-size:11px;font-weight:300">Search...</span>
+  </div>
+  <div style="margin:8px 0;text-align:center">
+    <span style="color:#555;font-size:10px">▼  tap  ▼</span>
+  </div>
+  <div class="label">FOCUSED STATE (animates wider)</div>
+  <div style="background:#0C0C0E;border:1px solid #C9A84C;border-radius:8px;padding:10px 14px;display:flex;align-items:center;width:100%;transition:all 0.3s;box-shadow:0 0 10px rgba(201,168,76,0.1)">
+    <span style="color:#C9A84C;margin-right:10px;font-size:14px">🔍</span>
+    <span style="color:#F2F0EB;font-size:13px;font-weight:300">Search services...</span>
+    <span style="margin-left:auto;color:#555;font-size:10px">ESC</span>
+  </div>
+  <div style="margin-top:12px;padding-top:8px;border-top:1px solid #1a1a1a">
+    <span class="animation-label">ANIMATION: Width expands from 160px to 100%. Gold border fades in. Search icon turns gold. 300ms ease.</span>
+  </div>
+</div>
+
+<!-- B: Slide Down + Stagger -->
+<div class="b-b badge">B — Slide Down Banner</div>
+<div class="section">
+  <div class="label">SCROLLED UP — no search visible</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+    <span style="font-size:11px;font-weight:600;letter-spacing:1.5px;color:#C9A84C">SERVICE PRICING</span>
+    <span style="color:#555;font-size:12px">🔍</span>
+  </div>
+  <div style="margin:8px 0;text-align:center">
+    <span style="color:#555;font-size:10px">▼  pull down  ▼</span>
+  </div>
+  <div class="label">PULL DOWN — search slides in</div>
+  <div style="background:#0C0C0E;border:1px solid #C9A84C;border-radius:10px;padding:12px 14px;display:flex;align-items:center;margin-bottom:8px;box-shadow:0 0 12px rgba(201,168,76,0.08)">
+    <span style="color:#C9A84C;margin-right:10px;font-size:14px">🔍</span>
+    <input style="flex:1;background:none;border:none;color:#F2F0EB;font-size:14px;font-weight:300;outline:none" placeholder="Search 39 services...">
+  </div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+    <div style="background:rgba(201,168,76,0.12);border:1px solid #C9A84C;border-radius:6px;padding:4px 10px;font-size:9px;color:#C9A84C;font-weight:600">📍 ALL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:4px 10px;font-size:9px;color:#888;font-weight:500">🏠 RESIDENTIAL</div>
+    <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:6px;padding:4px 10px;font-size:9px;color:#888;font-weight:500">🚗 AUTO</div>
+  </div>
+  <div style="margin-top:12px;padding-top:8px;border-top:1px solid #1a1a1a">
+    <span class="animation-label">ANIMATION: Search bar slides down from behind app bar with 250ms ease. Chips stagger in with 50ms delay each.</span>
+  </div>
+</div>
+
+<!-- C: Gold Underline Reveal -->
+<div class="b-c badge">C — Underline Reveal</div>
+<div class="section">
+  <div class="label">IDLE — compact icon only</div>
+  <div style="display:flex;justify-content:flex-end;align-items:center;padding:4px 0">
+    <div style="width:36px;height:36px;background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <span style="color:#555;font-size:14px">🔍</span>
+    </div>
+  </div>
+  <div style="margin:8px 0;text-align:center">
+    <span style="color:#555;font-size:10px">▼  tap icon  ▼</span>
+  </div>
+  <div class="label">ACTIVE — field expands from icon</div>
+  <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;">
+    <div style="display:flex;align-items:center;padding:8px 12px">
+      <span style="color:#C9A84C;margin-right:10px;font-size:14px">🔍</span>
+      <input style="flex:1;background:none;border:none;color:#F2F0EB;font-size:13px;font-weight:300;outline:none" placeholder="Search services...">
+    </div>
+    <div style="height:2px;background:#C9A84C;width:100%;transform-origin:left;animation:grow 0.3s"></div>
+  </div>
+  <div style="margin-top:12px;padding-top:8px;border-top:1px solid #1a1a1a">
+    <span class="animation-label">ANIMATION: Tap icon → search field expands width from 36px to 100%. Gold underline animates in from left. 300ms ease-out.</span>
+  </div>
+</div>
+
+<!-- D: Floating Search -->
+<div class="b-d badge">D — Floating Search Bar</div>
+<div class="section">
+  <div class="label">DEFAULT — elevated above content</div>
+  <div style="margin:0 -8px">
+    <div style="background:#161618;border:1px solid #2a2a2a;border-radius:12px;padding:12px 14px;display:flex;align-items:center;margin:0 8px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+      <span style="color:#C9A84C;margin-right:10px;font-size:14px">🔍</span>
+      <input style="flex:1;background:none;border:none;color:#F2F0EB;font-size:14px;font-weight:300;outline:none" placeholder="Search 39 services...">
+    </div>
+  </div>
+  <div style="margin-top:16px;padding-top:8px;border-top:1px solid #1a1a1a">
+    <span class="animation-label">ANIMATION: On scroll down, search compresses to icon-only and pins to top of viewport. Tapping scrolls back up. Card-like shadow lifts it above list. 200ms ease.</span>
+  </div>
+</div>
+
+<div style="max-width:400px;margin:32px auto 0;padding-top:16px;border-top:1px solid #2a2a2a">
+  <p style="font-size:12px;color:#888;font-weight:300">Which animation direction? Or mix?</p>
+</div>

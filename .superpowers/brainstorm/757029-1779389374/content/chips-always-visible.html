@@ -1,0 +1,139 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; }
+  h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 12px; font-weight: 300; margin-bottom: 20px; }
+  .phone { max-width: 380px; margin: 0 auto; background: #0C0C0E; border-radius: 20px; border: 1px solid #2a2a2a; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
+  .b-state1 { background: rgba(96,165,250,0.15); color: #60A5FA; border: 1px solid rgba(96,165,250,0.3); }
+  .b-state2 { background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+
+  .appbar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#0C0C0E; border-bottom:1px solid #1a1a1a; height:46px; }
+  .title { font-size:13px; font-weight:900; letter-spacing:1.2px; color:#F2F0EB; }
+  .icon-box { width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  .chips-row { display:flex; gap:4px; padding:10px 16px; border-bottom:1px solid #1a1a1a; flex-wrap:wrap; }
+  .chip { padding:4px 10px; border-radius:6px; font-size:9px; font-weight:500; letter-spacing:0.8px; }
+
+  .search-area { overflow:hidden; transition:max-height 0.25s ease; }
+  .search-closed { max-height:0; padding:0 16px; }
+  .search-open { max-height:60px; padding:4px 16px 10px; }
+
+  .search-row { display:flex; align-items:center; gap:6px; }
+  .search-row .icon { font-size:12px; }
+  .search-row .text { color:#666; font-size:11px; font-weight:300; }
+  .search-row .close { margin-left:auto; color:#555; font-size:10px; cursor:pointer; }
+  .underline { height:1.5px; background:#C9A84C; width:100%; margin-top:2px; }
+
+  .list-item { display:flex; align-items:center; padding:9px 16px; border-bottom:1px solid #1a1a1a; }
+  .li-icon { width:30px; height:30px; background:#161618; border-radius:6px; border:1px solid #2a2a2a; display:flex; align-items:center; justify-content:center; font-size:12px; margin-right:10px; }
+  .li-name { flex:1; font-size:11px; font-weight:300; color:#F2F0EB; }
+  .li-price { font-size:11px; font-weight:600; color:#C9A84C; }
+
+  .list-header { padding:8px 16px 4px; font-size:9px; color:#C9A84C; font-weight:600; letter-spacing:1px; }
+  
+  .arrow { text-align:center; color:#555; font-size:10px; padding:4px 0; }
+  .anno { font-size:10px; color:#888; font-weight:300; padding:8px; background:#161618; border-radius:6px; margin-top:8px; }
+  .anno strong { color:#C9A84C; }
+</style>
+
+<h2>Only Search Animates — Chips Always Visible</h2>
+<p class="subtitle">Filter chips are navigation, not search. They stay put.</p>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;max-width:800px;margin:0 auto">
+
+<!-- STATE 1: CLOSED -->
+<div style="flex:1;min-width:320px">
+  <div class="badge b-state1">STATE 1 — Search closed (default)</div>
+  <div class="phone">
+    <div class="appbar">
+      <span style="font-size:14px;color:#555">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icon-box" style="border:1px solid #2a2a2a"><span style="color:#555;font-size:14px">🔍</span></div>
+    </div>
+
+    <!-- Chips: ALWAYS visible, never move -->
+    <div class="chips-row">
+      <div class="chip" style="background:rgba(201,168,76,0.12);border:1px solid #C9A84C;color:#C9A84C;font-weight:600">📍 ALL (39)</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">🏠 RESIDENTIAL (8)</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">🚗 AUTO (8)</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">🏢 COMMERCIAL</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">📡 SECURITY</div>
+    </div>
+
+    <!-- Search: COLLAPSED — zero height -->
+    <div class="search-area search-closed"></div>
+
+    <!-- List -->
+    <div class="list-header">RESIDENTIAL</div>
+    <div class="list-item"><div class="li-icon">🔧</div><span class="li-name">Lock Installation</span><span class="li-price">GHS 150</span></div>
+    <div class="list-item"><div class="li-icon">🔑</div><span class="li-name">Key Duplication</span><span class="li-price">GHS 15</span></div>
+    <div class="list-item"><div class="li-icon" style="border-color:#C9A84C">🔐</div><span class="li-name">Smart Lock Install</span><span class="li-price">GHS 250</span></div>
+    <div class="list-item" style="border-bottom:none"><div class="li-icon">🔩</div><span class="li-name">Lock Repair</span><span class="li-price">GHS 80</span></div>
+  </div>
+  <div class="anno">✅ <strong>Zero dead space.</strong> Chips always visible. Search collapsed to 0px. List fills normally.</div>
+</div>
+
+<!-- STATE 2: OPEN -->
+<div style="flex:1;min-width:320px">
+  <div class="badge b-state2">STATE 2 — Search open (tap 🔍)</div>
+  <div class="phone">
+    <div class="appbar">
+      <span style="font-size:14px;color:#555">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icon-box" style="border:1px solid #C9A84C;background:rgba(201,168,76,0.1)"><span style="color:#C9A84C;font-size:14px">✕</span></div>
+    </div>
+
+    <!-- Chips: SAME POSITION, never moved -->
+    <div class="chips-row">
+      <div class="chip" style="background:rgba(201,168,76,0.12);border:1px solid #C9A84C;color:#C9A84C;font-weight:600">📍 ALL (39)</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">🏠 RESIDENTIAL (8)</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">🚗 AUTO (8)</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">🏢 COMMERCIAL</div>
+      <div class="chip" style="background:#161618;border:1px solid #2a2a2a;color:#888">📡 SECURITY</div>
+    </div>
+
+    <!-- Search: EXPANDS into the body area -->
+    <div class="search-area search-open" style="max-height:60px">
+      <div class="search-row">
+        <span class="icon" style="color:#C9A84C">🔍</span>
+        <span class="text" style="color:#F2F0EB">Search 39 services...</span>
+        <span class="close">✕</span>
+      </div>
+      <div class="underline"></div>
+    </div>
+
+    <!-- List (same items, just shifted down by ~50px) -->
+    <div class="list-header">RESIDENTIAL</div>
+    <div class="list-item"><div class="li-icon">🔧</div><span class="li-name">Lock Installation</span><span class="li-price">GHS 150</span></div>
+    <div class="list-item"><div class="li-icon">🔑</div><span class="li-name">Key Duplication</span><span class="li-price">GHS 15</span></div>
+    <div class="list-item"><div class="li-icon" style="border-color:#C9A84C">🔐</div><span class="li-name">Smart Lock Install</span><span class="li-price">GHS 250</span></div>
+    <div class="list-item" style="border-bottom:none"><div class="li-icon">🔩</div><span class="li-name">Lock Repair</span><span class="li-price">GHS 80</span></div>
+  </div>
+  <div class="anno">✅ <strong>Search slides in.</strong> Chips never move. List shrinks via Expanded. <strong>Zero overflow.</strong></div>
+</div>
+
+</div>
+
+<!-- Architecture -->
+<div style="max-width:800px;margin:32px auto 0;padding-top:20px;border-top:1px solid #2a2a2a">
+  <div style="font-size:12px;color:#888;font-weight:300;margin-bottom:12px">Component architecture:</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px;max-width:800px;margin:0 auto">
+    <div style="background:#161618;border-radius:8px;padding:12px;border:1px solid #2a2a2a">
+      <div style="color:#60A5FA;font-weight:600;margin-bottom:4px">1. KsAppBar</div>
+      <div style="color:#888;font-weight:300">Fixed height (56px). 🔍 icon toggles search via callback. No bottom panel. preferredSize always 56.</div>
+    </div>
+    <div style="background:#161618;border-radius:8px;padding:12px;border:1px solid #2a2a2a">
+      <div style="color:#60A5FA;font-weight:600;margin-bottom:4px">2. Chips Row</div>
+      <div style="color:#888;font-weight:300">Permanent part of the body. Rendered before the search panel. Never animated, never hidden.</div>
+    </div>
+    <div style="background:#161618;border-radius:8px;padding:12px;border:1px solid #2a2a2a">
+      <div style="color:#60A5FA;font-weight:600;margin-bottom:4px">3. SearchPanelBody</div>
+      <div style="color:#888;font-weight:300">Reusable wrapper: Column( animated search panel + Expanded(body) ). Slides search in/out. Zero overflow.</div>
+    </div>
+  </div>
+  <div style="margin-top:16px;text-align:center;font-size:11px;color:#C9A84C">
+    KsAppBar stays as ConsumerWidget (no state). Search state managed by screen or a lightweight wrapper.
+  </div>
+</div>

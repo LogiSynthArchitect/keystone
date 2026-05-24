@@ -59,6 +59,9 @@ dependencies:
   video_player: ^2.11.1
   flutter_local_notifications: ^18.0.1
 
+  # Notifications / snackbars
+  another_flushbar: ^2.2.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -79,6 +82,8 @@ flutter:
     - assets/fonts/
     - assets/flags/
     - assets/services/
+    - assets/icons/3d/
+    - assets/icons/3d/transparent/
   fonts:
     - family: BarlowSemiCondensed
       fonts:

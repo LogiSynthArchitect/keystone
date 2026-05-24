@@ -1,0 +1,214 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; display: flex; justify-content: center; padding: 40px 16px; gap: 24px; flex-wrap: wrap; }
+  
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px; background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+
+  .phone { width: 380px; background: #0C0C0E; border: 1px solid #2a2a2a; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; min-height: 580px; }
+
+  /* App bar */
+  .app-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #1a1a1a; }
+  .app-bar .back { color: #888; font-size: 16px; cursor: pointer; }
+  .app-bar .title { font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #F2F0EB; }
+  .app-bar .icons { display: flex; gap: 12px; }
+  .app-bar .icons span { font-size: 16px; cursor: pointer; color: #555; }
+  .app-bar .icons .active { color: #C9A84C; }
+
+  /* List mock */
+  .list { padding: 12px 16px; }
+  .cat-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: #C9A84C; padding: 8px 4px; margin-top: 8px; text-transform: uppercase; }
+  .cat-header .count { font-size: 11px; font-weight: 700; color: #555; }
+  .row { display: flex; align-items: center; padding: 10px 4px; border-bottom: 1px solid #1a1a1a; cursor: pointer; }
+  .row .icon { width: 32px; height: 32px; background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 10px; }
+  .row .name { flex: 1; font-size: 13px; font-weight: 500; color: #F2F0EB; }
+  .row .price { font-size: 13px; font-weight: 600; color: #C9A84C; }
+
+  /* Bottom sheet */
+  .sheet { background: #161618; border-radius: 16px 16px 0 0; padding: 12px 20px 24px; margin-top: 12px; border-top: 1px solid #2a2a2a; }
+  .handle { width: 36px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 16px; }
+
+  /* ── HEADER ── */
+  .sheet-header { display: flex; align-items: center; margin-bottom: 20px; }
+  .sheet-header .icon { color: #C9A84C; font-size: 14px; margin-right: 8px; }
+  .sheet-header .label { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #C9A84C; text-transform: uppercase; }
+  .sheet-header .spacer { flex: 1; }
+  .sheet-header .svc-name { font-size: 12px; font-weight: 500; color: #666; max-width: 140px; text-align: right; }
+
+  /* ── SECTION LABEL ── */
+  .section-label { font-size: 11px; font-weight: 600; color: #666; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+
+  /* ── PRESET CHIPS ── */
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chip { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .chip-sel { background: rgba(201,168,76,0.12); border: 1px solid #C9A84C; color: #C9A84C; font-weight: 600; }
+  .chip-unsel { background: #0C0C0E; border: 1px solid #2a2a2a; color: #F2F0EB; font-weight: 500; }
+
+  /* ── CUSTOM AMOUNT ── */
+  .custom-area { margin-bottom: 20px; }
+  .custom-row { display: flex; align-items: center; gap: 8px; }
+  .currency { font-size: 18px; font-weight: 600; color: #666; }
+  .amount-input { flex: 1; padding: 8px 0; border: none; border-bottom: 1px solid #2a2a2a; background: none; color: #F2F0EB; font-size: 28px; font-weight: 700; font-family: 'Inter', sans-serif; outline: none; }
+  .amount-input:focus { border-bottom-color: #C9A84C; }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 8px; }
+  .btn { flex: 1; padding: 14px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 700; cursor: pointer; border: none; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+  .btn-cancel { background: transparent; border: 1px solid #2a2a2a; color: #888; font-weight: 700; }
+  .btn-continue { flex: 2; background: #C9A84C; color: #0C0C0E; font-weight: 700; }
+
+  /* ── CONFIRM STEP ── */
+  .confirm-icon { text-align: center; margin-bottom: 16px; }
+  .confirm-icon span { font-size: 32px; color: #C9A84C; }
+  .confirm-header { text-align: center; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #C9A84C; margin-bottom: 20px; text-transform: uppercase; }
+  .confirm-name { text-align: center; font-size: 17px; font-weight: 700; color: #F2F0EB; margin-bottom: 16px; }
+  .price-box { background: #0C0C0E; border: 1px solid rgba(201,168,76,0.3); border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px; }
+  .price-box .old { font-size: 12px; color: #666; text-decoration: line-through; }
+  .price-box .new { font-size: 28px; font-weight: 700; color: #C9A84C; margin-top: 4px; }
+  .btn-edit { background: transparent; border: 1px solid #2a2a2a; color: #F2F0EB; font-weight: 700; }
+  .btn-save { flex: 2; background: #C9A84C; color: #0C0C0E; font-weight: 700; box-shadow: 0 2px 8px rgba(201,168,76,0.25); }
+
+  /* Font reference table */
+  .ref-table { max-width: 380px; background: #161618; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; margin-top: 20px; }
+  .ref-table h3 { font-size: 12px; font-weight: 700; color: #C9A84C; margin-bottom: 12px; letter-spacing: 1px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: #888; font-weight: 600; font-size: 10px; letter-spacing: 1px; padding: 6px 8px; border-bottom: 1px solid #1a1a1a; }
+  td { padding: 6px 8px; border-bottom: 1px solid #1a1a1a; color: #ccc; font-weight: 300; }
+  td .new { color: #4ADE80; font-weight: 500; }
+  td .old { color: #EF4444; text-decoration: line-through; }
+</style>
+
+<div>
+  <div class="badge">PRICE DRAWER — FONT HIERARCHY FIX</div>
+
+  <!-- Phone frame: Step 0 — Set Price -->
+  <div class="phone">
+    <div class="app-bar">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="active">⚙️</span></div>
+    </div>
+
+    <div class="list">
+      <div class="cat-header">Residential <span class="count">14</span></div>
+      <div class="row">
+        <div class="icon">🔐</div>
+        <span class="name">Smart Lock Install</span>
+        <span class="price">GHS 250</span>
+      </div>
+      <div class="row">
+        <div class="icon">🔧</div>
+        <span class="name">Lock Installation</span>
+        <span class="price">GHS 150</span>
+      </div>
+    </div>
+
+    <!-- Sheet: Step 0 — Set Price -->
+    <div class="sheet">
+      <div class="handle"></div>
+
+      <!-- Header: 12px w700 gold -->
+      <div class="sheet-header">
+        <span class="icon">✎</span>
+        <span class="label">SET PRICE</span>
+        <span class="spacer"></span>
+        <span class="svc-name">Smart Lock Install</span>
+      </div>
+
+      <!-- QUICK SELECT: 11px w600 -->
+      <div class="section-label">QUICK SELECT</div>
+      <div class="presets">
+        <div class="chip chip-unsel">GHS 50</div>
+        <div class="chip chip-sel">GHS 150</div>
+        <div class="chip chip-unsel">GHS 200</div>
+        <div class="chip chip-unsel">GHS 250</div>
+        <div class="chip chip-unsel">GHS 350</div>
+        <div class="chip chip-unsel">GHS 500</div>
+      </div>
+
+      <!-- CUSTOM AMOUNT: 11px w600 -->
+      <div class="custom-area">
+        <div class="section-label">CUSTOM AMOUNT</div>
+        <div class="custom-row">
+          <span class="currency">GHS</span>
+          <input class="amount-input" type="text" value="150">
+        </div>
+      </div>
+
+      <!-- Buttons: both 12px w700 -->
+      <div class="btn-row">
+        <div class="btn btn-cancel">CANCEL</div>
+        <div class="btn btn-continue">CONTINUE — GHS 150</div>
+      </div>
+    </div>
+
+    <div style="padding:6px 20px 20px;font-size:10px;color:#666;text-align:center;border-top:1px solid #1a1a1a">
+      STEP 0 — Set Price
+    </div>
+  </div>
+
+  <!-- Phone frame: Step 1 — Confirm Price -->
+  <div class="phone">
+    <div class="app-bar">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="active">⚙️</span></div>
+    </div>
+
+    <div class="list">
+      <div class="cat-header">Residential <span class="count">14</span></div>
+      <div class="row">
+        <div class="icon">🔐</div>
+        <span class="name" style="font-weight:600;color:#C9A84C">Smart Lock Install</span>
+        <span class="price">GHS 250</span>
+      </div>
+    </div>
+
+    <!-- Sheet: Step 1 — Confirm -->
+    <div class="sheet">
+      <div class="handle"></div>
+
+      <div class="confirm-icon"><span>✓</span></div>
+      <div class="confirm-header">CONFIRM PRICE</div>
+      <div class="confirm-name">Smart Lock Install</div>
+
+      <div class="price-box">
+        <div class="old">Current: GHS 250</div>
+        <div class="new">GHS 150</div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn-row">
+        <div class="btn btn-edit">EDIT</div>
+        <div class="btn btn-save">SAVE — GHS 150</div>
+      </div>
+    </div>
+
+    <div style="padding:6px 20px 20px;font-size:10px;color:#666;text-align:center;border-top:1px solid #1a1a1a">
+      STEP 1 — Confirm Price
+    </div>
+  </div>
+
+  <!-- Font reference table -->
+  <div class="ref-table">
+    <h3>FONT CHANGES FROM CURRENT</h3>
+    <table>
+      <tr><th>Element</th><th>Before</th><th>After</th></tr>
+      <tr><td>"SET PRICE" / "CONFIRM PRICE"</td><td class="old">11px w700</td><td class="new">12px w700</td></tr>
+      <tr><td>Service name in header</td><td class="old">12px (none)</td><td class="new">12px w500</td></tr>
+      <tr><td>"QUICK SELECT" label</td><td class="old">10px (none)</td><td class="new">11px w600</td></tr>
+      <tr><td>"CUSTOM AMOUNT" label</td><td class="old">10px (none)</td><td class="new">11px w600</td></tr>
+      <tr><td>Preset chip (unselected)</td><td class="old">13px w400</td><td class="new">13px w500</td></tr>
+      <tr><td>Preset chip (selected)</td><td>13px w600</td><td class="new">13px w600 unchanged</td></tr>
+      <tr><td>CANCEL button</td><td class="old">12px w600</td><td class="new">12px w700</td></tr>
+      <tr><td>CONTINUE button</td><td>12px w700</td><td class="new">12px w700 unchanged</td></tr>
+      <tr><td>EDIT button</td><td>12px w700</td><td class="new">12px w700 unchanged</td></tr>
+      <tr><td>SAVE button</td><td>12px w700</td><td class="new">12px w700 unchanged</td></tr>
+      <tr><td>Service name (confirm)</td><td>17px h3</td><td class="new">17px w700 unchanged</td></tr>
+      <tr><td>New price amount</td><td>28px w700</td><td class="new">28px w700 unchanged</td></tr>
+    </table>
+    <div style="margin-top:12px;padding:10px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.15);border-radius:6px;font-size:11px;color:#C9A84C">
+      6 changes: 4 labels bumped up (10→11px), 2 headers (11→12px), 1 weight (w400→w500), 1 button (w600→w700)
+    </div>
+  </div>
+</div>

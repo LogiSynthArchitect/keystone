@@ -59,9 +59,9 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<InventoryItemEntit
   }
 
   Future<void> addItem({
-    required String itemType,
+    required InventoryItemCategory category,
     required String name,
-    String? category,
+    Map<String, dynamic> attributes = const {},
     String? brand,
     String? model,
     String? keySpec,
@@ -74,6 +74,7 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<InventoryItemEntit
     int? lowStockThreshold,
     String? location,
     bool isAutoCogs = false,
+    String? coverImageUrl,
   }) async {
     final userId = _userId;
     if (userId == null) return;
@@ -82,9 +83,9 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<InventoryItemEntit
       final item = InventoryItemEntity(
         id: const Uuid().v4(),
         userId: userId,
-        itemType: itemType,
-        name: name,
         category: category,
+        name: name,
+        attributes: attributes,
         brand: brand,
         model: model,
         keySpec: keySpec,
@@ -97,6 +98,7 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<InventoryItemEntit
         lowStockThreshold: lowStockThreshold,
         location: location,
         isAutoCogs: isAutoCogs,
+        coverImageUrl: coverImageUrl,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

@@ -21,6 +21,17 @@ class JobTemplateLocalDatasource {
     await _box.flush();
   }
 
+  Future<void> renameTemplate(String id, String newName) async {
+    final existing = _box.get(id);
+    if (existing != null) {
+      final json = Map<String, dynamic>.from(existing);
+      json['name'] = newName;
+      json['updated_at'] = DateTime.now().toIso8601String();
+      await _box.put(id, json);
+      await _box.flush();
+    }
+  }
+
   Future<void> clear() async {
     await _box.clear();
     await _box.flush();

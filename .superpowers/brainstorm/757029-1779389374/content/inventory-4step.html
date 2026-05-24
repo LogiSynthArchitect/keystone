@@ -1,0 +1,265 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+  h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; color: #C9A84C; }
+  .subtitle { color: #888; font-size: 12px; margin-bottom: 24px; }
+
+  .row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+
+  .phone { width: 280px; background: #0C0C0E; border: 1px solid #2a2a2a; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #2a2a2a; }
+  .header .close { color: #555; font-size: 16px; cursor: pointer; }
+  .header .title { font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
+
+  .step-dots { display: flex; align-items: center; gap: 4px; padding: 10px 14px 4px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-active { background: #C9A84C; width: 24px; border-radius: 4px; }
+  .dot-done { background: #C9A84C; opacity: 0.5; }
+  .dot-empty { background: #333; }
+  .step-labels { display: flex; justify-content: space-between; padding: 2px 10px 12px 10px; font-size: 8px; color: #666; letter-spacing: 0.3px; text-transform: uppercase; }
+  .step-labels .active { color: #C9A84C; font-weight: 700; }
+
+  .body { padding: 12px 14px; }
+
+  .field-label { font-size: 10px; font-weight: 700; color: #666; letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase; }
+  .input { background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; color: #F2F0EB; font-size: 13px; font-family: 'Inter', sans-serif; width: 100%; outline: none; margin-bottom: 12px; }
+  .input::placeholder { color: #555; }
+
+  .photo-box { display: flex; align-items: center; gap: 10px; background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; cursor: pointer; }
+  .photo-box .icon { font-size: 20px; color: #555; }
+  .photo-box .info { flex: 1; }
+  .photo-box .info .label { font-size: 10px; font-weight: 700; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+  .photo-box .info .hint { font-size: 9px; color: #555; margin-top: 2px; }
+  .photo-box .plus { color: #C9A84C; font-size: 18px; }
+
+  .chip-row { display: flex; gap: 6px; margin-bottom: 12px; }
+  .chip { padding: 8px 16px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .chip-active { background: rgba(201,168,76,0.12); border: 1px solid #C9A84C; color: #C9A84C; }
+  .chip-inactive { background: #161618; border: 1px solid #2a2a2a; color: #888; }
+
+  .select { background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; color: #F2F0EB; font-size: 13px; font-family: 'Inter', sans-serif; width: 100%; outline: none; margin-bottom: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+  .toggle-row .info .label { font-size: 10px; font-weight: 700; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+  .toggle-row .info .hint { font-size: 9px; color: #555; margin-top: 2px; }
+  .switch { width: 36px; height: 20px; background: #333; border-radius: 10px; position: relative; cursor: pointer; }
+  .switch.on { background: rgba(201,168,76,0.4); }
+  .switch .knob { width: 16px; height: 16px; background: #888; border-radius: 50%; position: absolute; top: 2px; left: 2px; }
+  .switch.on .knob { background: #C9A84C; left: 18px; }
+
+  .qty-row { display: flex; align-items: center; justify-content: space-between; background: #161618; border-bottom: 1.5px solid #2a2a2a; padding: 4px 12px; margin-bottom: 12px; }
+  .qty-btn { width: 32px; height: 32px; background: #0C0C0E; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #C9A84C; font-size: 16px; }
+  .qty-value { font-size: 20px; font-weight: 900; color: #F2F0EB; }
+
+  .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .slider-track { flex: 1; height: 4px; background: #2a2a2a; border-radius: 2px; position: relative; }
+  .slider-fill { height: 4px; width: 20%; background: #C9A84C; border-radius: 2px; position: absolute; }
+  .slider-thumb { width: 16px; height: 16px; background: #C9A84C; border-radius: 50%; position: absolute; left: 18%; top: -6px; }
+
+  .nav-bar { border-top: 1px solid #2a2a2a; padding: 10px 14px 14px; display: flex; gap: 8px; }
+  .btn { flex: 1; padding: 10px; border-radius: 6px; text-align: center; font-size: 11px; font-weight: 600; cursor: pointer; border: none; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+  .btn-back { background: transparent; border: 1px solid #2a2a2a; color: #888; }
+  .btn-next { flex: 2; background: #C9A84C; color: #0C0C0E; font-weight: 700; }
+
+  .step-label { font-size: 10px; font-weight: 700; color: #C9A84C; letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; }
+</style>
+
+<h1>INVENTORY - 4-STEP WIZARD</h1>
+<p class="subtitle">All 4 steps shown side by side</p>
+
+<div class="row">
+
+  <!-- STEP 1 - BASIC -->
+  <div class="phone">
+    <div class="header">
+      <span class="close">X</span>
+      <span class="title">ADD ITEM</span>
+      <span></span>
+    </div>
+    <div class="step-dots">
+      <div class="dot dot-active"></div>
+      <div class="dot dot-empty"></div>
+      <div class="dot dot-empty"></div>
+      <div class="dot dot-empty"></div>
+    </div>
+    <div class="step-labels">
+      <span class="active">BASIC</span>
+      <span>GENERAL</span>
+      <span>SPECS</span>
+      <span>STOCK</span>
+    </div>
+    <div class="body">
+      <div class="step-label">Step 1 - Basic Info</div>
+
+      <div class="field-label">NAME *</div>
+      <input class="input" type="text" placeholder="Enter item name">
+
+      <div class="photo-box">
+        <span class="icon">[CAM]</span>
+        <div class="info">
+          <div class="label">Photo</div>
+          <div class="hint">Tap to add item photo</div>
+        </div>
+        <span class="plus">+</span>
+      </div>
+    </div>
+    <div class="nav-bar">
+      <div></div>
+      <div class="btn btn-next">NEXT &gt;</div>
+    </div>
+  </div>
+
+  <!-- STEP 2 - GENERAL -->
+  <div class="phone">
+    <div class="header">
+      <span class="close">X</span>
+      <span class="title">ADD ITEM</span>
+      <span></span>
+    </div>
+    <div class="step-dots">
+      <div class="dot dot-done"></div>
+      <div class="dot dot-active"></div>
+      <div class="dot dot-empty"></div>
+      <div class="dot dot-empty"></div>
+    </div>
+    <div class="step-labels">
+      <span>BASIC</span>
+      <span class="active">GENERAL</span>
+      <span>SPECS</span>
+      <span>STOCK</span>
+    </div>
+    <div class="body">
+      <div class="step-label">Step 2 - Type &amp; Identity</div>
+
+      <div class="field-label">TYPE</div>
+      <div class="chip-row">
+        <div class="chip chip-active">PART</div>
+        <div class="chip chip-inactive">HARDWARE</div>
+      </div>
+
+      <div class="field-label">CATEGORY</div>
+      <div class="select">Select category <span style="color:#555">V</span></div>
+
+      <div class="field-label">BRAND</div>
+      <input class="input" type="text" placeholder="e.g. Yale">
+
+      <div class="field-label">MODEL</div>
+      <input class="input" type="text" placeholder="e.g. YL-210">
+    </div>
+    <div class="nav-bar">
+      <div class="btn btn-back">BACK</div>
+      <div class="btn btn-next">NEXT &gt;</div>
+    </div>
+  </div>
+
+  <!-- STEP 3 - SPECS & SETTINGS -->
+  <div class="phone">
+    <div class="header">
+      <span class="close">X</span>
+      <span class="title">ADD ITEM</span>
+      <span></span>
+    </div>
+    <div class="step-dots">
+      <div class="dot dot-done"></div>
+      <div class="dot dot-done"></div>
+      <div class="dot dot-active"></div>
+      <div class="dot dot-empty"></div>
+    </div>
+    <div class="step-labels">
+      <span>BASIC</span>
+      <span>GENERAL</span>
+      <span class="active">SPECS</span>
+      <span>STOCK</span>
+    </div>
+    <div class="body">
+      <div class="step-label">Step 3 - Specs &amp; Settings</div>
+
+      <div class="field-label">KEY SPEC</div>
+      <input class="input" type="text" placeholder="e.g. SC1">
+
+      <div class="field-label">MATERIAL</div>
+      <input class="input" type="text" placeholder="e.g. Brass">
+
+      <div class="field-label">FINISH</div>
+      <input class="input" type="text" placeholder="e.g. Polished Nickel">
+
+      <div class="field-label">DIMENSIONS</div>
+      <input class="input" type="text" placeholder='e.g. 2.5" x 1.5"'>
+
+      <div class="toggle-row">
+        <div class="info">
+          <div class="label">Auto-COGS</div>
+          <div class="hint">Auto-deduct from job revenue</div>
+        </div>
+        <div class="switch">
+          <div class="knob"></div>
+        </div>
+      </div>
+
+      <div class="field-label">LOCATION</div>
+      <div class="chip-row">
+        <div class="chip chip-active">VAN</div>
+        <div class="chip chip-inactive">WORKSHOP</div>
+        <div class="chip chip-inactive">OTHER</div>
+      </div>
+    </div>
+    <div class="nav-bar">
+      <div class="btn btn-back">BACK</div>
+      <div class="btn btn-next">NEXT &gt;</div>
+    </div>
+  </div>
+
+  <!-- STEP 4 - STOCK -->
+  <div class="phone">
+    <div class="header">
+      <span class="close">X</span>
+      <span class="title">ADD ITEM</span>
+      <span></span>
+    </div>
+    <div class="step-dots">
+      <div class="dot dot-done"></div>
+      <div class="dot dot-done"></div>
+      <div class="dot dot-done"></div>
+      <div class="dot dot-active"></div>
+    </div>
+    <div class="step-labels">
+      <span>BASIC</span>
+      <span>GENERAL</span>
+      <span>SPECS</span>
+      <span class="active">STOCK</span>
+    </div>
+    <div class="body">
+      <div class="step-label">Step 4 - Pricing &amp; Stock</div>
+
+      <div class="field-label">COST PRICE (GHS)</div>
+      <input class="input" type="text" placeholder="0.00">
+
+      <div class="field-label">SALE PRICE (GHS)</div>
+      <input class="input" type="text" placeholder="0.00">
+
+      <div class="field-label">QUANTITY</div>
+      <div class="qty-row">
+        <div class="qty-btn">-</div>
+        <div class="qty-value">12</div>
+        <div class="qty-btn">+</div>
+      </div>
+
+      <div class="field-label">LOW STOCK THRESHOLD</div>
+      <div class="slider-row">
+        <span style="font-size:11px;color:#555">0</span>
+        <div class="slider-track">
+          <div class="slider-fill"></div>
+          <div class="slider-thumb"></div>
+        </div>
+        <span style="font-size:11px;color:#C9A84C;font-weight:700">5</span>
+      </div>
+    </div>
+    <div class="nav-bar">
+      <div class="btn btn-back">BACK</div>
+      <div class="btn btn-next">ADD ITEM</div>
+    </div>
+  </div>
+
+</div>

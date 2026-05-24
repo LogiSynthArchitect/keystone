@@ -3,9 +3,9 @@ import '../../domain/entities/inventory_item_entity.dart';
 class InventoryItemModel {
   final String id;
   final String userId;
-  final String itemType;
+  final InventoryItemCategory category;
   final String name;
-  final String? category;
+  final Map<String, dynamic> attributes;
   final String? brand;
   final String? model;
   final String? keySpec;
@@ -27,9 +27,9 @@ class InventoryItemModel {
   const InventoryItemModel({
     required this.id,
     required this.userId,
-    required this.itemType,
+    required this.category,
     required this.name,
-    this.category,
+    this.attributes = const {},
     this.brand,
     this.model,
     this.keySpec,
@@ -52,9 +52,11 @@ class InventoryItemModel {
   factory InventoryItemModel.fromJson(Map<String, dynamic> json) => InventoryItemModel(
     id: json['id'] as String,
     userId: json['user_id'] as String,
-    itemType: json['item_type'] as String,
+    category: InventoryItemCategory.fromDb(json['item_type'] as String),
     name: json['name'] as String,
-    category: json['category'] as String?,
+    attributes: json['attributes'] != null
+        ? Map<String, dynamic>.from(json['attributes'] as Map)
+        : <String, dynamic>{},
     brand: json['brand'] as String?,
     model: json['model'] as String?,
     keySpec: json['key_spec'] as String?,
@@ -77,9 +79,9 @@ class InventoryItemModel {
   Map<String, dynamic> toJson() => {
     'id': id,
     'user_id': userId,
-    'item_type': itemType,
+    'item_type': category.dbValue,
     'name': name,
-    'category': category,
+    'attributes': attributes,
     'brand': brand,
     'model': model,
     'key_spec': keySpec,
@@ -102,9 +104,9 @@ class InventoryItemModel {
   InventoryItemEntity toEntity() => InventoryItemEntity(
     id: id,
     userId: userId,
-    itemType: itemType,
-    name: name,
     category: category,
+    name: name,
+    attributes: attributes,
     brand: brand,
     model: model,
     keySpec: keySpec,
@@ -127,9 +129,9 @@ class InventoryItemModel {
   factory InventoryItemModel.fromEntity(InventoryItemEntity entity) => InventoryItemModel(
     id: entity.id,
     userId: entity.userId,
-    itemType: entity.itemType,
-    name: entity.name,
     category: entity.category,
+    name: entity.name,
+    attributes: entity.attributes,
     brand: entity.brand,
     model: entity.model,
     keySpec: entity.keySpec,

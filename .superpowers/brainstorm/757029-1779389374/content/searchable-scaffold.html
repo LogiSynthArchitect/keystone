@@ -1,0 +1,173 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; }
+  h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 12px; font-weight: 300; margin-bottom: 24px; }
+  .section { max-width: 380px; margin: 0 auto 32px; }
+  
+  /* Phone frame */
+  .phone {
+    background: #0C0C0E;
+    border-radius: 20px;
+    border: 1px solid #2a2a2a;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  
+  /* App bar */
+  .appbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #0C0C0E;
+    border-bottom: 1px solid #1a1a1a;
+    height: 48px;
+  }
+  .appbar-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+  }
+  .appbar-icon {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  
+  /* Body area */
+  .body-area {
+    transition: all 0.25s ease;
+    min-height: 400px;
+  }
+  
+  /* Current — old approach (search in appbar bottom) */
+  .gap { height: 104px; background: #0C0C0E; }
+  
+  /* Labels */
+  .label { font-size: 10px; color: #C9A84C; font-weight: 600; letter-spacing: 1px; margin: 24px 0 12px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
+  .badge-old { background: rgba(239,68,68,0.15); color: #EF4444; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-new { background: rgba(74,222,128,0.15); color: #4ADE80; border: 1px solid rgba(74,222,128,0.3); }
+
+  .list-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .list-icon {
+    width: 32px; height: 32px;
+    background: #161618;
+    border-radius: 6px;
+    border: 1px solid #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-right: 10px;
+  }
+  .list-name { flex: 1; font-size: 12px; font-weight: 300; color: #F2F0EB; }
+  .list-price { font-size: 12px; font-weight: 600; color: #C9A84C; }
+</style>
+
+<h2>Current vs. Proposed Approach</h2>
+<p class="subtitle">The problem: 104px empty gap when search is closed (left). No gap when panel is in body (right).</p>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center">
+
+<!-- CURRENT APPROACH -->
+<div class="section">
+  <div class="badge badge-old">CURRENT — Search in AppBar.bottom</div>
+  <div class="phone">
+    <!-- App bar -->
+    <div class="appbar">
+      <span style="font-size:16px;color:#555">←</span>
+      <span class="appbar-title">SERVICE PRICING</span>
+      <div class="appbar-icon"><span style="color:#555;font-size:16px">🔍</span></div>
+    </div>
+    
+    <!-- ✗ 104px empty gap when search is closed -->
+    <div class="gap" style="display:flex;align-items:center;justify-content:center;flex-direction:column">
+      <span style="color:#EF4444;font-size:20px">✗</span>
+      <span style="color:#EF4444;font-size:9px;letter-spacing:1px">104PX EMPTY GAP</span>
+      <span style="color:#555;font-size:8px;margin-top:4px">(pre-allocated space, not visible)</span>
+    </div>
+    
+    <!-- List -->
+    <div style="padding:8px 0">
+      <div style="padding:8px 16px;font-size:9px;color:#C9A84C;font-weight:600;letter-spacing:1px">RESIDENTIAL</div>
+      <div class="list-item"><div class="list-icon">🔧</div><span class="list-name">Lock Installation</span><span class="list-price">GHS 150</span></div>
+      <div class="list-item"><div class="list-icon">🔑</div><span class="list-name">Key Duplication</span><span class="list-price">GHS 15</span></div>
+      <div class="list-item"><div class="list-icon">🔐</div><span class="list-name">Smart Lock Install</span><span class="list-price">GHS 250</span></div>
+    </div>
+  </div>
+  <div style="margin-top:12px;padding:10px;background:#161618;border-radius:8px;border:1px solid #EF444440">
+    <span style="font-size:10px;color:#EF4444;font-weight:500">✗ 104px dead space below app bar when search is closed. Overflow when open. preferredSize can't animate.</span>
+  </div>
+</div>
+
+<!-- PROPOSED APPROACH -->
+<div class="section">
+  <div class="badge badge-new">PROPOSED — SearchPanel in Body + KsAppBar fixed</div>
+  <div class="phone">
+    <!-- App bar (always 48px, no bottom) -->
+    <div class="appbar">
+      <span style="font-size:16px;color:#555">←</span>
+      <span class="appbar-title">SERVICE PRICING</span>
+      <div class="appbar-icon" style="border:1px solid #C9A84C;background:rgba(201,168,76,0.1)">
+        <span style="color:#C9A84C;font-size:16px">✕</span>
+      </div>
+    </div>
+    
+    <!-- Search panel (in body, NO gap when closed) -->
+    <div style="padding:8px 16px 10px;background:#0C0C0E">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0">
+        <span style="color:#C9A84C;font-size:13px">🔍</span>
+        <span style="color:#666;font-size:12px;font-weight:300">Search 39 services...</span>
+      </div>
+      <div style="height:1.5px;background:#C9A84C;width:100%"></div>
+      <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+        <div style="background:rgba(201,168,76,0.12);border:1px solid #C9A84C;border-radius:6px;padding:3px 8px;font-size:8px;color:#C9A84C;font-weight:600">📍 ALL (39)</div>
+        <div style="background:#161618;border:1px solid #2a2a2a;border-radius:6px;padding:3px 8px;font-size:8px;color:#888;font-weight:500">🏠 RESIDENTIAL (8)</div>
+        <div style="background:#161618;border:1px solid #2a2a2a;border-radius:6px;padding:3px 8px;font-size:8px;color:#888;font-weight:500">🚗 AUTO (8)</div>
+      </div>
+    </div>
+    
+    <!-- List (Expanded fills remaining space, no gap) -->
+    <div style="padding:4px 0">
+      <div style="padding:8px 16px;font-size:9px;color:#C9A84C;font-weight:600;letter-spacing:1px">RESIDENTIAL</div>
+      <div class="list-item"><div class="list-icon">🔧</div><span class="list-name">Lock Installation</span><span class="list-price">GHS 150</span></div>
+      <div class="list-item"><div class="list-icon">🔑</div><span class="list-name">Key Duplication</span><span class="list-price">GHS 15</span></div>
+      <div class="list-item"><div class="list-icon">🔐</div><span class="list-name">Smart Lock Install</span><span class="list-price">GHS 250</span></div>
+      <div class="list-item"><div class="list-icon">🔩</div><span class="list-name">Lock Repair</span><span class="list-price">GHS 80</span></div>
+    </div>
+  </div>
+  <div style="margin-top:12px;padding:10px;background:#161618;border-radius:8px;border:1px solid #4ADE8040">
+    <span style="font-size:10px;color:#4ADE80;font-weight:500">✅ App bar fixed 48px. Search panel lives in the body. Expanded adjusts. Zero dead space. Zero overflow.</span>
+  </div>
+</div>
+
+</div>
+
+<div style="max-width:800px;margin:32px auto 0;padding-top:20px;border-top:1px solid #2a2a2a">
+  <div style="font-size:12px;color:#888;font-weight:300;margin-bottom:12px">How the proposed approach works:</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px;">
+    <div style="background:#161618;border-radius:8px;padding:12px;border:1px solid #2a2a2a">
+      <div style="color:#C9A84C;font-weight:600;margin-bottom:4px">1. KsAppBar</div>
+      <div style="color:#888;font-weight:300">Fixed 48px. Search icon in actions. <code>preferredSize</code> always 56. No bottom panel. Calls back to parent on toggle.</div>
+    </div>
+    <div style="background:#161618;border-radius:8px;padding:12px;border:1px solid #2a2a2a">
+      <div style="color:#C9A84C;font-weight:600;margin-bottom:4px">2. SearchPanelBody</div>
+      <div style="color:#888;font-weight:300">Reusable wrapper widget. Column with animated search panel + Expanded(body). Zero space when closed. No overflow.</div>
+    </div>
+    <div style="background:#161618;border-radius:8px;padding:12px;border:1px solid #2a2a2a">
+      <div style="color:#C9A84C;font-weight:600;margin-bottom:4px">3. Pricing Screen</div>
+      <div style="color:#888;font-weight:300">Wraps body in SearchPanelBody. Panel contains KsSearchBar + filter chips. Works with any screen.</div>
+    </div>
+  </div>
+</div>

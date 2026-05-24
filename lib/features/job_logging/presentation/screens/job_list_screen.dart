@@ -78,7 +78,6 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
               title: 'FILTER JOBS',
               onApply: () {
                 ref.read(jobListProvider.notifier).setFilters(draft);
-                Navigator.of(ctx).pop();
               },
               onClear: () {
                 draft = const JobListFilters();
@@ -88,10 +87,10 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                 KsFilterChipGroup(
                   label: 'STATUS',
                   options: const [
-                    KsFilterOption(value: 'quoted', display: 'Quoted'),
-                    KsFilterOption(value: 'in_progress', display: 'In Progress'),
-                    KsFilterOption(value: 'completed', display: 'Completed'),
-                    KsFilterOption(value: 'invoiced', display: 'Invoiced'),
+                    KsFilterOption(value: 'quoted', display: 'Quoted', icon: '📋'),
+                    KsFilterOption(value: 'in_progress', display: 'In Progress', icon: '⏳'),
+                    KsFilterOption(value: 'completed', display: 'Completed', icon: '✅'),
+                    KsFilterOption(value: 'invoiced', display: 'Invoiced', icon: '💰'),
                   ],
                   selected: draft.status,
                   onSelect: (v) => setLocalState(() => draft = draft.copyWith(status: v)),
@@ -99,9 +98,9 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                 KsFilterChipGroup(
                   label: 'PAYMENT',
                   options: const [
-                    KsFilterOption(value: 'unpaid', display: 'Unpaid'),
-                    KsFilterOption(value: 'partial', display: 'Partial'),
-                    KsFilterOption(value: 'paid', display: 'Paid'),
+                    KsFilterOption(value: 'unpaid', display: 'Unpaid', icon: '❌'),
+                    KsFilterOption(value: 'partial', display: 'Partial', icon: '💳'),
+                    KsFilterOption(value: 'paid', display: 'Paid', icon: '✅'),
                   ],
                   selected: draft.paymentStatus,
                   onSelect: (v) => setLocalState(() => draft = draft.copyWith(paymentStatus: v)),

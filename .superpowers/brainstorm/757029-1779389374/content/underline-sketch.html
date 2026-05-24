@@ -1,0 +1,62 @@
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; }
+  h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 12px; font-weight: 300; margin-bottom: 24px; }
+  .section { max-width: 400px; margin: 0 auto 32px; background: #161618; border-radius: 12px; padding: 24px; border: 1px solid #2a2a2a; }
+
+  /* The search bar as implemented */
+  .search-row { display: flex; align-items: center; gap: 8px; }
+
+  .idle { color: #555; font-size: 13px; }
+  .focused { color: #F2F0EB; font-size: 13px; font-weight: 300; }
+
+  .icon-idle { color: #555; font-size: 16px; }
+  .icon-focused { color: #C9A84C; font-size: 16px; }
+
+  .underline { height: 1.5px; background: #C9A84C; transition: width 0.25s ease-out; }
+  .u-idle { width: 0%; }
+  .u-focused { width: 100%; }
+
+  .arrow { text-align: center; color: #555; font-size: 11px; padding: 12px 0; }
+  .label { font-size: 9px; color: #C9A84C; font-weight: 600; letter-spacing: 1px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #1a1a1a; }
+</style>
+
+<h2>KsSearchBar — Underline Reveal</h2>
+<p class="subtitle">This is what the search bar should look like after the update</p>
+
+<div class="section">
+  <div style="font-size:10px;color:#666;letter-spacing:1px;margin-bottom:12px;font-weight:500">IDLE STATE (no focus)</div>
+
+  <div class="search-row">
+    <span class="icon-idle">🔍</span>
+    <span class="idle">Search 39 services...</span>
+  </div>
+  <div class="underline u-idle" style="margin-top:2px"></div>
+
+  <div class="arrow">▼  tap / focus  ▼</div>
+
+  <div style="font-size:10px;color:#666;letter-spacing:1px;margin-bottom:12px;font-weight:500">FOCUSED STATE (gold underline animates in)</div>
+
+  <div class="search-row">
+    <span class="icon-focused">🔍</span>
+    <span class="focused">Search 39 services...</span>
+    <span style="margin-left:auto;color:#555;font-size:12px">✕</span>
+  </div>
+  <div class="underline u-focused" style="margin-top:2px;width:100%"></div>
+
+  <div class="label">ANIMATION: Gold underline slides in from left → right in 250ms. Icon turns gold. No container border at all — just the underline.</div>
+</div>
+
+<div class="section">
+  <div style="font-size:12px;color:#F2F0EB;margin-bottom:8px">What it should NOT look like:</div>
+  <div style="background:#0C0C0E;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;display:flex;align-items:center">
+    <span style="color:#555;margin-right:8px">🔍</span>
+    <span style="color:#555;font-size:13px;font-weight:300">Search...</span>
+  </div>
+  <div style="color:#EF4444;font-size:10px;margin-top:8px">✗ No container box — no border-radius, no background fill, no border</div>
+</div>
+
+<div style="max-width:400px;margin:0 auto">
+  <div style="font-size:12px;color:#888;font-weight:300">Does it look like this on your phone or does it still have the box border?</div>
+</div>

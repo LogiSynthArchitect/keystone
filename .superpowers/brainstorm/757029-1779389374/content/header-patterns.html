@@ -1,0 +1,214 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; color: #C9A84C; }
+  .subtitle { color: #888; font-size: 12px; margin-bottom: 24px; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1000px; margin: 0 auto; }
+
+  .card { border-radius: 12px; overflow: hidden; border: 1px solid #2a2a2a; background: #0C0C0E; }
+
+  /* ── Phone frame — shows ONLY the header ── */
+  .phone { position: relative; height: 72px; overflow: hidden; display: flex; align-items: center; padding: 0 16px; }
+  .phone .back { color: rgba(242,240,235,0.7); font-size: 18px; margin-right: 12px; }
+  .phone .title { font-size: 14px; font-weight: 700; letter-spacing: 1px; flex: 1; }
+  .phone .icons { display: flex; gap: 10px; }
+  .phone .icons span { font-size: 16px; opacity: 0.6; }
+  .phone .accent { color: #C9A84C; opacity: 1 !important; }
+
+  .card-body { padding: 10px 14px 14px; }
+  .card-body .name { font-size: 12px; font-weight: 700; color: #C9A84C; margin-bottom: 3px; }
+  .card-body .desc { font-size: 10px; color: #888; line-height: 1.4; }
+
+  /* ═══════════ 1. GOLD TOP GRADIENT ═══════════ */
+  .h-grad { background: linear-gradient(180deg, #C9A84C 0%, #C9A84C 15%, rgba(201,168,76,0.15) 55%, #0C0C0E 100%); }
+  .h-grad .title { color: #0C0C0E; }
+  .h-grad .back { color: rgba(12,12,14,0.7) !important; }
+  .h-grad .icons span { color: #0C0C0E; opacity: 0.6; }
+
+  /* ═══════════ 2. DIAGONAL GOLD LINES ═══════════ */
+  .h-diag { background-color: #0C0C0E; position: relative; }
+  .h-diag::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent 0px, transparent 18px, rgba(201,168,76,0.12) 18px, rgba(201,168,76,0.12) 19px); }
+  .h-diag .title { color: #F2F0EB; position: relative; z-index: 1; }
+  .h-diag .back { position: relative; z-index: 1; }
+  .h-diag .icons span { position: relative; z-index: 1; }
+
+  /* ═══════════ 3. ART DECO BORDER TRIM ═══════════ */
+  .h-border { background: #0C0C0E; border-bottom: 2px solid #C9A84C; position: relative; }
+  .h-border::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #C9A84C 0%, rgba(201,168,76,0.2) 50%, #C9A84C 100%); }
+  .h-border .title { color: #F2F0EB; }
+
+  /* ═══════════ 4. GOLD DUST SCATTER ═══════════ */
+  .h-dust { background-color: #0C0C0E; position: relative; }
+  .h-dust::before { content: ''; position: absolute; inset: 0; 
+    background-image: 
+      radial-gradient(1.5px 1.5px at 15% 30%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1px 1px at 45% 50%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 70% 25%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1px 1px at 90% 60%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 30% 70%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1px 1px at 60% 80%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 5% 50%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1px 1px at 80% 20%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 55% 15%, #C9A84C 50%, transparent 50%),
+      radial-gradient(1px 1px at 25% 90%, #C9A84C 50%, transparent 50%);
+    opacity: 0.4; }
+  .h-dust .title { color: #F2F0EB; position: relative; z-index: 1; }
+  .h-dust .back { position: relative; z-index: 1; }
+  .h-dust .icons span { position: relative; z-index: 1; }
+
+  /* ═══════════ 5. WARM TOP VIGNETTE ═══════════ */
+  .h-vign { background: radial-gradient(ellipse 140% 120% at 50% 0%, rgba(201,168,76,0.2) 0%, rgba(201,168,76,0.05) 50%, #0C0C0E 100%); }
+  .h-vign .title { color: #F2F0EB; }
+  .h-vign .back { color: rgba(242,240,235,0.6) !important; }
+
+  /* ═══════════ 6. HORIZONTAL GOLD PINSTRIPE ═══════════ */
+  .h-pin { background-color: #0C0C0E; position: relative; }
+  .h-pin::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0px, transparent 17px, rgba(201,168,76,0.08) 17px, rgba(201,168,76,0.08) 18px); }
+  .h-pin .title { color: #F2F0EB; position: relative; z-index: 1; }
+  .h-pin .back { position: relative; z-index: 1; }
+  .h-pin .icons span { position: relative; z-index: 1; }
+
+  /* ═══════════ 7. GOLD GEOMETRIC FRAME ═══════════ */
+  .h-geo { background-color: #0C0C0E; position: relative; }
+  .h-geo::before { content: ''; position: absolute; inset: 0; opacity: 0.1; 
+    background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 15 L15 0 L30 15 L15 30 Z' fill='none' stroke='%23C9A84C' stroke-width='0.6'/%3E%3C/svg%3E");
+    background-size: 30px 30px; }
+  .h-geo .title { color: #F2F0EB; position: relative; z-index: 1; }
+  .h-geo .back { position: relative; z-index: 1; }
+  .h-geo .icons span { position: relative; z-index: 1; }
+
+  /* ═══════════ 8. GOLD FOIL TEXTURE ═══════════ */
+  .h-foil { background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(201,168,76,0.04) 25%, rgba(201,168,76,0.06) 50%, rgba(201,168,76,0.02) 75%, #0C0C0E 100%);
+    position: relative; }
+  .h-foil::before { content: ''; position: absolute; inset: 0; 
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06' /%3E%3C/svg%3E");
+    background-size: 100px 100px;
+    opacity: 0.3; }
+  .h-foil .title { color: #F2F0EB; position: relative; z-index: 1; }
+  .h-foil .back { position: relative; z-index: 1; }
+  .h-foil .icons span { position: relative; z-index: 1; }
+
+  .note { margin-top: 32px; max-width: 700px; margin-left: auto; margin-right: auto; background: #161618; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; text-align: center; }
+  .note h3 { font-size: 12px; font-weight: 700; color: #C9A84C; margin-bottom: 8px; letter-spacing: 1px; }
+  .note p { font-size: 12px; color: #888; line-height: 1.6; }
+</style>
+
+<h1>✦ HEADER BACKGROUND PATTERNS</h1>
+<p class="subtitle">Each shows only the app bar area. Replaces the solid gold background with a refined pattern treatment.</p>
+
+<div class="grid">
+
+  <!-- 1. GOLD TOP GRADIENT -->
+  <div class="card">
+    <div class="phone h-grad">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Gold Top Gradient</div>
+      <div class="desc">Solid gold at top edge, fading to near-black. Like a horizon glow. Dark text on gold section, light text below.</div>
+    </div>
+  </div>
+
+  <!-- 2. DIAGONAL GOLD LINES -->
+  <div class="card">
+    <div class="phone h-diag">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Diagonal Gold Weave</div>
+      <div class="desc">45° thin gold lines on dark bg at 12% opacity. Like woven luxury fabric. Subtle, textured, premium.</div>
+    </div>
+  </div>
+
+  <!-- 3. ART DECO BORDER TRIM -->
+  <div class="card">
+    <div class="phone h-border">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Art Deco Border Trim</div>
+      <div class="desc">Dark header with gold top edge line and bottom border. Minimal, architectural. Gold used only as trim.</div>
+    </div>
+  </div>
+
+  <!-- 4. GOLD DUST SCATTER -->
+  <div class="card">
+    <div class="phone h-dust">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Gold Dust Scatter</div>
+      <div class="desc">Random gold specks scattered at 1-1.5px across dark header. Like loose gold leaf fragments. Organic.</div>
+    </div>
+  </div>
+
+  <!-- 5. WARM TOP VIGNETTE -->
+  <div class="card">
+    <div class="phone h-vign">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Warm Top Vignette</div>
+      <div class="desc">Radial gold glow concentrated at top center. Warm spotlight effect. Very subtle — 20% opacity at peak.</div>
+    </div>
+  </div>
+
+  <!-- 6. HORIZONTAL GOLD PINSTRIPE -->
+  <div class="card">
+    <div class="phone h-pin">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Horizontal Pinstripe</div>
+      <div class="desc">Thin gold horizontal lines at 18px intervals at 8% opacity. Like a ruled notebook. Calm, structured.</div>
+    </div>
+  </div>
+
+  <!-- 7. GOLD GEOMETRIC FRAME -->
+  <div class="card">
+    <div class="phone h-geo">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Geometric Diamond Frame</div>
+      <div class="desc">Small gold wireframe diamonds at 10% opacity. Engineering precision meets luxury texture.</div>
+    </div>
+  </div>
+
+  <!-- 8. GOLD FOIL TEXTURE -->
+  <div class="card">
+    <div class="phone h-foil">
+      <span class="back">←</span>
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons"><span>🔍</span><span class="accent" style="opacity:1">⚙️</span></div>
+    </div>
+    <div class="card-body">
+      <div class="name">Gold Foil Texture</div>
+      <div class="desc">Multi-angle gold gradient wash + fractal noise grain. Gives a metallic foil appearance. Textured, rich.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <h3>✦ MY RECOMMENDATION</h3>
+  <p><strong style="color:#F2F0EB">#3 Art Deco Border Trim</strong> — Most aligned with NoirLuxe's "gold used surgically" principle. Gold only at the edges, not as a fill. Dark header stays elegant, gold trim frames the content.</p>
+  <p style="margin-top:6px;"><strong style="color:#F2F0EB">#4 Gold Dust</strong> — Close second. Adds texture without covering the header in gold. The scattered specks feel premium without being overwhelming.</p>
+  <p style="margin-top:6px; color:#666;">All patterns are implemented as CSS/CustomPaint overlays — no images needed. Zero performance cost.</p>
+</div>

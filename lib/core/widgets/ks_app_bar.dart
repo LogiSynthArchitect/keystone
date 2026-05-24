@@ -40,9 +40,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
         IconButton(
           icon: Icon(
             isSearchOpen ? LineAwesomeIcons.times_solid : LineAwesomeIcons.search_solid,
-            color: goldStyle
-                ? context.ksc.primary900
-                : (isSearchOpen ? context.ksc.accent500 : context.ksc.neutral500),
+            color: isSearchOpen ? context.ksc.accent500 : context.ksc.neutral500,
             size: 20,
           ),
           onPressed: onSearchToggle,
@@ -50,8 +48,11 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ...?actions,
     ];
 
-    final bgColor = goldStyle ? context.ksc.accent500 : context.ksc.primary900;
-    final fgColor = goldStyle ? context.ksc.primary900 : context.ksc.white;
+    final theme = context.ksc;
+
+    // goldStyle: dark bg, light text, gold border trim (top + bottom)
+    final bgColor = goldStyle ? theme.primary900 : theme.primary900;
+    final fgColor = goldStyle ? theme.white : theme.white;
 
     return AppBar(
       backgroundColor: bgColor,
@@ -59,6 +60,16 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0.5,
       centerTitle: false,
+      flexibleSpace: goldStyle
+          ? Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: theme.accent500, width: 3),
+                  bottom: BorderSide(color: theme.accent500.withValues(alpha: 0.3), width: 1),
+                ),
+              ),
+            )
+          : null,
       title: titleWidget ?? Text(
         title,
         style: AppTextStyles.h3.copyWith(

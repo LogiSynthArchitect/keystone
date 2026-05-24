@@ -1,4 +1,7 @@
 import '../../domain/entities/job_template_entity.dart';
+import '../../domain/entities/template_service_item.dart';
+import '../../domain/entities/template_hardware_item.dart';
+import '../../domain/entities/template_part_item.dart';
 
 class JobTemplateModel {
   final String id;
@@ -25,18 +28,19 @@ class JobTemplateModel {
     required this.updatedAt,
   });
 
-  factory JobTemplateModel.fromJson(Map<String, dynamic> json) => JobTemplateModel(
-    id: json['id'] as String,
-    userId: json['user_id'] as String,
-    name: json['name'] as String,
-    serviceType: json['service_type'] as String,
-    notes: json['notes'] as String?,
-    services: json['services_json'] as List<dynamic>? ?? [],
-    hardwareItems: json['hardware_json'] as List<dynamic>? ?? [],
-    parts: json['parts_json'] as List<dynamic>? ?? [],
-    createdAt: json['created_at'] as String,
-    updatedAt: json['updated_at'] as String,
-  );
+  factory JobTemplateModel.fromJson(Map<String, dynamic> json) =>
+      JobTemplateModel(
+        id: json['id'] as String,
+        userId: json['user_id'] as String,
+        name: json['name'] as String,
+        serviceType: json['service_type'] as String,
+        notes: json['notes'] as String?,
+        services: json['services_json'] as List<dynamic>? ?? [],
+        hardwareItems: json['hardware_json'] as List<dynamic>? ?? [],
+        parts: json['parts_json'] as List<dynamic>? ?? [],
+        createdAt: json['created_at'] as String,
+        updatedAt: json['updated_at'] as String,
+      );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -57,23 +61,30 @@ class JobTemplateModel {
     name: name,
     serviceType: serviceType,
     notes: notes,
-    services: services.cast<Map<String, dynamic>>(),
-    hardwareItems: hardwareItems.cast<Map<String, dynamic>>(),
-    parts: parts.cast<Map<String, dynamic>>(),
+    services: services
+        .map((e) => TemplateServiceItem.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    hardwareItems: hardwareItems
+        .map((e) => TemplateHardwareItem.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    parts: parts
+        .map((e) => TemplatePartItem.fromJson(e as Map<String, dynamic>))
+        .toList(),
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
   );
 
-  factory JobTemplateModel.fromEntity(JobTemplateEntity entity) => JobTemplateModel(
-    id: entity.id,
-    userId: entity.userId,
-    name: entity.name,
-    serviceType: entity.serviceType,
-    notes: entity.notes,
-    services: entity.services,
-    hardwareItems: entity.hardwareItems,
-    parts: entity.parts,
-    createdAt: entity.createdAt.toIso8601String(),
-    updatedAt: entity.updatedAt.toIso8601String(),
-  );
+  factory JobTemplateModel.fromEntity(JobTemplateEntity entity) =>
+      JobTemplateModel(
+        id: entity.id,
+        userId: entity.userId,
+        name: entity.name,
+        serviceType: entity.serviceType,
+        notes: entity.notes,
+        services: entity.services.map((e) => e.toJson()).toList(),
+        hardwareItems: entity.hardwareItems.map((e) => e.toJson()).toList(),
+        parts: entity.parts.map((e) => e.toJson()).toList(),
+        createdAt: entity.createdAt.toIso8601String(),
+        updatedAt: entity.updatedAt.toIso8601String(),
+      );
 }

@@ -1,0 +1,173 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; display: flex; justify-content: center; padding: 40px 16px; }
+  .option-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px; background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+
+  .phone { width: 380px; background: #0C0C0E; border: 1px solid #2a2a2a; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+
+  /* Mock pricing page */
+  .app-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #1a1a1a; }
+  .app-bar .title { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: #F2F0EB; }
+  .app-bar .icons { display: flex; gap: 16px; }
+  .app-bar .icons span { font-size: 18px; cursor: pointer; }
+  .app-bar .filter-active { color: #C9A84C; }
+
+  .list-area { padding: 12px 16px; }
+  .cat-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; margin-top: 8px; }
+  .cat-header .name { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #C9A84C; }
+  .cat-header .count { font-size: 11px; color: #555; font-weight: 700; }
+
+  .service-row { display: flex; align-items: center; padding: 10px 4px; border-bottom: 1px solid #1a1a1a; }
+  .service-icon { width: 32px; height: 32px; background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 10px; }
+  .service-name { flex: 1; font-size: 13px; font-weight: 500; color: #F2F0EB; }
+  .service-price { font-size: 13px; font-weight: 600; color: #C9A84C; }
+
+  /* ============= FILTER DRAWER OVERLAY ============= */
+  .drawer-overlay { position: absolute; inset: 0; background: rgba(12,12,14,0.4); display: flex; align-items: flex-end; z-index: 10; }
+  .drawer { width: 100%; background: #161618; border-radius: 16px 16px 0 0; padding: 12px 20px 24px; animation: slideUp 0.3s ease; }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .drawer-handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 16px; }
+
+  .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .drawer-header .title { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: #C9A84C; }
+  .drawer-header .close { color: #555; font-size: 18px; cursor: pointer; padding: 4px; }
+
+  /* Category rows */
+  .filter-row { display: flex; align-items: center; padding: 12px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; transition: all 0.15s; }
+  .filter-row:hover { background: rgba(255,255,255,0.02); }
+  .filter-row.selected { background: rgba(201,168,76,0.08); border-left: 3px solid #C9A84C; margin-left: -3px; }
+  .filter-row .icon { font-size: 16px; width: 28px; text-align: center; flex-shrink: 0; }
+  .filter-row .name { flex: 1; font-size: 13px; font-weight: 400; color: #F2F0EB; margin-left: 12px; }
+  .filter-row.selected .name { color: #C9A84C; font-weight: 600; }
+  .filter-row .count-badge { font-size: 11px; color: #555; font-weight: 500; background: #0C0C0E; padding: 2px 8px; border-radius: 4px; }
+  .filter-row.selected .count-badge { background: rgba(201,168,76,0.12); color: #C9A84C; }
+  .filter-row .check { color: #C9A84C; font-size: 14px; margin-left: 8px; opacity: 0; }
+  .filter-row.selected .check { opacity: 1; }
+
+  .divider { height: 1px; background: #1a1a1a; margin: 8px 0; }
+
+  .drawer-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .drawer-actions .btn { flex: 1; padding: 12px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; border: none; font-family: 'Inter', sans-serif; letter-spacing: 0.5px; }
+  .btn-cancel { background: transparent; border: 1px solid #2a2a2a; color: #888; }
+  .btn-apply { background: #C9A84C; color: #0C0C0E; flex: 2; }
+  .btn-apply .count { font-weight: 400; opacity: 0.8; }
+</style>
+
+<div style="position:relative">
+
+  <div class="option-badge">FILTER DRAWER — REDESIGN SUGGESTION</div>
+
+  <div class="phone" style="position:relative; min-height: 620px;">
+
+    <!-- Mock app bar -->
+    <div class="app-bar">
+      <span class="title">SERVICE PRICING</span>
+      <div class="icons">
+        <span>🔍</span>
+        <span class="filter-active">⚙️</span>
+      </div>
+    </div>
+
+    <!-- Mock list content -->
+    <div class="list-area">
+      <div class="cat-header">
+        <span class="name">Residential</span>
+        <span class="count">14</span>
+      </div>
+      <div class="service-row">
+        <div class="service-icon">🔐</div>
+        <span class="service-name">Smart Lock Install</span>
+        <span class="service-price">GHS 250</span>
+      </div>
+      <div class="service-row">
+        <div class="service-icon">🔧</div>
+        <span class="service-name">Lock Installation</span>
+        <span class="service-price">GHS 150</span>
+      </div>
+
+      <div class="cat-header">
+        <span class="name">Automotive</span>
+        <span class="count">8</span>
+      </div>
+      <div class="service-row">
+        <div class="service-icon">🚗</div>
+        <span class="service-name">Car Key Replacement</span>
+        <span class="service-price">GHS 250</span>
+      </div>
+    </div>
+
+    <!-- Filter drawer overlay -->
+    <div class="drawer-overlay">
+      <div class="drawer">
+        <div class="drawer-handle"></div>
+
+        <div class="drawer-header">
+          <span class="title">Filter by Category</span>
+          <span class="close">✕</span>
+        </div>
+
+        <!-- Category rows — list layout instead of chips -->
+        <div class="filter-row selected">
+          <span class="icon">📍</span>
+          <span class="name">All Services</span>
+          <span class="count-badge">36</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="filter-row">
+          <span class="icon">🏠</span>
+          <span class="name">Residential</span>
+          <span class="count-badge">14</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="filter-row">
+          <span class="icon">🚗</span>
+          <span class="name">Automotive</span>
+          <span class="count-badge">8</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="filter-row">
+          <span class="icon">🏢</span>
+          <span class="name">Commercial</span>
+          <span class="count-badge">6</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="filter-row">
+          <span class="icon">📡</span>
+          <span class="name">Security Systems</span>
+          <span class="count-badge">5</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="filter-row">
+          <span class="icon">⚡</span>
+          <span class="name">Specialty</span>
+          <span class="count-badge">3</span>
+          <span class="check">✓</span>
+        </div>
+
+        <div class="drawer-actions">
+          <button class="btn btn-cancel">CANCEL</button>
+          <button class="btn btn-apply">APPLY <span class="count">(36)</span></button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 20px; max-width: 380px; background: #161618; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px;">
+    <div style="font-size: 11px; color: #C9A84C; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px;">CHANGES FROM CURRENT</div>
+    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+      <tr><td style="padding:4px 8px; color:#888">Chips → Rows</td><td style="padding:4px 8px; color:#ccc">Wrap of chips → list with icon + name + count, easier to scan</td></tr>
+      <tr><td style="padding:4px 8px; color:#888">Selection</td><td style="padding:4px 8px; color:#ccc">Gold left border + gold name + checkmark ✓</td></tr>
+      <tr><td style="padding:4px 8px; color:#888">Counts</td><td style="padding:4px 8px; color:#ccc">Right-aligned badge on each row</td></tr>
+      <tr><td style="padding:4px 8px; color:#888">Apply button</td><td style="padding:4px 8px; color:#ccc">Shows count <span style="color:#888">"(36)"</span> — user sees scope</td></tr>
+      <tr><td style="padding:4px 8px; color:#888">Close ✕</td><td style="padding:4px 8px; color:#ccc">Clearer intent than "CLEAR ALL" text button</td></tr>
+      <tr><td style="padding:4px 8px; color:#888">Icons</td><td style="padding:4px 8px; color:#ccc">Category emoji per row — visual scannability</td></tr>
+    </table>
+  </div>
+</div>

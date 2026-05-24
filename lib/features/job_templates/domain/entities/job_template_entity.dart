@@ -1,12 +1,16 @@
+import 'template_service_item.dart';
+import 'template_hardware_item.dart';
+import 'template_part_item.dart';
+
 class JobTemplateEntity {
   final String id;
   final String userId;
   final String name;
   final String serviceType;
   final String? notes;
-  final List<Map<String, dynamic>> services;
-  final List<Map<String, dynamic>> hardwareItems;
-  final List<Map<String, dynamic>> parts;
+  final List<TemplateServiceItem> services;
+  final List<TemplateHardwareItem> hardwareItems;
+  final List<TemplatePartItem> parts;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,9 +33,9 @@ class JobTemplateEntity {
     String? name,
     String? serviceType,
     String? notes,
-    List<Map<String, dynamic>>? services,
-    List<Map<String, dynamic>>? hardwareItems,
-    List<Map<String, dynamic>>? parts,
+    List<TemplateServiceItem>? services,
+    List<TemplateHardwareItem>? hardwareItems,
+    List<TemplatePartItem>? parts,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

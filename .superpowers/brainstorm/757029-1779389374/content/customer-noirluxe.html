@@ -1,0 +1,373 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 16px; }
+  .gold { color: #C9A84C; }
+  .muted { color: #888; font-weight: 300; }
+  h2 { font-family: 'Dancing Script', cursive; font-size: 28px; color: #F2F0EB; margin-bottom: 4px; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 20px; font-weight: 300; }
+  .screen { max-width: 400px; margin: 0 auto; }
+
+  /* Search bar — same as pricing */
+  .search-bar { display: flex; align-items: center; background: #060607; border: 1px solid #333; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; }
+  .search-bar:focus-within { border-color: #C9A84C; box-shadow: 0 0 6px rgba(201,168,76,0.15); }
+  .search-bar input { background: none; border: none; color: #F2F0EB; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 300; width: 100%; outline: none; }
+  .search-bar input::placeholder { color: #666; }
+  .search-icon { color: #555; margin-right: 10px; font-size: 14px; }
+
+  /* Filter chips */
+  .filter-row { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .chip { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; }
+  .chip-active { background: rgba(201,168,76,0.15); border: 1px solid #C9A84C; color: #C9A84C; }
+  .chip-inactive { background: #161618; border: 1px solid #2a2a2a; color: #888; }
+  .chip-inactive:hover { border-color: #555; }
+
+  /* Customer card */
+  .customer-card { display: flex; align-items: center; padding: 14px 12px; border-radius: 8px; background: #161618; border: 1px solid #2a2a2a; cursor: pointer; transition: all 0.15s; margin-bottom: 10px; }
+  .customer-card:hover { border-color: #444; background: #1a1a1e; }
+  .customer-card.premium { border-left: 3px solid #C9A84C; }
+  .customer-card.premium .customer-name { color: #C9A84C; }
+
+  .avatar { width: 44px; height: 44px; border-radius: 50%; background: #1f1f23; border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #C9A84C; flex-shrink: 0; }
+  .customer-card.premium .avatar { border-color: rgba(201,168,76,0.3); }
+
+  .customer-info { flex: 1; margin-left: 14px; min-width: 0; }
+  .customer-name { font-size: 14px; font-weight: 400; color: #F2F0EB; margin-bottom: 2px; }
+  .customer-meta { font-size: 12px; color: #666; font-weight: 300; }
+  .customer-meta span { margin-right: 12px; }
+  .customer-meta .tag { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+  .tag-residential { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.2); }
+  .tag-commercial { background: rgba(74,222,128,0.12); color: #4ADE80; border: 1px solid rgba(74,222,128,0.2); }
+
+  .customer-chevron { color: #444; font-size: 16px; margin-left: 8px; }
+
+  /* Add FAB */
+  .fab { width: 48px; height: 48px; border-radius: 8px; background: #C9A84C; color: #0C0C0E; border: none; font-size: 24px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 24px; right: 24px; box-shadow: 0 4px 16px rgba(201,168,76,0.25); transition: all 0.15s; }
+  .fab:hover { background: #d4b35a; box-shadow: 0 4px 20px rgba(201,168,76,0.35); }
+
+  /* Section divider */
+  .section-header { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 8px; margin-top: 8px; }
+  .section-header .name { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #C9A84C; }
+  .section-header .count { font-size: 11px; color: #555; font-weight: 400; }
+
+  /* Drawer styles */
+  .drawer-overlay { max-width: 400px; margin: 24px auto 0; border-top: 1px solid #1a1a1a; padding-top: 24px; }
+  .drawer-handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 20px; }
+  .drawer-header { display: flex; align-items: center; margin-bottom: 20px; }
+  .drawer-avatar { width: 56px; height: 56px; border-radius: 50%; background: #1f1f23; border: 2px solid rgba(201,168,76,0.3); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; color: #C9A84C; flex-shrink: 0; }
+  .drawer-header-info { margin-left: 16px; }
+  .drawer-name { font-size: 18px; font-weight: 500; color: #F2F0EB; }
+  .drawer-phone { font-size: 13px; color: #888; font-weight: 300; margin-top: 2px; }
+  .drawer-email { font-size: 12px; color: #666; font-weight: 300; }
+
+  /* Quick action buttons */
+  .action-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  .action-btn { flex: 1; padding: 10px; border-radius: 6px; background: #161618; border: 1px solid #2a2a2a; color: #F2F0EB; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .action-btn:hover { border-color: #C9A84C; color: #C9A84C; }
+  .action-btn .icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .stat-box { background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; padding: 12px; text-align: center; }
+  .stat-value { font-size: 18px; font-weight: 600; color: #C9A84C; }
+  .stat-label { font-size: 10px; color: #666; font-weight: 400; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Recent jobs list inside drawer */
+  .job-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+  .job-row:last-child { border-bottom: none; }
+  .job-icon { width: 32px; height: 32px; border-radius: 6px; background: #1f1f23; border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 12px; flex-shrink: 0; }
+  .job-info { flex: 1; }
+  .job-type { font-size: 13px; font-weight: 400; color: #F2F0EB; }
+  .job-date { font-size: 11px; color: #666; font-weight: 300; margin-top: 1px; }
+  .job-amount { font-size: 13px; font-weight: 600; color: #C9A84C; margin-right: 8px; }
+  .job-status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+  .status-completed { background: rgba(201,168,76,0.12); color: #C9A84C; border: 1px solid rgba(201,168,76,0.2); }
+  .status-invoiced { background: rgba(74,222,128,0.12); color: #4ADE80; border: 1px solid rgba(74,222,128,0.2); }
+  .status-active { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.2); }
+
+  /* Notes section */
+  .notes-area { margin-top: 16px; }
+  .notes-area h4 { font-family: 'Dancing Script', cursive; font-size: 18px; color: #F2F0EB; margin-bottom: 8px; }
+  .note-item { background: #161618; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; font-size: 12px; color: #ccc; font-weight: 300; line-height: 1.5; }
+  .note-item .date { font-size: 10px; color: #555; display: block; margin-top: 4px; }
+
+  /* Options badge */
+  .option-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px; }
+  .badge-a { background: rgba(201,168,76,0.15); color: #C9A84C; border: 1px solid rgba(201,168,76,0.3); }
+
+  /* Loading skeleton */
+  .skeleton { background: #161618; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; display: flex; align-items: center; margin-bottom: 10px; }
+  .skeleton-avatar { width: 44px; height: 44px; border-radius: 50%; background: #1f1f23; flex-shrink: 0; margin-right: 14px; }
+  .skeleton-lines { flex: 1; }
+  .skeleton-line { height: 10px; background: #1f1f23; border-radius: 4px; margin-bottom: 6px; }
+  .skeleton-line:last-child { width: 60%; margin-bottom: 0; }
+</style>
+
+<div class="screen">
+  <!-- ============================================ -->
+  <!-- SECTION 1 — CUSTOMER LIST                     -->
+  <!-- ============================================ -->
+  <div class="option-badge badge-a">CUSTOMER LIST — Compact</div>
+  <h2>Customers</h2>
+  <p class="subtitle">24 total &bull; 3 repeat &bull; 2 follow-ups</p>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Search customers..." value="">
+  </div>
+
+  <!-- Filter chips -->
+  <div class="filter-row">
+    <div class="chip chip-active">All</div>
+    <div class="chip chip-inactive">Recent</div>
+    <div class="chip chip-inactive">Repeat</div>
+    <div class="chip chip-inactive">🏢 Commercial</div>
+  </div>
+
+  <!-- Section: Repeat Customers -->
+  <div class="section-header">
+    <span class="name">Repeat Customers</span>
+    <span class="count">3</span>
+  </div>
+
+  <div class="customer-card premium">
+    <div class="avatar">KM</div>
+    <div class="customer-info">
+      <div class="customer-name">Kwame Mensah</div>
+      <div class="customer-meta">
+        <span>024 123 4567</span>
+        <span class="tag tag-residential">Residential</span>
+      </div>
+      <div class="customer-meta" style="margin-top: 4px; font-size: 11px;">
+        4 jobs &bull; Last: 3d ago &bull; Spent: GHS 1,850
+      </div>
+    </div>
+    <span class="customer-chevron">›</span>
+  </div>
+
+  <div class="customer-card premium">
+    <div class="avatar">EA</div>
+    <div class="customer-info">
+      <div class="customer-name">Esi Amoako</div>
+      <div class="customer-meta">
+        <span>024 987 6543</span>
+        <span class="tag tag-residential">Residential</span>
+      </div>
+      <div class="customer-meta" style="margin-top: 4px; font-size: 11px;">
+        3 jobs &bull; Last: 1w ago &bull; Spent: GHS 2,300
+      </div>
+    </div>
+    <span class="customer-chevron">›</span>
+  </div>
+
+  <!-- Section: All Customers -->
+  <div class="section-header" style="margin-top: 16px;">
+    <span class="name">All Customers</span>
+    <span class="count">21</span>
+  </div>
+
+  <div class="customer-card">
+    <div class="avatar">NA</div>
+    <div class="customer-info">
+      <div class="customer-name">Nana Asante</div>
+      <div class="customer-meta">
+        <span>027 555 1212</span>
+        <span class="tag tag-commercial">Commercial</span>
+      </div>
+      <div class="customer-meta" style="margin-top: 4px; font-size: 11px;">
+        1 job &bull; Last: 2w ago
+      </div>
+    </div>
+    <span class="customer-chevron">›</span>
+  </div>
+
+  <div class="customer-card">
+    <div class="avatar">AO</div>
+    <div class="customer-info">
+      <div class="customer-name">Adjoa Ofori</div>
+      <div class="customer-meta">
+        <span>020 333 4444</span>
+        <span class="tag tag-residential">Residential</span>
+      </div>
+      <div class="customer-meta" style="margin-top: 4px; font-size: 11px;">
+        2 jobs &bull; Last: 3w ago
+      </div>
+    </div>
+    <span class="customer-chevron">›</span>
+  </div>
+
+  <div class="customer-card">
+    <div class="avatar">YN</div>
+    <div class="customer-info">
+      <div class="customer-name">Yaw Nyame</div>
+      <div class="customer-meta">
+        <span>054 777 8888</span>
+        <span class="tag tag-commercial">Commercial</span>
+      </div>
+      <div class="customer-meta" style="margin-top: 4px; font-size: 11px;">
+        1 job &bull; Last: 1mo ago
+      </div>
+    </div>
+    <span class="customer-chevron">›</span>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab">+</button>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 2 — CUSTOMER DETAIL DRAWER            -->
+<!-- ============================================ -->
+<div class="drawer-overlay">
+  <div class="option-badge badge-a">CUSTOMER DETAIL — Bottom Sheet Drawer</div>
+
+  <div class="drawer-handle"></div>
+
+  <!-- Drawer header with avatar -->
+  <div class="drawer-header">
+    <div class="drawer-avatar">KM</div>
+    <div class="drawer-header-info">
+      <div class="drawer-name">Kwame Mensah</div>
+      <div class="drawer-phone">024 123 4567</div>
+      <div class="drawer-email">kwame.mensah@email.com</div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="action-row">
+    <button class="action-btn"><span class="icon">📞</span>Call</button>
+    <button class="action-btn"><span class="icon">💬</span>WhatsApp</button>
+    <button class="action-btn"><span class="icon">✏️</span>Edit</button>
+    <button class="action-btn"><span class="icon">📋</span>New Job</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-value">4</div>
+      <div class="stat-label">Jobs</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">3d</div>
+      <div class="stat-label">Last Active</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">GH₵1.8k</div>
+      <div class="stat-label">Total Spent</div>
+    </div>
+  </div>
+
+  <!-- Property info -->
+  <div style="font-size: 11px; color: #666; font-weight: 300; margin-bottom: 12px;">
+    🏠 Residential &bull; 📍 Accra, Cantonments &bull; 🔑 Key code: KC-042
+  </div>
+
+  <!-- Recent Jobs -->
+  <div class="section-header">
+    <span class="name">Recent Jobs</span>
+    <span class="count">View all ›</span>
+  </div>
+
+  <div class="job-row">
+    <div class="job-icon">🔐</div>
+    <div class="job-info">
+      <div class="job-type">Smart Lock Installation</div>
+      <div class="job-date">18 May 2026</div>
+    </div>
+    <span class="job-amount">GHS 450</span>
+    <span class="job-status status-completed">Completed</span>
+  </div>
+
+  <div class="job-row">
+    <div class="job-icon">🔑</div>
+    <div class="job-info">
+      <div class="job-type">Key Duplication (3x)</div>
+      <div class="job-date">12 May 2026</div>
+    </div>
+    <span class="job-amount">GHS 45</span>
+    <span class="job-status status-invoiced">Invoiced</span>
+  </div>
+
+  <div class="job-row">
+    <div class="job-icon">🔧</div>
+    <div class="job-info">
+      <div class="job-type">Door Lock Repair</div>
+      <div class="job-date">28 Apr 2026</div>
+    </div>
+    <span class="job-amount">GHS 120</span>
+    <span class="job-status status-completed">Completed</span>
+  </div>
+
+  <div class="job-row">
+    <div class="job-icon">🚗</div>
+    <div class="job-info">
+      <div class="job-type">Car Key Replacement</div>
+      <div class="job-date">15 Mar 2026</div>
+    </div>
+    <span class="job-amount">GHS 350</span>
+    <span class="job-status status-invoiced">Invoiced</span>
+  </div>
+
+  <!-- Notes -->
+  <div class="notes-area">
+    <div class="section-header">
+      <span class="name">Notes</span>
+      <span class="count">+ Add note</span>
+    </div>
+    <div class="note-item">
+      Prefers morning appointments. Has a guard dog — call before arrival.
+      <span class="date">12 May 2026</span>
+    </div>
+    <div class="note-item">
+      Referred by Esi Amoako. Discounted first service by 10%.
+      <span class="date">28 Apr 2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 3 — LOADING SKELETON                  -->
+<!-- ============================================ -->
+<div class="drawer-overlay">
+  <div class="option-badge badge-a">LOADING SKELETON</div>
+
+  <div class="skeleton">
+    <div class="skeleton-avatar"></div>
+    <div class="skeleton-lines">
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+    </div>
+  </div>
+  <div class="skeleton">
+    <div class="skeleton-avatar"></div>
+    <div class="skeleton-lines">
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+    </div>
+  </div>
+  <div class="skeleton">
+    <div class="skeleton-avatar"></div>
+    <div class="skeleton-lines">
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 4 — EMPTY STATE                       -->
+<!-- ============================================ -->
+<div class="drawer-overlay">
+  <div class="option-badge badge-a">EMPTY STATE</div>
+
+  <div style="text-align: center; padding: 48px 24px;">
+    <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.4;">👥</div>
+    <div style="font-size: 16px; font-weight: 400; color: #F2F0EB; margin-bottom: 8px;">No Customers Yet</div>
+    <div style="font-size: 12px; color: #666; font-weight: 300; line-height: 1.6; margin-bottom: 24px;">
+      Add your first customer to get started.<br>
+      Tap the gold + button below.
+    </div>
+    <div style="display: inline-block; padding: 10px 24px; background: #C9A84C; color: #0C0C0E; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">+ ADD CUSTOMER</div>
+  </div>
+</div>
