@@ -18,6 +18,7 @@ import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../features/service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../../../../core/services/cloudinary_service.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
@@ -47,13 +48,6 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   int _recordingDuration = 0;
   Timer? _recordingTimer;
   bool _isUploading = false;
-
-  static const _serviceTypes = [
-    'car_lock_programming',
-    'door_lock_installation',
-    'door_lock_repair',
-    'smart_lock_installation',
-  ];
 
   @override
   void dispose() {
@@ -192,31 +186,53 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
                     const SizedBox(height: 32),
                     Text("SERVICE CATEGORY (OPTIONAL)", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
                     const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _serviceTypes.map((type) {
-                        final label = type.replaceAll('_', ' ').toUpperCase();
-                        final isSelected = _serviceType == type;
-                        return GestureDetector(
-                          onTap: () => setState(() => _serviceType = isSelected ? null : type),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
-                            ),
-                            child: Text(
-                              label,
-                              style: AppTextStyles.caption.copyWith(
-                                color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
-                                fontWeight: FontWeight.w700,
+                    if (_serviceType != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: context.ksc.primary800,
+                          border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _serviceType!.replaceAll('_', ' ').toUpperCase(),
+                                style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w700),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                            GestureDetector(
+                              onTap: () => setState(() => _serviceType = null),
+                              child: Icon(LineAwesomeIcons.times_circle_solid, size: 20, color: context.ksc.error500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    GestureDetector(
+                      onTap: () => _showCategoryPicker(),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: context.ksc.primary800,
+                          border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(LineAwesomeIcons.folder_open_solid, size: 16, color: context.ksc.neutral500),
+                            const SizedBox(width: 12),
+                            Text(
+                              _serviceType == null ? "Select a service category..." : "Change category",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: _serviceType == null ? context.ksc.neutral500 : context.ksc.neutral400,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(LineAwesomeIcons.chevron_right_solid, size: 14, color: context.ksc.neutral500),
+                          ],
+                        ),
+                      ),
                     ),
                     // PHOTO SECTION
                     Text("PHOTO", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
@@ -486,6 +502,57 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showCategoryPicker() async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: context.ksc.neutral600,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Text("SELECT CATEGORY",
+                    style: AppTextStyles.h2.copyWith(
+                        color: context.ksc.white,
+                        fontWeight: FontWeight.w900)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(LineAwesomeIcons.times_solid,
+                      color: context.ksc.neutral500, size: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Flexible(
+              child: ServiceTypePickerV2(
+                selected: _serviceType,
+                onSelected: (type) => Navigator.pop(context, type),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() => _serviceType = result);
+    }
   }
 
   Future<void> _startRecording() async {
