@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keystone/core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/data/models/job_audit_entry_model.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_audit_entry_entity.dart';
-import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:keystone/features/job_logging/data/models/job_model.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 
 class TimelineEvent {
@@ -61,9 +61,7 @@ class TimelineState {
 }
 
 class TimelineNotifier extends StateNotifier<TimelineState> {
-  final Ref _ref;
-
-  TimelineNotifier(this._ref) : super(const TimelineState()) {
+  TimelineNotifier() : super(const TimelineState()) {
     load();
   }
 
@@ -84,7 +82,8 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
 
       // Build job lookup for descriptions
       final jobMap = <String, JobEntity>{
-        for (final j in _ref.read(jobListProvider).allJobs) j.id: j,
+        for (final j in HiveService.jobs.values)
+          j.id: JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity()
       };
 
       // Convert audit entries to timeline events, take most recent 50
@@ -164,4 +163,4 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
 }
 
 final timelineProvider = StateNotifierProvider.autoDispose<TimelineNotifier, TimelineState>(
-  (ref) => TimelineNotifier(ref));
+  (_) => TimelineNotifier());
