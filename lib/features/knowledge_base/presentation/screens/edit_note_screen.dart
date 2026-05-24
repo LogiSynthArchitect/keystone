@@ -540,10 +540,15 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Flexible(
-              child: ServiceTypePickerV2(
-                selected: _serviceType,
-                onSelected: (type) => Navigator.pop(context, type),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
+              ),
+              child: SingleChildScrollView(
+                child: ServiceTypePickerV2(
+                  selected: _serviceType,
+                  onSelected: (type) => Navigator.pop(context, type),
+                ),
               ),
             ),
           ],
