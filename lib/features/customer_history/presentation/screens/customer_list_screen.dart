@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
@@ -16,7 +15,6 @@ import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
-import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../providers/customer_providers.dart';
@@ -236,11 +234,6 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                                   customer: customer,
                                   hasPendingFollowUp: pendingCustomerIds.contains(customer.id),
                                   onTap: () => context.push(RouteNames.customerDetail(customer.id)),
-                                  onCall: () => launchUrl(Uri.parse('tel:${customer.phoneNumber}')),
-                                  onWhatsApp: () => WhatsAppLauncher.openChat(
-                                    phoneNumber: customer.phoneNumber,
-                                    message: "Hello ${customer.fullName}, this is your locksmith.",
-                                  ),
                                 );
                               },
                             );
