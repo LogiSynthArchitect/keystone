@@ -4,31 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
-import '../../../../core/widgets/ks_step_indicator.dart';
+import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/utils/service_icon_map.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/utils/date_formatter.dart';
-import '../../../customer_history/presentation/providers/customer_providers.dart';
-import '../../../customer_history/domain/entities/customer_entity.dart';
 import '../providers/job_providers.dart';
 import '../../domain/entities/job_service_entity.dart';
 import '../../domain/entities/job_part_entity.dart';
 import '../../domain/entities/job_expense_entity.dart';
-import '../../../service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../../../service_types/domain/entities/service_type_entity.dart';
 import '../../../inventory/domain/entities/inventory_item_entity.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
@@ -39,120 +32,41 @@ import '../../../job_templates/domain/entities/template_hardware_item.dart';
 import '../../../job_templates/domain/entities/template_part_item.dart';
 import '../../../job_templates/presentation/providers/job_template_provider.dart';
 import '../../../job_templates/presentation/widgets/template_picker_sheet.dart';
-import '../../../../core/router/route_names.dart';
+import '../widgets/job_step_types.dart';
+import '../widgets/job_step_service.dart';
+import '../widgets/job_step_status.dart';
+import '../widgets/job_step_customer.dart';
+import '../widgets/job_step_pricing.dart';
+import '../widgets/job_step_schedule.dart';
+import '../widgets/job_step_extras.dart';
 
-class _ItemRow {
-  String? inventoryItemId;
-  InventoryItemEntity? inventoryItem;
-  final nameController = TextEditingController();
-  final qtyController = TextEditingController(text: '1');
+// Row types (ItemRow, ServiceRow, PartRow, HardwareRow, ExpenseRow)
+// are now imported from job_step_types.dart
 
-  bool get isFromInventory => inventoryItem != null;
-  String get displayName => isFromInventory ? inventoryItem!.name : nameController.text.trim();
-
-  void dispose() {
-    nameController.dispose();
-    qtyController.dispose();
-  }
-
-  _ItemRow copy() {
-    final i = _ItemRow();
-    i.inventoryItemId = inventoryItemId;
-    i.inventoryItem = inventoryItem;
-    i.nameController.text = nameController.text;
-    i.qtyController.text = qtyController.text;
-    return i;
-  }
-}
-
-class _PartRow {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController qtyController = TextEditingController();
-  String? inventoryItemId;
-
-  void dispose() {
-    nameController.dispose();
-    qtyController.dispose();
-  }
-
-  _PartRow copy() {
-    final p = _PartRow();
-    p.nameController.text = nameController.text;
-    p.qtyController.text = qtyController.text;
-    p.inventoryItemId = inventoryItemId;
-    return p;
+/// Static entry point — shows the Log Job drawer as a bottom sheet.
+class LogJobScreen {
+  static Future<void> show(BuildContext context, {String? preSelectedCustomerId}) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (ctx) => _LogJobSheet(preSelectedCustomerId: preSelectedCustomerId),
+    );
   }
 }
 
-class _ServiceRow {
-  String? serviceType;
-  final qtyController = TextEditingController(text: '1');
-  final priceController = TextEditingController();
-
-  void dispose() {
-    qtyController.dispose();
-    priceController.dispose();
-  }
-}
-
-class _ExpenseRow {
-  String category = 'transport';
-  final descriptionController = TextEditingController();
-  final amountController = TextEditingController();
-
-  void dispose() {
-    descriptionController.dispose();
-    amountController.dispose();
-  }
-
-  _ExpenseRow copy() {
-    final e = _ExpenseRow();
-    e.category = category;
-    e.descriptionController.text = descriptionController.text;
-    e.amountController.text = amountController.text;
-    return e;
-  }
-}
-
-class _HardwareRow {
-  String? domain;
-  String? category;
-  final nameController = TextEditingController();
-  final qtyController = TextEditingController(text: '1');
-  String? inventoryItemId;
-  InventoryItemEntity? inventoryItem;
-
-  bool get isFromInventory => inventoryItem != null;
-  String get displayName => isFromInventory ? inventoryItem!.name : nameController.text.trim();
-
-  void dispose() {
-    nameController.dispose();
-    qtyController.dispose();
-  }
-
-  _HardwareRow copy() {
-    final h = _HardwareRow();
-    h.domain = domain;
-    h.category = category;
-    h.inventoryItemId = inventoryItemId;
-    h.inventoryItem = inventoryItem;
-    h.nameController.text = nameController.text;
-    h.qtyController.text = qtyController.text;
-    return h;
-  }
-}
-
-class LogJobScreen extends ConsumerStatefulWidget {
+class _LogJobSheet extends ConsumerStatefulWidget {
   final String? preSelectedCustomerId;
-  const LogJobScreen({super.key, this.preSelectedCustomerId});
+  const _LogJobSheet({this.preSelectedCustomerId});
 
   @override
-  ConsumerState<LogJobScreen> createState() => _LogJobScreenState();
+  ConsumerState<_LogJobSheet> createState() => _LogJobSheetState();
 }
 
-class _LogJobScreenState extends ConsumerState<LogJobScreen> {
-  int _currentStep = 0;
-  final int _totalSteps = 6;
+class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
   String? _serviceType;
   String? _finalCustomerId;
@@ -177,11 +91,11 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   Timer? _phoneLookupDebounce;
   String? _lastLookupPhone;
 
-  final List<_ItemRow> _items = [];
-  final List<_PartRow> _parts = [];
-  final List<_ServiceRow> _additionalServices = [];
-  final List<_HardwareRow> _hardwareItems = [];
-  final List<_ExpenseRow> _expenses = [];
+  final List<ItemRow> _items = [];
+  final List<PartRow> _parts = [];
+  final List<ServiceRow> _additionalServices = [];
+  final List<HardwareRow> _hardwareItems = [];
+  final List<ExpenseRow> _expenses = [];
   int _partSuggestionIndex = -1;
   List<InventoryItemEntity> _partSuggestions = [];
   int _hwSuggestionIndex = -1;
@@ -254,9 +168,9 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                       _beforePhotos.isNotEmpty ||
                       _afterPhotos.isNotEmpty;
 
-  bool get _canMoveForward {
+  bool _canMoveForwardForStep(int step) {
     final hasCustomer = _finalCustomerId != null;
-    switch (_currentStep) {
+    switch (step) {
       case 0: return _serviceType != null;
       case 1: return true;
       case 2:
@@ -274,25 +188,6 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       case 4: return true;
       case 5: return true;
       default: return false;
-    }
-  }
-
-  void _nextStep() {
-    if (_currentStep < _totalSteps - 1) {
-      HapticFeedback.mediumImpact();
-      setState(() => _currentStep++);
-    } else {
-      _onSave();
-    }
-  }
-
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
-    } else {
-      _confirmDiscard().then((ok) {
-        if (ok && mounted) Navigator.of(context).pop();
-      });
     }
   }
 
@@ -370,7 +265,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       _notesController.text = template.notes ?? '';
 
       for (final s in template.services) {
-        final row = _ServiceRow();
+        final row = ServiceRow();
         row.serviceType = s.serviceType;
         row.qtyController.text = s.quantity.toString();
         if (s.unitPrice != null) {
@@ -380,7 +275,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       }
 
       for (final h in template.hardwareItems) {
-        final row = _ItemRow();
+        final row = ItemRow();
         row.nameController.text = h.name;
         row.qtyController.text = h.quantity.toString();
         if (h.inventoryItemId != null) {
@@ -390,7 +285,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       }
 
       for (final p in template.parts) {
-        final row = _ItemRow();
+        final row = ItemRow();
         row.nameController.text = p.name;
         row.qtyController.text = p.quantity.toString();
         if (p.inventoryItemId != null) {
@@ -703,7 +598,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
       }
 
       if (mounted) {
-        context.pop();
+        Navigator.of(context).pop();
         KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
       }
     } else {
@@ -717,70 +612,105 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(logJobProvider);
-    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _previousStep();
-      },
-      child: Scaffold(
-        backgroundColor: context.ksc.primary900,
-        appBar: KsAppBar(
-          title: "ADD NEW JOB",
-          showBack: true,
-          onBack: _previousStep,
-          actions: [
-            GestureDetector(
-              onTap: _pickTemplate,
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: context.ksc.accent500,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'TEMPLATES',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                    color: context.ksc.primary900,
+    return KsStepDrawer(
+      title: "ADD NEW JOB",
+      showBackArrow: true,
+      onBack: () => _confirmDiscard().then((ok) {
+        if (ok && mounted) Navigator.of(context).pop();
+      }),
+      steps: const [
+        KsStep(label: 'SERVICE', icon: LineAwesomeIcons.wrench_solid, subSteps: 1,
+          tip: 'Select the main service performed'),
+        KsStep(label: 'STATUS', icon: LineAwesomeIcons.flag_solid, subSteps: 1,
+          tip: 'Set the job status'),
+        KsStep(label: 'CUSTOMER', icon: LineAwesomeIcons.user_solid, subSteps: 1,
+          tip: 'Enter customer information'),
+        KsStep(label: 'PRICING', icon: LineAwesomeIcons.money_bill_wave_alt_solid, subSteps: 1,
+          tip: 'Set the quoted or final amount'),
+        KsStep(label: 'SCHEDULE', icon: LineAwesomeIcons.calendar_solid, subSteps: 1,
+          tip: 'Set the job date and schedule'),
+        KsStep(label: 'EXTRAS', icon: LineAwesomeIcons.boxes_solid, subSteps: 1,
+          tip: 'Add parts, expenses, photos, and notes'),
+      ],
+      nextLabel: "NEXT STEP",
+      saveLabel: "SAVE JOB RECORD",
+      canAdvance: (step, subStep) => _canMoveForwardForStep(step),
+      onSave: _onSave,
+      onClose: () => _confirmDiscard().then((ok) {
+        if (ok && mounted) Navigator.of(context).pop();
+      }),
+      stepContent: (step, subStep, rebuild) {
+        // Inject TEMPLATES button into step 1
+        if (step == 0) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStepByIndex(step),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _pickTemplate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: context.ksc.accent500,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'TEMPLATES',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                      color: context.ksc.primary900,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            const KsOfflineBanner(),
-            KsStepIndicator(
-              currentStep: _currentStep,
-              totalSteps: _totalSteps,
-              labels: ["SERVICE", "STATUS", "CUSTOMER", "PRICING", "SCHEDULE", "EXTRAS"],
-            ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: SingleChildScrollView(
-                  key: ValueKey<int>(_currentStep),
-                  padding: const EdgeInsets.all(24.0),
-                  child: _buildCurrentStep(),
+            ],
+          );
+        }
+        // Inject save-as-template button into step 6
+        if (step == 5) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStepByIndex(step),
+              const SizedBox(height: 16),
+              if (state.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+              InkWell(
+                onTap: _saveAsTemplate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'SAVE AS TEMPLATE',
+                    style: AppTextStyles.label.copyWith(
+                      color: context.ksc.accent500,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            if (!keyboardVisible) _buildBottomAction(state.isLoading),
-          ],
-        ),
-      ),
+            ],
+          );
+        }
+        return _buildStepByIndex(step);
+      },
     );
   }
 
-  Widget _buildCurrentStep() {
-    switch (_currentStep) {
+  Widget _buildStepByIndex(int step) {
+    switch (step) {
       case 0: return _buildStep1();
       case 1: return _buildStep2();
       case 2: return _buildStep3();
@@ -792,352 +722,36 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   Widget _buildStep1() {
-    final mainServiceSummary = _serviceType != null
-        ? _serviceType!.replaceAll('_', ' ').toUpperCase()
-        : null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("SERVICE PERFORMED", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("The main reason for this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        _buildExpandableSection(
-          collapsedSummary: mainServiceSummary,
-          expanded: _serviceExpanded,
-          onToggle: () => setState(() => _serviceExpanded = !_serviceExpanded),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: ServiceTypePickerV2(
-              selected: _serviceType,
-              onSelected: (t) => setState(() {
-                _serviceType = t;
-                _fromTemplateId = null;
-              }),
-            ),
-          ),
-        ),
-        const SizedBox(height: 48),
-        Text("ADDITIONAL SERVICES (OPTIONAL)", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Other services performed during this visit", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 16),
-        if (_additionalServices.isEmpty)
-          KsEmptyState(
-            icon: LineAwesomeIcons.tools_solid,
-            title: "NO ADDITIONAL SERVICES",
-            subtitle: "Tap the button below to add services performed during this visit",
-          )
-        else
-          ..._additionalServices.asMap().entries.map((entry) {
-            final svc = entry.value;
-            final qty = int.tryParse(svc.qtyController.text) ?? 1;
-            final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
-            final total = qty * unitPrice;
-            final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
-            final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: _showAdditionalServicesDrawer,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: context.ksc.primary800,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: context.ksc.primary700),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(ServiceIconMap.resolve(svcType?.iconName), size: 16, color: context.ksc.accent500),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          svc.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
-                          style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, fontSize: 10),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _showAdditionalServicesDrawer,
-            icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
-            label: Text("ADD SERVICE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExpandableSection({
-    required String? collapsedSummary,
-    required bool expanded,
-    required VoidCallback onToggle,
-    required Widget child,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(4),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: context.ksc.primary800,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: context.ksc.primary700),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    expanded ? LineAwesomeIcons.angle_down_solid : LineAwesomeIcons.angle_right_solid,
-                    size: 12,
-                    color: context.ksc.accent500,
-                  ),
-                  if (collapsedSummary != null) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(collapsedSummary.toUpperCase(),
-                        style: AppTextStyles.caption.copyWith(
-                          color: context.ksc.accent500,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 9,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          if (expanded) ...[
-            const SizedBox(height: 12),
-            child,
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusSelector() {
-    final options = [
-      ('quoted', 'QUOTED'),
-      ('in_progress', 'IN PROGRESS'),
-      ('completed', 'COMPLETED'),
-      ('invoiced', 'INVOICED'),
-    ];
-    return Wrap(
-      spacing: 8, runSpacing: 8,
-      children: options.map((opt) {
-        final isSelected = _status == opt.$1;
-        return GestureDetector(
-          onTap: () => setState(() => _status = opt.$1),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
-            ),
-            child: Text(opt.$2, style: AppTextStyles.caption.copyWith(color: isSelected ? context.ksc.accent500 : context.ksc.neutral400, fontWeight: FontWeight.w900)),
-          ),
-        );
-      }).toList(),
+    return JobStepService(
+      serviceType: _serviceType,
+      serviceExpanded: _serviceExpanded,
+      additionalServices: _additionalServices,
+      onServiceTypeChanged: (t) => setState(() {
+        _serviceType = t;
+        _fromTemplateId = null;
+      }),
+      onServiceExpandedToggled: () => setState(() => _serviceExpanded = !_serviceExpanded),
+      onOpenAdditionalServices: _showAdditionalServicesDrawer,
     );
   }
 
   Widget _buildStep2() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("JOB STATUS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Where is this job in the workflow?", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 24),
-        _buildStatusSelector(),
-        const SizedBox(height: 32),
-        Text("LEAD SOURCE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("How did the customer find you?", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 24),
-        _buildLeadSourceRow(),
-      ],
+    return JobStepStatus(
+      status: _status,
+      leadSource: _leadSource,
+      onStatusChanged: (v) => setState(() => _status = v),
+      onLeadSourceChanged: (v) => setState(() => _leadSource = v),
     );
   }
 
   Widget _buildStep3() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("CUSTOMER", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 32),
-        _buildCustomerField(
-          icon: LineAwesomeIcons.user_solid,
-          label: "Customer Name",
-          hint: "Kwame Mensah",
-          controller: _customerController,
-          readOnly: widget.preSelectedCustomerId != null,
-          maxLength: 100,
-        ),
-        if (widget.preSelectedCustomerId == null) ...[
-          const SizedBox(height: 16),
-          _buildCustomerField(
-            icon: LineAwesomeIcons.phone_alt_solid,
-            label: "Phone Number",
-            hint: "024 123 4567",
-            controller: _phoneController,
-            fieldHint: "Required for WhatsApp follow-ups.",
-            isNumeric: true,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-            onChanged: _onPhoneChanged,
-          ),
-          if (_matchedCustomerName != null && _matchedCustomerId != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.ksc.accent500.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: context.ksc.accent500),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("LINKED TO EXISTING CUSTOMER",
-                            style: AppTextStyles.caption.copyWith(
-                              color: context.ksc.accent500,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 10,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(_matchedCustomerName!.toUpperCase(),
-                            style: AppTextStyles.body.copyWith(
-                              color: context.ksc.white,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildCustomerField({
-    required IconData icon,
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    bool readOnly = false,
-    bool isNumeric = false,
-    String? fieldHint,
-    int? maxLength,
-    List<TextInputFormatter>? inputFormatters,
-    ValueChanged<String>? onChanged,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 14),
-          child: Icon(icon, size: 20, color: context.ksc.accent500),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label.toUpperCase(),
-                style: AppTextStyles.caption.copyWith(
-                  color: context.ksc.neutral500,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              if (fieldHint != null) ...[
-                const SizedBox(height: 2),
-                Text(fieldHint,
-                  style: AppTextStyles.caption.copyWith(
-                    color: context.ksc.accent500.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 10,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                readOnly: readOnly,
-                maxLength: maxLength,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                inputFormatters: inputFormatters,
-                onChanged: onChanged,
-                keyboardType: isNumeric ? TextInputType.phone : TextInputType.text,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: readOnly ? context.ksc.neutral500 : context.ksc.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: AppTextStyles.bodyLarge.copyWith(
-                    color: context.ksc.neutral600,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.only(bottom: 4),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
-                  ),
-                  border: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2A3A4A)),
-                  ),
-                  filled: false,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return JobStepCustomer(
+      customerController: _customerController,
+      phoneController: _phoneController,
+      matchedCustomerName: _matchedCustomerName,
+      matchedCustomerId: _matchedCustomerId,
+      preSelectedCustomerId: widget.preSelectedCustomerId != null,
+      onPhoneChanged: _onPhoneChanged,
     );
   }
 
@@ -1247,511 +861,61 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   Widget _buildStep4() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("PRICING", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("Set the money side of this job", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 32),
-        _buildPriceCard(
-          icon: LineAwesomeIcons.file_invoice_dollar_solid,
-          label: "Quoted Amount",
-          hint: "0.00",
-          controller: _quotedAmountController,
-          focusNode: _quotedFocusNode,
-        ),
-        const SizedBox(height: 16),
-        _buildPriceCard(
-          icon: LineAwesomeIcons.money_bill_wave_alt_solid,
-          label: "Final Amount",
-          hint: "0.00",
-          controller: _amountController,
-          focusNode: _amountFocusNode,
-        ),
-        const SizedBox(height: 32),
-        Text("PAYMENT STATUS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        _buildPaymentStatusRow(),
-      ],
-    );
-  }
-
-  Widget _buildPriceCard({
-    required IconData icon,
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    FocusNode? focusNode,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 14),
-          child: Icon(icon, size: 20, color: context.ksc.accent500),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(label.toUpperCase(),
-                    style: AppTextStyles.caption.copyWith(
-                      color: context.ksc.neutral500,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text("GHS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 12)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: controller,
-                focusNode: focusNode,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [CurrencyInputFormatter()],
-                style: AppTextStyles.h2.copyWith(
-                  color: context.ksc.white,
-                  fontWeight: FontWeight.w900,
-                ),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: AppTextStyles.h2.copyWith(
-                    color: context.ksc.neutral600,
-                    fontWeight: FontWeight.w900,
-                  ),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.only(bottom: 4),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
-                  ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
-                  ),
-                  border: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2A3A4A)),
-                  ),
-                  filled: false,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaymentStatusRow() {
-    final statusOpts = [('unpaid', 'UNPAID'), ('partial', 'PARTIAL'), ('paid', 'PAID')];
-    return Row(
-      children: statusOpts.map((opt) {
-        final isSel = _paymentStatus == opt.$1;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
-            onTap: () => setState(() => _paymentStatus = opt.$1),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSel ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: isSel ? context.ksc.accent500 : context.ksc.primary700),
-              ),
-              child: Text(opt.$2, style: AppTextStyles.caption.copyWith(color: isSel ? context.ksc.accent500 : context.ksc.neutral400, fontWeight: FontWeight.w900)),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildLeadSourceRow() {
-    final sources = <String, IconData>{
-      'referral': LineAwesomeIcons.user_plus_solid,
-      'walk_in': LineAwesomeIcons.user_solid,
-      'whatsapp': LineAwesomeIcons.comment_solid,
-      'repeat_customer': LineAwesomeIcons.history_solid,
-      'social_media': LineAwesomeIcons.share_alt_solid,
-      'phone_call': LineAwesomeIcons.phone_alt_solid,
-      'online_search': LineAwesomeIcons.search_solid,
-      'other': LineAwesomeIcons.ellipsis_h_solid,
-    };
-    return Wrap(
-      spacing: 8, runSpacing: 8,
-      children: sources.entries.map((e) {
-        final s = e.key;
-        final icon = e.value;
-        final isSel = _leadSource == s;
-        return GestureDetector(
-          onTap: () => setState(() => _leadSource = isSel ? null : s),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSel ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: isSel ? context.ksc.accent500 : context.ksc.primary700),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 12, color: isSel ? context.ksc.accent500 : context.ksc.neutral400),
-                const SizedBox(width: 6),
-                Text(s.replaceAll('_', ' ').toUpperCase(), style: AppTextStyles.caption.copyWith(
-                  color: isSel ? context.ksc.accent500 : context.ksc.neutral400,
-                  fontWeight: FontWeight.w900,
-                )),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildRecurringToggle() {
-    final intervals = [('weekly', 'WEEKLY'), ('monthly', 'MONTHLY'), ('quarterly', 'QUARTERLY')];
-    final nextDueStr = switch (_recurringInterval) {
-      'weekly' => DateFormatter.short(_jobDate.add(const Duration(days: 7))),
-      'monthly' => DateFormatter.short(_jobDate.add(const Duration(days: 30))),
-      'quarterly' => DateFormatter.short(_jobDate.add(const Duration(days: 90))),
-      _ => '',
-    };
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () => setState(() => _isRecurring = !_isRecurring),
-          child: Row(
-            children: [
-              Icon(
-                _isRecurring ? LineAwesomeIcons.calendar_check_solid : LineAwesomeIcons.calendar_solid,
-                color: _isRecurring ? context.ksc.accent500 : context.ksc.neutral500,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text("REPEAT THIS JOB", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
-                        const SizedBox(width: 6),
-                        Tooltip(
-                          message: "Auto-generate follow-up jobs on a schedule.\n"
-                              "Weekly = every 7 days\n"
-                              "Monthly = every 30 days\n"
-                              "Quarterly = every 90 days\n\n"
-                              "Works only after a customer is selected.",
-                          preferBelow: false,
-                          child: Icon(LineAwesomeIcons.question_circle_solid, size: 14, color: context.ksc.neutral500),
-                        ),
-                      ],
-                    ),
-                    Text(_isRecurring ? "Next: $nextDueStr" : "Set up weekly / monthly / quarterly", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-                  ],
-                ),
-              ),
-              Switch(
-                value: _isRecurring,
-                onChanged: (v) => setState(() => _isRecurring = v),
-                activeColor: context.ksc.accent500,
-              ),
-            ],
-          ),
-        ),
-        if (_isRecurring) ...[
-          const SizedBox(height: 16),
-          Row(
-            children: intervals.map((opt) {
-              final isSelected = _recurringInterval == opt.$1;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: () => setState(() => _recurringInterval = opt.$1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary700,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
-                    ),
-                    child: Text(opt.$2, style: AppTextStyles.caption.copyWith(
-                      color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
-                      fontWeight: FontWeight.w900,
-                    )),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildCustomerHistorySuggestions() {
-    final suggestions = ref.watch(customerHistorySuggestionsProvider(_finalCustomerId!));
-    return suggestions.when(
-      data: (data) {
-        if (data.hardwareBrands.isEmpty && data.partNames.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(LineAwesomeIcons.history_solid, size: 14, color: context.ksc.accent500),
-                  const SizedBox(width: 8),
-                  Text("FROM PAST JOBS", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (data.hardwareBrands.isNotEmpty) ...[
-                Text("BRANDS USED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6, runSpacing: 6,
-                  children: data.hardwareBrands.map((b) => GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (_items.isEmpty || _items.last.nameController.text.isNotEmpty) {
-                          _items.add(_ItemRow());
-                        }
-                        _items.last.nameController.text = b;
-                      });
-                    },
-                    child: Text(b.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, decoration: TextDecoration.underline)),
-                  )).toList(),
-                ),
-                const SizedBox(height: 10),
-              ],
-              if (data.partNames.isNotEmpty) ...[
-                Text("PARTS USED", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6, runSpacing: 6,
-                  children: data.partNames.map((p) => GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (_items.isEmpty || _items.last.nameController.text.isNotEmpty) {
-                          _items.add(_ItemRow());
-                        }
-                        _items.last.nameController.text = p;
-                      });
-                    },
-                    child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, decoration: TextDecoration.underline)),
-                  )).toList(),
-                ),
-              ],
-              const Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: Divider(height: 1, color: Color(0xFF1E2A3A)),
-              ),
-            ],
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+    return JobStepPricing(
+      quotedAmountController: _quotedAmountController,
+      amountController: _amountController,
+      quotedFocusNode: _quotedFocusNode,
+      amountFocusNode: _amountFocusNode,
+      paymentStatus: _paymentStatus,
+      onPaymentStatusChanged: (v) => setState(() => _paymentStatus = v),
     );
   }
 
   Widget _buildStep5() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildRecurringToggle(),
-        const SizedBox(height: 48),
-        Text("DATE & LOCATION", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text("When and where this job took place", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        const SizedBox(height: 24),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(context: context, initialDate: _jobDate, firstDate: DateTime(2024), lastDate: DateTime.now());
-            if (picked != null) setState(() => _jobDate = picked);
-          },
-          child: Row(
-            children: [
-              Icon(LineAwesomeIcons.calendar, size: 20, color: context.ksc.accent500),
-              const SizedBox(width: 14),
-              Text(DateFormatter.short(_jobDate), style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.only(left: 34, top: 4),
-          child: Divider(height: 1, color: Color(0xFF2A3A4A)),
-        ),
-        const SizedBox(height: 32),
-        _buildDarkField(label: "Location", hint: "East Legon, Accra", controller: _locationController, maxLength: 255),
-      ],
+    return JobStepSchedule(
+      isRecurring: _isRecurring,
+      recurringInterval: _recurringInterval,
+      jobDate: _jobDate,
+      locationController: _locationController,
+      onRecurringChanged: (v) => setState(() => _isRecurring = v),
+      onIntervalChanged: (v) => setState(() => _recurringInterval = v),
+      onDateChanged: (v) => setState(() => _jobDate = v),
     );
   }
 
   Widget _buildStep6() {
-    final itemCount = _items.length;
-    final expCount = _expenses.length;
-    final expTotal = _expenses.fold<int>(0, (sum, e) {
-      return sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0);
-    });
-    final partCount = _parts.length;
-    final photoCount = _beforePhotos.length + _afterPhotos.length;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_finalCustomerId != null)
-          _buildCustomerHistorySuggestions(),
-        const SizedBox(height: 24),
-        _buildExtrasCard(
-          icon: Icon(LineAwesomeIcons.box_solid, size: 16, color: context.ksc.accent500),
-          title: "Items Used",
-          subtitle: "Hardware, parts & supplies",
-          trailing: itemCount > 0
-              ? _extrasCountTrailing("$itemCount item${itemCount > 1 ? 's' : ''}")
-              : _extrasEmptyTrailing(),
-          onTap: () => _showItemsDrawer(),
-        ),
-        _buildExtrasCard(
-          icon: Icon(LineAwesomeIcons.coins_solid, size: 16, color: context.ksc.accent500),
-          title: "Expenses",
-          subtitle: "Transport, parking, subs",
-          trailing: expCount > 0
-              ? _extrasCountTrailing("$expCount item${expCount > 1 ? 's' : ''}", amount: CurrencyFormatter.format(expTotal))
-              : _extrasEmptyTrailing(),
-          onTap: () => _showExpensesDrawer(),
-        ),
-        _buildExtrasCard(
-          icon: Icon(LineAwesomeIcons.camera_solid, size: 16, color: context.ksc.accent500),
-          title: "Media",
-          subtitle: "Photos, videos & audio recordings",
-          trailing: photoCount > 0
-              ? _extrasCountTrailing("$photoCount item${photoCount > 1 ? 's' : ''}")
-              : _extrasEmptyTrailing(),
-          onTap: () => _showPhotosDrawer(),
-        ),
-        _buildExtrasCard(
-          icon: Icon(LineAwesomeIcons.edit_solid, size: 16, color: context.ksc.accent500),
-          title: "Notes",
-          subtitle: "Job notes",
-          trailing: _extrasNoteTrailing(),
-          onTap: () => _showNotesDrawer(),
-        ),
-        const SizedBox(height: 48),
-      ],
+    return JobStepExtras(
+      customerId: _finalCustomerId,
+      itemCount: _items.length,
+      expenseCount: _expenses.length,
+      expenseTotal: _expenses.fold<int>(0, (sum, e) =>
+        sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0)),
+      photoCount: _beforePhotos.length + _afterPhotos.length,
+      notesPreview: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      onOpenItems: _showItemsDrawer,
+      onOpenExpenses: _showExpensesDrawer,
+      onOpenMedia: _showPhotosDrawer,
+      onOpenNotes: _showNotesDrawer,
+      onBrandSuggestionTapped: (brand) {
+        setState(() {
+          if (_items.isEmpty || _items.last.nameController.text.isNotEmpty) {
+            _items.add(ItemRow());
+          }
+          _items.last.nameController.text = brand;
+        });
+      },
+      onPartSuggestionTapped: (part) {
+        setState(() {
+          if (_items.isEmpty || _items.last.nameController.text.isNotEmpty) {
+            _items.add(ItemRow());
+          }
+          _items.last.nameController.text = part;
+        });
+      },
     );
   }
 
-  Widget _buildExtrasCard({
-    required Widget icon,
-    required String title,
-    required String subtitle,
-    required Widget trailing,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: SizedBox(width: 20, height: 20, child: icon),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title.toUpperCase(),
-                    style: AppTextStyles.caption.copyWith(
-                      color: context.ksc.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(subtitle,
-                    style: AppTextStyles.caption.copyWith(
-                      color: context.ksc.neutral500,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            trailing,
-            const SizedBox(width: 8),
-            Icon(LineAwesomeIcons.angle_right_solid,
-              color: context.ksc.neutral500, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _extrasCountTrailing(String count, {String? amount}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(count,
-          style: AppTextStyles.caption.copyWith(
-            color: context.ksc.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 12,
-          ),
-        ),
-        if (amount != null)
-          Text(amount,
-            style: AppTextStyles.caption.copyWith(
-              color: context.ksc.accent500,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _extrasEmptyTrailing() {
-    return Text("No items",
-      style: AppTextStyles.caption.copyWith(
-        color: context.ksc.neutral600,
-        fontSize: 11,
-      ),
-    );
-  }
-
-  Widget _extrasNoteTrailing() {
-    final text = _notesController.text.trim();
-    if (text.isEmpty) {
-      return Text("No notes",
-        style: AppTextStyles.caption.copyWith(
-          color: context.ksc.neutral600,
-          fontSize: 11,
-        ),
-      );
-    }
-    return Text(text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: AppTextStyles.caption.copyWith(
-        color: context.ksc.neutral500,
-        fontSize: 11,
-        fontStyle: FontStyle.italic,
-      ),
-    );
-  }
-
-  Widget _buildExpenseRow(int index, _ExpenseRow expense) {
+  Widget _buildExpenseRow(int index, ExpenseRow expense) {
     final categories = ['transport', 'parking', 'subcontractor', 'supplies', 'other'];
     return Column(
       children: [
@@ -1783,7 +947,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     );
   }
 
-  Widget _buildPartRow(int index, _PartRow part) {
+  Widget _buildPartRow(int index, PartRow part) {
     final showSuggestions = _partSuggestionIndex == index && _partSuggestions.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1851,7 +1015,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
 
-  Widget _buildHardwareRow(int index, _HardwareRow hw, {VoidCallback? onRemove}) {
+  Widget _buildHardwareRow(int index, HardwareRow hw, {VoidCallback? onRemove}) {
     final showSuggestions = _hwSuggestionIndex == index && _hwSuggestions.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1947,7 +1111,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   /// Compact card for hardware selected from inventory.
-  Widget _buildInventoryHardwareCard(int index, _HardwareRow hw) {
+  Widget _buildInventoryHardwareCard(int index, HardwareRow hw) {
     final item = hw.inventoryItem;
 
     return Column(
@@ -1993,7 +1157,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   /// Qty stepper with [-] [+] buttons
-  Widget _buildQtyStepper(_HardwareRow hw) {
+  Widget _buildQtyStepper(HardwareRow hw) {
     final qty = int.tryParse(hw.qtyController.text) ?? 1;
     return Container(
       decoration: BoxDecoration(
@@ -2040,7 +1204,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   /// Bottom sheet to pick hardware from inventory.
-  void _showInventoryPicker({void Function(_HardwareRow item)? onItemSelected}) {
+  void _showInventoryPicker({void Function(HardwareRow item)? onItemSelected}) {
     final items = ref.read(inventoryProvider).valueOrNull ?? [];
     final hardwareItems = items.where((i) => i.category == InventoryItemCategory.lock && !i.isArchived).toList();
 
@@ -2157,7 +1321,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                               return InkWell(
                                 onTap: () {
                                   // Create hardware row pre-filled from inventory
-                                  final hw = _HardwareRow();
+                                  final hw = HardwareRow();
                                   hw.inventoryItem = invItem;
                                   hw.inventoryItemId = invItem.id;
                                   hw.nameController.text = invItem.name;
@@ -2243,7 +1407,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
 
   void _showAdditionalServicesDrawer() {
     final localServices = _additionalServices.map((s) {
-      final copy = _ServiceRow();
+      final copy = ServiceRow();
       copy.serviceType = s.serviceType;
       copy.qtyController.text = s.qtyController.text;
       copy.priceController.text = s.priceController.text;
@@ -2364,7 +1528,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                     padding: const EdgeInsets.only(bottom: 6),
                                     child: InkWell(
                                       onTap: alreadyAdded ? null : () async {
-                                        final row = _ServiceRow();
+                                        final row = ServiceRow();
                                         row.serviceType = type.name;
                                         if (type.defaultPrice != null) {
                                           row.priceController.text = (type.defaultPrice! / 100.0).toStringAsFixed(2);
@@ -2477,7 +1641,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   /// Read-only summary card for a selected service in Drawer 1.
   /// Tapping opens the edit drawer (Drawer 2).
   Widget _buildAdditionalServiceSummaryCard({
-    required _ServiceRow service,
+    required ServiceRow service,
     required List<ServiceTypeEntity> types,
     required VoidCallback onTap,
     required VoidCallback onRemove,
@@ -2561,7 +1725,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   /// If [existingIndex] is null, the service is new (ADD mode).
   /// If [existingIndex] is set, it's editing an existing service.
   Future<bool> _showServiceEditDrawer({
-    required _ServiceRow service,
+    required ServiceRow service,
     required int? existingIndex,
     required VoidCallback onChanged,
   }) async {
@@ -2922,7 +2086,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                           Center(
                             child: TextButton.icon(
                               onPressed: () {
-                                localItems.add(_HardwareRow());
+                                localItems.add(HardwareRow());
                                 dirty = true;
                                 setSheetState(() {});
                               },
@@ -3038,7 +2202,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                           if (localExpenses.length < 10)
                             TextButton.icon(
                               onPressed: () {
-                                localExpenses.add(_ExpenseRow());
+                                localExpenses.add(ExpenseRow());
                                 dirty = true;
                                 setSheetState(() {});
                               },
@@ -3150,7 +2314,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                           if (localParts.length < 20)
                             TextButton.icon(
                               onPressed: () {
-                                localParts.add(_PartRow());
+                                localParts.add(PartRow());
                                 dirty = true;
                                 setSheetState(() {});
                               },
@@ -3569,7 +2733,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   Widget _buildItemSummaryCard({
-    required _ItemRow item,
+    required ItemRow item,
     required VoidCallback onTap,
     required VoidCallback onRemove,
   }) {
@@ -3633,7 +2797,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   void _showItemEditDrawer({
-    required _ItemRow item,
+    required ItemRow item,
     required int? existingIndex,
     required VoidCallback onChanged,
   }) {
@@ -3759,7 +2923,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
   }
 
   void _showItemSearchDrawer({
-    required List<_ItemRow> localItems,
+    required List<ItemRow> localItems,
     required VoidCallback onChanged,
   }) {
     final allInv = ref.read(inventoryProvider).valueOrNull ?? [];
@@ -3860,7 +3024,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                                   li.inventoryItemId == invItem.id);
                                 return InkWell(
                                   onTap: alreadyAdded ? null : () {
-                                    final row = _ItemRow();
+                                    final row = ItemRow();
                                     row.inventoryItem = invItem;
                                     row.inventoryItemId = invItem.id;
                                     row.nameController.text = invItem.name;
@@ -3918,7 +3082,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
                     child: TextButton.icon(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        final row = _ItemRow();
+                        final row = ItemRow();
                         _showItemEditDrawer(
                           item: row,
                           existingIndex: null,
@@ -4070,98 +3234,7 @@ class _LogJobScreenState extends ConsumerState<LogJobScreen> {
     return 'image';
   }
 
-  Widget _buildBottomAction(bool isLoading) {
-    final isLastStep = _currentStep == _totalSteps - 1;
-    final canGo = _canMoveForward;
 
-    return Container(
-      width: double.infinity,
-      color: context.ksc.primary700,
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      child: SafeArea(
-        top: false,
-        child: isLastStep
-            ? Row(
-                children: [
-                  // SAVE AS TEMPLATE
-                  Expanded(
-                    child: InkWell(
-                      onTap: _saveAsTemplate,
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'SAVE AS TEMPLATE',
-                          style: AppTextStyles.label.copyWith(
-                            color: context.ksc.accent500,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 10,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // SAVE JOB RECORD
-                  Expanded(
-                    flex: 2,
-                    child: InkWell(
-                      onTap: canGo && !isLoading ? _nextStep : null,
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: canGo ? context.ksc.accent500 : context.ksc.neutral600.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'SAVE JOB RECORD',
-                              style: AppTextStyles.label.copyWith(
-                                color: canGo ? context.ksc.primary900 : context.ksc.neutral500.withValues(alpha: 0.3),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 11,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            if (isLoading) ...[
-                              const SizedBox(width: 8),
-                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.primary900)),
-                            ] else ...[
-                              const SizedBox(width: 8),
-                              Icon(LineAwesomeIcons.check_solid, size: 16, color: canGo ? context.ksc.primary900 : context.ksc.neutral500.withValues(alpha: 0.3)),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : InkWell(
-                onTap: canGo && !isLoading ? _nextStep : null,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'NEXT STEP',
-                      style: AppTextStyles.h2.copyWith(color: canGo ? context.ksc.white : context.ksc.neutral500.withValues(alpha: 0.3), fontWeight: FontWeight.w900, letterSpacing: 1.5)
-                    ),
-                    if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
-                    else Icon(LineAwesomeIcons.arrow_right_solid, color: canGo ? context.ksc.accent500 : context.ksc.neutral600),
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
 
   Widget _buildDarkField({required String label, required String hint, required TextEditingController controller, TextInputType type = TextInputType.text, int maxLines = 1, bool readOnly = false, bool isNumeric = false, String? fieldHint, List<TextInputFormatter>? inputFormatters, int? maxLength, ValueChanged<String>? onChanged}) {
     return Column(

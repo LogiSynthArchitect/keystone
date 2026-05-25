@@ -34,7 +34,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
 
   void _complete() {
     HiveService.settings.put('setup_complete', true);
-    context.go(RouteNames.logJob);
+    context.go(RouteNames.dashboard);
   }
 
   @override

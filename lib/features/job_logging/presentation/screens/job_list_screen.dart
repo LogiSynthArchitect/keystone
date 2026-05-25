@@ -13,6 +13,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
+import 'log_job_screen.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
@@ -404,7 +405,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
       floatingActionButton: _selectionMode
           ? null
           : FloatingActionButton(
-              onPressed: () => context.push(RouteNames.logJob),
+              onPressed: () => LogJobScreen.show(context),
               backgroundColor: context.ksc.accent500,
               foregroundColor: context.ksc.primary900,
               elevation: 0,

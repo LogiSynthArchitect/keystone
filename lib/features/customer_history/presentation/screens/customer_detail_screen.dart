@@ -17,6 +17,7 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../job_logging/presentation/screens/log_job_screen.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../job_logging/domain/entities/job_entity.dart';
 import '../../../key_codes/presentation/providers/key_code_provider.dart';
@@ -193,7 +194,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => context.push(RouteNames.logJob, extra: widget.customerId),
+              onTap: () => LogJobScreen.show(context, preSelectedCustomerId: widget.customerId),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(

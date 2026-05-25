@@ -28,6 +28,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../job_logging/domain/entities/job_entity.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
+import '../../../job_logging/presentation/screens/log_job_screen.dart';
 import '../../../job_logging/data/datasources/job_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_services_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_hardware_local_datasource.dart';
@@ -593,7 +594,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               variant: KsButtonVariant.primary,
               size: KsButtonSize.small,
               leadingIcon: LineAwesomeIcons.plus_solid,
-              onPressed: () => context.push(RouteNames.logJob),
+              onPressed: () => LogJobScreen.show(context),
             ),
           ),
           const SizedBox(width: 8),
