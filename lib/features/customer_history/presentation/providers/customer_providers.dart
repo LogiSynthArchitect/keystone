@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/errors/app_exception.dart';
+import '../../../../core/errors/duplicate_customer_exception.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
@@ -302,10 +304,15 @@ class AddCustomerNotifier extends StateNotifier<AddCustomerState> {
       state = state.copyWith(isLoading: false, isSubmitting: false, saved: true);
       return customer;
     } catch (e) {
+      final msg = switch (e) {
+        AppException() => e.message,
+        DuplicateCustomerException() => e.message,
+        _ => 'Could not save customer.',
+      };
       state = state.copyWith(
         isLoading: false,
         isSubmitting: false,
-        errorMessage: e.toString(),
+        errorMessage: msg,
       );
       return null;
     }

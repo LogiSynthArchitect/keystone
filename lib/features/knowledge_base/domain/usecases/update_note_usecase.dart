@@ -33,6 +33,14 @@ class UpdateNoteUsecase implements UseCase<KnowledgeNoteEntity, UpdateNoteParams
       );
     }
 
+    if (note.tags.length > 10) {
+      throw const ValidationException(
+        message: 'Maximum 10 tags allowed.',
+        code: 'TOO_MANY_TAGS',
+        field: 'tags',
+      );
+    }
+
     final updatedNote = KnowledgeNoteEntity(
       id: note.id,
       userId: note.userId,

@@ -20,18 +20,23 @@ import '../../domain/entities/note_attachment.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
 
 class AddNoteScreen extends ConsumerStatefulWidget {
-  const AddNoteScreen({super.key});
+  final KnowledgeNoteEntity? existingNote;
 
-  /// Shows the add note sheet as a modal bottom sheet. Returns the created [KnowledgeNoteEntity] or null.
-  static Future<KnowledgeNoteEntity?> show(BuildContext context) {
+  const AddNoteScreen({super.key, this.existingNote});
+
+  bool get isEditMode => existingNote != null;
+
+  /// Shows the note sheet as a modal bottom sheet. Returns the created/updated [KnowledgeNoteEntity] or null.
+  static Future<KnowledgeNoteEntity?> show(BuildContext context, {KnowledgeNoteEntity? existingNote}) {
     return showModalBottomSheet<KnowledgeNoteEntity>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.ksc.primary800,
+      enableDrag: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
-      builder: (_) => const AddNoteScreen(),
+      builder: (_) => AddNoteScreen(existingNote: existingNote),
     );
   }
 
@@ -52,6 +57,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   Timer? _recordingTimer;
   bool _isUploading = false;
 
+  bool get _isEditMode => widget.existingNote != null;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +67,15 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(addNoteProvider.notifier).reset();
     });
+    // Pre-populate fields when editing an existing note
+    final note = widget.existingNote;
+    if (note != null) {
+      _titleController.text = note.title;
+      _descriptionController.text = note.description;
+      _tags = List.from(note.tags);
+      _serviceType = note.serviceType;
+      _attachments = List.from(note.attachments);
+    }
   }
 
   @override
@@ -79,6 +95,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       _attachments.isNotEmpty;
 
   bool _canAdvance(int step, int subStep) {
+    if (_isRecording || _isUploading) return false;
     if (step == 0) {
       return _titleController.text.trim().length >= 3 &&
           _descriptionController.text.trim().length >= 10;
@@ -135,70 +152,114 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
   }
 
   Future<void> _onSave() async {
+    if (_isRecording) {
+      KsSnackbar.show(context, message: "Stop recording before saving",
+          type: KsSnackbarType.info);
+      return;
+    }
+    if (_isUploading) {
+      KsSnackbar.show(context, message: "Wait for upload to finish",
+          type: KsSnackbarType.info);
+      return;
+    }
     HapticFeedback.heavyImpact();
-    final note = await ref.read(addNoteProvider.notifier).save(
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          tags: _tags,
-          serviceType: _serviceType,
-          attachments: _attachments.isNotEmpty ? _attachments : null,
-        );
     if (!mounted) return;
-    if (note != null) {
-      Navigator.of(context).pop(note);
-      KsSnackbar.show(context, message: "Note saved",
-          type: KsSnackbarType.success);
+
+    if (_isEditMode) {
+      // Update existing note
+      final updated = widget.existingNote!.copyWith(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        tags: _tags,
+        serviceType: _serviceType,
+        attachments: _attachments,
+      );
+      final result = await ref.read(editNoteProvider.notifier).save(updated);
+      if (!mounted) return;
+      if (result != null) {
+        ref.read(notesListProvider.notifier).updateNote(result);
+        Navigator.of(context).pop(result);
+        KsSnackbar.show(context, message: "Note updated",
+            type: KsSnackbarType.success);
+      } else {
+        final error = ref.read(editNoteProvider).errorMessage;
+        KsSnackbar.show(context, message: error ?? "Could not update note",
+            type: KsSnackbarType.error);
+      }
     } else {
-      final error = ref.read(addNoteProvider).errorMessage;
-      KsSnackbar.show(context, message: error ?? "Could not save note",
-          type: KsSnackbarType.error);
+      // Create new note
+      final note = await ref.read(addNoteProvider.notifier).save(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            tags: _tags,
+            serviceType: _serviceType,
+            attachments: _attachments.isNotEmpty ? _attachments : null,
+          );
+      if (!mounted) return;
+      if (note != null) {
+        Navigator.of(context).pop(note);
+        KsSnackbar.show(context, message: "Note saved",
+            type: KsSnackbarType.success);
+      } else {
+        final error = ref.read(addNoteProvider).errorMessage;
+        KsSnackbar.show(context, message: error ?? "Could not save note",
+            type: KsSnackbarType.error);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return KsStepDrawer(
-      showBackArrow: true,
-      title: "ADD NOTE",
-      steps: const [
-        KsStep(
-          label: 'NOTE CONTENT',
-          icon: LineAwesomeIcons.edit_solid,
-          tip: 'Give your note a clear title and describe the steps.',
-          imageAsset: 'assets/icons/3d/transparent/66b0f8-pencil.png',
-        ),
-        KsStep(
-          label: 'TAGS & CATEGORY',
-          icon: LineAwesomeIcons.tags_solid,
-          tip: 'Tags help you find this note later by keywords.',
-          imageAsset: 'assets/icons/3d/transparent/628100-notebook.png',
-        ),
-        KsStep(
-          label: 'ATTACHMENTS',
-          icon: LineAwesomeIcons.paperclip_solid,
-          tip: 'Add audio recordings or PDF documents to your note.',
-          imageAsset: 'assets/icons/3d/transparent/135b84-file-fav.png',
-        ),
-      ],
-      onBack: _handleBack,
-      onClose: _handleClose,
-      nextLabel: "NEXT",
-      saveLabel: "SAVE NOTE",
-      canAdvance: _canAdvance,
-      onSave: _onSave,
-      stepContent: (step, subStep, setSheetState) {
-        // Use the drawer's setState for UI updates triggered by callbacks
-        switch (step) {
-          case 0:
-            return _buildStep1();
-          case 1:
-            return _buildStep2();
-          case 2:
-            return _buildStep3(setSheetState);
-          default:
-            return const SizedBox.shrink();
-        }
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final ok = await _confirmDiscard();
+        if (ok && context.mounted) Navigator.of(context).pop();
       },
+      child: KsStepDrawer(
+        showBackArrow: true,
+        title: _isEditMode ? "EDIT NOTE" : "ADD NOTE",
+        steps: const [
+          KsStep(
+            label: 'NOTE CONTENT',
+            icon: LineAwesomeIcons.edit_solid,
+            tip: 'Give your note a clear title and describe the steps.',
+            imageAsset: 'assets/icons/3d/transparent/66b0f8-pencil.png',
+          ),
+          KsStep(
+            label: 'TAGS & CATEGORY',
+            icon: LineAwesomeIcons.tags_solid,
+            tip: 'Tags help you find this note later by keywords.',
+            imageAsset: 'assets/icons/3d/transparent/628100-notebook.png',
+          ),
+          KsStep(
+            label: 'ATTACHMENTS',
+            icon: LineAwesomeIcons.paperclip_solid,
+            tip: 'Add audio recordings or PDF documents to your note.',
+            imageAsset: 'assets/icons/3d/transparent/135b84-file-fav.png',
+          ),
+        ],
+        onBack: _handleBack,
+        onClose: _handleClose,
+        nextLabel: "NEXT",
+        saveLabel: _isEditMode ? "SAVE CHANGES" : "SAVE NOTE",
+        canAdvance: _canAdvance,
+        onSave: _onSave,
+        stepContent: (step, subStep, setSheetState) {
+          // Use the drawer's setState for UI updates triggered by callbacks
+          switch (step) {
+            case 0:
+              return _buildStep1();
+            case 1:
+              return _buildStep2();
+            case 2:
+              return _buildStep3(setSheetState);
+            default:
+              return const SizedBox.shrink();
+          }
+        },
+      ),
     );
   }
 
@@ -222,6 +283,13 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             fieldHint: "A short title helps you find this note later.",
             maxLength: 200,
           ),
+          _buildValidationHint(
+            text: _titleController.text.trim().isEmpty
+                ? null
+                : _titleController.text.trim().length < 3
+                    ? "Minimum 3 characters (${_titleController.text.trim().length}/3)"
+                    : null,
+          ),
           const SizedBox(height: 20),
           _buildDarkField(
             label: "Description",
@@ -229,6 +297,13 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
             maxLines: 5,
             controller: _descriptionController,
             fieldHint: "Write your full notes here — steps, tips, what worked.",
+          ),
+          _buildValidationHint(
+            text: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim().length < 10
+                    ? "Minimum 10 characters (${_descriptionController.text.trim().length}/10)"
+                    : null,
           ),
         ],
       ),
@@ -730,6 +805,21 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  Widget _buildValidationHint({required String? text}) {
+    if (text == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, left: 2),
+      child: Text(
+        text,
+        style: AppTextStyles.caption.copyWith(
+          color: context.ksc.error500,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+        ),
+      ),
+    );
   }
 
   Widget _buildDarkField({

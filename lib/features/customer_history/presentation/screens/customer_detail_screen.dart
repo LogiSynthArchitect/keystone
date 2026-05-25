@@ -6,9 +6,15 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_card.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
+import '../../../../core/widgets/ks_content_drawer.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
@@ -27,21 +33,7 @@ class CustomerDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<CustomerDetailScreen> createState() => _CustomerDetailScreenState();
 }
 
-class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
 
   void _confirmDelete(BuildContext context) {
     KsConfirmDialog.show(
@@ -72,7 +64,6 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
   Widget build(BuildContext context) {
     final customerAsync = ref.watch(customerDetailProvider(widget.customerId));
     final allJobsState = ref.watch(jobListProvider);
-    final keyCodeState = ref.watch(keyCodeProvider(widget.customerId));
 
     final customerJobs = allJobsState.activeJobs
         .where((j) => j.customerId == widget.customerId)
@@ -90,16 +81,15 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
             onPressed: () => context.push(RouteNames.editCustomer(widget.customerId)),
           ),
           IconButton(
-            icon: Icon(LineAwesomeIcons.compress_solid, color: context.ksc.neutral400, size: 22),
+            icon: Icon(LineAwesomeIcons.compress_solid, color: context.ksc.neutral200, size: 22),
             onPressed: () {
               final customer = customerAsync.valueOrNull;
               if (customer == null) return;
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: context.ksc.primary900,
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
-                builder: (_) => MergeCustomerSheet(
+              KsContentDrawer.show(
+                context,
+                icon: LineAwesomeIcons.compress_solid,
+                title: "MERGE CUSTOMER",
+                child: MergeCustomerSheet(
                   targetCustomer: customer,
                   onMerged: () {
                     ref.invalidate(customerListProvider);
@@ -120,7 +110,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
           const KsOfflineBanner(),
           Expanded(
             child: customerAsync.when(
-              loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
+              loading: () => const Center(child: KsLoadingIndicator()),
               error: (err, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -131,21 +121,18 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
                     const SizedBox(height: 8),
                     Text("Could not load customer.", style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400)),
                     const SizedBox(height: 24),
-                    ElevatedButton(
+                    KsButton(
+                      label: "TAP TO RETRY",
                       onPressed: () => ref.invalidate(customerDetailProvider(widget.customerId)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.ksc.accent500,
-                        foregroundColor: context.ksc.primary900,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      child: const Text("TAP TO RETRY"),
+                      size: KsButtonSize.small,
+                      fullWidth: false,
                     ),
                   ],
                 ),
               ),
               data: (customer) {
                 if (customer == null) {
-                  return Center(child: Text("CUSTOMER NOT FOUND", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)));
+                  return const Center(child: KsEmptyState(icon: LineAwesomeIcons.user_slash_solid, title: "CUSTOMER NOT FOUND"));
                 }
 
                 final lifetimeRevenue = customerJobs.fold<int>(0, (sum, j) => sum + (j.amountCharged ?? 0));
@@ -166,51 +153,32 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
                 }
                 final sortedParts = frequentParts.toList()..sort();
 
-                return Column(
-                  children: [
-                    // Header info
-                    Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        children: [
-                          _buildProfileModule(context, customer),
-                          const SizedBox(height: 16),
-                          _buildStatsRow(context, customer, customerJobs.length, lifetimeRevenue),
-                          if (frequentBrands.isNotEmpty || sortedParts.isNotEmpty) ...[
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(
+                    children: [
+                      // Header section
+                      Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            _buildProfileModule(context, customer),
                             const SizedBox(height: 16),
-                            _buildFrequentPartsChips(frequentBrands, sortedParts),
+                            _buildStatsRow(context, customer, customerJobs.length, lifetimeRevenue),
+                            if (frequentBrands.isNotEmpty || sortedParts.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              _buildFrequentPartsChips(frequentBrands, sortedParts),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    // Tab bar
-                    Container(
-                      color: context.ksc.primary800,
-                      child: TabBar(
-                        controller: _tabController,
-                        indicatorColor: context.ksc.accent500,
-                        labelColor: context.ksc.accent500,
-                        unselectedLabelColor: context.ksc.neutral500,
-                        labelStyle: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.0),
-                        tabs: const [
-                          Tab(text: "KEY CODES"),
-                          Tab(text: "SERVICE HISTORY"),
-                        ],
+                      // Hub action tiles
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: _buildActionTiles(context, customer, customerJobs),
                       ),
-                    ),
-                    // Tab content
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          // Key Codes tab
-                          _KeyCodesTab(customerId: widget.customerId, keyCodeState: keyCodeState),
-                          // Service History tab
-                          _ServiceHistoryTab(customer: customer, jobs: customerJobs),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 );
               },
             ),
@@ -219,20 +187,22 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
       ),
       bottomNavigationBar: Container(
         width: double.infinity,
-        decoration: BoxDecoration(color: context.ksc.primary800, border: Border(top: BorderSide(color: context.ksc.primary700))),
-        padding: const EdgeInsets.all(24.0),
+        color: context.ksc.accent500,
         child: SafeArea(
           top: false,
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: () => context.push(RouteNames.logJob, extra: widget.customerId),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('LOG NEW JOB', style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 2.0)),
-                  Icon(LineAwesomeIcons.plus_circle_solid, color: context.ksc.accent500, size: 24),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('LOG NEW JOB', style: AppTextStyles.h2.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
+                    Icon(LineAwesomeIcons.plus_circle_solid, color: context.ksc.primary900, size: 24),
+                  ],
+                ),
               ),
             ),
           ),
@@ -240,6 +210,159 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
       ),
     );
   }
+
+  // ──────────────────────────────────────────────────────────────
+  // Hub action tiles
+  // ──────────────────────────────────────────────────────────────
+
+  Widget _buildActionTiles(BuildContext context, CustomerEntity customer, List<JobEntity> customerJobs) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _ActionTile(
+                iconPath: 'assets/icons/3d/transparent/778c78-key.png',
+                label: "KEY CODES",
+                subtitle: "Gates, remotes, safes",
+                onTap: () => _showKeyCodesSheet(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionTile(
+                iconPath: 'assets/icons/3d/transparent/8ef1fa-clock.png',
+                label: "SERVICE HISTORY",
+                subtitle: "${customerJobs.length} visit${customerJobs.length == 1 ? '' : 's'}",
+                onTap: () => _showServiceHistorySheet(context, customer, customerJobs),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionTile(
+                iconPath: 'assets/icons/3d/transparent/628100-notebook.png',
+                label: "NOTES",
+                subtitle: customer.notes?.isNotEmpty == true ? "Tap to view" : "Add notes",
+                onTap: () => _showNotesSheet(context, customer),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionTile(
+                iconPath: 'assets/icons/3d/transparent/f32794-calendar.png',
+                label: "SCHEDULE",
+                subtitle: "Recurring visits",
+                onTap: () => _showScheduleSheet(context),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // Bottom sheets
+  // ──────────────────────────────────────────────────────────────
+
+  void _showKeyCodesSheet(BuildContext context) {
+    KsContentDrawer.show(
+      context,
+      icon: LineAwesomeIcons.key_solid,
+      title: "KEY CODES",
+      child: Consumer(
+        builder: (context, ref, _) {
+          final sheetState = ref.watch(keyCodeProvider(widget.customerId));
+          return _KeyCodesTab(customerId: widget.customerId, keyCodeState: sheetState);
+        },
+      ),
+      bottomLabel: "ADD KEY CODE",
+      bottomIcon: LineAwesomeIcons.plus_solid,
+      bottomOnPressed: () => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => EditKeyCodeScreen(customerId: widget.customerId),
+      )),
+    );
+  }
+
+  void _showServiceHistorySheet(BuildContext context, CustomerEntity customer, List<JobEntity> jobs) {
+    KsContentDrawer.show(
+      context,
+      icon: LineAwesomeIcons.history_solid,
+      title: "SERVICE HISTORY",
+      child: _ServiceHistoryTab(customer: customer, jobs: jobs),
+    );
+  }
+
+  void _showNotesSheet(BuildContext context, CustomerEntity customer) {
+    final controller = TextEditingController(text: customer.notes ?? '');
+    KsContentDrawer.show(
+      context,
+      icon: LineAwesomeIcons.sticky_note_solid,
+      title: "NOTES",
+      heightFactor: 0.55,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: TextField(
+          controller: controller,
+          maxLines: null,
+          expands: true,
+          textAlignVertical: TextAlignVertical.top,
+          style: AppTextStyles.body.copyWith(color: context.ksc.white),
+          decoration: InputDecoration(
+            hintText: "Add notes about this customer...",
+            hintStyle: AppTextStyles.body.copyWith(color: context.ksc.neutral600),
+            filled: false,
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
+            ),
+          ),
+        ),
+      ),
+      bottomLabel: "SAVE NOTES",
+      bottomIcon: LineAwesomeIcons.check_solid,
+      bottomOnPressed: () async {
+        try {
+          await ref.read(customerRepositoryProvider).updateCustomer(
+            customer.copyWith(notes: controller.text.trim()),
+          );
+          ref.invalidate(customerDetailProvider(widget.customerId));
+          if (context.mounted) Navigator.pop(context);
+        } catch (_) {
+          if (context.mounted) {
+            KsSnackbar.show(context, message: "Failed to save notes", type: KsSnackbarType.error);
+          }
+        }
+      },
+    );
+  }
+
+  void _showScheduleSheet(BuildContext context) {
+    KsContentDrawer.show(
+      context,
+      icon: LineAwesomeIcons.calendar_solid,
+      title: "RECURRING SCHEDULE",
+      heightFactor: 0.45,
+      child: KsEmptyState(
+        icon: LineAwesomeIcons.calendar_solid,
+        title: "COMING SOON",
+        subtitle: "Schedule recurring maintenance visits.",
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // Header widgets
+  // ──────────────────────────────────────────────────────────────
 
   Widget _buildProfileModule(BuildContext context, CustomerEntity customer) {
     return Container(
@@ -265,10 +388,22 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
+                GestureDetector(
+                  onTap: () => WhatsAppLauncher.openChat(
+                    phoneNumber: customer.phoneNumber,
+                    message: "Hello ${customer.fullName.split(' ').first},",
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(customer.phoneNumber, style: AppTextStyles.body.copyWith(color: context.ksc.neutral200, fontWeight: FontWeight.w600))),
+                      Icon(LineAwesomeIcons.whatsapp, size: 14, color: context.ksc.success500),
+                      const SizedBox(width: 4),
+                    ],
+                  ),
+                ),
                 if (customer.leadSource != null) ...[
                   const SizedBox(height: 2),
-                  Text("Via: ${_leadSourceLabel(customer.leadSource!)}", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                  Text("Via: ${_leadSourceLabel(customer.leadSource!)}", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200, fontSize: 10)),
                 ],
                 if (customer.location != null) ...[
                   const SizedBox(height: 6),
@@ -276,7 +411,21 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
                     children: [
                       Icon(LineAwesomeIcons.map_marker_solid, size: 12, color: context.ksc.accent500),
                       const SizedBox(width: 4),
-                      Expanded(child: Text(customer.location!.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 0.5), overflow: TextOverflow.ellipsis)),
+                      Expanded(child: Text(customer.location!.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200, fontWeight: FontWeight.w800, letterSpacing: 0.5), overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                ],
+                if (customer.notes != null && customer.notes!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Icon(LineAwesomeIcons.sticky_note_solid, size: 12, color: context.ksc.neutral200),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(child: Text(customer.notes!, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200), maxLines: 3, overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                 ],
@@ -297,7 +446,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
         children: [
           _stat(context, "TOTAL JOBS", jobCount.toString().padLeft(2, '0')),
           Container(width: 1, height: 20, color: context.ksc.primary700),
-          _stat(context, "STATUS", customer.isRepeatCustomer ? "REPEAT" : "NEW"),
+          _stat(context, "LAST VISIT", customer.lastJobAt != null ? DateFormatter.relative(customer.lastJobAt!).toUpperCase() : "NONE"),
           Container(width: 1, height: 20, color: context.ksc.primary700),
           _statValue(context, "LIFETIME REVENUE", CurrencyFormatter.formatShort(lifetimeRevenue)),
         ],
@@ -308,7 +457,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
   Widget _statValue(BuildContext context, String label, String value) => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
-      Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 1.0)),
+      Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 1.0)),
       const SizedBox(height: 2),
       Text(value, style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
     ],
@@ -317,7 +466,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
   Widget _stat(BuildContext context, String label, String value) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 1.0)),
+      Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 1.0)),
       const SizedBox(height: 2),
       Text(value, style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
     ],
@@ -340,7 +489,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
           ),
           const SizedBox(height: 12),
           if (brands.isNotEmpty) ...[
-            Text("BRANDS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
+            Text("BRANDS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200, fontWeight: FontWeight.w800, fontSize: 9)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6, runSpacing: 6,
@@ -353,14 +502,14 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
             const SizedBox(height: 12),
           ],
           if (parts.isNotEmpty) ...[
-            Text("PARTS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 9)),
+            Text("PARTS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral200, fontWeight: FontWeight.w800, fontSize: 9)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6, runSpacing: 6,
               children: parts.map((p) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: context.ksc.primary500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary500.withValues(alpha: 0.3))),
-                child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.primary500, fontWeight: FontWeight.w800, fontSize: 9)),
+                decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
+                child: Text(p.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
               )).toList(),
             ),
           ],
@@ -378,6 +527,10 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen>
     return map[key] ?? key;
   }
 }
+
+// ──────────────────────────────────────────────────────────────
+// Property badge
+// ──────────────────────────────────────────────────────────────
 
 class _PropertyBadge extends StatelessWidget {
   final String type;
@@ -398,6 +551,10 @@ class _PropertyBadge extends StatelessWidget {
   }
 }
 
+// ──────────────────────────────────────────────────────────────
+// Key Codes tab content (used inside bottom sheet)
+// ──────────────────────────────────────────────────────────────
+
 class _KeyCodesTab extends ConsumerWidget {
   final String customerId;
   final KeyCodeState keyCodeState;
@@ -406,20 +563,16 @@ class _KeyCodesTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (keyCodeState.isLoading) {
-      return Center(child: CircularProgressIndicator(color: context.ksc.accent500));
+      return const Center(child: KsLoadingIndicator());
     }
     return Column(
       children: [
         Expanded(
           child: keyCodeState.entries.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(LineAwesomeIcons.key_solid, size: 48, color: context.ksc.primary700),
-                      const SizedBox(height: 12),
-                      Text("NO KEY CODES YET", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, letterSpacing: 1.5)),
-                    ],
+              ? const Center(
+                  child: KsEmptyState(
+                    icon: LineAwesomeIcons.key_solid,
+                    title: "NO KEY CODES YET",
                   ),
                 )
               : ListView.builder(
@@ -427,55 +580,72 @@ class _KeyCodesTab extends ConsumerWidget {
                   itemCount: keyCodeState.entries.length,
                   itemBuilder: (context, i) {
                     final entry = keyCodeState.entries[i];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
-                      child: Row(
-                        children: [
-                          Icon(LineAwesomeIcons.key_solid, size: 16, color: context.ksc.accent500),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(entry.keyCode.toUpperCase(), style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
-                                if (entry.keyType != null)
-                                  Text(entry.keyType!, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10)),
-                              ],
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: KsCard(
+                        variant: KsCardVariant.flat,
+                        backgroundColor: context.ksc.primary800,
+                        padding: const EdgeInsets.all(12),
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => EditKeyCodeScreen(customerId: customerId, existing: entry),
+                        )),
+                        child: Row(
+                          children: [
+                            Icon(LineAwesomeIcons.key_solid, size: 16, color: context.ksc.accent500),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(entry.keyCode.toUpperCase(), style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      if (entry.keyType != null)
+                                        _buildBadge(context, entry.keyType!, context.ksc.accent500),
+                                      if (entry.bitting != null) ...[
+                                        const SizedBox(width: 6),
+                                        _buildBadge(context, entry.bitting!, context.ksc.neutral400),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            icon: Icon(LineAwesomeIcons.edit, color: context.ksc.neutral500, size: 18),
-                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => EditKeyCodeScreen(customerId: customerId, existing: entry),
-                            )),
-                          ),
-                        ],
+                            Icon(LineAwesomeIcons.angle_right_solid, color: context.ksc.neutral500, size: 16),
+                          ],
+                        ),
                       ),
                     );
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton.icon(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => EditKeyCodeScreen(customerId: customerId),
-            )),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.ksc.accent500,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            ),
-            icon: Icon(LineAwesomeIcons.plus_solid, color: context.ksc.primary900, size: 18),
-            label: Text("ADD KEY CODE", style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900)),
-          ),
-        ),
       ],
     );
   }
+
+  Widget _buildBadge(BuildContext context, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(text,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }
+
+// ──────────────────────────────────────────────────────────────
+// Service History tab content (used inside bottom sheet)
+// ──────────────────────────────────────────────────────────────
 
 class _ServiceHistoryTab extends StatelessWidget {
   final CustomerEntity customer;
@@ -509,11 +679,12 @@ class _ServiceHistoryTab extends StatelessWidget {
           ),
         Expanded(
           child: jobs.isEmpty
-              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(LineAwesomeIcons.history_solid, size: 48, color: context.ksc.primary700),
-                  const SizedBox(height: 12),
-                  Text("NO SERVICE RECORDS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, letterSpacing: 2.0)),
-                ]))
+              ? const Center(
+                  child: KsEmptyState(
+                    icon: LineAwesomeIcons.history_solid,
+                    title: "NO SERVICE RECORDS",
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: jobs.length,
@@ -600,6 +771,57 @@ class _ServiceHistoryTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Hub action tile widget
+// ──────────────────────────────────────────────────────────────
+
+class _ActionTile extends StatelessWidget {
+  final String iconPath;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ActionTile({
+    required this.iconPath,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          decoration: BoxDecoration(
+            color: context.ksc.primary800,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: context.ksc.primary700),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: 56,
+                child: Image.asset(iconPath, height: 48, fit: BoxFit.contain),
+              ),
+              const SizedBox(height: 12),
+              Text(label, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+              const SizedBox(height: 2),
+              Text(subtitle, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10), textAlign: TextAlign.center),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
@@ -121,18 +122,32 @@ class _EditKeyCodeScreenState extends ConsumerState<EditKeyCodeScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(24),
-        color: context.ksc.primary800,
-        child: SafeArea(
-          top: false,
-          child: ElevatedButton(
-            onPressed: _onSave,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.ksc.accent500,
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        width: double.infinity,
+        color: context.ksc.accent500,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _onSave,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("SAVE KEY CODE",
+                      style: AppTextStyles.body.copyWith(
+                        color: context.ksc.primary900,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    Icon(LineAwesomeIcons.check_solid, color: context.ksc.primary900, size: 20),
+                  ],
+                ),
+              ),
             ),
-            child: Text("SAVE KEY CODE", style: AppTextStyles.h2.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900)),
           ),
         ),
       ),
@@ -145,18 +160,24 @@ class _EditKeyCodeScreenState extends ConsumerState<EditKeyCodeScreen> {
       children: [
         Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10)),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: context.ksc.primary800,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: context.ksc.primary700),
-          ),
-          child: TextField(
-            controller: ctrl,
-            maxLines: maxLines,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(border: InputBorder.none, hintText: hint, hintStyle: TextStyle(color: context.ksc.neutral600)),
+        TextField(
+          controller: ctrl,
+          maxLines: maxLines,
+          cursorColor: context.ksc.accent500,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: context.ksc.neutral600),
+            filled: false,
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
+            ),
           ),
         ),
       ],

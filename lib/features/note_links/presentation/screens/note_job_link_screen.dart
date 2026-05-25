@@ -4,33 +4,51 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:keystone/core/theme/app_text_styles.dart';
 import 'package:keystone/core/theme/ks_colors.dart';
 import 'package:keystone/core/utils/date_formatter.dart';
-import 'package:keystone/core/widgets/ks_app_bar.dart';
 import 'package:keystone/core/widgets/ks_empty_state.dart';
-import 'package:keystone/core/widgets/ks_offline_banner.dart';
+import 'package:keystone/core/widgets/ks_search_bar.dart';
 import 'package:keystone/core/widgets/ks_snackbar.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart';
 import '../providers/note_link_provider.dart';
 
-class NoteJobLinkScreen extends ConsumerStatefulWidget {
-  final String noteId;
-  const NoteJobLinkScreen({super.key, required this.noteId});
-
-  @override
-  ConsumerState<NoteJobLinkScreen> createState() => _NoteJobLinkScreenState();
+/// Bottom sheet for linking a note to a job.
+class NoteJobLinkScreen {
+  static Future<void> show(BuildContext context, String noteId) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      builder: (_) => _NoteJobLinkSheet(noteId: noteId),
+    );
+  }
 }
 
-class _NoteJobLinkScreenState extends ConsumerState<NoteJobLinkScreen> {
+class _NoteJobLinkSheet extends ConsumerStatefulWidget {
+  final String noteId;
+  const _NoteJobLinkSheet({required this.noteId});
+
+  @override
+  ConsumerState<_NoteJobLinkSheet> createState() => _NoteJobLinkSheetState();
+}
+
+class _NoteJobLinkSheetState extends ConsumerState<_NoteJobLinkSheet> {
   String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
     final linksAsync = ref.watch(noteLinkByNoteProvider(widget.noteId));
     final jobState   = ref.watch(jobListProvider);
+    final note = ref.read(notesListProvider).notes.where((n) => n.id == widget.noteId).firstOrNull;
 
     final allJobs = jobState.allJobs.where((j) => !j.isArchived && !j.isDeleted).toList();
 
-    final filtered = _searchQuery.isEmpty
+    // Filter by query
+    var filtered = _searchQuery.isEmpty
         ? allJobs
         : allJobs.where((j) {
             final q = _searchQuery.toLowerCase();
@@ -39,13 +57,68 @@ class _NoteJobLinkScreenState extends ConsumerState<NoteJobLinkScreen> {
                    (j.location?.toLowerCase().contains(q) ?? false);
           }).toList();
 
-    return Scaffold(
-      backgroundColor: context.ksc.primary900,
-      appBar: const KsAppBar(title: "LINK TO JOB", showBack: true),
-      body: Column(
+    // Sort: most recent first
+    filtered.sort((a, b) => b.jobDate.compareTo(a.jobDate));
+
+    // Prefer jobs matching the note's service type
+    if (note?.serviceType != null) {
+      final matchType = note!.serviceType!;
+      filtered.sort((a, b) {
+        final aScore = a.serviceType == matchType ? 0 : 1;
+        final bScore = b.serviceType == matchType ? 0 : 1;
+        if (aScore != bScore) return aScore.compareTo(bScore);
+        return b.jobDate.compareTo(a.jobDate);
+      });
+    }
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const KsOfflineBanner(),
-          _buildSearchBar(context),
+          // Drag handle
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: context.ksc.neutral600,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // Header row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
+            child: Row(
+              children: [
+                Text("LINK TO JOB",
+                  style: AppTextStyles.h2.copyWith(
+                    color: context.ksc.white, fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(LineAwesomeIcons.times_solid,
+                      color: context.ksc.neutral500, size: 20),
+                ),
+              ],
+            ),
+          ),
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 10, 24, 4),
+            child: KsSearchBar(
+              hint: 'Search by service type or date...',
+              onChanged: (q) => setState(() => _searchQuery = q),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Job list
           Expanded(
             child: linksAsync.when(
               loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
@@ -62,7 +135,8 @@ class _NoteJobLinkScreenState extends ConsumerState<NoteJobLinkScreen> {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
@@ -75,29 +149,6 @@ class _NoteJobLinkScreenState extends ConsumerState<NoteJobLinkScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      color: context.ksc.primary800,
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
-      child: TextField(
-        onChanged: (v) => setState(() => _searchQuery = v),
-        style: AppTextStyles.body.copyWith(color: context.ksc.white),
-        cursorColor: context.ksc.accent500,
-        decoration: InputDecoration(
-          hintText: "Search by service type or date...",
-          hintStyle: AppTextStyles.body.copyWith(color: context.ksc.neutral500),
-          prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral500, size: 18),
-          filled: true,
-          fillColor: context.ksc.primary900,
-          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: context.ksc.primary700)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: context.ksc.primary700)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: BorderSide(color: context.ksc.accent500)),
-        ),
       ),
     );
   }
@@ -138,8 +189,7 @@ class _NoteJobLinkScreenState extends ConsumerState<NoteJobLinkScreen> {
         child: Row(
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 32, height: 32,
               decoration: BoxDecoration(
                 color: isLinked ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary900,
                 borderRadius: BorderRadius.circular(4),

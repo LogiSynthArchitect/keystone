@@ -1,27 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
-import '../../../../core/widgets/ks_step_indicator.dart';
-import '../../../../core/router/route_names.dart';
+import '../../../../core/widgets/ks_step_drawer.dart';
+import '../../../../core/router/route_names.dart' show RouteNames;
+import 'package:go_router/go_router.dart';
+import '../../domain/entities/customer_entity.dart';
 import '../providers/customer_providers.dart';
 
 class AddCustomerScreen extends ConsumerStatefulWidget {
   const AddCustomerScreen({super.key});
+
+  static Future<void> show(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      builder: (_) => const AddCustomerScreen(),
+    );
+  }
+
   @override
   ConsumerState<AddCustomerScreen> createState() => _AddCustomerScreenState();
 }
 
 class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
-  int _currentStep = 0;
-  final int _totalSteps = 2;
-
   final _nameController     = TextEditingController();
   final _phoneController    = TextEditingController();
   final _locationController = TextEditingController();
@@ -32,6 +42,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   // Duplicate detection state
   String? _duplicateId;
   String? _duplicateName;
+  String? _duplicateByName;
 
   static const _propertyTypes = [
     ('residential', 'Residential'),
@@ -51,10 +62,11 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   @override
   void initState() {
     super.initState();
-    // Reset provider state so a returning user never sees stale saved/error state.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(addCustomerProvider.notifier).reset();
     });
+    _nameController.addListener(() => setState(() {}));
+    _phoneController.addListener(() => setState(() {}));
   }
 
   @override
@@ -78,37 +90,47 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     });
   }
 
+  Future<void> _checkDuplicateName(String name) async {
+    if (name.trim().length < 2) {
+      setState(() => _duplicateByName = null);
+      return;
+    }
+    final results = await ref.read(customerRepositoryProvider).searchCustomers(name.trim());
+    CustomerEntity? match;
+    for (final c in results) {
+      if (c.fullName.toLowerCase() == name.trim().toLowerCase()) {
+        match = c;
+        break;
+      }
+    }
+    setState(() => _duplicateByName = match?.fullName);
+  }
+
   bool get _isDirty =>
       _nameController.text.trim().isNotEmpty ||
       _phoneController.text.trim().isNotEmpty ||
       _locationController.text.trim().isNotEmpty ||
       _notesController.text.trim().isNotEmpty;
 
-  bool get _canMoveForward {
-    if (_currentStep == 0) {
+  bool _canAdvance(int step, int subStep) {
+    if (step == 0) {
+      final phone = _phoneController.text.trim();
       return _nameController.text.trim().length >= 2 &&
-             _phoneController.text.trim().isNotEmpty;
+             phone.length == 10 && phone.startsWith('0');
     }
     return true;
   }
 
-  void _nextStep() {
-    if (_currentStep < _totalSteps - 1) {
-      HapticFeedback.mediumImpact();
-      setState(() => _currentStep++);
-    } else {
-      _onSave();
-    }
+  void _handleBack() {
+    _confirmDiscard().then((ok) {
+      if (ok && context.mounted) Navigator.of(context).pop();
+    });
   }
 
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
-    } else {
-      _confirmDiscard().then((ok) {
-        if (ok && mounted) Navigator.of(context).pop();
-      });
-    }
+  void _handleClose() {
+    _confirmDiscard().then((ok) {
+      if (ok && context.mounted) Navigator.of(context).pop();
+    });
   }
 
   Future<bool> _confirmDiscard() async {
@@ -138,8 +160,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   }
 
   Future<void> _onSave() async {
-    HapticFeedback.heavyImpact();
-
     final phone = _phoneController.text.trim();
     if (phone.length != 10 || !phone.startsWith('0')) {
       if (mounted) {
@@ -159,7 +179,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     if (!mounted) return;
     if (customer != null) {
       ref.read(customerListProvider.notifier).addCustomer(customer);
-      context.pop();
+      Navigator.of(context).pop(customer);
       KsSnackbar.show(context, message: "Customer saved", type: KsSnackbarType.success);
     } else {
       final error = ref.read(addCustomerProvider).errorMessage;
@@ -169,57 +189,51 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(addCustomerProvider);
-    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        _previousStep();
+        final ok = await _confirmDiscard();
+        if (ok && context.mounted) Navigator.of(context).pop();
       },
-      child: Scaffold(
-        backgroundColor: context.ksc.primary900,
-        appBar: KsAppBar(
-          title: "ADD NEW CUSTOMER",
-          showBack: true,
-          onBack: _previousStep,
-        ),
-        body: Column(
-          children: [
-            const KsOfflineBanner(),
-            KsStepIndicator(
-              currentStep: _currentStep,
-              totalSteps: _totalSteps,
-              labels: ["CONTACT", "DETAILS"],
-            ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: SingleChildScrollView(
-                  key: ValueKey<int>(_currentStep),
-                  padding: const EdgeInsets.all(24.0),
-                  child: _buildCurrentStep(),
-                ),
-              ),
-            ),
-            if (!keyboardVisible) _buildBottomAction(state.isLoading),
-          ],
-        ),
+      child: KsStepDrawer(
+        showBackArrow: true,
+        title: "ADD CUSTOMER",
+        steps: const [
+          KsStep(
+            label: 'CONTACT',
+            icon: LineAwesomeIcons.phone_solid,
+            tip: 'Enter the customer name and phone number.',
+            imageAsset: 'assets/icons/3d/transparent/1b19dc-call-only.png',
+          ),
+          KsStep(
+            label: 'EXTRA DETAILS',
+            icon: LineAwesomeIcons.info_circle_solid,
+            tip: 'Optional property type, lead source, location, and notes.',
+            imageAsset: 'assets/icons/3d/transparent/58aeba-message.png',
+          ),
+        ],
+        onBack: _handleBack,
+        onClose: _handleClose,
+        nextLabel: "NEXT",
+        saveLabel: "SAVE",
+        canAdvance: _canAdvance,
+        onSave: _onSave,
+        stepContent: (step, subStep, setSheetState) {
+          switch (step) {
+            case 0: return _buildStep1();
+            case 1: return _buildStep2();
+            default: return const SizedBox.shrink();
+          }
+        },
       ),
     );
   }
 
-  Widget _buildCurrentStep() {
-    switch (_currentStep) {
-      case 0: return _buildStep1();
-      case 1: return _buildStep2();
-      default: return const SizedBox.shrink();
-    }
-  }
-
   Widget _buildStep1() {
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("CUSTOMER DETAILS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
@@ -231,7 +245,31 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           hint: "Kwame Mensah",
           controller: _nameController,
           maxLength: 100,
+          onChanged: (v) => _checkDuplicateName(v),
         ),
+        if (_duplicateByName != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: context.ksc.warning500.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.warning500.withValues(alpha: 0.4))),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_outlined, size: 16, color: context.ksc.warning500),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text.rich(TextSpan(
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.warning500, fontSize: 11),
+                    children: [
+                      const TextSpan(text: "A customer named "),
+                      TextSpan(text: _duplicateByName, style: const TextStyle(fontWeight: FontWeight.w900)),
+                      const TextSpan(text: " already exists. Consider checking for duplicates."),
+                    ],
+                  )),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         _buildDarkField(
           label: "Phone Number",
@@ -275,11 +313,14 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           ),
         ],
       ],
+      ),
     );
   }
 
   Widget _buildStep2() {
-    return Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("EXTRA DETAILS", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
@@ -322,6 +363,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
           maxLength: 1000,
         ),
       ],
+      ),
     );
   }
 
@@ -350,41 +392,6 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     );
   }
 
-  Widget _buildBottomAction(bool isLoading) {
-    final isLastStep = _currentStep == _totalSteps - 1;
-    final canGo = _canMoveForward;
-
-    return Container(
-      width: double.infinity,
-      color: context.ksc.primary700,
-      padding: const EdgeInsets.all(24.0),
-      child: SafeArea(
-        top: false,
-        child: InkWell(
-          onTap: canGo && !isLoading ? _nextStep : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isLastStep ? 'SAVE CUSTOMER RECORD' : 'NEXT STEP',
-                style: AppTextStyles.h2.copyWith(
-                  color: canGo ? context.ksc.white : context.ksc.neutral500,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                )
-              ),
-              if (isLoading) CircularProgressIndicator(color: context.ksc.accent500)
-              else Icon(
-                isLastStep ? LineAwesomeIcons.check_solid : LineAwesomeIcons.arrow_right_solid,
-                color: canGo ? context.ksc.accent500 : context.ksc.primary700
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDarkField({
     required String label,
     required String hint,
@@ -409,8 +416,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
         Container(
           decoration: BoxDecoration(
             color: context.ksc.primary800,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: context.ksc.primary700),
+            border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1.5)),
           ),
           child: TextField(
             controller: controller,
@@ -428,10 +434,11 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: context.ksc.neutral500),
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
               border: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isDense: true,
             ),
           ),
         ),
@@ -439,3 +446,5 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     );
   }
 }
+
+

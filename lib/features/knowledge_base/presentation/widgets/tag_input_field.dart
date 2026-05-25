@@ -18,8 +18,12 @@ class TagInputField extends StatefulWidget {
 
 class _TagInputFieldState extends State<TagInputField> {
   final _controller = TextEditingController();
+  static const _kMaxTags = 10;
+
+  bool get _isAtMax => widget.tags.length >= _kMaxTags;
 
   void _addTag(String value) {
+    if (_isAtMax) return;
     final tag = value.trim().toLowerCase();
     if (tag.isNotEmpty && !widget.tags.contains(tag)) {
       widget.onChanged([...widget.tags, tag]);
@@ -69,17 +73,43 @@ class _TagInputFieldState extends State<TagInputField> {
               TextField(
                 controller: _controller,
                 onSubmitted: _addTag,
+                enabled: !_isAtMax,
                 style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white),
                 cursorColor: context.ksc.accent500,
                 decoration: InputDecoration(
-                  hintText: "Add tag, press Enter",
-                  hintStyle: TextStyle(color: context.ksc.neutral500),
+                  hintText: _isAtMax ? "Max 10 tags reached" : "Add tag, press Enter",
+                  hintStyle: TextStyle(color: _isAtMax ? context.ksc.error500.withValues(alpha: 0.7) : context.ksc.neutral500),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   isDense: true,
                 ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    "${widget.tags.length}/$_kMaxTags tags",
+                    style: AppTextStyles.caption.copyWith(
+                      color: _isAtMax ? context.ksc.error500 : context.ksc.neutral500,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    ),
+                  ),
+                  if (_isAtMax) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      "MAX REACHED",
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.error500,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

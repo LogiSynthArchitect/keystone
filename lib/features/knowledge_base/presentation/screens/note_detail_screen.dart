@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -9,17 +8,18 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
-import 'package:share_plus/share_plus.dart' show Share;
+import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_snackbar.dart';
-import '../../../../core/router/route_names.dart';
 import '../providers/notes_providers.dart';
+import 'add_note_screen.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
 import '../../domain/entities/note_attachment.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../note_links/presentation/providers/note_link_provider.dart';
+import '../../../note_links/presentation/screens/note_job_link_screen.dart';
 
 class NoteDetailScreen extends ConsumerWidget {
   final String noteId;
@@ -27,7 +27,10 @@ class NoteDetailScreen extends ConsumerWidget {
 
   KnowledgeNoteEntity? _findNote(NotesListState state) {
     try { return state.notes.firstWhere((n) => n.id == noteId); }
-    catch (_) { return null; }
+    catch (_) {
+      try { return state.searchResults.firstWhere((n) => n.id == noteId); }
+      catch (_) { return null; }
+    }
   }
 
   @override
@@ -75,44 +78,17 @@ class NoteDetailScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           IconButton(
-            icon: Icon(LineAwesomeIcons.share_alt_solid, color: context.ksc.neutral400, size: 22),
-            onPressed: () {
-              final text = [
-                note.title.toUpperCase(),
-                '',
-                note.description,
-                if (note.hasTags) '',
-                if (note.hasTags) 'Tags: ${note.tags.map((t) => '#$t').join(' ')}',
-                if (note.serviceType != null) '',
-                if (note.serviceType != null) 'Category: ${note.serviceType!.replaceAll('_', ' ').toUpperCase()}',
-                '',
-                'Exported from Keystone',
-              ].join('\n');
-              Share.share(text, subject: note.title);
-            },
-          ),
-          IconButton(
-            icon: Icon(note.isPinned ? LineAwesomeIcons.thumbtack_solid : LineAwesomeIcons.thumbtack_solid, color: note.isPinned ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
+            icon: Icon(
+              note.isPinned ? LineAwesomeIcons.thumbtack_solid : LineAwesomeIcons.map_pin_solid,
+              color: note.isPinned ? context.ksc.accent500 : context.ksc.neutral400,
+              size: 22,
+            ),
+            tooltip: note.isPinned ? 'Unpin note' : 'Pin note',
             onPressed: () => ref.read(notesListProvider.notifier).togglePin(note.id),
           ),
           IconButton(
-            icon: Icon(LineAwesomeIcons.copy_solid, color: context.ksc.neutral400, size: 22),
-            onPressed: () async {
-              final newNote = await ref.read(addNoteProvider.notifier).save(
-                title: '${note.title} (copy)',
-                description: note.description,
-                tags: note.tags,
-                serviceType: note.serviceType,
-              );
-              if (newNote != null && context.mounted) {
-                ref.read(notesListProvider.notifier).addNote(newNote);
-                context.push(RouteNames.noteDetail(newNote.id));
-              }
-            },
-          ),
-          IconButton(
             icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
-            onPressed: () => context.push(RouteNames.editNote(noteId)),
+            onPressed: () => AddNoteScreen.show(context, existingNote: note),
           ),
           IconButton(
             icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
@@ -239,19 +215,36 @@ class NoteDetailScreen extends ConsumerWidget {
                   // ── ATTACHMENTS ──
                   if (note.hasAttachments) ...[
                     const SizedBox(height: 32),
-                    Text(
-                      "ATTACHMENTS",
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.neutral500,
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.w800,
+                    // Image gallery (grouped)
+                    if (note.attachments.any((a) => a.type == AttachmentType.image)) ...[
+                      _ImageGallery(attachments: note.attachments.where((a) => a.type == AttachmentType.image).toList()),
+                      const SizedBox(height: 24),
+                    ],
+                    // Audio recordings
+                    if (note.attachments.any((a) => a.type == AttachmentType.audio)) ...[
+                      Text("RECORDINGS",
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral500, letterSpacing: 1.5, fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...note.attachments.map((att) => _AttachmentTile(
-                      attachment: att,
-                      key: ValueKey(att.id),
-                    )),
+                      const SizedBox(height: 12),
+                      ...note.attachments.where((a) => a.type == AttachmentType.audio).map((att) => _AudioAttachmentTile(
+                        attachment: att, key: ValueKey(att.id),
+                      )),
+                      const SizedBox(height: 16),
+                    ],
+                    // Documents
+                    if (note.attachments.any((a) => a.type == AttachmentType.document)) ...[
+                      Text("DOCUMENTS",
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral500, letterSpacing: 1.5, fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...note.attachments.where((a) => a.type == AttachmentType.document).map((att) => _DocumentAttachmentTile(
+                        attachment: att, key: ValueKey(att.id),
+                      )),
+                    ],
                   ],
 
                   if (note.hasTags) ...[
@@ -301,7 +294,7 @@ class NoteDetailScreen extends ConsumerWidget {
                         ),
                       ),
                       TextButton.icon(
-                        onPressed: () => context.push(RouteNames.noteLinkJobs(noteId)),
+                        onPressed: () => NoteJobLinkScreen.show(context, noteId),
                         icon: Icon(Icons.add, size: 14, color: context.ksc.accent500),
                         label: Text("LINK JOB", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                         style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
@@ -339,19 +332,10 @@ class _LinkedJobsList extends ConsumerWidget {
       error: (_, __) => Text("Could not load links.", style: AppTextStyles.caption.copyWith(color: context.ksc.error500)),
       data: (links) {
         if (links.isEmpty) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: context.ksc.primary800,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: context.ksc.primary700),
-            ),
-            child: Text(
-              "No jobs linked yet.",
-              style: AppTextStyles.body.copyWith(color: context.ksc.neutral500),
-              textAlign: TextAlign.center,
-            ),
+          return const KsEmptyState(
+            icon: LineAwesomeIcons.link_solid,
+            title: "NO JOBS LINKED YET",
+            subtitle: "Tap LINK JOB above to attach a job to this note.",
           );
         }
 
@@ -404,54 +388,195 @@ class _LinkedJobsList extends ConsumerWidget {
   }
 }
 
-/// Displays a single attachment tile based on its type (image/audio/document).
-class _AttachmentTile extends StatelessWidget {
-  final NoteAttachment attachment;
-  const _AttachmentTile({super.key, required this.attachment});
+/// Horizontal scrollable image gallery with full-screen viewer.
+class _ImageGallery extends StatelessWidget {
+  final List<NoteAttachment> attachments;
+  const _ImageGallery({required this.attachments});
 
-  @override
-  Widget build(BuildContext context) {
-    switch (attachment.type) {
-      case AttachmentType.image:
-        return _ImageAttachmentTile(attachment: attachment);
-      case AttachmentType.audio:
-        return _AudioAttachmentTile(attachment: attachment);
-      case AttachmentType.document:
-        return _DocumentAttachmentTile(attachment: attachment);
-    }
-  }
-}
+  ImageProvider<Object> _provider(NoteAttachment a) => a.url.startsWith('file://')
+      ? FileImage(File(a.url.replaceFirst('file://', ''))) as ImageProvider<Object>
+      : NetworkImage(a.url);
 
-class _ImageAttachmentTile extends StatelessWidget {
-  final NoteAttachment attachment;
-  const _ImageAttachmentTile({required this.attachment});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        height: 160,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-          image: DecorationImage(
-            image: attachment.url.startsWith('file://')
-                ? FileImage(File(attachment.url.replaceFirst('file://', ''))) as ImageProvider
-                : NetworkImage(attachment.url),
-            fit: BoxFit.cover,
-          ),
+  void _openViewer(BuildContext context, int index) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.92),
+        pageBuilder: (context, _, __) => _ImageViewer(
+          attachments: attachments,
+          initialIndex: index,
+          provider: _provider,
         ),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final images = attachments;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("IMAGES (${images.length})",
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.neutral500, letterSpacing: 1.5, fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text("Tap to expand",
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.neutral500, fontSize: 9, fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length,
+            itemBuilder: (context, i) {
+              final att = images[i];
+              return GestureDetector(
+                onTap: () => _openViewer(context, i),
+                child: Container(
+                  width: 160,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: context.ksc.primary700),
+                    image: DecorationImage(image: _provider(att), fit: BoxFit.cover),
+                  ),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Text("${i + 1}",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-/// Inline audio player using just_audio.
+/// Full-screen image viewer page (pushed as a transparent route).
+class _ImageViewer extends StatefulWidget {
+  final List<NoteAttachment> attachments;
+  final int initialIndex;
+  final ImageProvider<Object> Function(NoteAttachment) provider;
+
+  const _ImageViewer({
+    required this.attachments,
+    required this.initialIndex,
+    required this.provider,
+  });
+
+  @override
+  State<_ImageViewer> createState() => _ImageViewerState();
+}
+
+class _ImageViewerState extends State<_ImageViewer> {
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final images = widget.attachments;
+    final current = images[_index];
+    return Stack(
+      children: [
+        Center(
+          child: InteractiveViewer(
+            child: Image(
+              image: widget.provider(current),
+              fit: BoxFit.contain,
+              height: double.infinity,
+            ),
+          ),
+        ),
+        // Close
+        Positioned(
+          top: 48, right: 16,
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Icon(LineAwesomeIcons.times_solid, color: Colors.white, size: 28),
+          ),
+        ),
+        // Prev
+        if (_index > 0)
+          Positioned(
+            left: 8, top: 0, bottom: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: () => setState(() => _index--),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
+                  child: Icon(LineAwesomeIcons.angle_left_solid, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ),
+        // Next
+        if (_index < images.length - 1)
+          Positioned(
+            right: 8, top: 0, bottom: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: () => setState(() => _index++),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
+                  child: Icon(LineAwesomeIcons.angle_right_solid, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ),
+        // Counter
+        Positioned(
+          bottom: 48, left: 0, right: 0,
+          child: Text(
+            "${_index + 1} / ${images.length}",
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(
+              color: Colors.white60, fontWeight: FontWeight.w700, fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Inline audio player using just_audio with draggable seek bar.
 class _AudioAttachmentTile extends StatefulWidget {
   final NoteAttachment attachment;
-  const _AudioAttachmentTile({required this.attachment});
+  const _AudioAttachmentTile({super.key, required this.attachment});
 
   @override
   State<_AudioAttachmentTile> createState() => _AudioAttachmentTileState();
@@ -460,6 +585,7 @@ class _AudioAttachmentTile extends StatefulWidget {
 class _AudioAttachmentTileState extends State<_AudioAttachmentTile> {
   final AudioPlayer _player = AudioPlayer();
   bool _isPlaying = false;
+  bool _isCompleted = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
@@ -474,9 +600,15 @@ class _AudioAttachmentTileState extends State<_AudioAttachmentTile> {
       if (mounted) setState(() => _position = p);
     });
     _player.playerStateStream.listen((state) {
-      if (mounted) {
-        setState(() => _isPlaying = state.playing);
-      }
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state.playing;
+        if (state.processingState == ProcessingState.completed) {
+          _isPlaying = false;
+          _isCompleted = true;
+          _position = _duration;
+        }
+      });
     });
   }
 
@@ -492,91 +624,30 @@ class _AudioAttachmentTileState extends State<_AudioAttachmentTile> {
     return '$min:$sec';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final durLabel = widget.attachment.duration != null
-        ? '${_formatDuration(Duration(seconds: widget.attachment.duration!))}'
-        : (_duration.inSeconds > 0 ? _formatDuration(_duration) : null);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(
-                _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                color: context.ksc.accent500,
-                size: 32,
-              ),
-              onPressed: () {
-                if (_isPlaying) {
-                  _player.pause();
-                } else {
-                  if (_position == _duration) {
-                    _player.seek(Duration.zero);
-                  }
-                  _player.play();
-                }
-              },
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.attachment.name,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.ksc.white),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  if (_duration.inSeconds > 0)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: LinearProgressIndicator(
-                        value: _duration.inSeconds > 0 ? _position.inSeconds / _duration.inSeconds : 0,
-                        backgroundColor: context.ksc.primary700,
-                        valueColor: AlwaysStoppedAnimation(context.ksc.accent500),
-                        minHeight: 3,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (durLabel != null)
-              Text(
-                durLabel,
-                style: TextStyle(fontSize: 11, color: context.ksc.neutral400, fontWeight: FontWeight.w600),
-              ),
-          ],
-        ),
-      ),
-    );
+  void _onPlayPause() {
+    if (_isPlaying) {
+      _player.pause();
+    } else {
+      if (_isCompleted) {
+        _isCompleted = false;
+        _player.seek(Duration.zero);
+      }
+      _player.play();
+    }
   }
-}
 
-/// Document/PDF attachment tile — opens file externally.
-class _DocumentAttachmentTile extends StatelessWidget {
-  final NoteAttachment attachment;
-  const _DocumentAttachmentTile({required this.attachment});
-
-  String _formatSize(int? bytes) {
-    if (bytes == null) return '';
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  void _onSeek(double fraction) {
+    final target = Duration(milliseconds: (_duration.inMilliseconds * fraction.clamp(0.0, 1.0)).round());
+    _player.seek(target);
+    _isCompleted = false;
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasDuration = _duration.inSeconds > 0;
+    final progress = hasDuration ? _position.inMilliseconds / _duration.inMilliseconds : 0.0;
+    final remaining = hasDuration ? _duration - _position : Duration.zero;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -586,35 +657,218 @@ class _DocumentAttachmentTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: context.ksc.primary700),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(LineAwesomeIcons.file_pdf_solid, color: context.ksc.error500, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    attachment.name,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.ksc.white),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (attachment.size != null)
-                    Text(
-                      _formatSize(attachment.size),
-                      style: TextStyle(fontSize: 10, color: context.ksc.neutral500),
+            // Top row: play button + name + total duration
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _onPlayPause,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: context.ksc.accent500,
+                      borderRadius: BorderRadius.circular(18),
                     ),
+                    child: Icon(
+                      _isPlaying ? Icons.pause : Icons.play_arrow,
+                      color: context.ksc.primary900,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.attachment.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _isCompleted ? context.ksc.neutral500 : context.ksc.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_isCompleted)
+                        Text("Completed · Tap to replay",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.accent500, fontWeight: FontWeight.w700, fontSize: 9,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (widget.attachment.duration != null)
+                  Text(
+                    _formatDuration(Duration(seconds: widget.attachment.duration!)),
+                    style: TextStyle(fontSize: 11, color: context.ksc.neutral400, fontWeight: FontWeight.w600),
+                  ),
+              ],
+            ),
+            // Seek bar
+            if (hasDuration) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onHorizontalDragUpdate: (details) {
+                  _onSeek(progress + details.delta.dx / 200); // rough, improved below
+                },
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final totalWidth = constraints.maxWidth;
+                    return GestureDetector(
+                      onTapDown: (details) {
+                        final fraction = details.localPosition.dx / totalWidth;
+                        _onSeek(fraction.clamp(0.0, 1.0));
+                      },
+                      child: Container(
+                        height: 20,
+                        alignment: Alignment.centerLeft,
+                        child: Stack(
+                          children: [
+                            // Track background
+                            Positioned.fill(
+                              child: Container(
+                                height: 4,
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: context.ksc.primary700,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                            // Fill
+                            Positioned(
+                              left: 0, top: 8,
+                              width: totalWidth * progress.clamp(0.0, 1.0),
+                              child: Container(
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: context.ksc.accent500,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // Time row: current + remaining
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_formatDuration(_position),
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral400, fontWeight: FontWeight.w600, fontSize: 9,
+                    ),
+                  ),
+                  Text("-${_formatDuration(remaining)}",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral500, fontWeight: FontWeight.w600, fontSize: 9,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            TextButton.icon(
-              onPressed: () => OpenFilex.open(attachment.url),
-              icon: Icon(LineAwesomeIcons.external_link_alt_solid, size: 12, color: context.ksc.accent500),
-              label: Text("OPEN", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: context.ksc.accent500, letterSpacing: 0.5)),
-              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: Size.zero),
-            ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Document/PDF attachment tile — tappable card, opens file externally.
+class _DocumentAttachmentTile extends StatelessWidget {
+  final NoteAttachment attachment;
+  const _DocumentAttachmentTile({super.key, required this.attachment});
+
+  String _formatSize(int? bytes) {
+    if (bytes == null) return '';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  String get _resolvedPath {
+    if (attachment.url.startsWith('file://')) {
+      return attachment.url.replaceFirst('file://', '');
+    }
+    return attachment.url;
+  }
+
+  Future<void> _openFile(BuildContext context) async {
+    try {
+      final result = await OpenFilex.open(_resolvedPath);
+      if (result.type != ResultType.done) {
+        if (context.mounted) {
+          KsSnackbar.show(context, message: "Could not open file: ${result.message}",
+              type: KsSnackbarType.error);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        KsSnackbar.show(context, message: "Could not open attachment",
+            type: KsSnackbarType.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: () => _openFile(context),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: context.ksc.primary800,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: context.ksc.primary700),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: context.ksc.accent500.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(LineAwesomeIcons.file_pdf_solid, color: context.ksc.accent500, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      attachment.name,
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.ksc.white),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (attachment.size != null)
+                      Text(
+                        _formatSize(attachment.size),
+                        style: TextStyle(fontSize: 10, color: context.ksc.neutral500),
+                      ),
+                  ],
+                ),
+              ),
+              Text("OPEN",
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

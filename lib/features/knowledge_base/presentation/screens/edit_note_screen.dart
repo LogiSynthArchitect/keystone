@@ -40,14 +40,22 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   String? _serviceType;
   String? _photoUrl;
   bool _isUploadingPhoto = false;
-  bool _initialised = false;
   List<NoteAttachment> _attachments = [];
+  KnowledgeNoteEntity? _note;
 
   final _recorder = AudioRecorder();
   bool _isRecording = false;
   int _recordingDuration = 0;
   Timer? _recordingTimer;
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Synchronously populate from the already-loaded provider
+    final note = ref.read(notesListProvider).notes.where((n) => n.id == widget.noteId).firstOrNull;
+    if (note != null) _applyNote(note);
+  }
 
   @override
   void dispose() {
@@ -58,15 +66,14 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     super.dispose();
   }
 
-  void _initFrom(KnowledgeNoteEntity note) {
-    if (_initialised) return;
+  void _applyNote(KnowledgeNoteEntity note) {
     _titleController.text       = note.title;
     _descriptionController.text = note.description;
     _tags                       = List.from(note.tags);
     _serviceType                = note.serviceType;
     _photoUrl                   = note.photoUrl;
     _attachments                = List.from(note.attachments);
-    _initialised = true;
+    _note = note;
   }
 
   bool get _isDirty =>
@@ -113,44 +120,18 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
   @override
   Widget build(BuildContext context) {
     final state    = ref.watch(editNoteProvider);
-    final note     = ref.watch(notesListProvider).notes.where((n) => n.id == widget.noteId).firstOrNull;
+    final note     = _note;
     final keyboard = MediaQuery.of(context).viewInsets.bottom > 0;
 
     if (note == null) {
-      final listState = ref.watch(notesListProvider);
-      if (listState.isLoading) {
-        return Scaffold(
-          backgroundColor: context.ksc.primary900,
-          appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
-          body: const Center(child: CircularProgressIndicator()),
-        );
-      }
-      if (listState.errorMessage != null) {
-        return Scaffold(
-          backgroundColor: context.ksc.primary900,
-          appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 48, color: context.ksc.error500),
-                const SizedBox(height: 16),
-                Text("FAILED TO LOAD", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                Text(listState.errorMessage!, textAlign: TextAlign.center, style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400)),
-              ],
-            ),
-          ),
-        );
-      }
       return Scaffold(
         backgroundColor: context.ksc.primary900,
         appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
-        body: Center(child: Text("NOTE NOT FOUND", style: TextStyle(color: context.ksc.neutral400))),
+        body: const Center(
+          child: CircularProgressIndicator(color: Color(0xFFD4A84B)),
+        ),
       );
     }
-
-    _initFrom(note);
 
     return PopScope(
       canPop: false,

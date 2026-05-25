@@ -191,11 +191,11 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                                       child: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.white, size: 24),
                                     ),
                                     confirmDismiss: (_) async {
-                                      ref.read(notesListProvider.notifier).archiveNote(note.id);
+                                      await ref.read(notesListProvider.notifier).archiveNote(note.id);
                                       if (context.mounted) {
                                         KsSnackbar.show(context, message: "Note archived", type: KsSnackbarType.success);
                                       }
-                                      return false;
+                                      return true;
                                     },
                                     child: NoteCard(
                                       note: note,

@@ -20,6 +20,7 @@ import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../providers/customer_providers.dart';
+import 'add_customer_screen.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/contact_import_sheet.dart';
 
@@ -250,7 +251,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(RouteNames.addCustomer),
+        onPressed: () => AddCustomerScreen.show(context),
         backgroundColor: context.ksc.accent500,
         foregroundColor: context.ksc.primary900,
         elevation: 0,
