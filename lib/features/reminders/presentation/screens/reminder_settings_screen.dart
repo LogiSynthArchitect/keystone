@@ -4,7 +4,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../domain/models/reminder_thresholds.dart';
 
 class ReminderSettingsScreen extends ConsumerStatefulWidget {
@@ -61,7 +61,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                   followUpPendingDays: _followUpDays,
                   followUpNoResponseDays: _noResponseDays,
                 ));
-                if (mounted) KsSnackbar.show(context, message: "Reminder thresholds saved", type: KsSnackbarType.success);
+                if (mounted) KsSlidingNotification.show(context, message: "Reminder thresholds saved", type: KsNotificationType.success);
               },
               child: Text("SAVE SETTINGS", style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
             ),

@@ -143,9 +143,9 @@ class JobStepExtras extends ConsumerWidget {
                   )).toList(),
                 ),
               ],
-              const Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: Divider(height: 1, color: Color(0xFF1E2A3A)),
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Divider(height: 1, color: context.ksc.primary700),
               ),
             ],
           ),

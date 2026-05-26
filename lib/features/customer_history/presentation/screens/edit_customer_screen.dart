@@ -10,7 +10,7 @@ import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../providers/customer_providers.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
@@ -98,12 +98,12 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
 
     final phone = _phoneController.text.trim();
     if (phone.length != 10 || !phone.startsWith('0')) {
-      KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsNotificationType.error);
       return;
     }
     final name = _nameController.text.trim();
     if (name.length < 2) {
-      KsSnackbar.show(context, message: "Name must be at least 2 characters", type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: "Name must be at least 2 characters", type: KsNotificationType.error);
       return;
     }
 
@@ -121,10 +121,10 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
         ref.invalidate(customerDetailProvider(widget.customerId));
         ref.read(customerListProvider.notifier).load();
         context.pop();
-        KsSnackbar.show(context, message: "Customer updated", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Customer updated", type: KsNotificationType.success);
       }
     } catch (e) {
-      if (mounted) KsSnackbar.show(context, message: "Update failed: $e", type: KsSnackbarType.error);
+      if (mounted) KsSlidingNotification.show(context, message: "Update failed: $e", type: KsNotificationType.error);
     }
   }
 

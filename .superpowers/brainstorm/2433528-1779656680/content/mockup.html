@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Note Detail — Attachments Redesign</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+  .phone { max-width: 390px; width: 100%; background: #0F0F12; border-radius: 24px; padding: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-top: 8px; }
+  .header .back { color: #D4A84B; font-size: 22px; cursor: pointer; line-height: 1; }
+  .header h1 { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #F2F0EB; }
+  .header .spacer { flex: 1; }
+  .header .icons { display: flex; gap: 14px; }
+  .header .icons span { color: #6B6B6B; font-size: 18px; cursor: pointer; }
+
+  .section-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #6B6B6B; margin-bottom: 12px; text-transform: uppercase; }
+
+  .content-card { background: #141418; border: 1px solid #1E1E24; border-radius: 4px; padding: 16px; margin-bottom: 24px; }
+  .content-card .label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #6B6B6B; margin-bottom: 12px; }
+  .content-card p { font-size: 14px; line-height: 1.6; color: #E0DDD5; font-weight: 500; }
+
+  /* ── IMAGE GALLERY ── */
+  .gallery-wrap { margin-bottom: 24px; }
+  .gallery-wrap .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .gallery-wrap .top .count { font-size: 11px; color: #6B6B6B; font-weight: 600; }
+  .gallery-scroll { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  .gallery-scroll::-webkit-scrollbar { height: 3px; }
+  .gallery-scroll::-webkit-scrollbar-track { background: #1E1E24; border-radius: 2px; }
+  .gallery-scroll::-webkit-scrollbar-thumb { background: #D4A84B; border-radius: 2px; }
+  .gallery-item { flex: 0 0 auto; width: 160px; height: 120px; border-radius: 4px; overflow: hidden; border: 1px solid #1E1E24; cursor: pointer; scroll-snap-align: start; position: relative; }
+  .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+  .gallery-item .hover { position: absolute; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; }
+  .gallery-item:hover .hover { opacity: 1; }
+  .gallery-item .hover span { color: #fff; font-size: 22px; }
+  .gallery-item .badge { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.7); color: #D4A84B; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 2px; }
+
+  /* ── FULLSCREEN OVERLAY ── */
+  .fs-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+  .fs-overlay.show { display: flex; }
+  .fs-overlay img { max-width: 92%; max-height: 80%; object-fit: contain; border-radius: 6px; }
+  .fs-overlay .fs-close { position: absolute; top: 20px; right: 20px; color: #fff; font-size: 30px; cursor: pointer; background: none; border: none; }
+  .fs-overlay .fs-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+  .fs-overlay .fs-nav:hover { background: rgba(255,255,255,0.18); }
+  .fs-overlay .fs-prev { left: 12px; }
+  .fs-overlay .fs-next { right: 12px; }
+  .fs-overlay .fs-counter { position: absolute; bottom: 24px; color: rgba(255,255,255,0.5); font-size: 13px; letter-spacing: 1px; }
+
+  /* ── AUDIO PLAYER ── */
+  .audio-card { background: #141418; border: 1px solid #1E1E24; border-radius: 4px; padding: 14px 16px; margin-bottom: 10px; }
+  .audio-card .row1 { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .audio-card .playbtn { width: 36px; height: 36px; border-radius: 50%; background: #D4A84B; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .audio-card .playbtn svg { width: 16px; height: 16px; fill: #0C0C0E; }
+  .audio-card .playbtn.is-playing { background: #D4A84B; }
+  .audio-card .info { flex: 1; min-width: 0; }
+  .audio-card .info .name { font-size: 12px; font-weight: 600; color: #F2F0EB; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .audio-card .info .sub { font-size: 10px; color: #6B6B6B; font-weight: 600; margin-top: 2px; }
+  .audio-card .duration { font-size: 11px; color: #6B6B6B; font-weight: 600; flex-shrink: 0; }
+  .seek-row { position: relative; height: 4px; background: #1E1E24; border-radius: 2px; cursor: pointer; }
+  .seek-row .fill { height: 100%; background: #D4A84B; border-radius: 2px; position: relative; }
+  .seek-row .fill .knob { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background: #D4A84B; display: none; }
+  .seek-row:hover .fill .knob { display: block; }
+  .time-row { display: flex; justify-content: space-between; margin-top: 4px; }
+  .time-row span { font-size: 9px; color: #6B6B6B; font-weight: 600; }
+  .time-row .now { color: #8B8B8B; }
+
+  /* ── DOCUMENT ── */
+  .doc-card { background: #141418; border: 1px solid #1E1E24; border-radius: 4px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s; }
+  .doc-card:hover { border-color: #D4A84B; }
+  .doc-card .icon-box { width: 32px; height: 32px; background: rgba(212,168,75,0.08); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .doc-card .icon-box svg { width: 18px; height: 18px; fill: #D4A84B; }
+  .doc-card .info { flex: 1; min-width: 0; }
+  .doc-card .info .name { font-size: 12px; font-weight: 600; color: #F2F0EB; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-card .info .meta { font-size: 10px; color: #6B6B6B; font-weight: 600; margin-top: 2px; }
+  .doc-card .action { font-size: 10px; font-weight: 800; letter-spacing: .5px; color: #D4A84B; background: none; border: none; cursor: pointer; padding: 4px 8px; text-transform: uppercase; flex-shrink: 0; }
+
+  .spacer16 { height: 16px; }
+  .spacer24 { height: 24px; }
+
+  /* Annotation strip */
+  .notes { margin-top: 24px; padding: 16px; background: #141418; border: 1px solid #D4A84B; border-radius: 4px; }
+  .notes h3 { font-size: 10px; font-weight: 800; color: #D4A84B; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+  .notes ul { font-size: 12px; color: #B0ADA5; line-height: 1.9; padding-left: 16px; }
+  .notes li strong { color: #F2F0EB; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- ====== HEADER ====== -->
+  <div class="header">
+    <span class="back">‹</span>
+    <h1>NOTE DETAIL</h1>
+    <div class="spacer"></div>
+    <div class="icons">
+      <span>🔗</span>
+      <span>📌</span>
+      <span style="color:#D4A84B;">✏️</span>
+    </div>
+  </div>
+
+  <!-- ====== TITLE ====== -->
+  <h2 style="font-size:20px;font-weight:900;letter-spacing:.5px;margin-bottom:4px;color:#F2F0EB;">REKEYING KWINSET DEADBOLT</h2>
+  <div style="font-size:10px;color:#6B6B6B;font-weight:700;margin-bottom:20px;">
+    <span>📅 MAY 24, 2026</span>
+    <span style="margin-left:12px;">✏️ EDITED 2H AGO</span>
+  </div>
+
+  <!-- ====== CONTENT ====== -->
+  <div class="content-card">
+    <div class="label">ANALYSIS & SOLUTION</div>
+    <p>Kwikset SmartKey deadbolt with key seized. Used the reset tool to depress the reset pin while inserting the existing key in the 12 o'clock position. Turned 15 degrees counterclockwise, inserted new key, turned back to 6 o'clock. Removed reset tool. Tested 3 times — smooth operation.</p>
+  </div>
+
+  <!-- ====== IMAGE GALLERY ====== -->
+  <div class="gallery-wrap">
+    <div class="top">
+      <div class="section-label" style="margin-bottom:0;">IMAGES (3)</div>
+      <span class="count">Tap to expand</span>
+    </div>
+    <div class="gallery-scroll">
+      <div class="gallery-item">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='140'%3E%3Crect width='200' height='140' fill='%2322222a'/%3E%3Ctext x='100' y='75' fill='%23666' font-size='12' text-anchor='middle' dominant-baseline='middle'%3EDeadbolt front%3C/text%3E%3C/svg%3E" alt="1">
+        <div class="hover"><span>🔍</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='140'%3E%3Crect width='200' height='140' fill='%2322222a'/%3E%3Ctext x='100' y='75' fill='%23666' font-size='12' text-anchor='middle' dominant-baseline='middle'%3ETools used%3C/text%3E%3C/svg%3E" alt="2">
+        <div class="hover"><span>🔍</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='140'%3E%3Crect width='200' height='140' fill='%2322222a'/%3E%3Ctext x='100' y='75' fill='%23666' font-size='12' text-anchor='middle' dominant-baseline='middle'%3EFinal result%3C/text%3E%3C/svg%3E" alt="3">
+        <div class="hover"><span>🔍</span></div>
+        <div class="badge">+2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== AUDIO ====== -->
+  <div class="section-label">RECORDINGS (2)</div>
+  <div class="spacer16"></div>
+
+  <!-- Audio 1 — playing -->
+  <div class="audio-card">
+    <div class="row1">
+      <button class="playbtn is-playing">
+        <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+      </button>
+      <div class="info">
+        <div class="name">Audio recording 2026-05-24 14:32</div>
+        <div class="sub">01:23 / 03:45</div>
+      </div>
+      <span class="duration">03:45</span>
+    </div>
+    <div class="seek-row">
+      <div class="fill" style="width:38%;"><div class="knob"></div></div>
+    </div>
+    <div class="time-row">
+      <span class="now">1:23</span>
+      <span>-2:22</span>
+    </div>
+  </div>
+
+  <!-- Audio 2 — completed, ready to replay -->
+  <div class="audio-card">
+    <div class="row1">
+      <button class="playbtn">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="info">
+        <div class="name" style="color:#6B6B6B;">Client instructions 2026-05-24 15:10</div>
+        <div class="sub" style="color:#D4A84B;">Completed · Tap to replay</div>
+      </div>
+      <span class="duration">02:10</span>
+    </div>
+    <div class="seek-row">
+      <div class="fill" style="width:100%;"><div class="knob"></div></div>
+    </div>
+    <div class="time-row">
+      <span class="now">2:10</span>
+      <span>0:00</span>
+    </div>
+  </div>
+
+  <!-- ====== DOCUMENTS ====== -->
+  <div class="spacer24"></div>
+  <div class="section-label">DOCUMENTS (1)</div>
+  <div class="spacer16"></div>
+
+  <div class="doc-card">
+    <div class="icon-box">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </div>
+    <div class="info">
+      <div class="name">Kwikset_SmartKey_Instructions.pdf</div>
+      <div class="meta">PDF · 1.2 MB</div>
+    </div>
+    <button class="action">OPEN</button>
+  </div>
+
+</div>
+
+<!-- ====== ANNOTATION ====== -->
+<div style="max-width:390px;width:100%;">
+  <div class="notes">
+    <h3>Proposed changes for attachments section</h3>
+    <ul>
+      <li><strong>Image gallery:</strong> Thumbnails in horizontal scroll row → tap opens full-screen viewer with prev/next navigation and swipe. Count badge when more images exist. Scrollbar styled with gold accent.</li>
+      <li><strong>Audio player:</strong> Seek bar is draggable (knob appears on hover). Shows <em>current time + remaining time</em>. After playback completes, tap play resets to zero and restarts. Name dims when completed, "Tap to replay" prompt shown.</li>
+      <li><strong>Documents:</strong> Full-width card with icon + name + size. OPEN button uses platform file picker. Entire card is tappable (not just the button).</li>
+      <li><strong>No other page changes</strong> — only the attachments section is redesigned. Header, content card, tags, linked jobs stay as-is.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

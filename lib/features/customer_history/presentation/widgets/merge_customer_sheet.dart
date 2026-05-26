@@ -7,7 +7,7 @@ import '../../../../core/widgets/ks_card.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../providers/customer_providers.dart';
 import '../../domain/usecases/merge_customers_usecase.dart';
@@ -88,7 +88,7 @@ class _MergeCustomerSheetState extends ConsumerState<MergeCustomerSheet> {
           }
         } catch (e) {
           if (mounted) {
-            KsSnackbar.show(context, message: "Merge failed: $e", type: KsSnackbarType.error);
+            KsSlidingNotification.show(context, message: "Merge failed: $e", type: KsNotificationType.error);
           }
         }
       },

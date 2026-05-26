@@ -13,7 +13,10 @@ export ANDROID_HOME=/home/cybocrime/Tools/android-sdk
 export FLUTTER_ROOT=/home/cybocrime/Tools/flutter
 
 # Auto-detect connected Android device (prefer wireless, fallback to USB)
-DEVICE_ID=$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')
+DEVICE_ID=$(adb devices | awk 'NR>1 && $2=="device" {print $1}' | grep -E '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [ -z "$DEVICE_ID" ]; then
+  DEVICE_ID=$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')
+fi
 if [ -z "$DEVICE_ID" ]; then
   echo "ERROR: No Android device connected via ADB"
   exit 1

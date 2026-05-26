@@ -9,7 +9,7 @@ import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_badge.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_button.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/services/demo_data_seeder.dart';
@@ -76,7 +76,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Future<void> _toggleDemoData() async {
     final userId = ref.read(currentUserProvider).valueOrNull?.id;
     if (userId == null) {
-      if (mounted) KsSnackbar.show(context, message: 'Please log in first', type: KsSnackbarType.error);
+      if (mounted) KsSlidingNotification.show(context, message: 'Please log in first', type: KsNotificationType.error);
       return;
     }
 
@@ -119,15 +119,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.invalidate(recurringScheduleProvider);
         ref.invalidate(jobTemplateProvider);
         ref.invalidate(serviceTypeProvider);
-        KsSnackbar.show(
+        KsSlidingNotification.show(
           context,
           message: exists ? 'Demo data removed' : 'Demo data seeded — 8 customers, 12 jobs, inventory, notes, & more',
-          type: KsSnackbarType.success,
+          type: KsNotificationType.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: 'Demo data error: $e', type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: 'Demo data error: $e', type: KsNotificationType.error);
       }
     }
   }

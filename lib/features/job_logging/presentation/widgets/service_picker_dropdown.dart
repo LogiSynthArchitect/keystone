@@ -4,6 +4,8 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/service_icon_map.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../service_types/presentation/providers/service_type_provider.dart';
 
 /// A compact dropdown-style service type selector.
@@ -181,43 +183,13 @@ class ServicePickerDropdown extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Search field — UnderlineInputBorder matching customer step
+                  // Search field — using KsSearchBar for consistent gold-accent focus
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24),
-                    child: TextField(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: KsSearchBar(
+                      hint: "Search services...",
                       controller: searchCtrl,
                       onChanged: (_) => setSheetState(() {}),
-                      style: AppTextStyles.bodyLarge.copyWith(
-                          color: context.ksc.white,
-                          fontWeight: FontWeight.bold),
-                      cursorColor: context.ksc.accent500,
-                      decoration: InputDecoration(
-                        hintText: "Search services...",
-                        hintStyle: AppTextStyles.bodyLarge.copyWith(
-                            color: context.ksc.neutral600,
-                            fontWeight: FontWeight.bold),
-                        prefixIcon: Icon(
-                            LineAwesomeIcons.search_solid,
-                            size: 18,
-                            color: context.ksc.neutral600),
-                        isDense: true,
-                        contentPadding:
-                            const EdgeInsets.only(bottom: 8),
-                        enabledBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(
-                              color: Color(0xFF2A3A4A), width: 1),
-                        ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(
-                              color: Color(0xFF4A90D9), width: 1.5),
-                        ),
-                        border: const UnderlineInputBorder(
-                          borderSide: BorderSide(
-                              color: Color(0xFF2A3A4A)),
-                        ),
-                        filled: false,
-                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -229,9 +201,12 @@ class ServicePickerDropdown extends ConsumerWidget {
                     ),
                     child: filtered.isEmpty
                         ? const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Center(
-                                child: Text("No services found")),
+                            padding: EdgeInsets.only(top: 40),
+                            child: KsEmptyState(
+                              icon: LineAwesomeIcons.search_solid,
+                              title: "No services found",
+                              subtitle: "Try a different search term",
+                            ),
                           )
                         : ListView.builder(
                             shrinkWrap: true,
@@ -262,9 +237,10 @@ class ServicePickerDropdown extends ConsumerWidget {
                                       border: Border.all(
                                         color: isSelected
                                             ? context.ksc.accent500
-                                            : context.ksc.primary700,
+                                            : context.ksc.accent500
+                                                .withValues(alpha: 0.25),
                                         width:
-                                            isSelected ? 1.5 : 1.0,
+                                            isSelected ? 2.0 : 1.0,
                                       ),
                                     ),
                                     child: Row(

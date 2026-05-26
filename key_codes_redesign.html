@@ -1,0 +1,327 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Barlow Semi Condensed', sans-serif; background: #0A1628; color: #E0E0E0; padding: 24px; display: flex; flex-direction: column; gap: 40px; }
+  h1 { color: #D4A017; font-size: 24px; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }
+  h2 { color: #FFf; font-size: 16px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+  h3 { color: #D4A017; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+  .subtitle { color: #9E9E9E; font-size: 12px; margin-bottom: 20px; }
+  .section { display: flex; gap: 32px; flex-wrap: wrap; }
+  .column { flex: 1; min-width: 300px; }
+  .label { font-size: 10px; font-weight: 800; color: #737373; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .phone-frame { width: 340px; background: #0F2144; border-radius: 12px; border: 1px solid #163060; overflow: hidden; }
+  .phone-frame .header { padding: 16px; border-bottom: 1px solid #163060; display: flex; align-items: center; gap: 12px; }
+  .phone-frame .header .back { width: 20px; height: 20px; border-radius: 4px; background: #163060; }
+  .phone-frame .header h4 { flex: 1; font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .phone-frame .body { padding: 16px; min-height: 300px; }
+
+  .card { background: #0F2144; border-radius: 4px; border: 1px solid #163060; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .card:hover { border-color: #D4A017; }
+  .card .icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .card .content { flex: 1; }
+  .card .content .primary { color: #fff; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; }
+  .card .content .secondary { color: #D4A017; font-size: 10px; font-weight: 600; margin-top: 2px; }
+  .card .badge { background: #D4A01722; border: 1px solid #D4A01744; border-radius: 100px; padding: 2px 8px; font-size: 9px; font-weight: 700; color: #D4A017; letter-spacing: 0.5px; }
+  .card .arrow { color: #4A6EC4; font-size: 14px; }
+
+  .divider { border: none; border-top: 1px solid #163060; margin: 24px 0; }
+
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+  .field .flabel { font-size: 10px; font-weight: 800; color: #737373; letter-spacing: 1.5px; }
+  .field .finput { background: transparent; border: none; border-bottom: 1px solid #163060; padding: 12px 0px 8px; color: #fff; font-size: 14px; font-weight: 600; font-family: inherit; outline: none; }
+  .field .finput:focus { border-bottom-color: #D4A017; }
+  .field .finput::placeholder { color: #5C5C5C; }
+
+  .btn-gold { width: 100%; background: #D4A017; color: #0A1628; border: none; border-radius: 4px; padding: 16px; font-family: inherit; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; cursor: pointer; }
+  .btn-gold:hover { background: #E8B84B; }
+
+  .gold-bar { width: 100%; background: #D4A017; display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; cursor: pointer; }
+  .gold-bar:hover { background: #E8B84B; }
+  .gold-bar span { color: #0A1628; font-weight: 900; font-size: 15px; letter-spacing: 1px; }
+  .gold-bar .icon { color: #0A1628; font-size: 20px; }
+
+  .btn-blue { width: 100%; background: #2952A3; color: #fff; border: none; border-radius: 4px; padding: 16px; font-family: inherit; font-size: 13px; font-weight: 900; letter-spacing: 1.5px; cursor: pointer; }
+
+  .info-banner { background: #D4A01708; border: 1px solid #D4A01730; border-radius: 4px; padding: 12px; display: flex; align-items: start; gap: 8px; margin-bottom: 24px; }
+  .info-banner .lock { width: 16px; height: 16px; color: #D4A017; font-size: 14px; flex-shrink: 0; }
+  .info-banner p { font-size: 11px; color: #D4A017; font-weight: 600; }
+
+  .edit-icon-badge { width: 32px; height: 32px; border-radius: 4px; background: #163060; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #D4A017; font-size: 14px; }
+  .edit-icon-badge:hover { background: #1E3F7A; }
+
+  .badge-success { background: #1B6B3A33; border: 1px solid #2E7D3255; border-radius: 100px; padding: 2px 8px; font-size: 9px; font-weight: 700; color: #2E7D32; }
+  .badge-neutral { background: #73737333; border: 1px solid #73737355; border-radius: 100px; padding: 2px 8px; font-size: 9px; font-weight: 700; color: #BDBDBD; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th { text-align: left; font-size: 11px; font-weight: 700; color: #D4A017; padding: 8px 12px; border-bottom: 1px solid #163060; letter-spacing: 0.5px; }
+  td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #0F2144; }
+  td:first-child { font-weight: 700; color: #fff; width: 140px; }
+
+  .gap-row { display: flex; gap: 24px; flex-wrap: wrap; }
+
+  .tag { display: inline-block; background: #163060; color: #E0E0E0; border-radius: 100px; padding: 2px 10px; font-size: 10px; font-weight: 600; }
+  .tag.gold { background: #D4A01722; color: #D4A017; border: 1px solid #D4A01733; }
+  .tag.blue { background: #2952A322; color: #4A6EC4; border: 1px solid #2952A333; }
+
+  .highlight { color: #D4A017; font-weight: 700; }
+</style>
+
+<h1>⌨ KEY CODES — REDESIGN PLAN</h1>
+<p class="subtitle">Reusable components audit + proposed changes for key codes drawer + edit screen</p>
+
+<hr class="divider">
+
+<!-- SECTION 1: Drawer Cards -->
+<h2>1. KEY CODES DRAWER — CARD LIST</h2>
+<p class="subtitle" style="margin-bottom:16px">
+  <span class="tag gold">KsContentDrawer</span>
+  <span class="tag gold">KsCard</span>
+  <span class="tag">KsEmptyState</span>
+  <span class="tag">KsLoadingIndicator</span>
+</p>
+
+<div class="section">
+  <div class="column">
+    <div class="label">❌ Current (raw Container + IconButton)</div>
+    <div class="phone-frame">
+      <div class="body">
+        <div class="card" style="cursor:default; border-color:#163060;">
+          <div class="icon" style="color:#D4A017;">🔑</div>
+          <div class="content">
+            <div class="primary">B276</div>
+            <div class="secondary">SC1</div>
+          </div>
+          <div class="edit-icon-badge">✏</div>
+        </div>
+        <div class="card" style="cursor:default; border-color:#163060;">
+          <div class="icon" style="color:#D4A017;">🔑</div>
+          <div class="content">
+            <div class="primary">KW1-832</div>
+            <div class="secondary">KW1</div>
+          </div>
+          <div class="edit-icon-badge">✏</div>
+        </div>
+        <div class="card" style="cursor:default; border-color:#163060;">
+          <div class="icon" style="color:#D4A017;">🔑</div>
+          <div class="content">
+            <div class="primary">M1-445-2</div>
+            <div class="secondary">M1</div>
+          </div>
+          <div class="edit-icon-badge">✏</div>
+        </div>
+      </div>
+    </div>
+    <p style="color:#9E9E9E; font-size:11px; margin-top:8px;">
+      ✘ Raw Container + BoxDecoration (no KsCard)<br>
+      ✘ IconButton to edit — breaks app pattern<br>
+      ✘ No bitting / description shown
+    </p>
+  </div>
+
+  <div class="column">
+    <div class="label">✅ Proposed (KsCard + tappable)</div>
+    <div class="phone-frame">
+      <div class="body">
+        <div class="card" style="border-color:#D4A01744;">
+          <div class="icon" style="color:#D4A017;">🔑</div>
+          <div class="content">
+            <div class="primary">B276</div>
+            <div style="display:flex; gap:6px; margin-top:4px; align-items:center;">
+              <span class="badge">SC1</span>
+              <span class="badge-neutral">4-3-2-1</span>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="card" style="border-color:#163060;">
+          <div class="icon" style="color:#D4A017;">🔑</div>
+          <div class="content">
+            <div class="primary">KW1-832</div>
+            <div style="display:flex; gap:6px; margin-top:4px; align-items:center;">
+              <span class="badge">KW1</span>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+        <div class="card" style="border-color:#163060;">
+          <div class="icon" style="color:#D4A017;">🔑</div>
+          <div class="content">
+            <div class="primary">M1-445-2</div>
+            <div style="display:flex; gap:6px; margin-top:4px; align-items:center;">
+              <span class="badge">M1</span>
+              <span class="badge-success">5-3-2</span>
+            </div>
+          </div>
+          <div class="arrow">›</div>
+        </div>
+      </div>
+    </div>
+    <p style="color:#9E9E9E; font-size:11px; margin-top:8px;">
+      ✓ KsCard with backgroundColor: primary800, onTap → edit screen<br>
+      ✓ Gold badge for keyType, neutral badge for bitting<br>
+      ✓ Chevron › indicates tappable — no IconButton needed
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 2: Reusable Components Audit -->
+<h2>2. REUSABLE COMPONENTS — USAGE TABLE</h2>
+
+<table>
+  <tr><th>Widget</th><th>Status</th><th>Notes</th></tr>
+  <tr><td>KsCard</td><td><span class="highlight">Will use</span></td><td>variant: outlined, backgroundColor: primary800, onTap → edit</td></tr>
+  <tr><td>KsBadge</td><td><span class="highlight">Will use</span></td><td>variant: info for keyType (gold), neutral for bitting (grey)</td></tr>
+  <tr><td>KsTextField</td><td><span class="highlight">Will use</span></td><td>Replaces raw Container + TextField in edit screen</td></tr>
+  <tr><td>KsButton</td><td><span class="highlight">Will use</span></td><td>variant: cta (gold), fullWidth: true, leadingIcon: check</td></tr>
+  <tr><td>KsContentDrawer</td><td>Already used</td><td>Wrapper for the key codes sheet — no change</td></tr>
+  <tr><td>KsLoadingIndicator</td><td>Already used</td><td>Loading state — no change</td></tr>
+  <tr><td>KsEmptyState</td><td>Already used</td><td>Empty state — no change</td></tr>
+  <tr><td>KsAppBar</td><td>Already used</td><td>Edit screen appbar — no change</td></tr>
+</table>
+
+<hr class="divider">
+
+<!-- SECTION 3: Edit Key Code Screen -->
+<h2>3. EDIT KEY CODE SCREEN</h2>
+<p class="subtitle" style="margin-bottom:16px">
+  <span class="tag gold">KsTextField</span>
+  <span class="tag gold">KsButton</span>
+  <span class="tag gold">KsContentDrawer</span>
+  <span class="tag">KsAppBar</span>
+</p>
+
+<div class="section">
+  <div class="column">
+    <div class="label">❌ Current (raw widgets)</div>
+    <div class="phone-frame">
+      <div class="header">
+        <div class="back"></div>
+        <h4>EDIT KEY CODE</h4>
+      </div>
+      <div class="body">
+        <div class="info-banner">
+          <div class="lock">🔒</div>
+          <p>Bitting data is encrypted and only visible to you.</p>
+        </div>
+        <div class="field">
+          <div class="flabel">KEY CODE *</div>
+          <div class="finput" style="background:#0F2144; border:1px solid #163060;">B276</div>
+        </div>
+        <div class="field">
+          <div class="flabel">KEY TYPE</div>
+          <div class="finput" style="background:#0F2144; border:1px solid #163060;" placeholder="e.g. SC1, KW1, M1">SC1</div>
+        </div>
+        <div class="field">
+          <div class="flabel">BITTING / CODE DATA</div>
+          <div class="finput" style="background:#0F2144; border:1px solid #163060;" placeholder="e.g. 4-3-2-1-2-3"></div>
+        </div>
+        <div class="field">
+          <div class="flabel">NOTES</div>
+          <div class="finput" style="background:#0F2144; border:1px solid #163060; min-height:60px;" placeholder="e.g. Front door, deadbolt"></div>
+        </div>
+      </div>
+      <div style="padding:16px; border-top:1px solid #163060; background:#0F2144;">
+        <button class="btn-gold">SAVE KEY CODE</button>
+      </div>
+    </div>
+    <p style="color:#9E9E9E; font-size:11px; margin-top:8px;">
+      ✘ Raw Container + TextField (no KsTextField)<br>
+      ✘ Raw ElevatedButton (no KsButton)<br>
+      ✘ Raw Container bottom bar
+    </p>
+  </div>
+
+  <div class="column">
+    <div class="label">✅ Proposed (KsTextField + KsButton + drawer)</div>
+    <div class="phone-frame">
+      <div class="header">
+        <div class="back"></div>
+        <h4>EDIT KEY CODE</h4>
+      </div>
+      <div class="body">
+        <div class="info-banner">
+          <div class="lock">🔒</div>
+          <p>Bitting data is encrypted and only visible to you.</p>
+        </div>
+
+        <!-- KsTextField: type=text -->
+        <div class="field">
+          <div class="flabel">KEY CODE *</div>
+          <div class="finput" style="border-color:#D4A01744;">B276</div>
+        </div>
+        <div class="field">
+          <div class="flabel">KEY TYPE</div>
+          <div class="finput" style="border-color:#163060;" placeholder="e.g. SC1, KW1, M1">SC1</div>
+        </div>
+        <div class="field">
+          <div class="flabel">BITTING / CODE DATA</div>
+          <div class="finput" style="border-color:#163060;" placeholder="e.g. 4-3-2-1-2-3"></div>
+        </div>
+        <div class="field">
+          <div class="flabel">NOTES</div>
+          <div class="finput" style="border-color:#163060; min-height:60px;" placeholder="e.g. Front door, deadbolt"></div>
+        </div>
+      </div>
+      <!-- Gold bar matching KsContentDrawer._buildBottomBar -->
+      <div class="gold-bar">
+        <span>SAVE KEY CODE</span>
+        <span class="icon">✓</span>
+      </div>
+    </div>
+    <p style="color:#9E9E9E; font-size:11px; margin-top:8px;">
+      ✓ KsTextField (type: text) for all 4 fields<br>
+      ✓ Gold bar at bottom matching <span class="tag gold">KsContentDrawer._buildBottomBar</span> style<br>
+      ✓ Edge-to-edge gold, no rounded corners, text left + icon right
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 4: Alternatives for Edit Screen -->
+<h2>4. OPEN QUESTION — FULL SCREEN vs DRAWER?</h2>
+
+<div class="gap-row">
+  <div style="flex:1; min-width:280px; background:#0F2144; border-radius:8px; padding:16px; border:1px solid #163060;">
+    <h3>Option A: Stay Full-Screen</h3>
+    <p style="font-size:13px; line-height:1.5;">
+      Current pattern — push navigation via <code>Navigator.of(context).push</code>.<br><br>
+      <span class="tag">✓</span> Already works<br>
+      <span class="tag">✓</span> More space for form fields<br>
+      <span class="tag">✘</span> Inconsistent with Notes & History drawers
+    </p>
+  </div>
+  <div style="flex:1; min-width:280px; background:#0F2144; border-radius:8px; padding:16px; border:1px solid #163060;">
+    <h3>Option B: Convert to Drawer</h3>
+    <p style="font-size:13px; line-height:1.5;">
+      Use <code>KsContentDrawer.show()</code> inside the key codes drawer<br><br>
+      <span class="tag">✓</span> Consistent with Notes drawer pattern<br>
+      <span class="tag">✓</span> No full-screen transition<br>
+      <span class="tag">✘</span> Less space for 4+ fields<br>
+      <span class="tag">✘</span> Would need heightFactor adjustment
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECTION 5: Summary -->
+<h2>5. SUMMARY — FILES TO TOUCH</h2>
+
+<table>
+  <tr><th>File</th><th>Changes</th></tr>
+  <tr>
+    <td>customer_detail_screen.dart</td>
+    <td><span class="tag">_KeyCodesTab</span> Replace Container → <span class="highlight">KsCard</span> with onTap → edit; Remove IconButton; Add <span class="highlight">KsBadge</span> for keyType/bitting</td>
+  </tr>
+  <tr>
+    <td>edit_key_code_screen.dart</td>
+    <td><span class="tag">_field()</span> Replace Container+TextField → <span class="highlight">KsTextField</span>; Replace ElevatedButton → <span class="highlight">KsButton</span> (cta variant)</td>
+  </tr>
+  <tr>
+    <td>KsCard (review)</td>
+    <td><span class="tag">backgroundColor</span> Pass primary800 to match dark drawer background</td>
+  </tr>
+</table>

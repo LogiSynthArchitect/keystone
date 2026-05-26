@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Card Redesign Options</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0A1628;color:#E5E7EB;padding:24px;max-width:480px;margin:0 auto}
+h2{font-size:18px;font-weight:600;margin-bottom:4px}
+.subtitle{color:#9CA3AF;font-size:12px;margin-bottom:20px}
+.section{margin-bottom:24px}
+h3{font-size:14px;font-weight:600;margin-bottom:8px;color:#D1D5DB}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:8px}
+.badge-current{background:rgba(239,68,68,0.2);color:#EF4444}
+.badge-a{background:rgba(232,181,74,0.2);color:#E8B54A}
+.badge-b{background:rgba(139,92,246,0.2);color:#A78BFA}
+.badge-c{background:rgba(59,130,246,0.2);color:#60A5FA}
+
+.visor{background:#0F1A2E;border-radius:12px;padding:16px;margin:8px 0}
+
+/* Current */
+.card-current{background:#162240;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px}
+.card-current .avatar{width:36px;height:36px;background:#0F1A2E;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#E8B54A;font-weight:900;font-size:16px}
+.card-current .name{color:#FFF;font-weight:800;font-size:13px;letter-spacing:1px}
+.card-current .phone{color:#6B7280;font-size:11px;margin-top:2px}
+.card-current .chevron{color:#6B7280;font-size:16px}
+
+/* Option A */
+.card-a{background:linear-gradient(135deg,#1A2A4A,#162240);border:1px solid rgba(232,181,74,0.15);border-radius:10px;padding:14px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.card-a .avatar{width:42px;height:42px;background:linear-gradient(135deg,#0F1A2E,#1A2A4A);border:1px solid rgba(232,181,74,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#E8B54A;font-weight:900;font-size:18px}
+.card-a .name{color:#FFF;font-weight:700;font-size:14px}
+.card-a .phone{color:#9CA3AF;font-size:12px;margin-top:2px}
+.card-a .chevron{width:24px;height:24px;background:rgba(232,181,74,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#E8B54A;font-size:14px}
+
+/* Option B */
+.card-b{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;align-items:center;gap:14px}
+.card-b .avatar{width:44px;height:44px;background:rgba(232,181,74,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#E8B54A;font-weight:900;font-size:20px}
+.card-b .name{color:#F3F4F6;font-weight:600;font-size:14px}
+.card-b .meta{display:flex;align-items:center;gap:8px;margin-top:3px}
+.card-b .phone{color:#9CA3AF;font-size:11px}
+.card-b .dot{color:rgba(232,181,74,0.5);font-size:8px}
+.card-b .loc{color:#6B7280;font-size:11px}
+.card-b .chevron{color:rgba(232,181,74,0.6);font-size:18px}
+
+/* Option C */
+.card-c{border-bottom:1px solid rgba(255,255,255,0.04);padding:10px 0;display:flex;align-items:center;gap:12px}
+.card-c:last-child{border-bottom:none}
+.card-c .avatar{width:32px;height:32px;background:#1A2A4A;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#E8B54A;font-weight:900;font-size:14px}
+.card-c .info{flex:1;display:flex;align-items:center;gap:10px}
+.card-c .name{color:#F3F4F6;font-weight:600;font-size:14px}
+.card-c .phone{color:#6B7280;font-size:12px}
+.card-c .chevron{color:#4B5563;font-size:14px}
+</style>
+</head>
+<body>
+
+<h2>Merge Customer — Card Redesign</h2>
+<p class="subtitle">Current cards are too flat. Pick a direction.</p>
+
+<div class="section">
+  <div class="badge badge-current">⚠️ CURRENT</div>
+  <div class="visor">
+    <div class="card-current">
+      <div class="avatar">K</div>
+      <div style="flex:1">
+        <div class="name">KWAME MENSAH</div>
+        <div class="phone">0241234567</div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="badge badge-a">OPTION A</div>
+  <div class="visor">
+    <div class="card-a">
+      <div class="avatar">K</div>
+      <div style="flex:1">
+        <div class="name">Kwame Mensah</div>
+        <div class="phone">024 123 4567</div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="badge badge-b">OPTION B</div>
+  <div class="visor">
+    <div class="card-b">
+      <div class="avatar">K</div>
+      <div style="flex:1">
+        <div class="name">Kwame Mensah</div>
+        <div class="meta">
+          <span class="phone">024 123 4567</span>
+          <span class="dot">●</span>
+          <span class="loc">Accra</span>
+        </div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="badge badge-c">OPTION C — Compact Rows</div>
+  <div class="visor">
+    <div class="card-c">
+      <div class="avatar">K</div>
+      <div class="info">
+        <span class="name">Kwame Mensah</span>
+        <span class="phone">024 123 4567</span>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+    <div class="card-c">
+      <div class="avatar">Y</div>
+      <div class="info">
+        <span class="name">Yaw Boateng</span>
+        <span class="phone">020 456 7890</span>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+    <div class="card-c">
+      <div class="avatar">A</div>
+      <div class="info">
+        <span class="name">Abena Oforiwaa</span>
+        <span class="phone">054 112 2334</span>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

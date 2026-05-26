@@ -11,7 +11,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../providers/profile_provider.dart';
 import '../../domain/entities/profile_entity.dart';
 
@@ -132,7 +132,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       setState(() { _pendingPhotoUrl = url; _isUploadingPhoto = false; });
     } else {
       setState(() => _isUploadingPhoto = false);
-      KsSnackbar.show(context, message: 'Could not upload photo.', type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: 'Could not upload photo.', type: KsNotificationType.error);
     }
   }
 
@@ -140,14 +140,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final whatsapp = _whatsappController.text.trim();
     if (whatsapp.length != 10 || !whatsapp.startsWith('0')) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana WhatsApp number starting with 0", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Enter a valid 10-digit Ghana WhatsApp number starting with 0", type: KsNotificationType.error);
       }
       return;
     }
 
     final profile = ref.read(profileProvider).profile;
     if (profile == null) {
-      if (mounted) KsSnackbar.show(context, message: 'Profile not loaded yet. Try again.', type: KsSnackbarType.error);
+      if (mounted) KsSlidingNotification.show(context, message: 'Profile not loaded yet. Try again.', type: KsNotificationType.error);
       return;
     }
     final updated = profile.copyWith(
@@ -163,10 +163,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (!mounted) return;
     if (ok) {
       context.pop();
-      KsSnackbar.show(context, message: 'Profile updated.', type: KsSnackbarType.success);
+      KsSlidingNotification.show(context, message: 'Profile updated.', type: KsNotificationType.success);
     } else {
       final error = ref.read(profileProvider).errorMessage;
-      KsSnackbar.show(context, message: error ?? 'Could not update profile.', type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: error ?? 'Could not update profile.', type: KsNotificationType.error);
     }
   }
 

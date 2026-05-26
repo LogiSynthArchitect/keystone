@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Item Drawer Comparison</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:24px;display:flex;flex-direction:column;align-items:center;gap:32px}
+h1{color:#fff;font-size:20px;font-weight:800;letter-spacing:1px;margin-bottom:4px;text-align:center}
+h2{color:#fff;font-size:13px;font-weight:800;letter-spacing:1px;margin-bottom:4px}
+.sub{color:#6B7D8E;font-size:11px;font-weight:500;text-align:center;margin-bottom:20px;max-width:600px}
+.badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:0.5px;flex-shrink:0}
+.bg-bad{background:#3D1A1A;color:#FF6B6B}
+.bg-good{background:#1A3D1A;color:#4CAF50}
+.bg-info{background:#1A2A3D;color:#6BB5FF}
+.layout{display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
+
+/* Phone frame */
+.phone{width:380px;background:#0F1D2F;border-radius:20px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;min-height:600px}
+
+/* Drawer top bar */
+.drawer-handle{display:flex;justify-content:center;padding:12px 0 8px}
+.drawer-handle div{width:36px;height:4px;background:#2A3A4A;border-radius:2px}
+.drawer-header{display:flex;justify-content:space-between;align-items:flex-start;padding:0 16px 12px}
+.drawer-header h2{font-size:14px;margin:0}
+.drawer-header .sub{font-size:9px;color:#6B7D8E;margin:2px 0 0;text-align:left}
+.drawer-x{color:#4A5A6A;font-size:20px;cursor:pointer;line-height:1}
+
+/* ── OLD: Search bar (custom Container) ── */
+.old-search{display:flex;align-items:center;gap:8px;margin:0 16px 12px;background:#0D1A2A;border:1px solid #1A2D44;border-radius:4px;padding:0 10px;height:40px}
+.old-search .icon{color:#4A5A6A;font-size:14px}
+.old-search input{background:transparent;border:none;color:#fff;font-size:13px;font-weight:600;outline:none;flex:1;padding:0}
+.old-search input::placeholder{color:#2A3A4A;font-weight:600}
+
+/* ── NEW: Search bar (KsSearchBar - underline pattern) ── */
+.new-search{display:flex;align-items:center;gap:8px;margin:0 16px 12px;border-bottom:1px solid #1A2D44;padding:0 0 10px}
+.new-search .icon{color:#6B7D8E;font-size:16px}
+.new-search input{background:transparent;border:none;color:#fff;font-size:14px;font-weight:300;outline:none;flex:1;padding:0}
+.new-search input::placeholder{color:#4A5A6A;font-weight:300}
+.new-search:focus-within{border-bottom-color:#C8A84E}
+.new-search:focus-within .icon{color:#C8A84E}
+
+/* Category label */
+.cat-label{font-size:9px;font-weight:800;letter-spacing:1px;color:#4A5A6A;padding:8px 16px}
+
+/* ── OLD: Divider list ── */
+.old-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #0F1D2F;cursor:pointer}
+.old-item .icon{width:18px;height:18px;background:#C8A84E;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#0A1628;flex-shrink:0}
+.old-item .info{flex:1;min-width:0}
+.old-item .name{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.old-item .meta{font-size:9px;color:#4A5A6A;margin-top:2px}
+.old-item .action{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+
+/* ── NEW: Card design ── */
+.new-card{margin:0 16px 10px;background:#0F1D2F;border-radius:12px;border:1px solid #1A2D44;overflow:hidden;cursor:pointer}
+.new-card-inner{padding:12px}
+.new-card-top{display:flex;gap:10px}
+.new-card-photo{width:52px;height:52px;background:#0D1A2A;border-radius:8px;border:1px solid #1A2D44;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+.new-card-info{flex:1;min-width:0}
+.new-card-name{font-size:11px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.new-card-brand{font-size:9px;color:#4A5A6A;margin-top:2px}
+.new-card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.new-card-tag{font-size:8px;font-weight:800;padding:2px 6px;border-radius:2px;letter-spacing:0.3px}
+.tag-key{background:#C8A84E20;color:#C8A84E}
+.tag-loc{background:#6BB5FF20;color:#6BB5FF}
+.tag-stock{background:#4CAF5020;color:#4CAF50}
+.tag-lowstock{background:#FF6B6B20;color:#FF6B6B}
+.tag-outofstock{background:#FF000020;color:#FF4444}
+.tag-archived{background:#4A5A6A20;color:#4A5A6A}
+.new-card-check{width:20px;height:20px;background:#4CAF50;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;margin-top:4px}
+
+/* Old button */
+.old-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;color:#4A5A6A;font-size:11px;font-weight:600;cursor:pointer;border-top:1px solid #0F1D2F}
+
+/* New button */
+.new-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;color:#6B7D8E;font-size:11px;font-weight:500;cursor:pointer;border-top:1px solid #0F1D2F}
+
+/* Bottom bar */
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;background:#C8A84E;padding:10px 16px;margin-top:8px}
+.bottom-bar span{color:#0A1628;font-size:13px;font-weight:900;letter-spacing:1px}
+.bottom-bar .arrow{color:#0A1628;font-size:18px}
+
+/* Visual diff markers */
+.diff-marker{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
+.diff{margin:12px 16px;display:flex;flex-direction:column;gap:4px}
+.diff-line{display:flex;align-items:center;gap:6px;font-size:9px;padding:4px 8px;border-radius:3px}
+.diff-line .label{font-weight:800;flex-shrink:0;width:70px}
+.diff-line .value{color:#6B7D8E}
+
+/* Callout */
+.callout{background:#0F1D2F;border:1px solid #C8A84E40;border-radius:8px;padding:16px 20px;max-width:820px;margin:0 auto}
+.callout h3{color:#C8A84E;font-size:12px;font-weight:800;letter-spacing:0.5px;margin-bottom:8px}
+.callout p{font-size:11px;color:#8BA0B2;line-height:1.6}
+.callout code{background:#0A1628;padding:1px 6px;border-radius:3px;font-size:10px;color:#C8A84E}
+.callout ul{list-style:none;margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.callout ul li{background:#0A1628;border:1px solid #1A2D44;border-radius:4px;padding:6px 10px;font-size:10px;color:#8BA0B2}
+.callout ul li strong{color:#fff;font-weight:800}
+
+/* Reference cards */
+.ref-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+.ref-card{background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:10px 14px;flex:1;min-width:200px;max-width:280px}
+.ref-card .title{font-size:9px;font-weight:800;color:#C8A84E;letter-spacing:0.5px;margin-bottom:6px}
+.ref-card .path{font-size:8px;color:#4A5A6A;margin-bottom:6px}
+.ref-card .example{font-size:10px;color:#8BA0B2;line-height:1.5}
+.ref-card .good{color:#4CAF50;font-weight:700}
+.ref-card .bad{color:#FF6B6B;font-weight:700}
+</style>
+</head>
+<body>
+
+<h1>ITEMS USED — SELECT ITEM DRAWER</h1>
+<p class="sub">Three inconsistencies: search bar, item card design, and button styling</p>
+
+<div class="layout">
+
+  <!-- LEFT: CURRENT (broken) -->
+  <div class="phone">
+    <div class="screen">
+      <div class="drawer-handle"><div></div></div>
+      <div class="drawer-header">
+        <div>
+          <h2>SELECT ITEM</h2>
+          <p class="sub">Choose from inventory</p>
+        </div>
+        <span class="drawer-x">✕</span>
+      </div>
+
+      <!-- ── ISSUE 1: custom Container search ── -->
+      <div class="diff-marker"><span class="badge bg-bad">ISSUE 1</span></div>
+      <div class="old-search">
+        <span class="icon">🔍</span>
+        <input placeholder="Search inventory..." value="">
+        <span style="font-size:11px;color:#2A3A4A">✕</span>
+      </div>
+      <div style="margin:-8px 20px 12px;font-size:8px;color:#FF6B6B;font-weight:600">Custom Container — filled bg, rounded, InputBorder.none</div>
+
+      <div class="cat-label">KEYS</div>
+
+      <!-- ── ISSUE 2: flat divider rows ── -->
+      <div class="diff-marker"><span class="badge bg-bad">ISSUE 2</span></div>
+      <div class="old-item">
+        <div class="icon">🔑</div>
+        <div class="info">
+          <div class="name">YALE MORTISE KEY BLANK</div>
+          <div class="meta">Yale · KEY</div>
+        </div>
+        <div class="action" style="border:1px solid #C8A84E;color:#C8A84E">+</div>
+      </div>
+
+      <div class="old-item" style="opacity:0.5">
+        <div class="icon">🔑</div>
+        <div class="info">
+          <div class="name">SCHLAGE SC1 KEY</div>
+          <div class="meta">Schlage · KEY</div>
+        </div>
+        <div class="action" style="background:#4CAF50;color:#fff;border:none">✓</div>
+      </div>
+
+      <div class="old-item">
+        <div class="icon">🔑</div>
+        <div class="info">
+          <div class="name">KWIKSET SMARTKEY</div>
+          <div class="meta">Kwikset · KEY</div>
+        </div>
+        <div class="action" style="border:1px solid #C8A84E;color:#C8A84E">+</div>
+      </div>
+
+      <div style="margin:8px 16px 0;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span style="font-size:9px;color:#FF6B6B;font-weight:600">Flat divider rows — no photo, stock, or tags</span>
+      </div>
+
+      <!-- ── ISSUE 3: old manual entry button ── -->
+      <div class="diff-marker"><span class="badge bg-bad">ISSUE 3</span></div>
+      <div class="old-btn">
+        <span>✏️</span>
+        <span>Add Manual Entry</span>
+      </div>
+      <div style="margin:-6px 20px 0;font-size:8px;color:#FF6B6B;font-weight:600">Raw TextButton — neutral500, no KsButton</div>
+
+      <!-- Bottom label -->
+      <div style="margin-top:48px;display:flex;align-items:center;justify-content:center;gap:4px">
+        <span class="badge bg-bad">CURRENT</span>
+        <span style="font-size:9px;color:#4A5A6A">3 inconsistencies</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: FIXED -->
+  <div class="phone">
+    <div class="screen">
+      <div class="drawer-handle"><div></div></div>
+      <div class="drawer-header">
+        <div>
+          <h2>SELECT ITEM</h2>
+          <p class="sub">Choose from inventory</p>
+        </div>
+        <span class="drawer-x">✕</span>
+      </div>
+
+      <!-- ── FIX 1: KsSearchBar (underline pattern) ── -->
+      <div class="diff-marker"><span class="badge bg-good">FIX 1</span></div>
+      <div class="new-search">
+        <span class="icon">🔍</span>
+        <input placeholder="Search items..." value="">
+      </div>
+      <div style="margin:-8px 20px 12px;font-size:8px;color:#4CAF50;font-weight:600">KsSearchBar — underline border, transparent, gold focus</div>
+
+      <div class="cat-label">KEYS</div>
+
+      <!-- ── FIX 2: Card design (inventory _buildItemCard) ── -->
+      <div class="diff-marker"><span class="badge bg-good">FIX 2</span></div>
+
+      <div class="new-card">
+        <div class="new-card-inner">
+          <div class="new-card-top">
+            <div class="new-card-photo">🔑</div>
+            <div class="new-card-info">
+              <div class="new-card-name">YALE MORTISE KEY BLANK</div>
+              <div class="new-card-brand">Yale · Mortise Key</div>
+              <div class="new-card-tags">
+                <span class="new-card-tag tag-key">KEY</span>
+                <span class="new-card-tag tag-loc">SHOP BIN 3</span>
+                <span class="new-card-tag tag-stock">IN STOCK</span>
+              </div>
+            </div>
+            <div class="new-card-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="new-card" style="border-color:#C8A84E80">
+        <div class="new-card-inner">
+          <div class="new-card-top">
+            <div class="new-card-photo">🔑</div>
+            <div class="new-card-info">
+              <div class="new-card-name">SCHLAGE SC1 KEY</div>
+              <div class="new-card-brand">Schlage · Key</div>
+              <div class="new-card-tags">
+                <span class="new-card-tag tag-key">KEY</span>
+                <span class="new-card-tag tag-loc">VAN A</span>
+                <span class="new-card-tag tag-lowstock">LOW STOCK</span>
+              </div>
+            </div>
+            <div class="new-card-check" style="background:#C8A84E;color:#0A1628">+</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="new-card">
+        <div class="new-card-inner">
+          <div class="new-card-top">
+            <div class="new-card-photo">🔑</div>
+            <div class="new-card-info">
+              <div class="new-card-name">KWIKSET SMARTKEY</div>
+              <div class="new-card-brand">Kwikset · Smartkey</div>
+              <div class="new-card-tags">
+                <span class="new-card-tag tag-key">KEY</span>
+                <span class="new-card-tag tag-loc">SHOP BIN 1</span>
+                <span class="new-card-tag tag-stock">IN STOCK</span>
+              </div>
+            </div>
+            <div class="new-card-check" style="background:#4CAF50;color:#fff">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin:4px 16px 0;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span style="font-size:9px;color:#4CAF50;font-weight:600">Reuses inventory card — photo + stock + tags</span>
+      </div>
+
+      <!-- ── FIX 3: updated manual entry ── -->
+      <div class="diff-marker"><span class="badge bg-good">FIX 3</span></div>
+      <div class="new-btn">
+        <span>✏️</span>
+        <span>Add Manual Entry</span>
+      </div>
+      <div style="margin:-6px 20px 0;font-size:8px;color:#4CAF50;font-weight:600">Use KsButton(secondary) pattern for consistency</div>
+
+      <div style="margin-top:24px;display:flex;align-items:center;justify-content:center;gap:4px">
+        <span class="badge bg-good">FIXED</span>
+        <span style="font-size:9px;color:#4A5A6A">All 3 issues resolved</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Reference: how other screens do it -->
+<div class="callout" style="margin-top:24px">
+  <h3>APP-WIDE SEARCH BAR PATTERN</h3>
+  <p>
+    The app has a <code>KsSearchBar</code> widget (<code>lib/core/widgets/ks_search_bar.dart</code>) used in <strong>9 places</strong>:
+  </p>
+</div>
+
+<div class="ref-row">
+  <div class="ref-card">
+    <div class="title">INVENTORY SCREEN</div>
+    <div class="path">inventory_screen.dart:527</div>
+    <div class="example"><span class="good">✓</span> KsSearchBar(hint: "Search items...")</div>
+  </div>
+  <div class="ref-card">
+    <div class="title">CUSTOMER LIST</div>
+    <div class="path">customer_list_screen.dart:181</div>
+    <div class="example"><span class="good">✓</span> KsSearchBar(hint: "Search customers...")</div>
+  </div>
+  <div class="ref-card">
+    <div class="title">JOB LIST</div>
+    <div class="path">job_list_screen.dart:268</div>
+    <div class="example"><span class="good">✓</span> KsSearchBar(hint: "Search jobs...")</div>
+  </div>
+  <div class="ref-card">
+    <div class="title">SERVICE PICKER</div>
+    <div class="path">service_picker_dropdown.dart:189</div>
+    <div class="example"><span class="good">✓</span> KsSearchBar(hint: "Search services...")</div>
+  </div>
+  <div class="ref-card">
+    <div class="title">SELECT ITEM <span class="bad">✗</span></div>
+    <div class="path">log_job_screen.dart:2315</div>
+    <div class="example"><span class="bad">✗</span> Custom Container + InputBorder.none</div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="callout" style="margin-top:16px">
+  <h3>IMPLEMENTATION PLAN</h3>
+  <ul>
+    <li><strong>Step 1</strong> Extract shared <code>InventoryItemCard</code> widget from <code>_buildItemCard</code> (inventory_screen.dart lines 629-748)</li>
+    <li><strong>Step 2</strong> Replace custom <code>Container</code> search bar (line 2315) with <code>KsSearchBar(hint: "Search items...")</code></li>
+    <li><strong>Step 3</strong> Swap divider list (lines 2357-2416) to use <code>InventoryItemCard</code> + <code>alreadyAdded</code> prop</li>
+    <li><strong>Step 4</strong> Update "Add Manual Entry" to use <code>KsButton</code> consistent styling</li>
+    <li><strong>Step 5</strong> Preserve tap-to-add-and-close behavior</li>
+  </ul>
+</div>
+
+</body>
+</html>

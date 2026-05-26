@@ -12,7 +12,7 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../providers/notes_providers.dart';
 import 'add_note_screen.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
@@ -106,7 +106,7 @@ class NoteDetailScreen extends ConsumerWidget {
                 await ref.read(notesListProvider.notifier).archiveNote(note.id);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  KsSnackbar.show(context, message: "Note moved to archive.", type: KsSnackbarType.info);
+                  KsSlidingNotification.show(context, message: "Note moved to archive.", type: KsNotificationType.info);
                 }
               }
             },
@@ -808,14 +808,14 @@ class _DocumentAttachmentTile extends StatelessWidget {
       final result = await OpenFilex.open(_resolvedPath);
       if (result.type != ResultType.done) {
         if (context.mounted) {
-          KsSnackbar.show(context, message: "Could not open file: ${result.message}",
-              type: KsSnackbarType.error);
+          KsSlidingNotification.show(context, message: "Could not open file: ${result.message}",
+              type: KsNotificationType.error);
         }
       }
     } catch (e) {
       if (context.mounted) {
-        KsSnackbar.show(context, message: "Could not open attachment",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not open attachment",
+            type: KsNotificationType.error);
       }
     }
   }

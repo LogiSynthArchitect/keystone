@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Manual Entry — Unit Price Comparison</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:24px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:18px;font-weight:800;letter-spacing:1px;text-align:center}
+.sub{color:#6B7D8E;font-size:11px;font-weight:500;text-align:center;max-width:600px}
+.layout{display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
+
+/* Phone frame */
+.phone{width:380px;background:#0F1D2F;border-radius:20px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;min-height:500px}
+
+/* Drawer */
+.drawer-handle{display:flex;justify-content:center;padding:12px 0 8px}
+.drawer-handle div{width:36px;height:4px;background:#2A3A4A;border-radius:2px}
+.drawer-header{display:flex;justify-content:space-between;align-items:flex-start;padding:0 24px 16px}
+.drawer-header h2{font-size:14px;margin:0;color:#fff}
+.drawer-x{color:#4A5A6A;font-size:20px;cursor:pointer}
+
+/* Form section */
+.form{padding:0 24px}
+.label{font-size:10px;font-weight:800;color:#4A5A6A;letter-spacing:0.5px;margin-bottom:8px;display:block}
+
+/* Text field */
+.text-field{margin-bottom:24px}
+.text-field input{width:100%;background:transparent;border:none;border-bottom:1px solid #1A2D44;color:#fff;font-size:14px;font-weight:600;padding:6px 0 10px;outline:none}
+.text-field input:focus{border-bottom-color:#C8A84E}
+.text-field input::placeholder{color:#2A3A4A;font-weight:500}
+.text-field .hint{font-size:9px;color:#2A3A4A;margin-top:4px}
+
+/* QTY row */
+.qty-row{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.qty-row .lbl{font-size:10px;font-weight:800;color:#4A5A6A;letter-spacing:0.5px}
+.qty-stepper{display:flex;align-items:center;gap:10px}
+.qty-stepper .btn{width:24px;height:24px;border:1px solid #2A3A4A;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#4A5A6A;font-size:14px;cursor:pointer}
+.qty-stepper .val{font-size:14px;font-weight:900;color:#fff;min-width:16px;text-align:center}
+
+/* Price field */
+.price-row{margin-bottom:24px}
+.price-input{display:flex;align-items:baseline;gap:8px}
+.price-input input{flex:1;background:transparent;border:none;border-bottom:1px solid #2A3A4A;color:#C8A84E;font-size:16px;font-weight:900;padding:6px 0 10px;outline:none}
+.price-input input:focus{border-bottom-color:#4A90D9}
+.price-input input::placeholder{color:#2A3A4A}
+.price-input .currency{font-size:12px;font-weight:700;color:#4A5A6A}
+
+/* Total */
+.total-row{display:flex;justify-content:flex-end;margin-bottom:24px}
+.total-box{text-align:right}
+.total-box .lbl{font-size:10px;font-weight:800;color:#4A5A6A;letter-spacing:0.5px;margin-bottom:4px}
+.total-box .amt{font-size:24px;font-weight:900;color:#fff}
+.total-box .amt.gold{color:#C8A84E}
+
+/* Bottom bar */
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;background:#C8A84E;padding:12px 24px;margin-top:8px}
+.bottom-bar span{color:#0A1628;font-size:13px;font-weight:900;letter-spacing:1px}
+.bottom-bar .arrow{color:#0A1628;font-size:18px}
+
+/* Badges */
+.badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:0.5px}
+.bg-bad{background:#3D1A1A;color:#FF6B6B}
+.bg-good{background:#1A3D1A;color:#4CAF50}
+
+/* Missing marker */
+.missing{display:inline-flex;align-items:center;gap:4px;background:#3D1A1A;color:#FF6B6B;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;margin-left:6px}
+.added{display:inline-flex;align-items:center;gap:4px;background:#1A3D1A;color:#4CAF50;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;margin-left:6px}
+
+/* Code reference */
+.code-ref{background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:12px 16px;max-width:820px;margin:0 auto;width:100%}
+.code-ref h3{color:#C8A84E;font-size:11px;font-weight:800;letter-spacing:0.5px;margin-bottom:6px}
+.code-ref code{display:block;background:#0A1628;padding:10px 14px;border-radius:4px;font-size:10px;color:#8BA0B2;line-height:1.6;white-space:pre;overflow-x:auto}
+.code-ref .highlight{color:#C8A84E;font-weight:700}
+.code-ref .dim{color:#4A5A6A}
+</style>
+</head>
+<body>
+
+<h1>MANUAL ITEM — ADD UNIT PRICE</h1>
+<p class="sub">The "Add Manual Entry" drawer currently has no unit price field — you can only set name + qty</p>
+
+<div class="layout">
+
+  <!-- LEFT: CURRENT -->
+  <div class="phone">
+    <div class="screen">
+      <div class="drawer-handle"><div></div></div>
+      <div class="drawer-header">
+        <h2>NEW ITEM</h2>
+        <span class="drawer-x">✕</span>
+      </div>
+
+      <div class="form">
+        <!-- Item Name -->
+        <div class="text-field">
+          <span class="label">ITEM NAME</span>
+          <input type="text" value="Mortise screw" placeholder="e.g. Mortise screw">
+        </div>
+
+        <!-- QTY -->
+        <div class="qty-row">
+          <span class="lbl">QTY</span>
+          <div class="qty-stepper">
+            <div class="btn">−</div>
+            <div class="val">1</div>
+            <div class="btn">+</div>
+          </div>
+        </div>
+
+        <!-- MISSING: Unit Price -->
+        <div style="margin:32px 0;padding:16px;background:#3D1A1A20;border:1px dashed #FF6B6B40;border-radius:6px;text-align:center">
+          <span class="badge bg-bad">MISSING</span>
+          <p style="font-size:11px;color:#FF6B6B;margin-top:8px;font-weight:600">No unit price field</p>
+          <p style="font-size:9px;color:#6B7D8E;margin-top:4px">Cannot set cost or sale price per item</p>
+        </div>
+      </div>
+
+      <!-- Bottom -->
+      <div style="margin-top:32px">
+        <div class="bottom-bar">
+          <span>ADD</span>
+          <span class="arrow">→</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:8px">
+        <span class="badge bg-bad">CURRENT</span>
+        <span style="font-size:9px;color:#4A5A6A">Name + Qty only — no price</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: PROPOSED -->
+  <div class="phone">
+    <div class="screen">
+      <div class="drawer-handle"><div></div></div>
+      <div class="drawer-header">
+        <h2>NEW ITEM</h2>
+        <span class="drawer-x">✕</span>
+      </div>
+
+      <div class="form">
+        <!-- Item Name -->
+        <div class="text-field">
+          <span class="label">ITEM NAME</span>
+          <input type="text" value="Mortise screw" placeholder="e.g. Mortise screw">
+        </div>
+
+        <!-- QTY -->
+        <div class="qty-row">
+          <span class="lbl">QTY</span>
+          <div class="qty-stepper">
+            <div class="btn">−</div>
+            <div class="val">2</div>
+            <div class="btn">+</div>
+          </div>
+        </div>
+
+        <!-- Unit Price (NEW) -->
+        <div class="price-row">
+          <span class="label">UNIT PRICE (GHS)</span>
+          <div class="price-input">
+            <input type="text" value="15.00" placeholder="0.00">
+            <span class="currency">GHS</span>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="total-row">
+          <div class="total-box">
+            <div class="lbl">TOTAL</div>
+            <div class="amt gold">GHS 30.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom -->
+      <div style="margin-top:8px">
+        <div class="bottom-bar">
+          <span>ADD</span>
+          <span class="arrow">→</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:8px">
+        <span class="badge bg-good">PROPOSED</span>
+        <span style="font-size:9px;color:#4A5A6A">Name + Qty + Unit Price + Total</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Code reference -->
+<div class="code-ref" style="margin-top:16px">
+  <h3>WHAT NEEDS TO CHANGE</h3>
+  <code>
+<span class="dim">// 1. Add priceController to ItemRow (job_step_types.dart)</span>
+<span class="highlight">+  final priceController = TextEditingController();</span>
+  
+  void dispose() {
+    nameController.dispose();
+    qtyController.dispose();
+<span class="highlight">+   priceController.dispose();</span>
+  }
+
+  ItemRow copy() {
+    final i = ItemRow();
+    ...
+    i.qtyController.text = qtyController.text;
+<span class="highlight">+   i.priceController.text = priceController.text;</span>
+    return i;
+  }
+
+<span class="dim">// 2. Add unit price field + total display (log_job_screen.dart)</span>
+<span class="highlight">+  // UNIT PRICE row (same pattern as service edit drawer)</span>
+<span class="highlight">+  Padding(
++    padding: const EdgeInsets.symmetric(horizontal: 24),
++    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
++      Text("UNIT PRICE (GHS)", style: ...),
++      const SizedBox(height: 8),
++      Row(children: [
++        Expanded(child: TextField(
++          controller: item.priceController,
++          inputFormatters: [CurrencyInputFormatter()],
++          decoration: InputDecoration(
++            hintText: "0.00",
++            enabledBorder: UnderlineInputBorder(...),
++            focusedBorder: UnderlineInputBorder(...),
++            filled: false, isDense: true,
++          ),
++        )),
++        const SizedBox(width: 8),
++        Text("GHS"),
++      ]),
++    ]),
++  ),</span>
+  </code>
+</div>
+
+</body>
+</html>

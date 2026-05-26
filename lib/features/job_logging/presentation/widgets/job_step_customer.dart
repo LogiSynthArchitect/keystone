@@ -166,14 +166,14 @@ class JobStepCustomer extends ConsumerWidget {
                   ),
                   isDense: true,
                   contentPadding: const EdgeInsets.only(bottom: 4),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.primary700, width: 1),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
                   ),
-                  border: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2A3A4A)),
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.primary700),
                   ),
                   filled: false,
                 ),

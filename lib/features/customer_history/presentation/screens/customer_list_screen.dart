@@ -13,7 +13,7 @@ import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
@@ -129,7 +129,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
 
     ref.listen(customerListProvider, (prev, next) {
       if (next.errorMessage != null && mounted) {
-        KsSnackbar.show(context, message: next.errorMessage!, type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: next.errorMessage!, type: KsNotificationType.error);
       }
     });
 

@@ -12,9 +12,8 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
-import '../../../../core/widgets/ks_sliding_notification.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../providers/inventory_providers.dart';
@@ -269,7 +268,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         final qty = int.tryParse(qtyCtrl.text.trim());
                         if (qty == null || qty <= 0) return;
                         if (mode == 'remove' && qty > item.quantity) {
-                          KsSnackbar.show(ctx, message: 'Cannot remove more than current stock (${item.quantity})', type: KsSnackbarType.error);
+                          KsSlidingNotification.show(ctx, message: 'Cannot remove more than current stock (${item.quantity})', type: KsNotificationType.error);
                           return;
                         }
                         final change = mode == 'add' ? qty : -qty;
@@ -281,7 +280,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
-                          KsSnackbar.show(context, message: "Stock updated", type: KsSnackbarType.success);
+                          KsSlidingNotification.show(context, message: "Stock updated", type: KsNotificationType.success);
                         }
                       },
                       child: Text(
@@ -378,7 +377,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
                         if (context.mounted) {
-                          KsSnackbar.show(context, message: "Restock recorded", type: KsSnackbarType.success);
+                          KsSlidingNotification.show(context, message: "Restock recorded", type: KsNotificationType.success);
                         }
                       },
                       child: Text(
@@ -1009,7 +1008,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       isDanger: true,
       onConfirm: () {
         ref.read(inventoryProvider.notifier).deleteItem(item.id);
-        KsSnackbar.show(context, message: "Item deleted", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Item deleted", type: KsNotificationType.success);
       },
     );
   }
@@ -1118,11 +1117,11 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           final saleParsed = CurrencyFormatter.parseToPesewas(saleText);
 
           if (costText.isNotEmpty && costParsed == null) {
-            KsSnackbar.show(ctx, message: 'Cost price format is invalid', type: KsSnackbarType.error);
+            KsSlidingNotification.show(ctx, message: 'Cost price format is invalid', type: KsNotificationType.error);
             return;
           }
           if (saleText.isNotEmpty && saleParsed == null) {
-            KsSnackbar.show(ctx, message: 'Sale price format is invalid', type: KsSnackbarType.error);
+            KsSlidingNotification.show(ctx, message: 'Sale price format is invalid', type: KsNotificationType.error);
             return;
           }
           // Validation: warn if zero stock

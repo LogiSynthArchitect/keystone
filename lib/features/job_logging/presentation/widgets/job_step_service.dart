@@ -57,10 +57,10 @@ class JobStepService extends ConsumerWidget {
           ...additionalServices.asMap().entries.map((entry) {
             final svc = entry.value;
             final qty = int.tryParse(svc.qtyController.text) ?? 1;
-            final unitPrice = CurrencyFormatter.parseToPesewas(svc.priceController.text.trim()) ?? 0;
-            final total = qty * unitPrice;
             final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
             final svcType = types.where((t) => t.name == svc.serviceType).firstOrNull;
+            final unitPrice = (svcType?.defaultPrice ?? 0);
+            final total = qty * unitPrice;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: InkWell(

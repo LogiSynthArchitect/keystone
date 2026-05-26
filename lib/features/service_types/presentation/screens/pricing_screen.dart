@@ -11,7 +11,7 @@ import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/widgets/ks_watermark.dart';
@@ -425,9 +425,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         Future<void> _save() async {
           final newPesewas = CurrencyFormatter.parseToPesewas(currentValue);
           if (newPesewas == null || newPesewas <= 0) {
-            KsSnackbar.show(sheetContext,
+            KsSlidingNotification.show(sheetContext,
                 message: 'Price must be greater than 0',
-                type: KsSnackbarType.error);
+                type: KsNotificationType.error);
             return;
           }
           if (newPesewas == originalPesewas) {
@@ -440,9 +440,9 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           if (!saved) {
             isSavingNotifier.value = false;
             if (sheetContext.mounted) {
-              KsSnackbar.show(sheetContext,
+              KsSlidingNotification.show(sheetContext,
                   message: 'Failed to save price. Try again.',
-                  type: KsSnackbarType.error);
+                  type: KsNotificationType.error);
             }
             return;
           }

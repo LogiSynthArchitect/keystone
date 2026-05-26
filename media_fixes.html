@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Media Drawer — Fixes</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:15px;font-weight:800;letter-spacing:0.5px;text-align:center}
+.sub{color:#6B7D8E;font-size:10px;text-align:center;max-width:540px}
+.layout{display:flex;gap:40px;flex-wrap:wrap;justify-content:center}
+
+.phone{width:360px;background:#0F1D2F;border-radius:20px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:600px}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 0;flex-shrink:0}
+.header h2{font-size:13px;font-weight:900;color:#fff}
+.header .count{font-size:9px;color:#4A5A6A;margin-top:2px}
+.header .x{color:#4A5A6A;font-size:18px;cursor:pointer;line-height:1}
+
+/* ── Fix 1: STICKY TABS (outside scroll area) ── */
+.tabs{display:flex;margin:10px 16px;background:#0D1A2A;border-radius:8px;padding:3px;border:1px solid #1A2D44;flex-shrink:0}
+.tab{flex:1;text-align:center;padding:7px 0;font-size:9px;font-weight:700;cursor:pointer;border-radius:6px;letter-spacing:0.5px;text-transform:uppercase;transition:all .15s;color:#4A5A6A}
+.tab.active{background:#C8A84E;color:#0A1628}
+.tab .dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.tab .dot.blue{background:#6BB5FF}
+.tab .dot.green{background:#4CAF50}
+
+/* ── Fix 2: SCROLLABLE GRID AREA ── */
+.scroll-area{flex:1;overflow-y:auto;padding:0 16px 8px;min-height:0}
+.scroll-area::-webkit-scrollbar{width:3px}
+.scroll-area::-webkit-scrollbar-thumb{background:#1A2D44;border-radius:2px}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Card */
+.card{position:relative;border-radius:8px;overflow:hidden;background:#0D1A2A;border:1px solid #1A2D44;cursor:pointer;aspect-ratio:1/1;transition:border-color .15s}
+.card:hover{border-color:#C8A84E80}
+.card .del{position:absolute;top:4px;right:4px;width:20px;height:20px;background:#000000CC;border-radius:50%;display:none;align-items:center;justify-content:center;color:#FF6B6B;font-size:10px;cursor:pointer;z-index:3}
+.card:hover .del{display:flex}
+
+/* ── Fix 3: BETTER TYPE BADGE (bigger, solid bg) ── */
+.card .type-badge{position:absolute;bottom:4px;left:4px;padding:3px 8px;border-radius:4px;font-size:8px;font-weight:800;letter-spacing:0.5px;z-index:2;text-transform:uppercase}
+.type-badge.photo{background:#C8A84ECC;color:#0A1628}
+.type-badge.video{background:#6BB5FFCC;color:#0A1628}
+.type-badge.audio{background:#B388FFCC;color:#0A1628}
+
+/* video play overlay */
+.card.video .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;background:#C8A84E;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;opacity:0.9}
+.card.video .play::after{content:'';display:block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #0A1628;margin-left:2px}
+
+/* audio overlay */
+.card.audio .mic{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;background:#C8A84E;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;z-index:2;opacity:0.9}
+
+/* duration */
+.card .duration{position:absolute;top:4px;right:26px;font-size:7px;color:#fff;background:#00000099;padding:1px 4px;border-radius:2px;z-index:1}
+
+/* add cell */
+.add-cell{border:1px dashed #1A2D44;border-radius:8px;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:border-color .15s;background:#0A1628}
+.add-cell:hover{border-color:#C8A84E80}
+.add-cell .plus{font-size:18px;color:#C8A84E;line-height:1}
+.add-cell .txt{font-size:8px;color:#4A5A6A;font-weight:600;letter-spacing:0.3px}
+
+/* shimmer */
+@keyframes shimmer{0%{background-position:-200px 0}100%{background-position:calc(200px + 100%) 0}}
+.card.loading{background:linear-gradient(90deg,#0D1A2A 25%,#1A2D44 50%,#0D1A2A 75%);background-size:200px 100%;animation:shimmer 1.5s infinite}
+
+/* bottom bar */
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;background:#C8A84E;padding:10px 16px;flex-shrink:0}
+.bottom-bar span{color:#0A1628;font-size:12px;font-weight:900;letter-spacing:0.5px}
+.bottom-bar .arrow{font-size:16px;color:#0A1628}
+
+/* ── Fix 4: SOURCE PICKER (transparent bg + gold border) ── */
+.picker{background:#0F1D2F;border-radius:16px 16px 0 0;padding:20px 24px 24px;max-width:360px;margin:0 auto}
+.picker .drag{width:32px;height:4px;background:#2A3A4A;border-radius:2px;margin:0 auto 12px}
+.picker h3{font-size:13px;font-weight:900;color:#fff;margin-bottom:16px}
+.picker-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.picker-opt{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:8px;border:1px solid #1A2D44;cursor:pointer;background:transparent;transition:border-color .15s}
+.picker-opt:hover{border-color:#C8A84E80}
+.picker-opt .emoji{font-size:22px;line-height:1}
+.picker-opt .lbl{font-size:8px;font-weight:700;color:#4A5A6A;letter-spacing:0.5px;text-transform:uppercase}
+
+/* empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:48px 20px;text-align:center}
+.empty-state .icon{font-size:36px;opacity:0.2}
+.empty-state .msg{font-size:10px;color:#4A5A6A;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
+.empty-state .hint{font-size:8px;color:#2A3A4A;max-width:200px}
+
+/* ref callouts */
+.ref{background:#0F1D2F;border:1px solid #1A2D44;border-radius:10px;padding:16px 20px;max-width:820px;width:100%}
+.ref h3{color:#C8A84E;font-size:10px;font-weight:800;letter-spacing:0.5px;margin-bottom:10px}
+.issues{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:9px;color:#8BA0B2;line-height:1.5}
+.issue{background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44}
+.issue .num{display:inline-block;background:#3D1A1A;color:#FF6B6B;font-size:8px;padding:1px 5px;border-radius:2px;margin-right:4px}
+.issue .fix{display:inline-block;background:#1A3D1A;color:#4CAF50;font-size:8px;padding:1px 5px;border-radius:2px;margin-right:4px}
+</style>
+</head>
+<body>
+
+<h1>MEDIA DRAWER — ALL FIXES</h1>
+<p class="sub">Sticky tabs, 2-col grid, better type badges, transparent picker, scrollable content</p>
+
+<div class="layout">
+
+  <div class="phone">
+    <div class="screen">
+      <!-- HEADER (fixed) -->
+      <div class="header">
+        <div>
+          <h2>MEDIA</h2>
+          <div class="count">4 items · 3 before · 1 after</div>
+        </div>
+        <span class="x">✕</span>
+      </div>
+
+      <!-- TABS (fixed, outside scroll) -->
+      <div class="tabs">
+        <div class="tab active"><span class="dot blue"></span>BEFORE (3)</div>
+        <div class="tab"><span class="dot green"></span>AFTER (1)</div>
+      </div>
+
+      <!-- SCROLLABLE GRID (scrolls independently) -->
+      <div class="scroll-area">
+        <div class="grid">
+
+          <!-- Photo -->
+          <div class="card">
+            <div style="width:100%;height:100%;background:#1A2D44"></div>
+            <div class="type-badge photo">PHOTO</div>
+            <div class="del">✕</div>
+          </div>
+
+          <!-- Video -->
+          <div class="card video">
+            <div style="width:100%;height:100%;background:#1A2D44;display:flex;align-items:center;justify-content:center;color:#4A5A6A;font-size:28px">🎬</div>
+            <div class="play"></div>
+            <div class="type-badge video">VIDEO</div>
+            <div class="duration">1:24</div>
+            <div class="del">✕</div>
+          </div>
+
+          <!-- Photo -->
+          <div class="card">
+            <div style="width:100%;height:100%;background:#1A2D44"></div>
+            <div class="type-badge photo">PHOTO</div>
+            <div class="del">✕</div>
+          </div>
+
+          <!-- Audio -->
+          <div class="card audio">
+            <div style="width:100%;height:100%;background:#1A2D44;display:flex;align-items:center;justify-content:center;color:#4A5A6A;font-size:28px">🎵</div>
+            <div class="mic">🎤</div>
+            <div class="type-badge audio">AUDIO</div>
+            <div class="del">✕</div>
+          </div>
+
+          <!-- ADD MEDIA -->
+          <div class="add-cell">
+            <span class="plus">+</span>
+            <span class="txt">ADD MEDIA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM BAR (fixed) -->
+      <div class="bottom-bar">
+        <span>DONE</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOURCE PICKER (standalone) -->
+  <div style="align-self:center">
+    <div class="picker">
+      <div class="drag"></div>
+      <h3>ADD MEDIA</h3>
+      <div class="picker-grid">
+        <div class="picker-opt">
+          <span class="emoji">📷</span>
+          <span class="lbl">CAMERA</span>
+        </div>
+        <div class="picker-opt">
+          <span class="emoji">🖼️</span>
+          <span class="lbl">GALLERY</span>
+        </div>
+        <div class="picker-opt">
+          <span class="emoji">🎥</span>
+          <span class="lbl">VIDEO</span>
+        </div>
+        <div class="picker-opt">
+          <span class="emoji">🎤</span>
+          <span class="lbl">AUDIO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="ref" style="margin-top:16px">
+  <h3>ALL 5 FIXES</h3>
+  <div class="issues">
+    <div class="issue">
+      <span class="num">1</span><strong style="color:#fff">Sticky tabs</strong><br>
+      Tabs are now <strong>outside the scrollable area</strong>. Column layout: <code>[header → tabs → Expanded(scroll grid) → bottom bar]</code>. Tabs never scroll off-screen.
+    </div>
+    <div class="issue">
+      <span class="num">2</span><strong style="color:#fff">2-col grid</strong><br>
+      <code>Wrap</code> → <code>GridView.count(crossAxisCount: 2)</code> with proper spacing. No layout breaks. Grid scrolls inside the Expanded area.
+    </div>
+    <div class="issue">
+      <span class="num">3</span><strong style="color:#fff">Better type badge</strong><br>
+      <code>fontSize: 7</code> → <code>fontSize: 8</code>, solid colored background (<span class="fix" style="background:#C8A84ECC;color:#0A1628">PHOTO</span> <span class="fix" style="background:#6BB5FFCC;color:#0A1628">VIDEO</span> <span class="fix" style="background:#B388FFCC;color:#0A1628">AUDIO</span>), bottom-left position.
+    </div>
+    <div class="issue">
+      <span class="num">4</span><strong style="color:#fff">Transparent source picker</strong><br>
+      <code>accent500.withValues(alpha: 0.12)</code> → <code>Colors.transparent</code>. Adds gold border on hover. Matches all other app pickers. 2×2 grid layout.
+    </div>
+    <div class="issue">
+      <span class="num">5</span><strong style="color:#fff">Video: gallery + camera</strong><br>
+      Video picker now offers <strong>both</strong> Camera and Gallery options (was hardcoded to camera only).
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

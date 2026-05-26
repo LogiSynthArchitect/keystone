@@ -11,7 +11,7 @@ import 'package:record/record.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../features/service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../providers/notes_providers.dart';
@@ -153,13 +153,13 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
 
   Future<void> _onSave() async {
     if (_isRecording) {
-      KsSnackbar.show(context, message: "Stop recording before saving",
-          type: KsSnackbarType.info);
+      KsSlidingNotification.show(context, message: "Stop recording before saving",
+          type: KsNotificationType.info);
       return;
     }
     if (_isUploading) {
-      KsSnackbar.show(context, message: "Wait for upload to finish",
-          type: KsSnackbarType.info);
+      KsSlidingNotification.show(context, message: "Wait for upload to finish",
+          type: KsNotificationType.info);
       return;
     }
     HapticFeedback.heavyImpact();
@@ -179,12 +179,12 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       if (result != null) {
         ref.read(notesListProvider.notifier).updateNote(result);
         Navigator.of(context).pop(result);
-        KsSnackbar.show(context, message: "Note updated",
-            type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Note updated",
+            type: KsNotificationType.success);
       } else {
         final error = ref.read(editNoteProvider).errorMessage;
-        KsSnackbar.show(context, message: error ?? "Could not update note",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: error ?? "Could not update note",
+            type: KsNotificationType.error);
       }
     } else {
       // Create new note
@@ -198,12 +198,12 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       if (!mounted) return;
       if (note != null) {
         Navigator.of(context).pop(note);
-        KsSnackbar.show(context, message: "Note saved",
-            type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Note saved",
+            type: KsNotificationType.success);
       } else {
         final error = ref.read(addNoteProvider).errorMessage;
-        KsSnackbar.show(context, message: error ?? "Could not save note",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: error ?? "Could not save note",
+            type: KsNotificationType.error);
       }
     }
   }
@@ -662,8 +662,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Microphone permission denied",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Microphone permission denied",
+            type: KsNotificationType.error);
       }
       return;
     }
@@ -716,8 +716,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not save audio",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not save audio",
+            type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -745,8 +745,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not save image",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not save image",
+            type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -784,8 +784,8 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     } catch (e) {
       debugPrint('[KS:KB] FilePicker failed: $e');
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not attach PDF: $e",
-            type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not attach PDF: $e",
+            type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);

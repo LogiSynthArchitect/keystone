@@ -7,7 +7,7 @@ import 'package:keystone/core/theme/app_text_styles.dart';
 import 'package:keystone/core/theme/ks_colors.dart';
 import 'package:keystone/core/widgets/ks_app_bar.dart';
 import 'package:keystone/core/widgets/ks_offline_banner.dart';
-import 'package:keystone/core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/core/providers/auth_provider.dart';
 import 'package:keystone/core/providers/permissions_provider.dart';
 import 'package:keystone/core/utils/currency_formatter.dart';
@@ -148,10 +148,10 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
       if (mounted) {
         _refetch();
         context.pop();
-        KsSnackbar.show(context, message: "Job updated", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Job updated", type: KsNotificationType.success);
       }
     } catch (e) {
-      if (mounted) KsSnackbar.show(context, message: "Update failed: $e", type: KsSnackbarType.error);
+      if (mounted) KsSlidingNotification.show(context, message: "Update failed: $e", type: KsNotificationType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

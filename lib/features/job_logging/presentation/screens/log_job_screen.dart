@@ -5,20 +5,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/widgets/ks_bottom_sheet_scaffold.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/utils/service_icon_map.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/ks_search_bar.dart';
 import '../providers/job_providers.dart';
+import '../../../inventory/presentation/widgets/inventory_item_card.dart';
 import '../../domain/entities/job_service_entity.dart';
 import '../../domain/entities/job_part_entity.dart';
 import '../../domain/entities/job_expense_entity.dart';
@@ -89,9 +93,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   Timer? _phoneLookupDebounce;
   String? _lastLookupPhone;
 
+  final List<ServiceRow> _additionalServices = [];
   final List<ItemRow> _items = [];
   final List<PartRow> _parts = [];
-  final List<ServiceRow> _additionalServices = [];
   final List<HardwareRow> _hardwareItems = [];
   final List<ExpenseRow> _expenses = [];
   int _partSuggestionIndex = -1;
@@ -100,6 +104,11 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   List<InventoryItemEntity> _hwSuggestions = [];
   final List<XFile> _beforePhotos = [];
   final List<XFile> _afterPhotos = [];
+
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  bool _isRecording = false;
+  int _recordingDuration = 0;
+  Timer? _recordingTimer;
 
   DateTime _jobDate = DateTime.now();
 
@@ -132,6 +141,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       if (userId != null) {
         final invItems = ref.read(inventoryProvider.notifier);
         invItems.loadItems(userId);
+
+        ref.read(jobTemplateProvider.notifier).loadTemplates(userId);
       }
     });
   }
@@ -147,6 +158,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     _quotedFocusNode?.dispose();
     _amountFocusNode?.dispose();
     _notesController.dispose();
+    _recordingTimer?.cancel();
+    _audioRecorder.dispose();
     for (var p in _parts) { p.dispose(); }
     for (var i in _items) { i.dispose(); }
     for (var s in _additionalServices) { s.dispose(); }
@@ -169,32 +182,82 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   bool _canMoveForwardForStep(int step) {
     final hasCustomer = _finalCustomerId != null;
     switch (step) {
-      case 0: return _serviceType != null && _serviceType!.isNotEmpty;
-      case 1: return true;
-      case 2:
+      case 0: return true; // TEMPLATE — always can proceed
+      case 1: return _serviceType != null && _serviceType!.isNotEmpty;
+      case 2: return true;
+      case 3:
         if (_customerController.text.trim().isEmpty) return false;
         if (hasCustomer) return true;
         final phone = _phoneController.text.trim();
         // Accept 10 digits (with 0) or 9 digits (without 0) — PhoneFormatter normalizes both
         return (phone.length == 10 && phone.startsWith('0')) ||
                (phone.length == 9 && !phone.startsWith('0'));
-      case 3:
+      case 4:
         final amountText = _amountController.text.trim();
         if (amountText.isEmpty) return true;
         final amount = CurrencyFormatter.parseToPesewas(amountText);
         return amount != null && amount >= 0;
-      case 4: return true;
       case 5: return true;
+      case 6: return true;
       default: return false;
     }
   }
 
 
 
+  void _applyTemplate(JobTemplateEntity template) {
+    setState(() {
+      // Service type
+      _serviceType = template.serviceType;
+
+      // Additional services — dispose old controllers first
+      for (final s in _additionalServices) { s.dispose(); }
+      _additionalServices.clear();
+      for (final s in template.services) {
+        final row = ServiceRow();
+        row.serviceType = s.serviceType;
+        row.qtyController.text = s.quantity.toString();
+        _additionalServices.add(row);
+      }
+
+      // Items (hardware + parts) — match the split in _saveAsTemplate
+      for (final i in _items) { i.dispose(); }
+      _items.clear();
+      final invItems = ref.read(inventoryProvider).valueOrNull ?? [];
+
+      // Hardware items (from inventory)
+      for (final h in template.hardwareItems) {
+        final row = ItemRow();
+        row.nameController.text = h.name;
+        row.qtyController.text = h.quantity.toString();
+        row.inventoryItemId = h.inventoryItemId;
+        if (h.inventoryItemId != null) {
+          row.inventoryItem = invItems.where((i) => i.id == h.inventoryItemId).firstOrNull;
+        }
+        _items.add(row);
+      }
+
+      // Parts (non-inventory)
+      for (final p in template.parts) {
+        final row = ItemRow();
+        row.nameController.text = p.name;
+        row.qtyController.text = p.quantity.toString();
+        row.inventoryItemId = p.inventoryItemId;
+        _items.add(row);
+      }
+
+      // Notes
+      _notesController.text = template.notes ?? '';
+    });
+
+    // Show confirmation snackbar
+    KsSlidingNotification.show(context, message: 'Template applied — tap NEXT to review', type: KsNotificationType.info);
+  }
+
   Future<void> _saveAsTemplate() async {
     // Must have a service type selected
     if (_serviceType == null || _serviceType!.isEmpty) {
-      KsSnackbar.show(context, message: 'Select a service type first.', type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: 'Select a service type first.', type: KsNotificationType.error);
       return;
     }
 
@@ -225,7 +288,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
     final userId = ref.read(currentUserProvider).valueOrNull?.id;
     if (userId == null) {
-      KsSnackbar.show(context, message: 'Not signed in.', type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: 'Not signed in.', type: KsNotificationType.error);
       return;
     }
 
@@ -241,7 +304,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
           id: '${const Uuid().v4()}-svc-${e.key}',
           serviceType: s.serviceType ?? '',
           quantity: int.tryParse(s.qtyController.text.trim()) ?? 1,
-          unitPrice: CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
+          unitPrice: (ref.read(serviceTypeProvider).valueOrNull ?? []).where((t) => t.name == s.serviceType).firstOrNull?.defaultPrice,
           sortOrder: e.key,
         );
       }).toList(),
@@ -272,7 +335,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     await ref.read(jobTemplateProvider.notifier).saveTemplate(template);
 
     if (mounted) {
-      KsSnackbar.show(context, message: 'Template saved', type: KsSnackbarType.success);
+      KsSlidingNotification.show(context, message: 'Template saved', type: KsNotificationType.success);
     }
   }
 
@@ -300,7 +363,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       final valid = (phone.length == 10 && phone.startsWith('0')) ||
                     (phone.length == 9 && !phone.startsWith('0'));
       if (!valid) {
-        if (mounted) KsSnackbar.show(context, message: "Enter a valid Ghana number (e.g. 024 123 4567)", type: KsSnackbarType.error);
+        if (mounted) KsSlidingNotification.show(context, message: "Enter a valid Ghana number (e.g. 024 123 4567)", type: KsNotificationType.error);
         return;
       }
     }
@@ -348,21 +411,23 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     if (job != null) {
       final repo = ref.read(jobRepositoryProvider);
 
-      if (_additionalServices.isNotEmpty) {
-        final services = _additionalServices.asMap().entries.map((e) => JobServiceEntity(
+      final validServices = _additionalServices.where((s) => s.serviceType != null && s.serviceType!.isNotEmpty).toList();
+      if (validServices.isNotEmpty) {
+        final services = validServices.asMap().entries.map((e) => JobServiceEntity(
           id: const Uuid().v4(),
           jobId: job.id,
           serviceType: e.value.serviceType ?? '',
           quantity: int.tryParse(e.value.qtyController.text.trim()) ?? 1,
-          unitPrice: CurrencyFormatter.parseToPesewas(e.value.priceController.text.trim()),
+          unitPrice: (ref.read(serviceTypeProvider).valueOrNull ?? []).where((t) => t.name == e.value.serviceType).firstOrNull?.defaultPrice,
           sortOrder: e.key,
           createdAt: DateTime.now(),
         )).toList();
         await repo.saveServices(job.id, services);
       }
 
-      if (_items.isNotEmpty) {
-        final parts = _items.asMap().entries.map((e) {
+      final validItems = _items.where((i) => i.nameController.text.trim().isNotEmpty).toList();
+      if (validItems.isNotEmpty) {
+        final parts = validItems.asMap().entries.map((e) {
           final inv = e.value.inventoryItem;
           return JobPartEntity(
             id: const Uuid().v4(),
@@ -437,13 +502,13 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
               name: name,
               serviceType: _serviceType ?? '',
               notes: _notesController.text.trim(),
-              services: _additionalServices.asMap().entries.map((e) {
+      services: _additionalServices.where((s) => s.serviceType != null && s.serviceType!.isNotEmpty).toList().asMap().entries.map((e) {
                 final s = e.value;
                 return TemplateServiceItem(
                   id: '${const Uuid().v4()}-svc-${e.key}',
                   serviceType: s.serviceType ?? '',
                   quantity: int.tryParse(s.qtyController.text.trim()) ?? 1,
-                  unitPrice: CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
+                  unitPrice: (ref.read(serviceTypeProvider).valueOrNull ?? []).where((t) => t.name == s.serviceType).firstOrNull?.defaultPrice,
                   sortOrder: e.key,
                 );
               }).toList(),
@@ -457,7 +522,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
                   inventoryItemId: h.inventoryItemId,
                 );
               }).toList(),
-              parts: _items.where((i) => !i.isFromInventory).toList().asMap().entries.map((e) {
+      parts: _items.where((i) => !i.isFromInventory && i.nameController.text.trim().isNotEmpty).toList().asMap().entries.map((e) {
                 final p = e.value;
                 return TemplatePartItem(
                   id: '${const Uuid().v4()}-part-${e.key}',
@@ -494,12 +559,12 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        KsSnackbar.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsNotificationType.success);
       }
     } else {
       final error = ref.read(logJobProvider).errorMessage;
       if (error != null && error.isNotEmpty) {
-        KsSnackbar.show(context, message: error, type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: error, type: KsNotificationType.error);
       }
     }
   }
@@ -515,6 +580,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         if (ok && mounted) Navigator.of(context).pop();
       }),
       steps: const [
+        KsStep(label: 'TEMPLATE', icon: LineAwesomeIcons.clipboard_solid, subSteps: 1,
+          tip: 'Choose a saved template or start fresh',
+          imageAsset: 'assets/icons/3d/transparent/65d841-file-text.png'),
         KsStep(label: 'SERVICE', icon: LineAwesomeIcons.wrench_solid, subSteps: 1,
           tip: 'Select the main service performed',
           imageAsset: 'assets/icons/3d/transparent/ff5be0-tools.png'),
@@ -542,8 +610,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         if (ok && mounted) Navigator.of(context).pop();
       }),
       stepContent: (step, subStep, rebuild) {
-        // Inject save-as-template button into step 6
-        if (step == 5) {
+        // Inject save-as-template button into step 6 (EXTRAS)
+        if (step == 6) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
@@ -571,32 +639,135 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
                         fontWeight: FontWeight.w800,
                         fontSize: 10,
                         letterSpacing: 0.8,
-                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          );
-        }
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: _buildStepByIndex(step),
-        );
-      },
-    );
-  }
+              ),        // close InkWell
+            ],          // close children
+          ),            // close Column
+        );              // close Padding + return
+      }                 // close if block
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: _buildStepByIndex(step),
+      );
+    },
+  );
+}
 
   Widget _buildStepByIndex(int step) {
     switch (step) {
-      case 0: return _buildStep1();
-      case 1: return _buildStep2();
-      case 2: return _buildStep3();
-      case 3: return _buildStep4();
-      case 4: return _buildStep5();
-      case 5: return _buildStep6();
+      case 0: return _buildStep0();
+      case 1: return _buildStep1();
+      case 2: return _buildStep2();
+      case 3: return _buildStep3();
+      case 4: return _buildStep4();
+      case 5: return _buildStep5();
+      case 6: return _buildStep6();
       default: return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildStep0() {
+    final templatesAsync = ref.watch(jobTemplateProvider);
+    final templates = templatesAsync.valueOrNull ?? [];
+
+    if (templates.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: KsEmptyState(
+          icon: LineAwesomeIcons.clipboard_solid,
+          title: 'NO TEMPLATES YET',
+          subtitle: 'Save a job as a template from the EXTRAS step\nto reuse it here.',
+          actionLabel: 'START FRESH',
+          onAction: () {
+            // No pre-fill — user manually advances to step 1 via NEXT
+          },
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ...templates.map((t) => _buildTemplateCard(t)),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () {},
+          icon: const Icon(LineAwesomeIcons.plus_solid, size: 14),
+          label: Text('START FRESH',
+            style: AppTextStyles.label.copyWith(
+              color: context.ksc.accent500,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: context.ksc.accent500,
+            side: BorderSide(color: context.ksc.accent500, width: 1.5),
+            minimumSize: const Size(double.infinity, 44),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTemplateCard(JobTemplateEntity template) {
+    final serviceIcon = ServiceIconMap.resolve(template.serviceType);
+    final partsSummary = <String>[];
+    if (template.services.isNotEmpty) {
+      partsSummary.add('${template.services.length} additional service${template.services.length > 1 ? 's' : ''}');
+    }
+    if (template.hardwareItems.isNotEmpty) {
+      partsSummary.add('${template.hardwareItems.length} hardware item${template.hardwareItems.length > 1 ? 's' : ''}');
+    }
+    if (template.parts.isNotEmpty) {
+      partsSummary.add('${template.parts.length} part${template.parts.length > 1 ? 's' : ''}');
+    }
+    final summaryStr = partsSummary.isNotEmpty ? partsSummary.join(', ') : 'No additional items';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: () => _applyTemplate(template),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: context.ksc.primary700,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Icon(serviceIcon, color: context.ksc.accent500, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(template.name,
+                      style: AppTextStyles.body.copyWith(
+                        color: context.ksc.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(template.serviceType,
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.accent500, fontSize: 11)),
+                    const SizedBox(height: 2),
+                    Text(summaryStr,
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.neutral500, fontSize: 10)),
+                  ],
+                ),
+              ),
+              Icon(LineAwesomeIcons.angle_right_solid,
+                color: context.ksc.neutral500, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildStep1() {
@@ -790,38 +961,6 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     );
   }
 
-  Widget _buildExpenseRow(int index, ExpenseRow expense) {
-    final categories = ['transport', 'parking', 'subcontractor', 'supplies', 'other'];
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildDropdown("Category", categories, expense.category, (v) {
-                setState(() => expense.category = v ?? 'transport');
-              }),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: _buildDarkField(
-                label: "Amount (GHS)", hint: "0.00",
-                controller: expense.amountController, isNumeric: true,
-              ),
-            ),
-            IconButton(
-              icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 18),
-              onPressed: () => setState(() => _expenses.removeAt(index)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        _buildDarkField(label: "Description", hint: "e.g. Troski fare to site", controller: expense.descriptionController),
-        const Divider(height: 24, color: Color(0xFF1E2A3A)),
-      ],
-    );
-  }
-
   Widget _buildPartRow(int index, PartRow part) {
     final showSuggestions = _partSuggestionIndex == index && _partSuggestions.isNotEmpty;
     return Column(
@@ -851,8 +990,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         if (showSuggestions)
           Container(
             margin: const EdgeInsets.only(top: 2),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -881,9 +1020,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
             ),
           ),
 
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(top: 4),
-          child: Divider(height: 1, color: Color(0xFF1E2A3A)),
+          child: Divider(height: 1, color: context.ksc.primary700),
         ),
       ],
     );
@@ -1082,184 +1221,143 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   void _showInventoryPicker({void Function(HardwareRow item)? onItemSelected}) {
     final items = ref.read(inventoryProvider).valueOrNull ?? [];
     final hardwareItems = items.where((i) => i.category == InventoryItemCategory.lock && !i.isArchived).toList();
+    final searchCtrl = TextEditingController();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        final searchCtrl = TextEditingController();
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final query = searchCtrl.text.toLowerCase().trim();
-            final filtered = query.isEmpty
-                ? hardwareItems
-                : hardwareItems.where((i) =>
-                    i.name.toLowerCase().contains(query) ||
-                    (i.brand?.toLowerCase().contains(query) ?? false) ||
-                    i.category.displayName.toLowerCase().contains(query)
-                  ).toList();
+    KsBottomSheetScaffold.show(
+      context,
+      title: "SELECT HARDWARE ITEM",
+      bottomLabel: null,
+      contentBuilder: (ctx, setSheetState) {
+        final query = searchCtrl.text.toLowerCase().trim();
+        final filtered = query.isEmpty
+            ? hardwareItems
+            : hardwareItems.where((i) =>
+                i.name.toLowerCase().contains(query) ||
+                (i.brand?.toLowerCase().contains(query) ?? false) ||
+                i.category.displayName.toLowerCase().contains(query)
+              ).toList();
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        return Column(
+          children: [
+            // Search field
+            Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: context.ksc.primary900,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: context.ksc.primary700),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Drag handle
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(
-                      width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2)),
-                    ),
-                  ),
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text("SELECT HARDWARE ITEM",
-                            style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(ctx),
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Search field
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: context.ksc.primary900,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: context.ksc.primary700),
+              child: TextField(
+                controller: searchCtrl,
+                onChanged: (_) => setSheetState(() {}),
+                style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
+                cursorColor: context.ksc.accent500,
+                decoration: InputDecoration(
+                  hintText: "Search by name, brand...",
+                  hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
+                  prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral500, size: 18),
+                  suffixIcon: searchCtrl.text.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            searchCtrl.clear();
+                            setSheetState(() {});
+                          },
+                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 18),
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // List
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+              ),
+              child: filtered.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: KsEmptyState(
+                        icon: LineAwesomeIcons.lock_solid,
+                        title: "NO HARDWARE ITEMS",
+                        subtitle: "Add hardware items to your inventory first",
                       ),
-                      child: TextField(
-                        controller: searchCtrl,
-                        onChanged: (_) => setSheetState(() {}),
-                        style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
-                        cursorColor: context.ksc.accent500,
-                        decoration: InputDecoration(
-                          hintText: "Search by name, brand...",
-                          hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
-                          prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral500, size: 18),
-                          suffixIcon: searchCtrl.text.isNotEmpty
-                              ? GestureDetector(
-                                  onTap: () {
-                                    searchCtrl.clear();
-                                    setSheetState(() {});
-                                  },
-                                  child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 18),
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // List
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(ctx).size.height * 0.45,
-                    ),
-                    child: filtered.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: KsEmptyState(
-                              icon: LineAwesomeIcons.lock_solid,
-                              title: "NO HARDWARE ITEMS",
-                              subtitle: "Add hardware items to your inventory first",
-                            ),
-                          )
-                        : ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, __) => Divider(height: 1, color: context.ksc.primary700),
-                            itemBuilder: (_, i) {
-                              final invItem = filtered[i];
-                              final stockStatus = invItem.isLowStock
-                                  ? "${invItem.quantity} left (low)"
-                                  : "Stock: ${invItem.quantity}";
-                              return InkWell(
-                                onTap: () {
-                                  // Create hardware row pre-filled from inventory
-                                  final hw = HardwareRow();
-                                  hw.inventoryItem = invItem;
-                                  hw.inventoryItemId = invItem.id;
-                                  hw.nameController.text = invItem.name;
-                                  hw.qtyController.text = '1';
-                                  if (onItemSelected != null) {
-                                    onItemSelected(hw);
-                                  } else {
-                                    setState(() => _hardwareItems.add(hw));
-                                  }
-                                  Navigator.pop(ctx);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                  child: Row(
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => Divider(height: 1, color: context.ksc.primary700),
+                      itemBuilder: (_, i) {
+                        final invItem = filtered[i];
+                        final stockStatus = invItem.isLowStock
+                            ? "${invItem.quantity} left (low)"
+                            : "Stock: ${invItem.quantity}";
+                        return InkWell(
+                          onTap: () {
+                            final hw = HardwareRow();
+                            hw.inventoryItem = invItem;
+                            hw.inventoryItemId = invItem.id;
+                            hw.nameController.text = invItem.name;
+                            hw.qtyController.text = '1';
+                            if (onItemSelected != null) {
+                              onItemSelected(hw);
+                            } else {
+                              setState(() => _hardwareItems.add(hw));
+                            }
+                            Navigator.pop(ctx);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                            child: Row(
+                              children: [
+                                Icon(LineAwesomeIcons.lock_solid, size: 16, color: context.ksc.accent500),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Icon(LineAwesomeIcons.lock_solid, size: 16, color: context.ksc.accent500),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(invItem.name.toUpperCase(),
-                                              style: AppTextStyles.body.copyWith(
-                                                color: context.ksc.white,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              invItem.brand != null
-                                                  ? "${invItem.brand} · $stockStatus"
-                                                  : stockStatus,
-                                              style: AppTextStyles.caption.copyWith(
-                                                color: context.ksc.neutral500,
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          ],
+                                      Text(invItem.name.toUpperCase(),
+                                        style: AppTextStyles.body.copyWith(
+                                          color: context.ksc.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        invItem.brand != null
+                                            ? "${invItem.brand} · $stockStatus"
+                                            : stockStatus,
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: context.ksc.neutral500,
+                                          fontSize: 10,
                                         ),
                                       ),
-                                      if (invItem.defaultSalePrice != null)
-                                        Text(
-                                          CurrencyFormatter.format(invItem.defaultSalePrice!),
-                                          style: AppTextStyles.caption.copyWith(
-                                            color: context.ksc.accent500,
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 11,
-                                          ),
-                                        ),
                                     ],
                                   ),
                                 ),
-                              );
-                            },
+                                if (invItem.defaultSalePrice != null)
+                                  Text(
+                                    CurrencyFormatter.format(invItem.defaultSalePrice!),
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: context.ksc.accent500,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
-          },
+                        );
+                      },
+                    ),
+            ),
+          ],
         );
       },
     );
@@ -1290,218 +1388,146 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     }).toList();
     bool dirty = false;
 
-    showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final typesAsync = ref.watch(serviceTypeProvider);
-            final types = typesAsync.valueOrNull ?? [];
+    final svcCount = localServices.length;
+    KsBottomSheetScaffold.show<bool>(
+      context,
+      title: "ADDITIONAL SERVICES",
+      subtitle: svcCount > 0
+          ? "$svcCount service${svcCount > 1 ? 's' : ''}"
+          : "Tap a service below to add it to this job",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {
+        setState(() {
+          _additionalServices
+            ..clear()
+            ..addAll(localServices);
+        });
+      },
+      contentBuilder: (ctx, setSheetState) {
+        final typesAsync = ref.watch(serviceTypeProvider);
+        final types = typesAsync.valueOrNull ?? [];
 
-            final grouped = <String, List>{};
-            for (final t in types) {
-              grouped.putIfAbsent(t.category, () => []).add(t);
-            }
-            final categories = grouped.keys.toList()..sort();
+        final grouped = <String, List>{};
+        for (final t in types) {
+          grouped.putIfAbsent(t.category, () => []).add(t);
+        }
+        final categories = grouped.keys.toList()..sort();
 
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        return Column(
+          children: [
+            if (localServices.isNotEmpty) ...[
+              ...localServices.asMap().entries.map((entry) {
+                return _buildAdditionalServiceSummaryCard(
+                  service: entry.value,
+                  types: types,
+                  onTap: () {
+                    _showServiceEditDrawer(
+                      service: entry.value,
+                      existingIndex: entry.key,
+                      onChanged: () {
+                        dirty = true;
+                        setSheetState(() {});
+                      },
+                    );
+                  },
+                  onRemove: () {
+                    localServices.removeAt(entry.key);
+                    entry.value.dispose();
+                    dirty = true;
+                    setSheetState(() {});
+                  },
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
+            ...categories.map((cat) {
+              final items = grouped[cat]!;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(cat.toUpperCase(),
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.neutral500,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  ...items.map((type) {
+                    final alreadyAdded = localServices.any((s) => s.serviceType == type.name);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: InkWell(
+                        onTap: alreadyAdded ? null : () async {
+                          final row = ServiceRow();
+                          row.serviceType = type.name;
+                          final added = await _showServiceEditDrawer(
+                            service: row,
+                            existingIndex: null,
+                            onChanged: () {
+                              localServices.add(row);
+                              dirty = true;
+                              setSheetState(() {});
+                            },
+                          );
+                          if (!added) row.dispose();
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: alreadyAdded ? context.ksc.primary700.withValues(alpha: 0.3) : context.ksc.primary800,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Row(
                             children: [
-                              Text("ADDITIONAL SERVICES",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                localServices.isNotEmpty
-                                    ? "${localServices.length} service${localServices.length > 1 ? 's' : ''}"
-                                    : "Tap a service below to add it to this job",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                              Icon(
+                                ServiceIconMap.resolve(type.iconName),
+                                size: 18,
+                                color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
                               ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(type.name.replaceAll('_', ' ').toUpperCase(),
+                                  style: AppTextStyles.body.copyWith(
+                                    color: alreadyAdded ? context.ksc.neutral600 : context.ksc.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              if (type.defaultPrice != null && type.defaultPrice! > 0)
+                                Text(CurrencyFormatter.format(type.defaultPrice!),
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              if (alreadyAdded)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Icon(LineAwesomeIcons.check_circle_solid, size: 16, color: context.ksc.neutral600),
+                                ),
                             ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx, false);
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          if (localServices.isNotEmpty) ...[
-                            ...localServices.asMap().entries.map((entry) {
-                              return _buildAdditionalServiceSummaryCard(
-                                service: entry.value,
-                                types: types,
-                                onTap: () {
-                                  _showServiceEditDrawer(
-                                    service: entry.value,
-                                    existingIndex: entry.key,
-                                    onChanged: () {
-                                      dirty = true;
-                                      setSheetState(() {});
-                                    },
-                                  );
-                                },
-                                onRemove: () {
-                                  localServices.removeAt(entry.key);
-                                  entry.value.dispose();
-                                  dirty = true;
-                                  setSheetState(() {});
-                                },
-                              );
-                            }),
-                            const SizedBox(height: 16),
-                          ],
-                          ...categories.map((cat) {
-                            final items = grouped[cat]!;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Text(cat.toUpperCase(),
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: context.ksc.neutral500,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 10,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                ),
-                                ...items.map((type) {
-                                  final alreadyAdded = localServices.any((s) => s.serviceType == type.name);
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 6),
-                                    child: InkWell(
-                                      onTap: alreadyAdded ? null : () async {
-                                        final row = ServiceRow();
-                                        row.serviceType = type.name;
-                                        if (type.defaultPrice != null) {
-                                          row.priceController.text = (type.defaultPrice! / 100.0).toStringAsFixed(2);
-                                        }
-                                        final added = await _showServiceEditDrawer(
-                                          service: row,
-                                          existingIndex: null,
-                                          onChanged: () {
-                                            localServices.add(row);
-                                            dirty = true;
-                                            setSheetState(() {});
-                                          },
-                                        );
-                                        if (!added) row.dispose();
-                                      },
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                        decoration: BoxDecoration(
-                                          color: alreadyAdded ? context.ksc.primary700.withValues(alpha: 0.3) : context.ksc.primary800,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: alreadyAdded ? context.ksc.neutral600 : context.ksc.primary700,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              ServiceIconMap.resolve(type.iconName),
-                                              size: 18,
-                                              color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
-                                            ),
-                                            const SizedBox(width: 14),
-                                            Expanded(
-                                              child: Text(type.name.replaceAll('_', ' ').toUpperCase(),
-                                                style: AppTextStyles.body.copyWith(
-                                                  color: alreadyAdded ? context.ksc.neutral600 : context.ksc.white,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                            if (type.defaultPrice != null && type.defaultPrice! > 0)
-                                              Text(CurrencyFormatter.format(type.defaultPrice!),
-                                                style: AppTextStyles.caption.copyWith(
-                                                  color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 11,
-                                                ),
-                                              ),
-                                            if (alreadyAdded)
-                                              Padding(
-                                                padding: const EdgeInsets.only(left: 8),
-                                                child: Icon(LineAwesomeIcons.check_circle_solid, size: 16, color: context.ksc.neutral600),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                                const SizedBox(height: 16),
-                              ],
-                            );
-                          }),
-                          const SizedBox(height: 16),
-                        ],
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                          onPressed: () {
-                          setState(() {
-                            _additionalServices
-                              ..clear()
-                              ..addAll(localServices);
-                          });
-                          Navigator.pop(ctx, true);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.ksc.accent500,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: Text("DONE",
-                          style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                      ),
-                    ),
-                  ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
                 ],
-              ),
-            );
-          },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
         );
       },
     ).then((committed) {
@@ -1522,24 +1548,24 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     required VoidCallback onRemove,
   }) {
     final qty = int.tryParse(service.qtyController.text) ?? 1;
-    final unitPrice = CurrencyFormatter.parseToPesewas(service.priceController.text.trim()) ?? 0;
-    final total = qty * unitPrice;
     final svcType = types.where((t) => t.name == service.serviceType).firstOrNull;
+    final unitPrice = (svcType?.defaultPrice ?? 0);
+    final total = qty * unitPrice;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                ServiceIconMap.resolve(svcType?.iconName),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  ServiceIconMap.resolve(svcType?.iconName),
                 size: 20,
                 color: context.ksc.accent500,
               ),
@@ -1604,214 +1630,155 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     required int? existingIndex,
     required VoidCallback onChanged,
   }) async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final qty = int.tryParse(service.qtyController.text) ?? 1;
-            final unitPrice = CurrencyFormatter.parseToPesewas(service.priceController.text.trim()) ?? 0;
-            final total = qty * unitPrice;
-            final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
-            final svcType = types.where((t) => t.name == service.serviceType).firstOrNull;
+    final result = await KsBottomSheetScaffold.show<bool>(
+      context,
+      title: existingIndex != null ? "EDIT SERVICE" : "ADD SERVICE",
+      bottomLabel: existingIndex != null ? "SAVE" : "ADD",
+      onDone: () {}, // Needed to show the bottom button
+      contentBuilder: (ctx, setSheetState) {
+        final qty = int.tryParse(service.qtyController.text) ?? 1;
+        final customPrice = CurrencyFormatter.parseToPesewas(service.priceController.text.trim());
+        final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
+        final svcType = types.where((t) => t.name == service.serviceType).firstOrNull;
+        final unitPrice = customPrice ?? (svcType?.defaultPrice ?? 0);
+        final total = qty * unitPrice;
 
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        return Column(
+          children: [
+            // Service icon + name (read-only)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
                 children: [
-                  // Drag handle
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(
-                      width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2)),
-                    ),
+                  Icon(
+                    ServiceIconMap.resolve(svcType?.iconName),
+                    size: 24,
+                    color: context.ksc.accent500,
                   ),
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            existingIndex != null ? "EDIT SERVICE" : "ADD SERVICE",
-                            style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(ctx, false),
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Service icon + name (read-only)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Icon(
-                          ServiceIconMap.resolve(svcType?.iconName),
-                          size: 24,
-                          color: context.ksc.accent500,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            service.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
-                            style: AppTextStyles.bodyLarge.copyWith(
-                              color: context.ksc.white,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Qty row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Text("QTY",
-                          style: AppTextStyles.caption.copyWith(
-                            color: context.ksc.neutral600,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 10,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildDrawerQtyStepper(service.qtyController, () => setSheetState(() {})),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Unit price field (underline only)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("UNIT PRICE (GHS)",
-                          style: AppTextStyles.caption.copyWith(
-                            color: context.ksc.neutral600,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 10,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: service.priceController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                inputFormatters: [CurrencyInputFormatter()],
-                                onChanged: (_) => setSheetState(() {}),
-                                style: AppTextStyles.body.copyWith(
-                                  color: context.ksc.accent500,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 16,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: "0.00",
-                                  hintStyle: AppTextStyles.body.copyWith(
-                                    color: context.ksc.neutral600,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16,
-                                  ),
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.only(bottom: 4),
-                                  enabledBorder: const UnderlineInputBorder(
-                                    borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
-                                  ),
-                                  focusedBorder: const UnderlineInputBorder(
-                                    borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
-                                  ),
-                                  filled: false,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text("GHS",
-                              style: AppTextStyles.caption.copyWith(
-                                color: context.ksc.neutral500,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Total display
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        const Spacer(),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text("TOTAL",
-                              style: AppTextStyles.caption.copyWith(
-                                color: context.ksc.neutral600,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 10,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
-                              style: AppTextStyles.h2.copyWith(
-                                color: context.ksc.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 24,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Action button
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.ksc.accent500,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: Text(
-                          existingIndex != null ? "SAVE" : "ADD",
-                          style: AppTextStyles.label.copyWith(
-                            color: context.ksc.primary900,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      service.serviceType?.replaceAll('_', ' ').toUpperCase() ?? '',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: context.ksc.white,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 32),
+            // Qty row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Text("QTY",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral600,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildDrawerQtyStepper(service.qtyController, () => setSheetState(() {})),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Unit price field (underline only)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("UNIT PRICE (GHS)",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral600,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: service.priceController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [CurrencyInputFormatter()],
+                          onChanged: (_) => setSheetState(() {}),
+                          style: AppTextStyles.body.copyWith(
+                            color: context.ksc.accent500,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "0.00",
+                            hintStyle: AppTextStyles.body.copyWith(
+                              color: context.ksc.neutral600,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.only(bottom: 4),
+                            enabledBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                            ),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                            ),
+                            filled: false,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text("GHS",
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral500,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Total display
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text("TOTAL",
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral600,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                        style: AppTextStyles.h2.copyWith(
+                          color: context.ksc.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
@@ -1855,263 +1822,318 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   }
 
   void _showHardwareDrawer() {
-    // Local working copy — only committed to parent on DONE
     final localItems = _hardwareItems.map((h) => h.copy()).toList();
     bool dirty = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final hwCount = localItems.length;
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("HARDWARE ITEMS",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                hwCount > 0
-                                    ? "$hwCount item${hwCount > 1 ? 's' : ''}"
-                                    : "No items added",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                _showInventoryPicker(
-                                  onItemSelected: (hw) {
-                                    localItems.add(hw);
-                                    dirty = true;
-                                    setSheetState(() {});
-                                  },
-                                );
-                              },
-                              icon: Icon(LineAwesomeIcons.search_solid, size: 16, color: context.ksc.accent500),
-                              label: Text("SELECT FROM INVENTORY",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ...localItems.asMap().entries.map((entry) =>
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: entry.value.isFromInventory
-                                  ? _buildInventoryHardwareCard(entry.key, entry.value)
-                                  : _buildHardwareRow(
-                                      entry.key,
-                                      entry.value,
-                                      onRemove: () {
-                                        localItems.removeAt(entry.key);
-                                        dirty = true;
-                                        setSheetState(() {});
-                                      },
-                                    ),
-                            ),
-                          ),
-                          if (localItems.isNotEmpty) const SizedBox(height: 8),
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: () {
-                                localItems.add(HardwareRow());
-                                dirty = true;
-                                setSheetState(() {});
-                              },
-                              icon: Icon(LineAwesomeIcons.plus_solid, size: 14, color: context.ksc.neutral500),
-                              label: Text("Add Manual Entry",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w600)),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _hardwareItems
-                                    ..clear()
-                                    ..addAll(localItems);
-                                });
-                                Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.ksc.accent500,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                              child: Text("DONE",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+    KsBottomSheetScaffold.show(
+      context,
+      title: "HARDWARE ITEMS",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {
+        setState(() {
+          _hardwareItems
+            ..clear()
+            ..addAll(localItems);
+        });
+      },
+      contentBuilder: (ctx, setSheetState) {
+        return Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  _showInventoryPicker(
+                    onItemSelected: (hw) {
+                      localItems.add(hw);
+                      dirty = true;
+                      setSheetState(() {});
+                    },
+                  );
+                },
+                icon: Icon(LineAwesomeIcons.search_solid, size: 16, color: context.ksc.accent500),
+                label: Text("SELECT FROM INVENTORY",
+                  style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 12),
+            ...localItems.asMap().entries.map((entry) =>
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: entry.value.isFromInventory
+                    ? _buildInventoryHardwareCard(entry.key, entry.value)
+                    : _buildHardwareRow(
+                        entry.key,
+                        entry.value,
+                        onRemove: () {
+                          localItems.removeAt(entry.key);
+                          dirty = true;
+                          setSheetState(() {});
+                        },
+                      ),
+              ),
+            ),
+            if (localItems.isNotEmpty) const SizedBox(height: 8),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  localItems.add(HardwareRow());
+                  dirty = true;
+                  setSheetState(() {});
+                },
+                icon: Icon(LineAwesomeIcons.plus_solid, size: 14, color: context.ksc.neutral500),
+                label: Text("Add Manual Entry",
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  void _showExpensesDrawer() {
+    final localExpenses = _expenses.map((e) => e.copy()).toList();
+    bool dirty = false;
+
+    KsBottomSheetScaffold.show(
+      context,
+      title: "EXPENSES",
+      subtitle: localExpenses.isNotEmpty
+          ? "${localExpenses.length} expense${localExpenses.length > 1 ? 's' : ''} · ${
+              CurrencyFormatter.format(localExpenses.fold<int>(0, (sum, e) =>
+                sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0)))
+            }"
+          : "No expenses added",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {
+        setState(() {
+          _expenses
+            ..clear()
+            ..addAll(localExpenses);
+        });
+      },
+      contentBuilder: (ctx, setSheetState) {
+        return Column(
+          children: [
+            // Expense cards
+            ...localExpenses.asMap().entries.map((entry) =>
+              _buildExpenseSummaryCard(
+                expense: entry.value,
+                onTap: () {
+                  _openExpenseEditDrawer(
+                    expense: entry.value,
+                    existingIndex: entry.key,
+                    onChanged: () {
+                      dirty = true;
+                      setSheetState(() {});
+                    },
+                  );
+                },
+                onRemove: () {
+                  localExpenses.removeAt(entry.key);
+                  entry.value.dispose();
+                  dirty = true;
+                  setSheetState(() {});
+                  // Rebuild subtitle via setSheetState
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            // ADD EXPENSE button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  final row = ExpenseRow();
+                  _openExpenseEditDrawer(
+                    expense: row,
+                    existingIndex: null,
+                    onChanged: () {
+                      localExpenses.add(row);
+                      dirty = true;
+                      setSheetState(() {});
+                    },
+                  );
+                },
+                icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+                label: Text("ADD EXPENSE",
+                  style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  void _showExpensesDrawer() {
-    final localExpenses = _expenses.map((e) => e.copy()).toList();
-    bool dirty = false;
+  /// Summary card for an expense in the list — shows category emoji, name, description, amount.
+  Widget _buildExpenseSummaryCard({
+    required ExpenseRow expense,
+    required VoidCallback onTap,
+    required VoidCallback onRemove,
+  }) {
+    final amt = CurrencyFormatter.parseToPesewas(expense.amountController.text.trim());
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+          decoration: BoxDecoration(
+            color: context.ksc.primary800,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: context.ksc.primary700),
+          ),
+          child: Row(
+            children: [
+              // Category icon
+              Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: context.ksc.accent500.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: Text(_expenseCategoryEmoji(expense.category), style: const TextStyle(fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(expense.category.toUpperCase(),
+                      style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800),
+                    ),
+                    if (expense.descriptionController.text.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(expense.descriptionController.text,
+                          style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10),
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Amount
+              Text(
+                amt != null ? CurrencyFormatter.format(amt) : "GHS 0.00",
+                style: AppTextStyles.body.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 13),
+              ),
+              const SizedBox(width: 4),
+              // Delete
+              IconButton(
+                icon: Icon(LineAwesomeIcons.times_circle_solid, color: context.ksc.error500, size: 20),
+                onPressed: onRemove,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    showModalBottomSheet(
+  /// Opens a bottom sheet with the 5 expense categories. Returns the selected value or null.
+  Future<String?> _openExpenseCategorySheet({required String current}) async {
+    final categories = ['transport', 'parking', 'subcontractor', 'supplies', 'other'];
+    final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
       builder: (ctx) {
+        String selected = current;
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
-            final expCount = localExpenses.length;
-            final expTotal = localExpenses.fold<int>(0, (sum, e) {
-              return sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0);
-            });
-
             return Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Drag handle
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
+                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2)),
+                    ),
                   ),
+                  // Header
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("EXPENSES",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                expCount > 0
-                                    ? "$expCount item${expCount > 1 ? 's' : ''} · ${CurrencyFormatter.format(expTotal)}"
-                                    : "No expenses added",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
+                        Expanded(child: Text("SELECT CATEGORY",
+                            style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900))),
                         GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                          },
+                          onTap: () => Navigator.pop(ctx),
                           child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          ...localExpenses.asMap().entries.map((entry) =>
-                            _buildExpenseRow(entry.key, entry.value)),
-                          if (localExpenses.length < 10)
-                            TextButton.icon(
-                              onPressed: () {
-                                localExpenses.add(ExpenseRow());
-                                dirty = true;
-                                setSheetState(() {});
-                              },
-                              icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
-                              label: Text("ADD EXPENSE",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
-                            ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _expenses
-                                    ..clear()
-                                    ..addAll(localExpenses);
-                                });
-                                Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.ksc.accent500,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                              child: Text("DONE",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                  const SizedBox(height: 4),
+                  // Category options
+                  ...categories.map((cat) {
+                    final isSelected = selected == cat;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 3),
+                      child: InkWell(
+                        onTap: () {
+                          selected = cat;
+                          setSheetState(() {});
+                          Navigator.pop(ctx, cat);
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isSelected ? context.ksc.accent500 : context.ksc.accent500.withValues(alpha: 0.25),
+                              width: isSelected ? 1.5 : 1,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                        ],
+                          child: Row(
+                            children: [
+                              Text(_expenseCategoryEmoji(cat), style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(cat.replaceAll('_', ' ').toUpperCase(),
+                                  style: AppTextStyles.body.copyWith(
+                                    color: isSelected ? context.ksc.white : context.ksc.neutral400,
+                                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              if (isSelected)
+                                Icon(LineAwesomeIcons.check_circle_solid, size: 18, color: context.ksc.accent500),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
@@ -2119,490 +2141,799 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         );
       },
     );
+    return result;
+  }
+
+  /// Dedicated drawer for ADD / EDIT an expense.
+  /// Follows the same pattern as _showServiceEditDrawer and _showItemEditDrawer.
+  Future<bool> _openExpenseEditDrawer({
+    required ExpenseRow expense,
+    required int? existingIndex,
+    required VoidCallback onChanged,
+  }) async {
+    // Pre-populate category if empty
+    if (expense.category == 'transport') { /* default */ }
+    bool dirty = false;
+
+    final result = await KsBottomSheetScaffold.show<bool>(
+      context,
+      title: existingIndex != null ? "EDIT EXPENSE" : "ADD EXPENSE",
+      bottomLabel: existingIndex != null ? "SAVE" : "ADD",
+      onDone: () {}, // Needed to show the bottom button
+      contentBuilder: (ctx, setSheetState) {
+        final qty = 1; // single expense
+        final amt = CurrencyFormatter.parseToPesewas(expense.amountController.text.trim());
+        final total = amt ?? 0;
+
+        return Column(
+          children: [
+            // Category picker — tappable, opens bottom sheet
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("CATEGORY",
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      final newCat = await _openExpenseCategorySheet(current: expense.category);
+                      if (newCat != null && ctx.mounted) {
+                        expense.category = newCat;
+                        setSheetState(() {});
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(_expenseCategoryEmoji(expense.category), style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(expense.category.replaceAll('_', ' ').toUpperCase(),
+                              style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          Icon(LineAwesomeIcons.angle_down_solid, size: 14, color: context.ksc.neutral500),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Amount (GHS)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("AMOUNT (GHS)",
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: expense.amountController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [CurrencyInputFormatter()],
+                          onChanged: (_) => setSheetState(() {}),
+                          style: AppTextStyles.body.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 16),
+                          decoration: InputDecoration(
+                            hintText: "0.00",
+                            hintStyle: AppTextStyles.body.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w900, fontSize: 16),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.only(bottom: 4),
+                            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1)),
+                            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5)),
+                            filled: false,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text("GHS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Description
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("DESCRIPTION",
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: expense.descriptionController,
+                    style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
+                    cursorColor: context.ksc.accent500,
+                    decoration: InputDecoration(
+                      hintText: "e.g. Troski fare to site",
+                      hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.only(bottom: 8),
+                      enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1)),
+                      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5)),
+                      filled: false,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Total
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text("TOTAL",
+                        style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                        style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 24),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      onChanged();
+      return true;
+    }
+    return false;
+  }
+
+  /// Emoji helper for expense category
+  String _expenseCategoryEmoji(String category) {
+    switch (category) {
+      case 'transport': return '🚕';
+      case 'parking': return '🅿️';
+      case 'subcontractor': return '👷';
+      case 'supplies': return '📦';
+      case 'other': return '📋';
+      default: return '📋';
+    }
   }
 
   void _showPartsDrawer() {
     final localParts = _parts.map((p) => p.copy()).toList();
     bool dirty = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final partCount = localParts.length;
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("PARTS USED",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                partCount > 0
-                                    ? "$partCount item${partCount > 1 ? 's' : ''}"
-                                    : "No parts added",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          ...localParts.asMap().entries.map((entry) =>
-                            _buildPartRow(entry.key, entry.value)),
-                          if (localParts.length < 20)
-                            TextButton.icon(
-                              onPressed: () {
-                                localParts.add(PartRow());
-                                dirty = true;
-                                setSheetState(() {});
-                              },
-                              icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
-                              label: Text("ADD PART",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
-                            ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _parts
-                                    ..clear()
-                                    ..addAll(localParts);
-                                });
-                                Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.ksc.accent500,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                              child: Text("DONE",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+    KsBottomSheetScaffold.show(
+      context,
+      title: "PARTS USED",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {
+        setState(() {
+          _parts
+            ..clear()
+            ..addAll(localParts);
+        });
+      },
+      contentBuilder: (ctx, setSheetState) {
+        return Column(
+          children: [
+            ...localParts.asMap().entries.map((entry) =>
+              _buildPartRow(entry.key, entry.value)),
+            if (localParts.length < 20)
+              TextButton.icon(
+                onPressed: () {
+                  localParts.add(PartRow());
+                  dirty = true;
+                  setSheetState(() {});
+                },
+                icon: const Icon(LineAwesomeIcons.plus_solid, size: 16),
+                label: Text("ADD PART",
+                  style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
               ),
-            );
-          },
+          ],
         );
       },
     );
   }
-
   void _showPhotosDrawer() {
     final localBefore = List<XFile>.from(_beforePhotos);
     final localAfter = List<XFile>.from(_afterPhotos);
     bool dirty = false;
+    bool tabBefore = true;
+    bool isLoading = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final photoCount = localBefore.length + localAfter.length;
+    KsBottomSheetScaffold.show(
+      context,
+      title: "MEDIA",
+      subtitle: "${localBefore.length + localAfter.length} items · "
+          "${localBefore.length} before · ${localAfter.length} after",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {
+        setState(() {
+          _beforePhotos
+            ..clear()
+            ..addAll(localBefore);
+          _afterPhotos
+            ..clear()
+            ..addAll(localAfter);
+        });
+      },
+      // Tabs are sticky — outside scroll area
+      stickyHeader: (ctx, setSheetState) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: context.ksc.primary900,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: Row(
+          children: [
+            _buildTab("BEFORE", localBefore.length, true, tabBefore, () {
+              tabBefore = true;
+              setSheetState(() {});
+            }),
+            const SizedBox(width: 3),
+            _buildTab("AFTER", localAfter.length, false, tabBefore, () {
+              tabBefore = false;
+              setSheetState(() {});
+            }),
+          ],
+        ),
+      ),
+      contentBuilder: (ctx, setSheetState) {
+        final activeList = tabBefore ? localBefore : localAfter;
+        final label = tabBefore ? "BEFORE" : "AFTER";
 
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("MEDIA",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                photoCount > 0
-                                    ? "$photoCount item${photoCount > 1 ? 's' : ''}"
-                                    : "No media added",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx);
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          _buildPhotoGroup("BEFORE PHOTOS", localBefore, onChanged: () { dirty = true; setSheetState(() {}); }),
-                          const SizedBox(height: 16),
-                          _buildPhotoGroup("AFTER PHOTOS", localAfter, onChanged: () { dirty = true; setSheetState(() {}); }),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _beforePhotos
-                                    ..clear()
-                                    ..addAll(localBefore);
-                                  _afterPhotos
-                                    ..clear()
-                                    ..addAll(localAfter);
-                                });
-                                Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.ksc.accent500,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                              child: Text("DONE",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
+        return _buildMediaGrid(
+          files: activeList,
+          label: label,
+          isLoading: isLoading,
+          onRemove: (index) {
+            activeList.removeAt(index);
+            dirty = true;
+            setSheetState(() {});
+          },
+          onAdd: () async {
+            final source = await _showMediaSourceSheet(ctx);
+            if (source == null || !ctx.mounted) return;
+
+            isLoading = true;
+            setSheetState(() {});
+
+            XFile? picked;
+            if (source == 'camera' || source == 'gallery') {
+              final imgSource = source == 'camera'
+                  ? ImageSource.camera
+                  : ImageSource.gallery;
+              picked = await ImagePicker()
+                  .pickImage(source: imgSource, maxWidth: 1024, maxHeight: 1024, imageQuality: 80);
+            } else if (source == 'videocam') {
+              picked = await ImagePicker()
+                  .pickVideo(source: ImageSource.camera, maxDuration: const Duration(seconds: 60));
+            } else if (source == 'videogallery') {
+              picked = await ImagePicker()
+                  .pickVideo(source: ImageSource.gallery, maxDuration: const Duration(seconds: 60));
+            } else if (source == 'audio') {
+              final hasPermission = await _audioRecorder.hasPermission();
+              if (hasPermission && ctx.mounted) {
+                final result = await showDialog<String>(
+                  context: ctx,
+                  barrierDismissible: false,
+                  builder: (c) => _AudioRecordingDialog(recorder: _audioRecorder),
+                );
+                if (result != null) picked = XFile(result);
+              }
+            }
+
+            isLoading = false;
+            if (picked != null && ctx.mounted) {
+              activeList.add(picked);
+              dirty = true;
+            }
+            if (ctx.mounted) setSheetState(() {});
           },
         );
       },
     );
   }
+
+  /// Tab button for BEFORE / AFTER toggle.
+  Widget _buildTab(String label, int count, bool isBefore, bool isActive, VoidCallback onTap) {
+    final active = (isBefore && isActive) || (!isBefore && !isActive);
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: active ? context.ksc.accent500 : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 6, height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: active ? context.ksc.primary900 : (isBefore ? const Color(0xFF6BB5FF) : const Color(0xFF4CAF50)),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text("$label ($count)",
+                style: AppTextStyles.caption.copyWith(
+                  color: active ? context.ksc.primary900 : context.ksc.neutral400,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 10,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 2-column media grid with add button.
+  Widget _buildMediaGrid({
+    required List<XFile> files,
+    required String label,
+    required bool isLoading,
+    required ValueChanged<int> onRemove,
+    required VoidCallback onAdd,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Empty state with tappable ADD MEDIA
+        if (files.isEmpty && !isLoading)
+          InkWell(
+            onTap: onAdd,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(LineAwesomeIcons.camera_solid, size: 36, color: context.ksc.neutral600),
+                    const SizedBox(height: 12),
+                    Text("NO $label MEDIA",
+                      style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LineAwesomeIcons.plus_solid, size: 14, color: context.ksc.accent500),
+                          const SizedBox(width: 6),
+                          Text("ADD MEDIA",
+                            style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        // 2-col grid
+        if (files.isNotEmpty || isLoading)
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1,
+            children: [
+              ...files.asMap().entries.map((entry) =>
+                _buildMediaCard(
+                  file: entry.value,
+                  onRemove: () => onRemove(entry.key),
+                ),
+              ),
+              if (isLoading) _buildShimmerCard(),
+              // Add button
+              _buildMediaAddCard(onTap: isLoading ? null : onAdd),
+            ],
+          ),
+      ],
+    );
+  }
+
+  /// Add media card — dashed border + plus icon.
+  Widget _buildMediaAddCard({VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: context.ksc.primary700, width: 1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(LineAwesomeIcons.plus_solid, size: 24, color: context.ksc.accent500),
+            const SizedBox(height: 6),
+            Text("ADD MEDIA",
+              style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9, letterSpacing: 0.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Single media card with type badge, play overlay, delete.
+  Widget _buildMediaCard({
+    required XFile file,
+    required VoidCallback onRemove,
+  }) {
+    final path = file.path;
+    final isVideo = path.endsWith('.mp4') || path.endsWith('.mov');
+    final isAudio = path.endsWith('.m4a') || path.endsWith('.mp3') || path.endsWith('.wav');
+
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Stack(
+        children: [
+          // Thumbnail
+          Container(
+            width: double.infinity, height: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: context.ksc.primary900,
+              image: !isVideo && !isAudio
+                  ? DecorationImage(image: FileImage(File(path)), fit: BoxFit.cover)
+                  : null,
+              border: Border.all(color: context.ksc.primary700),
+            ),
+            child: isVideo
+                ? Center(child: Icon(LineAwesomeIcons.video_solid, color: context.ksc.accent500, size: 28))
+                : isAudio
+                    ? Center(child: Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.accent500, size: 28))
+                    : null,
+          ),
+          // Play button overlay (video only)
+          if (isVideo)
+            Positioned(
+              top: 0, bottom: 0, left: 0, right: 0,
+              child: Center(
+                child: Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: context.ksc.accent500,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(Icons.play_arrow, color: Colors.black, size: 20),
+                ),
+              ),
+            ),
+          // Mic overlay (audio only)
+          if (isAudio)
+            Positioned(
+              top: 0, bottom: 0, left: 0, right: 0,
+              child: Center(
+                child: Container(
+                  width: 28, height: 28,
+                  decoration: BoxDecoration(
+                    color: context.ksc.accent500,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.primary900, size: 14),
+                ),
+              ),
+            ),
+          // Type badge — bottom-left, solid colored bg
+          Positioned(
+            bottom: 4, left: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: isVideo
+                    ? const Color(0xFF6BB5FF).withValues(alpha: 0.85)
+                    : isAudio
+                        ? const Color(0xFFB388FF).withValues(alpha: 0.85)
+                        : context.ksc.accent500.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                isVideo ? "VIDEO" : isAudio ? "AUDIO" : "PHOTO",
+                style: AppTextStyles.caption.copyWith(
+                  color: context.ksc.primary900,
+                  fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+          // Delete button (top-right)
+          Positioned(
+            top: 4, right: 4,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 20, height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.error500, size: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shimmer loading card.
+  Widget _buildShimmerCard() {
+    final size = (MediaQuery.of(context).size.width - 56) / 2;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: context.ksc.primary900,
+          border: Border.all(color: context.ksc.primary700),
+        ),
+      ),
+    );
+  }
+
+  /// Unified source picker: Camera, Gallery, Video (cam), Video (gallery), Audio.
+  Future<String?> _showMediaSourceSheet(BuildContext ctx) {
+    return showModalBottomSheet<String>(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (c) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(c).viewInsets.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+                child: Row(
+                  children: [
+                    Expanded(child: Text("ADD MEDIA",
+                        style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900))),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(c),
+                      child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Options grid
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        _sourceOption(c, LineAwesomeIcons.camera_solid, "Camera", 'camera'),
+                        const SizedBox(width: 10),
+                        _sourceOption(c, LineAwesomeIcons.image_solid, "Gallery", 'gallery'),
+                        const SizedBox(width: 10),
+                        _sourceOption(c, LineAwesomeIcons.video_solid, "Video (Cam)", 'videocam'),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _sourceOption(c, LineAwesomeIcons.film_solid, "Video (Gallery)", 'videogallery'),
+                        const SizedBox(width: 10),
+                        _sourceOption(c, LineAwesomeIcons.microphone_solid, "Audio", 'audio'),
+                        const Expanded(child: SizedBox()), // Spacer for symmetry
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Single source option — transparent bg, border, icon.
+  Widget _sourceOption(BuildContext ctx, IconData icon, String label, String value) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => Navigator.pop(ctx, value),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52, height: 52,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: context.ksc.primary700, width: 1),
+              ),
+              child: Icon(icon, size: 22, color: context.ksc.accent500),
+            ),
+            const SizedBox(height: 6),
+            Text(label.toUpperCase(),
+              style: AppTextStyles.caption.copyWith(
+                color: context.ksc.neutral500, fontSize: 7, fontWeight: FontWeight.w700, letterSpacing: 0.3,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   void _showNotesDrawer() {
     final initialText = _notesController.text;
     bool dirty = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("NOTES",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text("Job notes and comments",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            _notesController.text = initialText; // restore on discard
-                            if (ctx.mounted) Navigator.pop(ctx);
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _notesController,
-                            onChanged: (_) {
-                              if (!dirty) { dirty = true; setSheetState(() {}); }
-                            },
-                            maxLines: 5,
-                            maxLength: 2000,
-                            maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                            style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold),
-                            decoration: InputDecoration(
-                              hintText: "Specific hardware used...",
-                              hintStyle: TextStyle(color: context.ksc.neutral500),
-                              contentPadding: const EdgeInsets.only(bottom: 8, top: 12),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: context.ksc.primary700, width: 1),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: context.ksc.primary700),
-                              ),
-                              filled: false,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.ksc.accent500,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                              child: Text("DONE",
-                                style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
+    KsBottomSheetScaffold.show(
+      context,
+      title: "NOTES",
+      subtitle: "Job notes and comments",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {},
+      onClose: () {
+        _notesController.text = initialText; // restore on discard
+      },
+      contentBuilder: (ctx, setSheetState) {
+        return TextField(
+          controller: _notesController,
+          onChanged: (_) {
+            if (!dirty) { dirty = true; setSheetState(() {}); }
           },
+          maxLines: 5,
+          maxLength: 2000,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
+          buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+          style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            hintText: "Specific hardware used...",
+            hintStyle: TextStyle(color: context.ksc.neutral500),
+            contentPadding: const EdgeInsets.only(bottom: 8, top: 12),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700, width: 1),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
+            ),
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: context.ksc.primary700),
+            ),
+            filled: false,
+          ),
         );
       },
     );
   }
-
   void _showItemsDrawer() {
     final localItems = _items.map((i) => i.copy()).toList();
     bool dirty = false;
 
-    showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final count = localItems.length;
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("ITEMS USED",
-                                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 2),
-                              Text(
-                                count > 0
-                                    ? "$count item${count > 1 ? 's' : ''}"
-                                    : "No items added",
-                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            if (dirty) {
-                              final ok = await _confirmDrawerClose(ctx);
-                              if (!ok) return;
-                            }
-                            if (ctx.mounted) Navigator.pop(ctx, false);
-                          },
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          if (localItems.isNotEmpty) ...[
-                            ...localItems.asMap().entries.map((entry) {
-                              return _buildItemSummaryCard(
-                                item: entry.value,
-                                onTap: () {
-                                  _showItemEditDrawer(
-                                    item: entry.value,
-                                    existingIndex: entry.key,
-                                    onChanged: () {
-                                      dirty = true;
-                                      setSheetState(() {});
-                                    },
-                                  );
-                                },
-                                onRemove: () {
-                                  localItems.removeAt(entry.key);
-                                  entry.value.dispose();
-                                  dirty = true;
-                                  setSheetState(() {});
-                                },
-                              );
-                            }),
-                            const SizedBox(height: 16),
-                          ],
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                _showItemSearchDrawer(
-                                  localItems: localItems,
-                                  onChanged: () {
-                                    dirty = true;
-                                    setSheetState(() {});
-                                  },
-                                );
-                              },
-                              icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
-                              label: Text("ADD ITEM", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _items
-                              ..clear()
-                              ..addAll(localItems);
-                          });
-                          Navigator.pop(ctx, true);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.ksc.accent500,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: Text("DONE",
-                          style: AppTextStyles.label.copyWith(color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                      ),
-                    ),
-                  ),
-                ],
+    KsBottomSheetScaffold.show<bool>(
+      context,
+      title: "ITEMS USED",
+      isDirty: () => dirty,
+      bottomLabel: "DONE",
+      onDone: () {
+        setState(() {
+          _items
+            ..clear()
+            ..addAll(localItems);
+        });
+      },
+      contentBuilder: (ctx, setSheetState) {
+        final count = localItems.length;
+        return Column(
+          children: [
+            if (localItems.isNotEmpty) ...[
+              ...localItems.asMap().entries.map((entry) {
+                return _buildItemSummaryCard(
+                  item: entry.value,
+                  onTap: () {
+                    _showItemEditDrawer(
+                      item: entry.value,
+                      existingIndex: entry.key,
+                      onChanged: () {
+                        dirty = true;
+                        setSheetState(() {});
+                      },
+                    );
+                  },
+                  onRemove: () {
+                    localItems.removeAt(entry.key);
+                    entry.value.dispose();
+                    dirty = true;
+                    setSheetState(() {});
+                  },
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  _showItemSearchDrawer(
+                    localItems: localItems,
+                    onChanged: () {
+                      dirty = true;
+                      setSheetState(() {});
+                    },
+                  );
+                },
+                icon: Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
+                label: Text("ADD ITEM", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: context.ksc.accent500.withValues(alpha: 0.3)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 16),
+          ],
         );
       },
     ).then((committed) {
       if (committed != true) {
-        for (final i in localItems) {
-          i.dispose();
-        }
+        for (final i in localItems) i.dispose();
       }
     });
   }
@@ -2621,8 +2952,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         borderRadius: BorderRadius.circular(4),
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFF1E2A3A), width: 1)),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: context.ksc.primary700, width: 1)),
           ),
           child: Row(
             children: [
@@ -2676,116 +3007,160 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     required int? existingIndex,
     required VoidCallback onChanged,
   }) {
-    showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            existingIndex != null ? "EDIT ITEM" : "NEW ITEM",
-                            style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(ctx, false),
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  if (item.isFromInventory) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          Icon(LineAwesomeIcons.lock_solid, size: 24, color: context.ksc.accent500),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              item.displayName.toUpperCase(),
-                              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text("From inventory",
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10),
-                      ),
-                    ),
-                  ] else ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: _buildDarkField(
-                        label: "Item Name", hint: "e.g. Mortise screw",
-                        controller: item.nameController,
-                        maxLength: 100,
+    KsBottomSheetScaffold.show<bool>(
+      context,
+      title: existingIndex != null ? "EDIT ITEM" : "NEW ITEM",
+      bottomLabel: existingIndex != null ? "SAVE" : "ADD",
+      onDone: () {}, // Needed to show the bottom button
+      contentBuilder: (ctx, setSheetState) {
+        return Column(
+          children: [
+            if (item.isFromInventory) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Icon(LineAwesomeIcons.lock_solid, size: 24, color: context.ksc.accent500),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        item.displayName.toUpperCase(),
+                        style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Text("QTY",
-                          style: AppTextStyles.caption.copyWith(
-                            color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildDrawerQtyStepper(item.qtyController, () => setSheetState(() {})),
-                      ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text("From inventory",
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10),
+                ),
+              ),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildDarkField(
+                  label: "Item Name", hint: "e.g. Mortise screw",
+                  controller: item.nameController,
+                  maxLength: 100,
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Text("QTY",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 10,
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.ksc.accent500,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: Text(
-                          existingIndex != null ? "SAVE" : "ADD",
-                          style: AppTextStyles.label.copyWith(
-                            color: context.ksc.primary900, fontWeight: FontWeight.w900, letterSpacing: 1.0,
+                  const SizedBox(width: 12),
+                  _buildDrawerQtyStepper(item.qtyController, () => setSheetState(() {})),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Unit price field (underline only) — same pattern as service edit drawer
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("UNIT PRICE (GHS)",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.neutral600,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: item.priceController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [CurrencyInputFormatter()],
+                          onChanged: (_) => setSheetState(() {}),
+                          style: AppTextStyles.body.copyWith(
+                            color: context.ksc.accent500,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "0.00",
+                            hintStyle: AppTextStyles.body.copyWith(
+                              color: context.ksc.neutral600,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.only(bottom: 4),
+                            enabledBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF2A3A4A), width: 1),
+                            ),
+                            focusedBorder: const UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF4A90D9), width: 1.5),
+                            ),
+                            filled: false,
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Text("GHS",
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral500,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 24),
+            // Total display
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text("TOTAL",
+                        style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral600,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      () {
+                        final qty = int.tryParse(item.qtyController.text) ?? 1;
+                        final customPrice = CurrencyFormatter.parseToPesewas(item.priceController.text.trim());
+                        final total = qty * (customPrice ?? 0);
+                        return Text(
+                          total > 0 ? CurrencyFormatter.format(total) : "GHS 0.00",
+                          style: AppTextStyles.h2.copyWith(
+                            color: context.ksc.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24,
+                          ),
+                        );
+                      }(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     ).then((result) {
@@ -2802,305 +3177,93 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     required VoidCallback onChanged,
   }) {
     final allInv = ref.read(inventoryProvider).valueOrNull ?? [];
+    final searchCtrl = TextEditingController();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-      builder: (ctx) {
-        final searchCtrl = TextEditingController();
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final query = searchCtrl.text.toLowerCase().trim();
-            final filtered = query.isEmpty
-                ? allInv
-                : allInv.where((i) =>
-                    i.name.toLowerCase().contains(query) ||
-                    (i.brand?.toLowerCase().contains(query) ?? false)
-                  ).toList();
+    KsBottomSheetScaffold.show(
+      context,
+      title: "SELECT ITEM",
+      bottomLabel: null,
+      contentBuilder: (ctx, setSheetState) {
+        final query = searchCtrl.text.toLowerCase().trim();
+        final filtered = query.isEmpty
+            ? allInv
+            : allInv.where((i) =>
+                i.name.toLowerCase().contains(query) ||
+                (i.brand?.toLowerCase().contains(query) ?? false) ||
+                (i.category.displayName.toLowerCase().contains(query)) ||
+                (i.location?.toLowerCase().contains(query) ?? false)
+              ).toList();
 
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(width: 40, height: 4,
-                      decoration: BoxDecoration(color: context.ksc.neutral600, borderRadius: BorderRadius.circular(2))),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text("SELECT ITEM",
-                          style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900))),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(ctx),
-                          child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 20),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: context.ksc.primary900,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: context.ksc.primary700),
+        return Column(
+          children: [
+            // Search field — using KsSearchBar for consistent underline + gold focus
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: KsSearchBar(
+                hint: "Search items...",
+                controller: searchCtrl,
+                onChanged: (_) => setSheetState(() {}),
+              ),
+            ),
+            // List
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.45),
+              child: filtered.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: KsEmptyState(
+                        icon: LineAwesomeIcons.box_solid,
+                        title: "NO ITEMS FOUND",
+                        subtitle: "Add items to your inventory first",
                       ),
-                      child: TextField(
-                        controller: searchCtrl,
-                        onChanged: (_) => setSheetState(() {}),
-                        style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600),
-                        cursorColor: context.ksc.accent500,
-                        decoration: InputDecoration(
-                          hintText: "Search inventory...",
-                          hintStyle: AppTextStyles.caption.copyWith(color: context.ksc.neutral600),
-                          prefixIcon: Icon(LineAwesomeIcons.search_solid, color: context.ksc.neutral500, size: 18),
-                          suffixIcon: searchCtrl.text.isNotEmpty
-                              ? GestureDetector(
-                                  onTap: () { searchCtrl.clear(); setSheetState(() {}); },
-                                  child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 18),
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Flexible(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.45),
-                      child: filtered.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: KsEmptyState(
-                                icon: LineAwesomeIcons.box_solid,
-                                title: "NO ITEMS FOUND",
-                                subtitle: "Add items to your inventory first",
-                              ),
-                            )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) => Divider(height: 1, color: context.ksc.primary700),
-                              itemBuilder: (_, i) {
-                                final invItem = filtered[i];
-                                final alreadyAdded = localItems.any((li) =>
-                                  li.inventoryItemId == invItem.id);
-                                return InkWell(
-                                  onTap: alreadyAdded ? null : () {
-                                    final row = ItemRow();
-                                    row.inventoryItem = invItem;
-                                    row.inventoryItemId = invItem.id;
-                                    row.nameController.text = invItem.name;
-                                    localItems.add(row);
-                                    onChanged();
-                                    Navigator.pop(ctx);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          invItem.category == InventoryItemCategory.lock
-                                              ? LineAwesomeIcons.lock_solid
-                                              : LineAwesomeIcons.box_solid,
-                                          size: 16, color: alreadyAdded ? context.ksc.neutral600 : context.ksc.accent500,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(invItem.name.toUpperCase(),
-                                                style: AppTextStyles.body.copyWith(
-                                                  color: alreadyAdded ? context.ksc.neutral600 : context.ksc.white,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                                maxLines: 1, overflow: TextOverflow.ellipsis,
-                                              ),
-                                              if (invItem.brand != null)
-                                                Text(
-                                                  [invItem.brand, invItem.category.displayName].nonNulls.join(' · '),
-                                                  style: AppTextStyles.caption.copyWith(
-                                                    color: alreadyAdded ? context.ksc.neutral600 : context.ksc.neutral500,
-                                                    fontSize: 10,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (alreadyAdded)
-                                          Icon(LineAwesomeIcons.check_circle_solid, size: 16, color: context.ksc.neutral600)
-                                        else
-                                          Icon(LineAwesomeIcons.plus_solid, size: 16, color: context.ksc.accent500),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        final row = ItemRow();
-                        _showItemEditDrawer(
-                          item: row,
-                          existingIndex: null,
-                          onChanged: () {
+                    )
+                  : ListView(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      children: filtered.map((invItem) {
+                        final alreadyAdded = localItems.any((li) =>
+                          li.inventoryItemId == invItem.id);
+                        return InventoryItemCard(
+                          key: ValueKey(invItem.id),
+                          item: invItem,
+                          alreadyAdded: alreadyAdded,
+                          onTap: alreadyAdded ? null : () {
+                            final row = ItemRow();
+                            row.inventoryItem = invItem;
+                            row.inventoryItemId = invItem.id;
+                            row.nameController.text = invItem.name;
                             localItems.add(row);
                             onChanged();
+                            Navigator.pop(ctx);
                           },
                         );
-                      },
-                      icon: Icon(LineAwesomeIcons.edit_solid, size: 14, color: context.ksc.neutral500),
-                      label: Text("Add Manual Entry",
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w600)),
+                      }).toList(),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+            ),
+            const SizedBox(height: 4),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  final row = ItemRow();
+                  _showItemEditDrawer(
+                    item: row,
+                    existingIndex: null,
+                    onChanged: () {
+                      localItems.add(row);
+                      onChanged();
+                    },
+                  );
+                },
+                icon: Icon(LineAwesomeIcons.edit_solid, size: 14, color: context.ksc.neutral500),
+                label: Text("Add Manual Entry",
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w600)),
               ),
-            );
-          },
+            ),
+          ],
         );
       },
     );
-  }
-
-  Widget _buildDropdown(String label, List<String> options, String? current, ValueChanged<String?> onChanged) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label.toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, fontSize: 10)),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(color: context.ksc.primary700, borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: current,
-                dropdownColor: context.ksc.primary800,
-                isExpanded: true,
-                hint: Text("Select", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
-                items: options.map((opt) => DropdownMenuItem(
-                  value: opt,
-                  child: Text(opt.replaceAll('_', ' ').toUpperCase(), style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w600)),
-                )).toList(),
-                onChanged: (v) => setState(() => onChanged(v)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotoGroup(String label, List<XFile> photos, {VoidCallback? onChanged}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            ...photos.map((p) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Stack(
-                children: [
-                  Container(
-                    width: 60, height: 60,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      image: p.path.endsWith('.mp4') || p.path.endsWith('.m4a')
-                          ? null
-                          : DecorationImage(image: FileImage(File(p.path)), fit: BoxFit.cover),
-                    ),
-                    child: p.path.endsWith('.mp4')
-                        ? Icon(LineAwesomeIcons.video_solid, color: context.ksc.accent500, size: 24)
-                        : p.path.endsWith('.m4a')
-                            ? Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.accent500, size: 24)
-                            : null,
-                  ),
-                  Positioned(top: 0, right: 0, child: GestureDetector(onTap: () {
-                    setState(() => photos.remove(p));
-                    onChanged?.call();
-                  }, child: Container(color: Colors.black54, child: const Icon(Icons.close, size: 16, color: Colors.white)))),
-                ],
-              ),
-            )),
-                if (photos.length < 4)
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          _pickPhoto(photos);
-                          onChanged?.call();
-                        },
-                        child: Container(width: 48, height: 48, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.camera_solid, color: context.ksc.neutral500, size: 18)),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          _pickVideo(photos);
-                          onChanged?.call();
-                        },
-                        child: Container(width: 48, height: 48, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.video_solid, color: context.ksc.neutral500, size: 18)),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      _pickAudio(photos);
-                      onChanged?.call();
-                    },
-                    child: Container(width: 48, height: 48, decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.primary700)), child: Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.neutral500, size: 18)),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Future<void> _pickPhoto(List<XFile> list) async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 1024, maxHeight: 1024, imageQuality: 80);
-    if (picked != null) setState(() => list.add(picked));
-  }
-
-  Future<void> _pickVideo(List<XFile> list) async {
-    final picked = await ImagePicker().pickVideo(source: ImageSource.camera, maxDuration: const Duration(seconds: 60));
-    if (picked != null) setState(() => list.add(picked));
-  }
-
-  Future<void> _pickAudio(List<XFile> list) async {
-    try {
-      final audioPath = '/tmp/keystone_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      final recorder = AudioRecorder();
-      await recorder.start(const RecordConfig(), path: audioPath);
-      await Future.delayed(const Duration(seconds: 30));
-      final recordedPath = await recorder.stop();
-      if (recordedPath != null && mounted) {
-        setState(() => list.add(XFile(recordedPath)));
-      }
-    } catch (e) {
-      debugPrint('[KS:AUDIO] Record failed: $e');
-    }
   }
 
   String _inferMediaType(String path) {
@@ -3148,6 +3311,119 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Recording dialog — opens immediately starts recording,
+/// shows live timer + stop button. Returns file path on stop, null on cancel.
+class _AudioRecordingDialog extends StatefulWidget {
+  final AudioRecorder recorder;
+  const _AudioRecordingDialog({required this.recorder});
+
+  @override
+  State<_AudioRecordingDialog> createState() => _AudioRecordingDialogState();
+}
+
+class _AudioRecordingDialogState extends State<_AudioRecordingDialog> {
+  int _duration = 0;
+  Timer? _timer;
+  bool _isStopping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startRecording();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _startRecording() async {
+    final tempDir = await getTemporaryDirectory();
+    final filePath = '${tempDir.path}/${const Uuid().v4()}.m4a';
+    await widget.recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: filePath);
+    if (!mounted) return;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _duration++);
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    if (_isStopping) return;
+    setState(() => _isStopping = true);
+    _timer?.cancel();
+    final filePath = await widget.recorder.stop();
+    if (!mounted) return;
+    if (filePath != null) {
+      Navigator.of(context).pop(filePath);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final minutes = _duration ~/ 60;
+    final seconds = _duration % 60;
+    final timeStr = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
+    return Dialog(
+      backgroundColor: context.ksc.primary800,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(4),
+        side: BorderSide(color: context.ksc.primary700),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(width: 12, height: 12,
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                const SizedBox(width: 10),
+                Text("RECORDING",
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.error500,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  )),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(timeStr,
+              style: AppTextStyles.h1.copyWith(
+                color: context.ksc.white,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+              )),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: _stopRecording,
+              child: Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(
+                  color: context.ksc.error500,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: _isStopping
+                    ? const Padding(padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                    : const Icon(Icons.stop, color: Colors.white, size: 28),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text("Tap stop when done",
+              style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
+          ],
+        ),
+      ),
     );
   }
 }

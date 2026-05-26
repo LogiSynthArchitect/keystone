@@ -7,7 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../customer_history/domain/entities/key_code_entry_entity.dart';
 import '../providers/key_code_provider.dart';
@@ -120,7 +120,7 @@ class KeyCodesScreen extends ConsumerWidget {
     );
     if (confirmed == true && context.mounted) {
       await ref.read(keyCodeProvider(customerId).notifier).delete(id);
-      if (context.mounted) KsSnackbar.show(context, message: "Key code deleted", type: KsSnackbarType.success);
+      if (context.mounted) KsSlidingNotification.show(context, message: "Key code deleted", type: KsNotificationType.success);
     }
   }
 }

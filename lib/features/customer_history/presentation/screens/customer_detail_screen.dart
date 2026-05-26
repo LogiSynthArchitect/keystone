@@ -15,7 +15,7 @@ import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_content_drawer.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../job_logging/presentation/screens/log_job_screen.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
@@ -50,11 +50,11 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
           ref.invalidate(customerListProvider);
           if (context.mounted) {
             context.pop();
-            KsSnackbar.show(context, message: "Customer deleted", type: KsSnackbarType.success);
+            KsSlidingNotification.show(context, message: "Customer deleted", type: KsNotificationType.success);
           }
         } catch (_) {
           if (context.mounted) {
-            KsSnackbar.show(context, message: "Delete failed", type: KsSnackbarType.error);
+            KsSlidingNotification.show(context, message: "Delete failed", type: KsNotificationType.error);
           }
         }
       },
@@ -340,7 +340,7 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
           if (context.mounted) Navigator.pop(context);
         } catch (_) {
           if (context.mounted) {
-            KsSnackbar.show(context, message: "Failed to save notes", type: KsSnackbarType.error);
+            KsSlidingNotification.show(context, message: "Failed to save notes", type: KsNotificationType.error);
           }
         }
       },

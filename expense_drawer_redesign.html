@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Expense Drawer Redesign</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px;text-align:center}
+.sub{color:#6B7D8E;font-size:10px;text-align:center;max-width:520px}
+
+/* layout */
+.layout{display:flex;gap:40px;flex-wrap:wrap;justify-content:center}
+.column{display:flex;flex-direction:column;gap:24px;align-items:center}
+
+/* phone */
+.phone{width:360px;background:#0F1D2F;border-radius:20px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;min-height:500px}
+
+/* drawer chrome */
+.drag{display:flex;justify-content:center;padding:10px 0 6px}
+.drag div{width:32px;height:4px;background:#2A3A4A;border-radius:2px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding:0 16px 12px}
+.header h2{font-size:13px;font-weight:900;color:#fff;letter-spacing:0.3px}
+.header .sub{font-size:9px;color:#4A5A6A;text-align:left;margin:2px 0 0}
+.header .x{color:#4A5A6A;font-size:18px;cursor:pointer;line-height:1}
+
+/* expense card */
+.card{display:flex;align-items:center;gap:10px;padding:12px 16px;margin:0 16px 8px;background:#0F1D2F;border-radius:8px;border:1px solid #1A2D44;cursor:pointer}
+.card-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.card-info{flex:1;min-width:0}
+.card-title{font-size:10px;font-weight:800;color:#fff;text-transform:uppercase}
+.card-meta{font-size:9px;color:#4A5A6A;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-amt{font-size:12px;font-weight:900;color:#C8A84E;flex-shrink:0}
+
+/* buttons */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 32px);margin:4px 16px;padding:12px;border:1px dashed #C8A84E40;border-radius:6px;cursor:pointer}
+.add-btn span{font-size:10px;font-weight:800;color:#C8A84E;letter-spacing:0.5px}
+
+/* bottom bar */
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;background:#C8A84E;padding:10px 16px;margin-top:8px}
+.bottom-bar span{color:#0A1628;font-size:12px;font-weight:900;letter-spacing:0.5px}
+.bottom-bar .arrow{font-size:16px;color:#0A1628}
+
+/* inner drawer form */
+.form{padding:0 24px}
+.form-label{font-size:9px;font-weight:800;color:#4A5A6A;letter-spacing:0.5px;margin-bottom:6px;display:block;text-transform:uppercase}
+
+/* category picker (tappable row, opens drawer) */
+.cat-picker{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#0D1A2A;border:1px solid #1A2D44;border-radius:6px;cursor:pointer;margin-bottom:20px}
+.cat-picker .left{display:flex;align-items:center;gap:10px}
+.cat-picker .icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.cat-picker .name{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase}
+.cat-picker .arrow{font-size:10px;color:#4A5A6A}
+
+/* input field */
+.field{margin-bottom:20px}
+.field input{width:100%;background:transparent;border:none;border-bottom:1px solid #1A2D44;color:#fff;font-size:14px;font-weight:600;padding:4px 0 10px;outline:none}
+.field input:focus{border-bottom-color:#C8A84E}
+.field input::placeholder{color:#2A3A4A;font-weight:500}
+.amount-input{display:flex;align-items:baseline;gap:8px}
+.amount-input input{flex:1;background:transparent;border:none;border-bottom:1px solid #1A2D44;color:#C8A84E;font-size:16px;font-weight:900;padding:4px 0 10px;outline:none}
+.amount-input input:focus{border-bottom-color:#4A90D9}
+.amount-input input::placeholder{color:#2A3A4A}
+.amount-input .suffix{font-size:11px;font-weight:700;color:#4A5A6A}
+
+/* gold bottom single button */
+.gold-bar{display:flex;align-items:center;justify-content:space-between;background:#C8A84E;padding:12px 24px;cursor:pointer}
+.gold-bar span{color:#0A1628;font-size:12px;font-weight:900;letter-spacing:0.5px}
+.gold-bar .arrow{font-size:16px;color:#0A1628}
+
+/* category drawer overlay */
+.drawer-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#00000080;display:none;align-items:flex-end;z-index:100}
+.drawer-overlay.show{display:flex}
+.cat-drawer{width:100%;max-width:360px;margin:0 auto;background:#0F1D2F;border-radius:16px 16px 0 0;padding:16px 20px 24px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.cat-handle{width:32px;height:4px;background:#2A3A4A;border-radius:2px;margin:0 auto 12px}
+.cat-title{font-size:13px;font-weight:900;color:#fff;margin-bottom:10px}
+.cat-opt{display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:4px;border-radius:6px;border:1px solid #1A2D44;cursor:pointer;background:#0D1A2A}
+.cat-opt .c{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-opt .n{font-size:10px;font-weight:700;color:#fff;text-transform:uppercase}
+.cat-opt .chk{font-size:13px;color:#C8A84E;margin-left:auto}
+.cat-opt.sel{border-color:#C8A84E80}
+
+/* legend */
+.legend{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.legend span{font-size:8px;color:#4A5A6A;background:#0F1D2F;padding:3px 8px;border-radius:4px;border:1px solid #1A2D44}
+
+/* arrow flow */
+.arrow-flow{display:flex;align-items:center;gap:8px;color:#C8A84E40;font-size:24px;font-weight:300;padding:40px 0}
+
+/* Tag */
+.tag{font-size:8px;font-weight:800;padding:2px 6px;border-radius:2px;letter-spacing:0.3px}
+.tag-blue{background:#1A2A3D;color:#6BB5FF}
+.tag-gold{background:#3D2A1A;color:#C8A84E}
+.tag-green{background:#1A3D1A;color:#4CAF50}
+.tag-red{background:#3D1A1A;color:#FF6B6B}
+.tag-gray{background:#1A1A2A;color:#6B7D8E}
+</style>
+</head>
+<body>
+
+<h1>EXPENSES — DEDICATED ADD DRAWER</h1>
+<p class="sub">Instead of inline fields, each expense is a summary card. Tapping <strong>[+ ADD EXPENSE]</strong> opens a dedicated drawer with one field per row.</p>
+
+<div class="layout">
+
+  <!-- STEP 1: EXPENSES LIST -->
+  <div class="phone">
+    <div class="screen">
+      <div class="drag"><div></div></div>
+      <div class="header">
+        <div>
+          <h2>EXPENSES</h2>
+          <p class="sub">2 expenses · GHS 25.00 total</p>
+        </div>
+        <span class="x">✕</span>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="card">
+        <div class="card-icon" style="background:#C8A84E20;color:#C8A84E">🚕</div>
+        <div class="card-info">
+          <div class="card-title">Transport</div>
+          <div class="card-meta">Troski fare to site</div>
+        </div>
+        <div class="card-amt">GHS 15.00</div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon" style="background:#4A90D920;color:#4A90D9">🅿️</div>
+        <div class="card-info">
+          <div class="card-title">Parking</div>
+          <div class="card-meta">Parking fee at mall</div>
+        </div>
+        <div class="card-amt">GHS 10.00</div>
+      </div>
+
+      <!-- ADD button -->
+      <div class="add-btn">
+        <span style="font-size:14px">+</span>
+        <span>ADD EXPENSE</span>
+      </div>
+
+      <!-- Bottom DONE bar -->
+      <div class="bottom-bar">
+        <span>DONE</span>
+        <span class="arrow">→</span>
+      </div>
+
+      <div style="padding:6px 16px;display:flex;gap:4px;flex-wrap:wrap">
+        <span class="tag tag-blue">KsBottomSheetScaffold</span>
+        <span class="tag tag-gray">_buildExpenseSummaryCard</span>
+        <span class="tag tag-gold">InkWell → _openExpenseEditDrawer</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-flow">→</div>
+
+  <!-- STEP 2: ADD EXPENSE DRAWER -->
+  <div class="phone">
+    <div class="screen">
+      <div class="drag"><div></div></div>
+      <div class="header">
+        <div>
+          <h2>ADD EXPENSE</h2>
+          <p class="sub">Fill in the details</p>
+        </div>
+        <span class="x">✕</span>
+      </div>
+
+      <div class="form">
+        <!-- Category picker — opens drawer -->
+        <div>
+          <span class="form-label">Category</span>
+          <div class="cat-picker" onclick="toggleDrawer()">
+            <div class="left">
+              <div class="icon" style="background:#C8A84E20;color:#C8A84E">🚕</div>
+              <span class="name">Transport</span>
+            </div>
+            <span class="arrow">▼</span>
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <span class="form-label">Amount (GHS)</span>
+          <div class="amount-input">
+            <input type="text" id="amtInput" value="15.00" placeholder="0.00" oninput="updateTotal()">
+            <span class="suffix">GHS</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="field">
+          <span class="form-label">Description</span>
+          <input type="text" value="Troski fare to site" placeholder="e.g. Troski fare to site">
+        </div>
+
+        <div style="margin-top:24px">
+          <span class="form-label" style="text-align:right;display:block">TOTAL</span>
+          <div style="text-align:right;font-size:22px;font-weight:900;color:#fff" id="totalDisplay">GHS 15.00</div>
+        </div>
+      </div>
+
+      <!-- Gold ADD bar -->
+      <div style="margin-top:24px">
+        <div class="gold-bar">
+          <span>ADD</span>
+          <span class="arrow">→</span>
+        </div>
+      </div>
+
+      <div style="padding:6px 16px;display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+        <span class="tag tag-blue">KsBottomSheetScaffold</span>
+        <span class="tag tag-green">_openExpenseEditDrawer</span>
+        <span class="tag tag-gold">InkWell → cat picker</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Category drawer (hidden, shown on click) -->
+<div id="catDrawer" class="drawer-overlay" onclick="toggleDrawer()">
+  <div class="cat-drawer" onclick="event.stopPropagation()">
+    <div class="cat-handle"></div>
+    <div class="cat-title">SELECT CATEGORY</div>
+    <div class="cat-opt sel" onclick="selectCat(this,'Transport','🚕','#C8A84E')">
+      <div class="c" style="background:#C8A84E"></div>
+      <span class="n">Transport</span>
+      <span class="chk">✓</span>
+    </div>
+    <div class="cat-opt" onclick="selectCat(this,'Parking','🅿️','#4A90D9')">
+      <div class="c" style="background:#4A90D9"></div>
+      <span class="n">Parking</span>
+    </div>
+    <div class="cat-opt" onclick="selectCat(this,'Subcontractor','👷','#6BB5FF')">
+      <div class="c" style="background:#6BB5FF"></div>
+      <span class="n">Subcontractor</span>
+    </div>
+    <div class="cat-opt" onclick="selectCat(this,'Supplies','📦','#4CAF50')">
+      <div class="c" style="background:#4CAF50"></div>
+      <span class="n">Supplies</span>
+    </div>
+    <div class="cat-opt" onclick="selectCat(this,'Other','📋','#9C27B0')">
+      <div class="c" style="background:#9C27B0"></div>
+      <span class="n">Other</span>
+    </div>
+  </div>
+</div>
+
+<!-- Reusable components used -->
+<div style="max-width:820px;width:100%;margin-top:8px">
+  <div style="background:#0F1D2F;border:1px solid #1A2D44;border-radius:10px;padding:16px 20px">
+    <h3 style="color:#C8A84E;font-size:10px;font-weight:800;letter-spacing:0.5px;margin-bottom:10px">REUSABLE COMPONENTS</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:9px;color:#8BA0B2;line-height:1.5">
+
+      <div style="background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44">
+        <strong style="color:#fff;display:block;margin-bottom:4px">KsBottomSheetScaffold</strong>
+        Outer expense list drawer. Already used by <code>_showExpensesDrawer</code>.
+        No changes needed — just clean up the content.
+      </div>
+
+      <div style="background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44">
+        <strong style="color:#fff;display:block;margin-bottom:4px">_buildExpenseSummaryCard</strong>
+        New method. Renders a compact card: emoji icon + category name + description + amount.
+        Wrapped in InkWell with onTap → _openExpenseEditDrawer and onDelete callback.
+      </div>
+
+      <div style="background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44">
+        <strong style="color:#fff;display:block;margin-bottom:4px">_openExpenseEditDrawer</strong>
+        New method. Dedicated bottom sheet for ADD / EDIT expense.
+        Follows same pattern as <code>_showServiceEditDrawer</code> and <code>_showItemEditDrawer</code>
+        — KsBottomSheetScaffold with gold ADD/SAVE button.
+      </div>
+
+      <div style="background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44">
+        <strong style="background:#1A2A3D;color:#6BB5FF;font-size:8px;font-weight:800;padding:2px 6px;border-radius:2px;display:inline-block;margin-bottom:4px">NEW</strong>
+        <strong style="color:#fff;display:block;margin-bottom:4px">Category Picker Sheet</strong>
+        Bottom sheet with 5 expense category options (transport, parking, subcontractor, supplies, other).
+        Tap selects + closes. Uses <code>showModalBottomSheet</code> with <code>StatefulBuilder</code> — same pattern as <code>ServicePickerDropdown._openSheet</code>.
+      </div>
+
+      <div style="background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44">
+        <strong style="color:#fff;display:block;margin-bottom:4px">ExpenseRow (updated)</strong>
+        Existing data class in <code>job_step_types.dart</code>.
+        Already has <code>category</code>, <code>amountController</code>, <code>descriptionController</code>, <code>copy()</code>, <code>dispose()</code>.
+        No changes needed to the data model.
+      </div>
+
+      <div style="background:#0A1628;padding:10px 12px;border-radius:6px;border:1px solid #1A2D44">
+        <strong style="color:#fff;display:block;margin-bottom:4px">CurrencyFormatter</strong>
+        Already used for parsing <code>parseToPesewas</code> and formatting <code>format</code>.
+        Reused from <code>_showServiceEditDrawer</code> pattern.
+      </div>
+    </div>
+
+    <div style="margin-top:12px;padding:10px 14px;background:#1A2A3D20;border:1px solid #1A2D44;border-radius:6px">
+      <h4 style="color:#6BB5FF;font-size:9px;font-weight:800;margin-bottom:6px">IMPLEMENTATION PLAN</h4>
+      <table style="font-size:9px;color:#8BA0B2;width:100%;border-collapse:collapse">
+        <tr><td style="padding:4px 0;color:#4A5A6A">1.</td><td style="padding:4px 8px"><strong style="color:#fff">_buildExpenseSummaryCard</strong></td><td style="padding:4px 0">New method — compact card with emoji + category + desc + amount</td></tr>
+        <tr><td style="padding:4px 0;color:#4A5A6A">2.</td><td style="padding:4px 8px"><strong style="color:#fff">_openExpenseEditDrawer</strong></td><td style="padding:4px 0">New method — KsBottomSheetScaffold with full form</td></tr>
+        <tr><td style="padding:4px 0;color:#4A5A6A">3.</td><td style="padding:4px 8px"><strong style="color:#fff">Category picker sheet</strong></td><td style="padding:4px 0">showModalBottomSheet with 5 category options</td></tr>
+        <tr><td style="padding:4px 0;color:#4A5A6A">4.</td><td style="padding:4px 8px"><strong style="color:#fff">Update _showExpensesDrawer</strong></td><td style="padding:4px 0">Replace inline _buildExpenseRow with summary cards + ADD button</td></tr>
+        <tr><td style="padding:4px 0;color:#4A5A6A">5.</td><td style="padding:4px 8px"><strong style="color:#fff">Delete _buildExpenseRow</strong></td><td style="padding:4px 0">Remove the old inline 3-line row (no longer needed)</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('catDrawer').classList.toggle('show');
+}
+function selectCat(el, name, emoji, color) {
+  document.querySelectorAll('.cat-opt').forEach(o => {
+    o.classList.remove('sel');
+    const chk = o.querySelector('.chk');
+    if (chk) chk.remove();
+  });
+  el.classList.add('sel');
+  const chk = document.createElement('span');
+  chk.className = 'chk';
+  chk.textContent = '✓';
+  el.appendChild(chk);
+
+  // Update the category picker in the form
+  const picker = document.querySelector('.cat-picker .name');
+  const icon = document.querySelector('.cat-picker .icon');
+  if (picker) picker.textContent = name;
+  if (icon) { icon.textContent = emoji; icon.style.background = color + '20'; icon.style.color = color; }
+  document.getElementById('catDrawer').classList.remove('show');
+}
+function updateTotal() {
+  const val = parseFloat(document.getElementById('amtInput').value) || 0;
+  document.getElementById('totalDisplay').textContent = 'GHS ' + val.toFixed(2);
+}
+</script>
+
+</body>
+</html>

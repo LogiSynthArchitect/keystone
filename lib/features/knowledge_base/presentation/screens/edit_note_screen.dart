@@ -16,7 +16,7 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../features/service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../../../../core/services/cloudinary_service.dart';
@@ -110,10 +110,10 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     if (result != null) {
       ref.read(notesListProvider.notifier).updateNote(result);
       context.pop();
-      KsSnackbar.show(context, message: "Note updated", type: KsSnackbarType.success);
+      KsSlidingNotification.show(context, message: "Note updated", type: KsNotificationType.success);
     } else {
       final error = ref.read(editNoteProvider).errorMessage;
-      KsSnackbar.show(context, message: error ?? "Could not update note", type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: error ?? "Could not update note", type: KsNotificationType.error);
     }
   }
 
@@ -391,7 +391,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
       setState(() => _photoUrl = publicUrl);
     } catch (_) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not upload photo", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not upload photo", type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
@@ -553,7 +553,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     final hasPermission = await _recorder.hasPermission();
     if (!hasPermission) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Microphone permission denied", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Microphone permission denied", type: KsNotificationType.error);
       }
       return;
     }
@@ -604,7 +604,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not save audio", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not save audio", type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -632,7 +632,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
       setState(() => _attachments.add(attachment));
     } catch (e) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not save image", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not save image", type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -670,7 +670,7 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     } catch (e) {
       debugPrint('[KS:KB] FilePicker failed: $e');
       if (mounted) {
-        KsSnackbar.show(context, message: "Could not attach PDF: $e", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not attach PDF: $e", type: KsNotificationType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);

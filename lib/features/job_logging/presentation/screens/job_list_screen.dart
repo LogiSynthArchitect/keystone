@@ -17,7 +17,7 @@ import 'log_job_screen.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../providers/job_providers.dart';
 import '../widgets/job_card.dart';
@@ -46,7 +46,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.listenManual(jobListProvider, (prev, next) {
         if (next.errorMessage != null && mounted) {
-          KsSnackbar.show(context, message: next.errorMessage!, type: KsSnackbarType.error);
+          KsSlidingNotification.show(context, message: next.errorMessage!, type: KsNotificationType.error);
         }
       });
     });
@@ -528,7 +528,7 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
         if (mounted) {
           setState(() { _selectionMode = false; _selectedIds.clear(); });
           ref.read(jobListProvider.notifier).refresh();
-          KsSnackbar.show(context, message: "${ids.length} jobs archived", type: KsSnackbarType.success);
+          KsSlidingNotification.show(context, message: "${ids.length} jobs archived", type: KsNotificationType.success);
         }
       },
     );

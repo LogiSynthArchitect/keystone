@@ -5,7 +5,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../customer_history/domain/entities/key_code_entry_entity.dart';
 import '../providers/key_code_provider.dart';
 import '../../domain/usecases/create_key_code_usecase.dart';
@@ -51,7 +51,7 @@ class _EditKeyCodeScreenState extends ConsumerState<EditKeyCodeScreen> {
   Future<void> _onSave() async {
     final keyCode = _keyCodeController.text.trim();
     if (keyCode.isEmpty) {
-      KsSnackbar.show(context, message: "Key code is required", type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: "Key code is required", type: KsNotificationType.error);
       return;
     }
 
@@ -77,10 +77,10 @@ class _EditKeyCodeScreenState extends ConsumerState<EditKeyCodeScreen> {
       }
       if (mounted) {
         context.pop();
-        KsSnackbar.show(context, message: _isEditing ? "Key code updated" : "Key code saved", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: _isEditing ? "Key code updated" : "Key code saved", type: KsNotificationType.success);
       }
     } catch (e) {
-      if (mounted) KsSnackbar.show(context, message: "Could not save: $e", type: KsSnackbarType.error);
+      if (mounted) KsSlidingNotification.show(context, message: "Could not save: $e", type: KsNotificationType.error);
     }
   }
 

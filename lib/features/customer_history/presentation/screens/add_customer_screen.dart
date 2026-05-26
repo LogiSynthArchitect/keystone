@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/router/route_names.dart' show RouteNames;
 import 'package:go_router/go_router.dart';
@@ -163,7 +163,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     final phone = _phoneController.text.trim();
     if (phone.length != 10 || !phone.startsWith('0')) {
       if (mounted) {
-        KsSnackbar.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Enter a valid 10-digit Ghana number starting with 0", type: KsNotificationType.error);
       }
       return;
     }
@@ -180,10 +180,10 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
     if (customer != null) {
       ref.read(customerListProvider.notifier).addCustomer(customer);
       Navigator.of(context).pop(customer);
-      KsSnackbar.show(context, message: "Customer saved", type: KsSnackbarType.success);
+      KsSlidingNotification.show(context, message: "Customer saved", type: KsNotificationType.success);
     } else {
       final error = ref.read(addCustomerProvider).errorMessage;
-      KsSnackbar.show(context, message: error ?? "Could not save customer", type: KsSnackbarType.error);
+      KsSlidingNotification.show(context, message: error ?? "Could not save customer", type: KsNotificationType.error);
     }
   }
 

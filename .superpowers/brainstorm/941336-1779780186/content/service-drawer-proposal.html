@@ -1,0 +1,116 @@
+<h2>Service Selection — Redesign Proposal</h2>
+<p class="subtitle">Replace the inline service type list with a compact dropdown + drawer.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header" style="background:#8B5CF6;">BEFORE — Inline List</div>
+    <div class="mockup-body" style="text-align:left;padding:16px;background:#0F172A;color:#E2E8F0;">
+      <div style="font-size:11px;font-weight:700;color:#94A3B8;margin-bottom:8px;">SERVICE PERFORMED</div>
+      <div style="font-size:9px;color:#64748B;margin-bottom:12px;">The main reason for this visit</div>
+      
+      <div style="background:#1E293B;border:1px solid #334155;border-radius:4px;padding:14px 16px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:20px;height:20px;background:#475569;border-radius:4px;"></div>
+          <span style="font-size:11px;font-weight:600;color:#94A3B8;">DEADBOLT REPLACEMENT</span>
+        </div>
+      </div>
+      <div style="background:#1E293B;border:1px solid #334155;border-radius:4px;padding:14px 16px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:20px;height:20px;background:#475569;border-radius:4px;"></div>
+          <span style="font-size:11px;font-weight:600;color:#94A3B8;">KEY DUPLICATION</span>
+        </div>
+      </div>
+      <div style="background:#1E293B;border:1px solid #334155;border-radius:4px;padding:14px 16px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:20px;height:20px;background:#475569;border-radius:4px;"></div>
+          <span style="font-size:11px;font-weight:600;color:#94A3B8;">LOCK INSTALLATION</span>
+        </div>
+      </div>
+      <div style="background:#1E293B;border:1px solid #334155;border-radius:4px;padding:14px 16px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:20px;height:20px;background:#475569;border-radius:4px;"></div>
+          <span style="font-size:11px;font-weight:600;color:#94A3B8;">SAFE SERVICING</span>
+        </div>
+      </div>
+      <div style="background:#1E293B;border:1px solid #334155;border-radius:4px;padding:14px 16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:20px;height:20px;background:#475569;border-radius:4px;"></div>
+          <span style="font-size:11px;font-weight:600;color:#94A3B8;">CCTV INSTALLATION</span>
+        </div>
+      </div>
+      
+      <div style="margin-top:16px;color:#F59E0B;font-size:9px;font-weight:700;letter-spacing:0.5px;text-align:center;border:1px solid #F59E0B;border-radius:4px;padding:8px;">
+        TEMPLATES
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header" style="background:#10B981;">AFTER — Dropdown + Drawer</div>
+    <div class="mockup-body" style="text-align:left;padding:16px;background:#0F172A;color:#E2E8F0;">
+      <div style="font-size:11px;font-weight:700;color:#94A3B8;margin-bottom:8px;">SERVICE PERFORMED</div>
+      <div style="font-size:9px;color:#64748B;margin-bottom:12px;">The main reason for this visit</div>
+      
+      <!-- Dropdown field (closed state) -->
+      <div style="display:flex;align-items:center;gap:14px;padding:4px 0;border-bottom:1.5px solid #334155;margin-bottom:12px;">
+        <div style="width:20px;height:20px;background:#F59E0B;border-radius:4px;"></div>
+        <div style="flex:1;padding:10px 0;">
+          <div style="font-size:9px;font-weight:700;color:#64748B;letter-spacing:0.3px;">SELECT SERVICE TYPE</div>
+        </div>
+        <div style="width:16px;height:16px;">▼</div>
+      </div>
+      
+      <div style="font-size:9px;color:#64748B;margin-bottom:8px;">Tap to open drawer ↓</div>
+      
+      <!-- Separator -->
+      <div style="border-top:1px dashed #334155;margin:16px 0;"></div>
+      
+      <!-- Selected state with chip -->
+      <div style="font-size:11px;font-weight:700;color:#94A3B8;margin-bottom:8px;">SERVICE PERFORMED</div>
+      <div style="display:flex;align-items:center;gap:14px;padding:4px 0;border-bottom:1.5px solid #F59E0B;">
+        <div style="width:20px;height:20px;background:#F59E0B;border-radius:4px;"></div>
+        <div style="flex:1;">
+          <div style="display:inline-flex;align-items:center;gap:8px;background:#F59E0B20;border:1px solid #F59E0B;border-radius:4px;padding:6px 10px;">
+            <span style="font-size:10px;font-weight:800;color:#F59E0B;letter-spacing:0.5px;">DEADBOLT REPLACEMENT</span>
+            <span style="color:#F59E0B;font-size:12px;cursor:pointer;">✕</span>
+          </div>
+        </div>
+        <div style="width:16px;height:16px;color:#F59E0B;">▼</div>
+      </div>
+      
+      <div style="font-size:9px;color:#64748B;margin-top:8px;">Tap again to re-open drawer and change selection.</div>
+      
+      <!-- Drawer preview -->
+      <div style="margin-top:20px;background:#1E293B;border-radius:12px 12px 0 0;border:1px solid #334155;overflow:hidden;">
+        <div style="display:flex;justify-content:center;padding:8px;">
+          <div style="width:36px;height:4px;background:#475569;border-radius:2px;"></div>
+        </div>
+        <div style="padding:0 14px 8px;">
+          <div style="font-size:10px;font-weight:800;color:#F59E0B;letter-spacing:0.8px;margin-bottom:8px;">SELECT SERVICE</div>
+          <div style="background:#0F172A;border-radius:4px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:2px solid #F59E0B;">
+            <span style="color:#F59E0B;">✓</span>
+            <span style="font-size:10px;font-weight:800;color:#F8FAFC;">DEADBOLT REPLACEMENT</span>
+          </div>
+          <div style="background:#0F172A;border-radius:4px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1E293B;">
+            <span style="color:#475569;">○</span>
+            <span style="font-size:10px;font-weight:600;color:#94A3B8;">KEY DUPLICATION</span>
+          </div>
+          <div style="background:#0F172A;border-radius:4px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1E293B;">
+            <span style="color:#475569;">○</span>
+            <span style="font-size:10px;font-weight:600;color:#94A3B8;">LOCK INSTALLATION</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>How it works</h3>
+  <ul>
+    <li><strong>Closed:</strong> A compact field with underline border + icon + "Select service type" placeholder — matches the Customer step input style.</li>
+    <li><strong>Tap:</strong> Opens a bottom sheet drawer listing all service types with icons + checkmark on selected.</li>
+    <li><strong>Selected:</strong> Drawer closes. Field shows the chosen name as a gold chip with ✕ to clear.</li>
+    <li><strong>Re-open:</strong> Tap the field again — drawer opens to the same list, current selection highlighted.</li>
+  </ul>
+</div>

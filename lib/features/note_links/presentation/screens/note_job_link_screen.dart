@@ -6,7 +6,7 @@ import 'package:keystone/core/theme/ks_colors.dart';
 import 'package:keystone/core/utils/date_formatter.dart';
 import 'package:keystone/core/widgets/ks_empty_state.dart';
 import 'package:keystone/core/widgets/ks_search_bar.dart';
-import 'package:keystone/core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart';
@@ -166,14 +166,14 @@ class _NoteJobLinkSheetState extends ConsumerState<_NoteJobLinkSheet> {
           final existing = links.firstWhere((l) => l.jobId == job.id);
           await ref.read(noteLinkByNoteProvider(widget.noteId).notifier).deleteLink(existing.id);
           if (!context.mounted) return;
-          KsSnackbar.show(context, message: "Link removed", type: KsSnackbarType.info);
+          KsSlidingNotification.show(context, message: "Link removed", type: KsNotificationType.info);
         } else {
           final result = await ref.read(noteLinkByNoteProvider(widget.noteId).notifier).createLink(widget.noteId, job.id);
           if (!context.mounted) return;
-          KsSnackbar.show(
+          KsSlidingNotification.show(
             context,
             message: result != null ? "Job linked" : "Could not link job",
-            type: result != null ? KsSnackbarType.success : KsSnackbarType.error,
+            type: result != null ? KsNotificationType.success : KsNotificationType.error,
           );
         }
       },

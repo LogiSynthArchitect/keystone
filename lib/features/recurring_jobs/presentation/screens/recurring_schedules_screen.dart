@@ -6,7 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/recurring_schedule_provider.dart';
@@ -91,7 +91,7 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
               isDanger: true,
               onConfirm: () {
                 ref.read(recurringScheduleProvider.notifier).delete(s.id);
-                KsSnackbar.show(context, message: "Schedule deleted", type: KsSnackbarType.success);
+                KsSlidingNotification.show(context, message: "Schedule deleted", type: KsNotificationType.success);
               },
             );
           },

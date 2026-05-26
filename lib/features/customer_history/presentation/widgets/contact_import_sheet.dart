@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/create_customer_usecase.dart';
@@ -56,7 +56,7 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
       });
     } catch (e) {
       setState(() => _loading = false);
-      if (mounted) KsSnackbar.show(context, message: "Could not load contacts", type: KsSnackbarType.error);
+      if (mounted) KsSlidingNotification.show(context, message: "Could not load contacts", type: KsNotificationType.error);
     }
   }
 
@@ -85,7 +85,7 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
     ref.read(customerListProvider.notifier).refresh();
     if (mounted) {
       Navigator.pop(context);
-      KsSnackbar.show(context, message: "$count customers imported", type: KsSnackbarType.success);
+      KsSlidingNotification.show(context, message: "$count customers imported", type: KsNotificationType.success);
     }
   }
 

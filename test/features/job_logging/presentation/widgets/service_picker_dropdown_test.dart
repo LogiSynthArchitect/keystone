@@ -152,5 +152,27 @@ void main() {
       // Sheet should open
       expect(find.text('SELECT SERVICE'), findsOneWidget);
     });
+
+    testWidgets('shows empty state when search has no results',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget(
+        selected: null,
+        onSelected: (_) {},
+      ));
+      await tester.pump();
+
+      // Open sheet
+      await tester.tap(find.text('SELECT SERVICE TYPE'));
+      await tester.pumpAndSettle();
+
+      // Type a query that matches nothing
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'zzzzzzzzz');
+      await tester.pumpAndSettle();
+
+      // KsEmptyState should appear with "No services found"
+      expect(find.text('No services found'), findsOneWidget);
+      expect(find.text('Try a different search term'), findsOneWidget);
+    });
   });
 }

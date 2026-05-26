@@ -20,13 +20,16 @@ class ItemRow {
   InventoryItemEntity? inventoryItem;
   final nameController = TextEditingController();
   final qtyController = TextEditingController(text: '1');
+  final priceController = TextEditingController();
 
   bool get isFromInventory => inventoryItem != null;
   String get displayName => isFromInventory ? inventoryItem!.name : nameController.text.trim();
+  String get displayPrice => priceController.text.trim();
 
   void dispose() {
     nameController.dispose();
     qtyController.dispose();
+    priceController.dispose();
   }
 
   ItemRow copy() {
@@ -35,6 +38,7 @@ class ItemRow {
     i.inventoryItem = inventoryItem;
     i.nameController.text = nameController.text;
     i.qtyController.text = qtyController.text;
+    i.priceController.text = priceController.text;
     return i;
   }
 }

@@ -23,12 +23,14 @@ class KsSlidingNotification {
   ///
   /// [pauseDuration] controls auto-dismiss; pass `null` for persistent
   /// notifications that stay until the user swipes or taps the action pill.
+  /// Simple notify — matches KsSnackbar's 3-param signature for easy migration.
+  /// Shows a themed flushbar. Type defaults to info (matching KsSnackbar default).
   static void show(
     BuildContext context, {
     required String message,
-    String? label,
-    KsNotificationType type = KsNotificationType.success,
+    KsNotificationType type = KsNotificationType.info,
     Duration? pauseDuration = const Duration(seconds: 3),
+    String? label,
     String? title,
     String? entity,
     Map<String, String>? metadata,

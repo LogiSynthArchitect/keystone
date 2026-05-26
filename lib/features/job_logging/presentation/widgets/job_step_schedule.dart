@@ -59,9 +59,9 @@ class JobStepSchedule extends ConsumerWidget {
             ],
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.only(left: 34, top: 4),
-          child: Divider(height: 1, color: Color(0xFF2A3A4A)),
+        Padding(
+          padding: const EdgeInsets.only(left: 34, top: 4),
+          child: Divider(height: 1, color: context.ksc.primary700),
         ),
         const SizedBox(height: 32),
         _buildDarkField(

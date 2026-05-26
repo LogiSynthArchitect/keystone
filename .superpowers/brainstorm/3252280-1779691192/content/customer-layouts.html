@@ -1,0 +1,569 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Barlow+Semi+Condensed:wght@300;400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow Semi Condensed', 'Inter', sans-serif; background: #0C0C0E; color: #F2F0EB; padding: 16px; }
+  h2 { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; color: #F2F0EB; }
+  .subtitle { color: #888; font-size: 12px; font-weight: 400; margin-bottom: 20px; }
+  
+  /* Layout cards grid */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 680px) {
+    .layout-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Each layout option */
+  .layout-card {
+    background: #1A1A1C;
+    border: 1.5px solid #2A2A2D;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+  .layout-card:hover {
+    border-color: #D4A84B;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 168, 75, 0.08);
+  }
+  .layout-card.selected {
+    border-color: #D4A84B;
+    border-width: 2px;
+    box-shadow: 0 0 0 1px rgba(212,168,75,0.2);
+  }
+  .layout-card.selected::after {
+    content: 'SELECTED';
+    position: absolute;
+    top: 8px; right: 8px;
+    background: #D4A84B;
+    color: #0C0C0E;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .layout-header {
+    padding: 10px 14px 6px;
+    border-bottom: 1px solid #2A2A2D;
+  }
+  .layout-header h3 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #D4A84B;
+  }
+  .layout-header .tag {
+    font-size: 9px;
+    color: #666;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .layout-body {
+    padding: 10px 14px 14px;
+    min-height: 340px;
+  }
+
+  /* ===== REUSABLE APP COMPONENTS ===== */
+  .accent { color: #D4A84B; }
+  .gold-bg { background: #D4A84B; }
+  .white { color: #F2F0EB; }
+  .neutral400 { color: #888; }
+  .neutral500 { color: #666; }
+  .neutral600 { color: #555; }
+  .primary700 { color: #2A2A2D; }
+  .primary800 { background: #1A1A1C; }
+  .primary900 { background: #0C0C0E; }
+  .success500 { color: #34C759; }
+  .warning500 { color: #FF9F0A; }
+  .error500 { color: #FF3B30; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .badge-gold { background: rgba(212,168,75,0.1); border: 1px solid rgba(212,168,75,0.3); color: #D4A84B; }
+  .badge-green { background: rgba(52,199,89,0.1); border: 1px solid rgba(52,199,89,0.3); color: #34C759; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 0;
+  }
+  .btn-primary { background: #D4A84B; color: #0C0C0E; }
+  .btn-ghost { background: transparent; color: #D4A84B; border: 1px solid #D4A84B; }
+  .btn-full { width: 100%; }
+  .btn-sm { height: 32px; font-size: 10px; padding: 0 14px; }
+
+  .divider { height: 1px; background: #2A2A2D; margin: 10px 0; }
+  
+  /* Tab bar */
+  .tab-bar {
+    display: flex;
+    background: #1A1A1C;
+    border-bottom: 1px solid #2A2A2D;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .tab.active { color: #D4A84B; border-bottom-color: #D4A84B; }
+
+  /* Stat elements */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(26,26,28,0.5);
+    border: 1px solid #2A2A2D;
+    border-radius: 4px;
+  }
+  .stat-item { text-align: center; }
+  .stat-label { font-size: 8px; color: #666; font-weight: 800; letter-spacing: 1px; }
+  .stat-value { font-size: 14px; color: #D4A84B; font-weight: 900; letter-spacing: 1px; }
+  .stat-divider { width: 1px; height: 24px; background: #2A2A2D; }
+
+  /* Profile card */
+  .profile-card {
+    background: #1A1A1C;
+    border: 1px solid #2A2A2D;
+    border-radius: 4px;
+    padding: 12px;
+  }
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .avatar {
+    width: 44px; height: 44px;
+    background: #0C0C0E;
+    border: 1px solid #2A2A2D;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px; color: #D4A84B;
+    flex-shrink: 0;
+  }
+  .avatar-sm { width: 36px; height: 36px; font-size: 14px; }
+
+  /* Inline info row */
+  .info-row {
+    display: flex; align-items: center;
+    gap: 4px; margin-top: 3px;
+  }
+  .info-icon { width: 12px; height: 12px; background: #555; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .info-text { font-size: 10px; color: #666; font-weight: 700; letter-spacing: 0.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Key code item */
+  .key-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: #1A1A1C;
+    border: 1px solid #2A2A2D;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .key-icon { width: 14px; height: 14px; background: rgba(212,168,75,0.2); border-radius: 50%; flex-shrink: 0; }
+  .key-label { font-size: 11px; font-weight: 700; color: #F2F0EB; }
+  .key-type { font-size: 9px; color: #D4A84B; font-weight: 600; }
+
+  /* Job timeline item */
+  .timeline-item {
+    display: flex; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .timeline-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #34C759;
+    border: 2px solid #0C0C0E;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .timeline-line {
+    width: 2px; flex: 1;
+    background: #2A2A2D;
+    margin: 0 auto;
+  }
+  .timeline-card {
+    flex: 1;
+    background: #1A1A1C;
+    border: 1px solid #2A2A2D;
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+
+  /* Part chips */
+  .chip {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 8px;
+    font-weight: 800;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    margin: 2px;
+  }
+  .chip-brand { background: rgba(212,168,75,0.1); border: 1px solid rgba(212,168,75,0.3); color: #D4A84B; }
+  .chip-part { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #888; }
+
+  /* Section label */
+  .section-label { font-size: 9px; color: #D4A84B; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 6px; }
+
+  /* Layout-specific tiny mockups */
+  .mockup-box {
+    border: 1px solid #333;
+    border-radius: 3px;
+    overflow: hidden;
+    font-size: 9px;
+  }
+  
+  /* Action tiles grid */
+  .action-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .tile {
+    background: #1A1A1C;
+    border: 1px solid #2A2A2D;
+    border-radius: 4px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .tile-icon { font-size: 18px; margin-bottom: 4px; }
+  .tile-label { font-size: 8px; font-weight: 800; letter-spacing: 1px; color: #888; }
+
+  /* Floating button */
+  .fab {
+    width: 44px; height: 44px;
+    background: #D4A84B;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: #0C0C0E;
+    box-shadow: 0 4px 12px rgba(212,168,75,0.2);
+  }
+
+  /* Pros/Cons section */
+  .pros-cons { margin: 6px 0 0; }
+  .pros-cons h4 { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; }
+  .pros-cons ul { margin: 2px 0 0 14px; font-size: 9px; color: #888; line-height: 1.5; }
+
+  .pros, .cons { background: rgba(26,26,28,0.5); border-radius: 3px; padding: 6px 10px; margin: 4px 0; }
+  .pros h4 { color: #34C759; }
+  .cons h4 { color: #FF3B30; }
+
+  /* Layout A: Top Tabs */
+  .la-header { background: #1A1A1C; border: 1px solid #2A2A2D; border-radius: 4px; padding: 8px; margin-bottom: 6px; }
+  .la-actions { display: flex; gap: 4px; margin: 4px 0; }
+  .la-action-btn { flex: 1; text-align: center; padding: 4px; background: #0C0C0E; border: 1px solid #2A2A2D; border-radius: 3px; font-size: 7px; color: #888; font-weight: 700; letter-spacing: 0.5px; }
+  
+  /* Layout C: Hub tiles */
+  .hub-tile { background: #1A1A1C; border: 1px solid #2A2A2D; border-radius: 4px; padding: 8px; text-align: center; }
+  .hub-tile .tile-num { font-size: 16px; font-weight: 900; color: #D4A84B; }
+  .hub-tile .tile-lbl { font-size: 7px; color: #666; font-weight: 700; letter-spacing: 0.8px; }
+
+  /* Layout D: Split */
+  .ld-panel { display: flex; gap: 6px; }
+  .ld-left { flex: 1; }
+  .ld-right { flex: 1.5; }
+</style>
+
+<h2>Customer Detail — Layout Redesign</h2>
+<p class="subtitle">4 approaches for reorganizing the customer dossier. Tap one to select it, then let me know.</p>
+
+<div class="layout-grid">
+
+  <!-- ===== LAYOUT A ===== -->
+  <div class="layout-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="layout-header">
+      <h3>A · TOP TABS</h3>
+      <span class="tag">Compact header → sticky tabs → scrollable content</span>
+    </div>
+    <div class="layout-body">
+      <div class="mockup-box">
+        <!-- Compact header row -->
+        <div class="la-header">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="avatar avatar-sm">K</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:11px;font-weight:800;letter-spacing:0.3px;">KWAME MENSAH</span>
+                <span class="badge badge-green">RESIDENTIAL</span>
+              </div>
+              <div style="font-size:9px;color:#888;font-weight:600;">+233 24 123 4567</div>
+              <div class="info-row">
+                <span class="info-icon"></span><span class="info-text">EAST LEGON, ACCRA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Action buttons -->
+        <div class="la-actions">
+          <div class="la-action-btn">💬 WHATSAPP</div>
+          <div class="la-action-btn">✏️ EDIT</div>
+          <div class="la-action-btn">📋 LOG JOB</div>
+        </div>
+        <!-- Stats row -->
+        <div class="stat-row" style="margin-bottom:6px;">
+          <div class="stat-item"><div class="stat-label">TOTAL JOBS</div><div class="stat-value">05</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-label">LAST VISIT</div><div class="stat-value" style="font-size:11px;">2 WEEKS AGO</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-label">REVENUE</div><div class="stat-value">₵4,200</div></div>
+        </div>
+        <!-- Sticky tabs -->
+        <div class="tab-bar" style="margin-bottom:6px;">
+          <div class="tab active">KEY CODES</div>
+          <div class="tab">SERVICE HISTORY</div>
+        </div>
+        <!-- Key codes content -->
+        <div class="key-item" style="margin-bottom:0;">
+          <div class="key-icon"></div>
+          <div style="flex:1;"><span class="key-label">KW-001</span><br><span class="key-type">Yale / Front Door</span></div>
+          <div style="font-size:7px;color:#666;">✎</div>
+        </div>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>✓ PROS</h4><ul><li>Familiar tab pattern — no learning curve</li><li>Dense header shows all key info at a glance</li><li>Action buttons always accessible</li></ul></div>
+        <div class="cons"><h4>△ CONS</h4><ul><li>Tabs still need vertical space — long lists still scroll</li><li>Header density might feel cluttered</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LAYOUT B ===== -->
+  <div class="layout-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="layout-header">
+      <h3>B · THE DOSSIER</h3>
+      <span class="tag">Full-page scrollable narrative — no tabs, all sections stacked</span>
+    </div>
+    <div class="layout-body">
+      <div class="mockup-box">
+        <!-- Full profile card with cover area hint -->
+        <div style="height:24px;background:linear-gradient(135deg,#1A1A1C,#2A2A2D);display:flex;align-items:center;padding:0 8px;">
+          <span style="font-size:6px;color:#555;letter-spacing:1px;">COVER IMAGE AREA</span>
+        </div>
+        <div class="profile-card" style="margin:0;border-top:0;border-radius:0 0 4px 4px;">
+          <div class="profile-row">
+            <div class="avatar">K</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:12px;font-weight:800;">KWAME MENSAH</span>
+                <span class="badge badge-green">RESIDENTIAL</span>
+              </div>
+              <div class="info-row"><span style="font-size:9px;color:#888;">📞 +233 24 123 4567</span></div>
+              <div class="info-row"><span style="font-size:9px;color:#888;">📍 EAST LEGON, ACCRA</span></div>
+              <div class="info-row"><span style="font-size:9px;color:#888;">📝 Prefers morning calls, has 2 cars</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Stats -->
+        <div class="stat-row" style="margin:6px 0;padding:8px 12px;">
+          <div class="stat-item"><div class="stat-label">JOBS</div><div class="stat-value">05</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-label">LAST VISIT</div><div class="stat-value" style="font-size:11px;">MAY 12</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-label">REVENUE</div><div class="stat-value">₵4.2K</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-label">SOURCE</div><div class="stat-value" style="font-size:10px;">REFERRAL</div></div>
+        </div>
+        <!-- Common parts chip -->
+        <div style="margin:6px 0;padding:6px 8px;border:1px solid rgba(212,168,75,0.2);border-radius:3px;">
+          <div style="font-size:7px;color:#D4A84B;font-weight:800;letter-spacing:1px;margin-bottom:4px;">COMMONLY USED</div>
+          <span class="chip chip-brand">YALE</span><span class="chip chip-brand">ABUS</span><span class="chip chip-part">CYLINDER LOCK</span>
+        </div>
+        <!-- Key Codes section -->
+        <div style="margin:6px 0;">
+          <div class="section-label">KEY CODES <span style="color:#666;font-weight:400;">· 2</span></div>
+          <div class="key-item"><div class="key-icon"></div><div style="flex:1;"><span class="key-label">KW-001</span><br><span class="key-type">Yale / Front Door</span></div></div>
+          <div class="key-item"><div class="key-icon"></div><div style="flex:1;"><span class="key-label">KW-002</span><br><span class="key-type">Gate / Rear</span></div></div>
+          <button class="btn btn-ghost btn-sm btn-full" style="margin-top:4px;">+ ADD KEY CODE</button>
+        </div>
+        <!-- Service History -->
+        <div style="margin:6px 0;">
+          <div class="section-label">SERVICE HISTORY <span style="color:#666;font-weight:400;">· 5</span></div>
+          <div class="timeline-item">
+            <div style="display:flex;flex-direction:column;align-items:center;width:14px;">
+              <div class="timeline-dot"></div>
+              <div class="timeline-line" style="min-height:20px;"></div>
+            </div>
+            <div class="timeline-card">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-size:9px;color:#D4A84B;font-weight:700;">2 WEEKS AGO</span>
+                <span class="badge badge-green">PAID</span>
+              </div>
+              <div style="font-size:10px;font-weight:700;">LOCK INSTALLATION</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div style="display:flex;flex-direction:column;align-items:center;width:14px;">
+              <div class="timeline-dot" style="background:#888;"></div>
+              <div style="height:4px;"></div>
+            </div>
+            <div class="timeline-card">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-size:9px;color:#888;">3 MONTHS AGO</span>
+                <span class="badge badge-green">PAID</span>
+              </div>
+              <div style="font-size:10px;font-weight:700;">KEY DUPLICATION</div>
+            </div>
+          </div>
+        </div>
+        <!-- Full-width FAB at bottom -->
+        <button class="btn btn-primary btn-full" style="margin-top:4px;">+ LOG NEW JOB</button>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>✓ PROS</h4><ul><li>Everything visible — no tab switching</li><li>Narrative flow: who → history → what they use</li><li>Cover image area adds visual personality</li></ul></div>
+        <div class="cons"><h4>△ CONS</h4><ul><li>Long scroll with many jobs</li><li>No quick-switch between sections</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LAYOUT C ===== -->
+  <div class="layout-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="layout-header">
+      <h3>C · HUB + DRAWERS</h3>
+      <span class="tag">Compact overview → each section opens a bottom sheet drawer</span>
+    </div>
+    <div class="layout-body">
+      <div class="mockup-box">
+        <!-- Minimal hero card -->
+        <div class="profile-card" style="padding:10px;">
+          <div class="profile-row">
+            <div class="avatar">K</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:13px;font-weight:800;">KWAME MENSAH</span>
+                <span class="badge badge-green">RESIDENTIAL</span>
+              </div>
+              <div class="info-row" style="margin-top:4px;">
+                <span style="font-size:10px;color:#D4A84B;font-weight:700;">+233 24 123 4567</span>
+                <span style="font-size:8px;color:#666;margin-left:4px;">💬</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Quick stats -->
+        <div style="display:flex;gap:6px;margin:6px 0;">
+          <div class="hub-tile" style="flex:1;"><div class="tile-num">05</div><div class="tile-lbl">JOBS</div></div>
+          <div class="hub-tile" style="flex:1;"><div class="tile-num">₵4.2K</div><div class="tile-lbl">REVENUE</div></div>
+          <div class="hub-tile" style="flex:1;"><div class="tile-num">12</div><div class="tile-lbl">DAYS</div></div>
+        </div>
+        <!-- Location + notes -->
+        <div class="info-row"><span style="font-size:9px;color:#888;">📍 EAST LEGON, ACCRA &nbsp;·&nbsp; Via: Referral</span></div>
+        <div class="info-row"><span style="font-size:9px;color:#666;font-style:italic;">📝 Prefers morning calls, has 2 cars</span></div>
+        <!-- Action tiles -->
+        <div style="margin:8px 0;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div class="tile" style="padding:10px;"><div style="font-size:16px;font-weight:700;color:#D4A84B;">🔑</div><div style="font-size:8px;font-weight:800;letter-spacing:1px;color:#888;margin-top:2px;">KEY CODES</div><div style="font-size:7px;color:#555;">2 codes</div></div>
+            <div class="tile" style="padding:10px;"><div style="font-size:16px;font-weight:700;color:#D4A84B;">📋</div><div style="font-size:8px;font-weight:800;letter-spacing:1px;color:#888;margin-top:2px;">HISTORY</div><div style="font-size:7px;color:#555;">5 visits</div></div>
+            <div class="tile" style="padding:10px;"><div style="font-size:16px;font-weight:700;color:#D4A84B;">📎</div><div style="font-size:8px;font-weight:800;letter-spacing:1px;color:#888;margin-top:2px;">NOTES</div><div style="font-size:7px;color:#555;">3 linked notes</div></div>
+            <div class="tile" style="padding:10px;"><div style="font-size:16px;font-weight:700;color:#D4A84B;">🔄</div><div style="font-size:8px;font-weight:800;letter-spacing:1px;color:#888;margin-top:2px;">REPEATING</div><div style="font-size:7px;color:#555;">Quarterly service</div></div>
+          </div>
+        </div>
+        <!-- Bottom bar - shows drawer handle hint -->
+        <div style="margin-top:4px;">
+          <div style="background:#1A1A1C;border:1px solid #2A2A2D;border-radius:4px;padding:8px;text-align:center;">
+            <div style="width:30px;height:3px;background:#555;border-radius:2px;margin:0 auto 4px;"></div>
+            <span style="font-size:8px;color:#888;font-weight:700;letter-spacing:1px;">TAP A TILE TO OPEN DETAIL DRAWER</span>
+          </div>
+        </div>
+        <!-- Full-width LOG JOB -->
+        <button class="btn btn-primary btn-full" style="margin-top:4px;">+ LOG NEW JOB</button>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>✓ PROS</h4><ul><li>Clean, uncluttered main view</li><li>Drawers match existing app pattern (Inventory, Notes, Pricing)</li><li>Action tiles show content preview (counts)</li><li>Easily extensible (add more tiles)</li></ul></div>
+        <div class="cons"><h4>△ CONS</h4><ul><li>Requires tap to see details — extra step</li><li>Not all info visible at once</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LAYOUT D ===== -->
+  <div class="layout-card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="layout-header">
+      <h3>D · SPLIT PANEL</h3>
+      <span class="tag">Profile panel left + dynamic content right — side-by-side</span>
+    </div>
+    <div class="layout-body">
+      <div class="mockup-box">
+        <div class="ld-panel" style="height:280px;">
+          <!-- Left: fixed profile panel -->
+          <div class="ld-left" style="background:#0C0C0E;border-right:1px solid #2A2A2D;padding:8px;">
+            <div class="profile-card" style="padding:8px;">
+              <div class="profile-row">
+                <div class="avatar avatar-sm">K</div>
+                <div style="flex:1;">
+                  <span style="font-size:10px;font-weight:800;">KWAME MENSAH</span>
+                  <span class="badge badge-green" style="font-size:7px;">RESIDENTIAL</span>
+                  <div style="font-size:8px;color:#888;font-weight:600;">+233 24 123 4567</div>
+                </div>
+              </div>
+            </div>
+            <div style="margin:6px 0;">
+              <div class="stat-item"><div class="stat-label">TOTAL JOBS</div><div class="stat-value" style="font-size:16px;">05</div></div>
+              <div style="text-align:center;"><div class="stat-label" style="margin-top:4px;">LAST VISIT</div><div style="font-size:10px;color:#D4A84B;font-weight:800;">MAY 12, 2026</div></div>
+              <div style="text-align:center;"><div class="stat-label" style="margin-top:4px;">REVENUE</div><div style="font-size:10px;color:#D4A84B;font-weight:900;">₵4,200</div></div>
+            </div>
+            <div class="divider"></div>
+            <div class="info-row"><span style="font-size:8px;color:#888;">📍 EAST LEGON, ACCRA</span></div>
+            <div class="info-row"><span style="font-size:8px;color:#888;">📝 Prefers morning calls</span></div>
+            <div class="info-row"><span style="font-size:8px;color:#888;">🔄 Via Referral</span></div>
+            <div class="divider"></div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <button class="btn btn-ghost btn-sm btn-full" style="font-size:8px;">💬 WHATSAPP</button>
+              <button class="btn btn-primary btn-sm btn-full" style="font-size:8px;">+ LOG JOB</button>
+            </div>
+          </div>
+          <!-- Right: content panel -->
+          <div class="ld-right" style="padding:8px;">
+            <div class="tab-bar" style="margin-bottom:6px;">
+              <div class="tab active">KEY CODES</div>
+              <div class="tab">HISTORY</div>
+            </div>
+            <div class="key-item"><div class="key-icon"></div><div style="flex:1;"><span class="key-label">KW-001</span><br><span class="key-type">Yale / Front Door</span></div><span style="font-size:7px;color:#666;">✎</span></div>
+            <div class="key-item"><div class="key-icon"></div><div style="flex:1;"><span class="key-label">KW-002</span><br><span class="key-type">Gate / Rear</span></div><span style="font-size:7px;color:#666;">✎</span></div>
+            <button class="btn btn-ghost btn-sm btn-full" style="margin-top:4px;font-size:8px;">+ ADD KEY CODE</button>
+            <div style="margin-top:6px;">
+              <span class="chip chip-brand">YALE</span><span class="chip chip-brand">ABUS</span><span class="chip chip-part">CYLINDER</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons">
+        <div class="pros"><h4>✓ PROS</h4><ul><li>Profile always visible — no scrolling away</li><li>Side-by-side uses screen width efficiently</li><li>Actions always one tap away</li></ul></div>
+        <div class="cons"><h4>△ CONS</h4><ul><li>Can feel cramped on narrow phones</li><li>Right panel still has tabs + scroll</li><li>Complex layout — more moving parts</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;text-align:center;">
+  <p style="font-size:11px;color:#555;">Tap a layout to select it, then tell me in the terminal which one you prefer (or what to mix)</p>
+</div>

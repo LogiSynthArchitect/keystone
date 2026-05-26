@@ -22,7 +22,7 @@ import 'package:keystone/core/widgets/ks_badge.dart';
 import 'package:keystone/core/widgets/ks_button.dart';
 import 'package:keystone/core/widgets/ks_confirm_dialog.dart';
 import 'package:keystone/core/widgets/sync_status_indicator.dart';
-import 'package:keystone/core/widgets/ks_snackbar.dart';
+import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/core/router/route_names.dart';
 import 'package:keystone/core/providers/auth_provider.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
@@ -80,7 +80,7 @@ class JobDetailScreen extends ConsumerWidget {
                   if (!context.mounted) return;
                   final error = ref.read(jobListProvider).errorMessage;
                   if (error != null && error.isNotEmpty) {
-                    KsSnackbar.show(context, message: error, type: KsSnackbarType.error);
+                    KsSlidingNotification.show(context, message: error, type: KsNotificationType.error);
                   } else {
                     Navigator.pop(context);
                   }
@@ -861,11 +861,11 @@ class JobDetailScreen extends ConsumerWidget {
       });
       ref.invalidate(jobPhotosProvider(jobId));
       if (context.mounted) {
-        KsSnackbar.show(context, message: "Photo added", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Photo added", type: KsNotificationType.success);
       }
     } catch (_) {
       if (context.mounted) {
-        KsSnackbar.show(context, message: "Could not add photo", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not add photo", type: KsNotificationType.error);
       }
     }
   }
@@ -887,11 +887,11 @@ class JobDetailScreen extends ConsumerWidget {
       await remote.deletePhoto(photo.id, photo.storagePath);
       ref.invalidate(jobPhotosProvider(jobId));
       if (context.mounted) {
-        KsSnackbar.show(context, message: "Photo deleted", type: KsSnackbarType.success);
+        KsSlidingNotification.show(context, message: "Photo deleted", type: KsNotificationType.success);
       }
     } catch (_) {
       if (context.mounted) {
-        KsSnackbar.show(context, message: "Could not delete photo", type: KsSnackbarType.error);
+        KsSlidingNotification.show(context, message: "Could not delete photo", type: KsNotificationType.error);
       }
     }
   }
@@ -1094,7 +1094,7 @@ class JobDetailScreen extends ConsumerWidget {
                 final hasAfterPhoto = photos.any((p) => p.label == 'after');
                 if (!hasAfterPhoto && context.mounted) {
                   Navigator.pop(ctx);
-                  KsSnackbar.show(context, message: "An after-photo is required before marking as completed", type: KsSnackbarType.error);
+                  KsSlidingNotification.show(context, message: "An after-photo is required before marking as completed", type: KsNotificationType.error);
                   return;
                 }
               }
