@@ -7,7 +7,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/service_icon_map.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../service_types/presentation/providers/service_type_provider.dart';
-import '../../../service_types/presentation/widgets/service_type_picker_v2.dart';
+import 'service_picker_dropdown.dart';
 import '../widgets/job_step_types.dart';
 
 /// Step 1 of the Add New Job wizard: Main service selection + Additional Services.
@@ -31,10 +31,6 @@ class JobStepService extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mainServiceSummary = serviceType != null
-        ? serviceType!.replaceAll('_', ' ').toUpperCase()
-        : null;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,18 +39,10 @@ class JobStepService extends ConsumerWidget {
         const SizedBox(height: 8),
         Text("The main reason for this visit",
           style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
-        _buildExpandableSection(
-          context: context,
-          collapsedSummary: mainServiceSummary,
-          expanded: serviceExpanded,
-          onToggle: onServiceExpandedToggled,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: ServiceTypePickerV2(
-              selected: serviceType,
-              onSelected: (t) => onServiceTypeChanged(t),
-            ),
-          ),
+        const SizedBox(height: 8),
+        ServicePickerDropdown(
+          selected: serviceType,
+          onSelected: (t) => onServiceTypeChanged(t),
         ),
         const SizedBox(height: 48),
         Text("ADDITIONAL SERVICES (OPTIONAL)",
@@ -126,62 +114,6 @@ class JobStepService extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildExpandableSection({
-    required BuildContext context,
-    required String? collapsedSummary,
-    required bool expanded,
-    required VoidCallback onToggle,
-    required Widget child,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(4),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: context.ksc.primary800,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: context.ksc.primary700),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    expanded ? LineAwesomeIcons.angle_down_solid : LineAwesomeIcons.angle_right_solid,
-                    size: 12,
-                    color: context.ksc.accent500,
-                  ),
-                  if (collapsedSummary != null) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(collapsedSummary.toUpperCase(),
-                        style: AppTextStyles.caption.copyWith(
-                          color: context.ksc.accent500,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 9,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          if (expanded) ...[
-            const SizedBox(height: 12),
-            child,
-          ],
-        ],
-      ),
     );
   }
 }
