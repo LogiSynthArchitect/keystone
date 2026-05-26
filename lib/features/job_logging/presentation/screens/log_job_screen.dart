@@ -31,7 +31,6 @@ import '../../../job_templates/domain/entities/template_service_item.dart';
 import '../../../job_templates/domain/entities/template_hardware_item.dart';
 import '../../../job_templates/domain/entities/template_part_item.dart';
 import '../../../job_templates/presentation/providers/job_template_provider.dart';
-import '../../../job_templates/presentation/widgets/template_picker_sheet.dart';
 import '../widgets/job_step_types.dart';
 import '../widgets/job_step_service.dart';
 import '../widgets/job_step_status.dart';
@@ -73,9 +72,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   String _status = 'in_progress';
   String _paymentStatus = 'unpaid';
   String? _leadSource;
-  String? _fromTemplateId; // tracks which template was applied; cleared on manual edit
+
   bool _isRecurring = false;
-  bool _serviceExpanded = true;
   String _recurringInterval = 'monthly';
 
   final _customerController     = TextEditingController();
@@ -191,110 +189,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     }
   }
 
-  void _loadTemplate() {
-    final userId = ref.read(currentUserProvider).valueOrNull?.id;
-    if (userId == null) return;
-    ref.read(jobTemplateProvider.notifier).loadTemplates(userId);
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
-      builder: (ctx) {
-        return Consumer(builder: (context, ref, _) {
-          final templatesAsync = ref.watch(jobTemplateProvider);
-          return templatesAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => Center(child: Text("FAILED TO LOAD", style: AppTextStyles.caption.copyWith(color: context.ksc.error500))),
-            data: (templates) {
-              if (templates.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("NO TEMPLATES", style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 8),
-                      Text("Save a job as template first", style: AppTextStyles.body.copyWith(color: context.ksc.neutral500)),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(16),
-                itemCount: templates.length,
-                itemBuilder: (context, index) {
-                  final t = templates[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: context.ksc.primary700,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: ListTile(
-                      leading: Icon(LineAwesomeIcons.clipboard_list_solid, color: context.ksc.accent500),
-                      title: Text(t.name, style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700)),
-                      subtitle: Text("${t.serviceType.replaceAll('_', ' ')} · ${t.services.length} services", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _applyTemplate(t);
-                      },
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        });
-      },
-    );
-  }
-
-  Future<void> _pickTemplate() async {
-    final template = await TemplatePickerSheet.show(context);
-    if (template != null && mounted) {
-      _applyTemplate(template);
-    }
-  }
-
-  void _applyTemplate(JobTemplateEntity template) {
-    setState(() {
-      _fromTemplateId = template.id;
-      _serviceType = template.serviceType;
-      _notesController.text = template.notes ?? '';
-
-      for (final s in template.services) {
-        final row = ServiceRow();
-        row.serviceType = s.serviceType;
-        row.qtyController.text = s.quantity.toString();
-        if (s.unitPrice != null) {
-          row.priceController.text = (s.unitPrice! / 100.0).toStringAsFixed(2);
-        }
-        _additionalServices.add(row);
-      }
-
-      for (final h in template.hardwareItems) {
-        final row = ItemRow();
-        row.nameController.text = h.name;
-        row.qtyController.text = h.quantity.toString();
-        if (h.inventoryItemId != null) {
-          row.inventoryItemId = h.inventoryItemId;
-        }
-        _items.add(row);
-      }
-
-      for (final p in template.parts) {
-        final row = ItemRow();
-        row.nameController.text = p.name;
-        row.qtyController.text = p.quantity.toString();
-        if (p.inventoryItemId != null) {
-          row.inventoryItemId = p.inventoryItemId;
-        }
-        _items.add(row);
-      }
-    });
-  }
 
   Future<void> _saveAsTemplate() async {
     // Must have a service type selected
@@ -621,17 +516,23 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       }),
       steps: const [
         KsStep(label: 'SERVICE', icon: LineAwesomeIcons.wrench_solid, subSteps: 1,
-          tip: 'Select the main service performed'),
+          tip: 'Select the main service performed',
+          imageAsset: 'assets/icons/3d/transparent/ff5be0-tools.png'),
         KsStep(label: 'STATUS', icon: LineAwesomeIcons.flag_solid, subSteps: 1,
-          tip: 'Set the job status'),
+          tip: 'Set the job status',
+          imageAsset: 'assets/icons/3d/transparent/e9828b-flag.png'),
         KsStep(label: 'CUSTOMER', icon: LineAwesomeIcons.user_solid, subSteps: 1,
-          tip: 'Enter customer information'),
+          tip: 'Enter customer information',
+          imageAsset: 'assets/icons/3d/transparent/eec43d-chat-bubble.png'),
         KsStep(label: 'PRICING', icon: LineAwesomeIcons.money_bill_wave_alt_solid, subSteps: 1,
-          tip: 'Set the quoted or final amount'),
+          tip: 'Set the quoted or final amount',
+          imageAsset: 'assets/icons/3d/transparent/b801dc-3d-coin.png'),
         KsStep(label: 'SCHEDULE', icon: LineAwesomeIcons.calendar_solid, subSteps: 1,
-          tip: 'Set the job date and schedule'),
+          tip: 'Set the job date and schedule',
+          imageAsset: 'assets/icons/3d/transparent/781f28-calendar.png'),
         KsStep(label: 'EXTRAS', icon: LineAwesomeIcons.boxes_solid, subSteps: 1,
-          tip: 'Add parts, expenses, photos, and notes'),
+          tip: 'Add parts, expenses, photos, and notes',
+          imageAsset: 'assets/icons/3d/transparent/4f52f8-cube.png'),
       ],
       nextLabel: "NEXT STEP",
       saveLabel: "SAVE JOB RECORD",
@@ -641,70 +542,47 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         if (ok && mounted) Navigator.of(context).pop();
       }),
       stepContent: (step, subStep, rebuild) {
-        // Inject TEMPLATES button into step 1
-        if (step == 0) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildStepByIndex(step),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: _pickTemplate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: context.ksc.accent500,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'TEMPLATES',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                      color: context.ksc.primary900,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
         // Inject save-as-template button into step 6
         if (step == 5) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildStepByIndex(step),
-              const SizedBox(height: 16),
-              if (state.isLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-              InkWell(
-                onTap: _saveAsTemplate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
-                    borderRadius: BorderRadius.circular(4),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildStepByIndex(step),
+                const SizedBox(height: 16),
+                if (state.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
-                  child: Text(
-                    'SAVE AS TEMPLATE',
-                    style: AppTextStyles.label.copyWith(
-                      color: context.ksc.accent500,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 10,
-                      letterSpacing: 0.8,
+                InkWell(
+                  onTap: _saveAsTemplate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'SAVE AS TEMPLATE',
+                      style: AppTextStyles.label.copyWith(
+                        color: context.ksc.accent500,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         }
-        return _buildStepByIndex(step);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: _buildStepByIndex(step),
+        );
       },
     );
   }
@@ -724,13 +602,10 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   Widget _buildStep1() {
     return JobStepService(
       serviceType: _serviceType,
-      serviceExpanded: _serviceExpanded,
       additionalServices: _additionalServices,
       onServiceTypeChanged: (t) => setState(() {
         _serviceType = t;
-        _fromTemplateId = null;
       }),
-      onServiceExpandedToggled: () => setState(() => _serviceExpanded = !_serviceExpanded),
       onOpenAdditionalServices: _showAdditionalServicesDrawer,
     );
   }

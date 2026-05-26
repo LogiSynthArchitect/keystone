@@ -13,19 +13,15 @@ import '../widgets/job_step_types.dart';
 /// Step 1 of the Add New Job wizard: Main service selection + Additional Services.
 class JobStepService extends ConsumerWidget {
   final String? serviceType;
-  final bool serviceExpanded;
   final List<ServiceRow> additionalServices;
   final ValueChanged<String?> onServiceTypeChanged;
-  final VoidCallback onServiceExpandedToggled;
   final VoidCallback onOpenAdditionalServices;
 
   const JobStepService({
     super.key,
     required this.serviceType,
-    required this.serviceExpanded,
     required this.additionalServices,
     required this.onServiceTypeChanged,
-    required this.onServiceExpandedToggled,
     required this.onOpenAdditionalServices,
   });
 
