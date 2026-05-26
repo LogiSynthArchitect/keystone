@@ -8,9 +8,9 @@ import '../../../service_types/presentation/providers/service_type_provider.dart
 
 /// A compact dropdown-style service type selector.
 ///
-/// Shows a field with underline border, icon, and either a placeholder
-/// ("SELECT SERVICE TYPE") or a gold chip with the selected name.
-/// Tap opens a bottom sheet with all service types for selection.
+/// Matches the Customer step's input field pattern:
+/// icon + label + underline border + value/placeholder row.
+/// Tap opens a bottom sheet with service types for selection.
 class ServicePickerDropdown extends ConsumerWidget {
   final String? selected;
   final ValueChanged<String> onSelected;
@@ -23,28 +23,17 @@ class ServicePickerDropdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final iconName = selected != null && selected!.isNotEmpty
-        ? _iconNameFor(ref, selected!)
-        : null;
     final hasSelection = selected != null && selected!.isNotEmpty;
+    final iconName = hasSelection ? _iconNameFor(ref, selected!) : null;
 
     return InkWell(
       onTap: () => _openSheet(context, ref),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: hasSelection
-                  ? context.ksc.accent500
-                  : context.ksc.primary700,
-              width: hasSelection ? 1.5 : 1.0,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Icon(
               iconName != null
                   ? ServiceIconMap.resolve(iconName)
                   : LineAwesomeIcons.wrench_solid,
@@ -53,66 +42,71 @@ class ServicePickerDropdown extends ConsumerWidget {
                   ? context.ksc.accent500
                   : context.ksc.neutral500,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: hasSelection
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color:
-                            context.ksc.accent500.withValues(alpha: 0.1),
-                        border: Border.all(color: context.ksc.accent500),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              selected!.replaceAll('_', ' ').toUpperCase(),
-                              style: AppTextStyles.caption.copyWith(
-                                color: context.ksc.accent500,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 10,
-                                letterSpacing: 0.5,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 14, bottom: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: hasSelection
+                            ? Row(
+                                children: [
+                                  Text(
+                                    selected!
+                                        .replaceAll('_', ' ')
+                                        .toUpperCase(),
+                                    style: AppTextStyles.bodyLarge.copyWith(
+                                      color: context.ksc.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => onSelected(''),
+                                    child: Icon(
+                                      LineAwesomeIcons.times_solid,
+                                      size: 14,
+                                      color: context.ksc.neutral500,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                'SELECT SERVICE TYPE',
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  color: context.ksc.neutral600,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => onSelected(''),
-                            child: Icon(
-                              LineAwesomeIcons.times_solid,
-                              size: 12,
-                              color: context.ksc.accent500,
-                            ),
-                          ),
-                        ],
                       ),
-                    )
-                  : Text(
-                      'SELECT SERVICE TYPE',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.neutral500,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 10,
-                        letterSpacing: 0.5,
+                      const SizedBox(width: 8),
+                      Icon(
+                        LineAwesomeIcons.angle_down_solid,
+                        size: 14,
+                        color: hasSelection
+                            ? context.ksc.accent500
+                            : context.ksc.neutral600,
                       ),
-                    ),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 1,
+                  color: hasSelection
+                      ? context.ksc.accent500
+                      : const Color(0xFF2A3A4A),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Icon(
-              LineAwesomeIcons.angle_down_solid,
-              size: 14,
-              color: hasSelection
-                  ? context.ksc.accent500
-                  : context.ksc.neutral500,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -187,42 +181,47 @@ class ServicePickerDropdown extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Search field
+                  // Search field — UnderlineInputBorder matching customer step
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 24),
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: context.ksc.primary900,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: context.ksc.primary700),
-                      ),
-                      child: TextField(
-                        controller: searchCtrl,
-                        onChanged: (_) => setSheetState(() {}),
-                        style: AppTextStyles.body.copyWith(
-                            color: context.ksc.white,
-                            fontWeight: FontWeight.w600),
-                        cursorColor: context.ksc.accent500,
-                        decoration: InputDecoration(
-                          hintText: "Search services...",
-                          hintStyle: AppTextStyles.caption.copyWith(
-                              color: context.ksc.neutral600),
-                          prefixIcon: Icon(
-                              LineAwesomeIcons.search_solid,
-                              size: 16,
-                              color: context.ksc.neutral600),
-                          border: InputBorder.none,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                    child: TextField(
+                      controller: searchCtrl,
+                      onChanged: (_) => setSheetState(() {}),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                          color: context.ksc.white,
+                          fontWeight: FontWeight.bold),
+                      cursorColor: context.ksc.accent500,
+                      decoration: InputDecoration(
+                        hintText: "Search services...",
+                        hintStyle: AppTextStyles.bodyLarge.copyWith(
+                            color: context.ksc.neutral600,
+                            fontWeight: FontWeight.bold),
+                        prefixIcon: Icon(
+                            LineAwesomeIcons.search_solid,
+                            size: 18,
+                            color: context.ksc.neutral600),
+                        isDense: true,
+                        contentPadding:
+                            const EdgeInsets.only(bottom: 8),
+                        enabledBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color(0xFF2A3A4A), width: 1),
                         ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color(0xFF4A90D9), width: 1.5),
+                        ),
+                        border: const UnderlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Color(0xFF2A3A4A)),
+                        ),
+                        filled: false,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // Service list
+                  const SizedBox(height: 16),
+                  // Service list — transparent + border only
                   ConstrainedBox(
                     constraints: BoxConstraints(
                       maxHeight:
@@ -245,7 +244,7 @@ class ServicePickerDropdown extends ConsumerWidget {
                                   selected == type.name;
                               return Padding(
                                 padding:
-                                    const EdgeInsets.only(bottom: 4),
+                                    const EdgeInsets.only(bottom: 8),
                                 child: InkWell(
                                   onTap: () {
                                     onSelected(type.name);
@@ -257,16 +256,15 @@ class ServicePickerDropdown extends ConsumerWidget {
                                             horizontal: 16,
                                             vertical: 14),
                                     decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? context.ksc.accent500
-                                              .withValues(alpha: 0.1)
-                                          : context.ksc.primary900,
+                                      color: Colors.transparent,
                                       borderRadius:
                                           BorderRadius.circular(4),
                                       border: Border.all(
                                         color: isSelected
                                             ? context.ksc.accent500
                                             : context.ksc.primary700,
+                                        width:
+                                            isSelected ? 1.5 : 1.0,
                                       ),
                                     ),
                                     child: Row(

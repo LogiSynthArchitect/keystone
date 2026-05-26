@@ -169,7 +169,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   bool _canMoveForwardForStep(int step) {
     final hasCustomer = _finalCustomerId != null;
     switch (step) {
-      case 0: return _serviceType != null;
+      case 0: return _serviceType != null && _serviceType!.isNotEmpty;
       case 1: return true;
       case 2:
         if (_customerController.text.trim().isEmpty) return false;
