@@ -40,7 +40,7 @@ class ReceiptPdfGenerator {
           children: [
             pw.Text('KEYSTONE', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
             pw.SizedBox(height: 2),
-            pw.Text('P A Y M E N T   R E C E I P T', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.w500, color: PdfColors.grey500, letterSpacing: 2)),
+            pw.Text('P A Y M E N T   R E C E I P T', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
             pw.SizedBox(height: 4),
             pw.Text('#${data.receiptNumber}', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey500)),
             pw.SizedBox(height: 20),

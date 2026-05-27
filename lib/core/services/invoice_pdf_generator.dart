@@ -128,7 +128,7 @@ class InvoicePdfGenerator {
           children: [
             pw.Text('KEYSTONE', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
             pw.SizedBox(height: 4),
-            pw.Text('I N V O I C E', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.w500, color: PdfColors.grey600, letterSpacing: 3)),
+            pw.Text('I N V O I C E', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.normal, color: PdfColors.grey600, letterSpacing: 3)),
           ],
         ),
         pw.Column(
@@ -147,7 +147,7 @@ class InvoicePdfGenerator {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('BILL TO', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.w500, color: PdfColors.grey500, letterSpacing: 2)),
+        pw.Text('BILL TO', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
         pw.SizedBox(height: 8),
         pw.Text(data.customerName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
         pw.SizedBox(height: 2),
@@ -198,7 +198,7 @@ class InvoicePdfGenerator {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('SERVICES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.w500, color: PdfColors.grey500, letterSpacing: 2)),
+        pw.Text('SERVICES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
         pw.SizedBox(height: 8),
         pw.Table(
           border: pw.TableBorder(
@@ -238,7 +238,7 @@ class InvoicePdfGenerator {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('HARDWARE', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.w500, color: PdfColors.grey500, letterSpacing: 2)),
+        pw.Text('HARDWARE', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
         pw.SizedBox(height: 8),
         pw.Table(
           border: pw.TableBorder(
@@ -276,7 +276,7 @@ class InvoicePdfGenerator {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('PARTS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.w500, color: PdfColors.grey500, letterSpacing: 2)),
+        pw.Text('PARTS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
         pw.SizedBox(height: 8),
         pw.Table(
           border: pw.TableBorder(
@@ -347,7 +347,7 @@ class InvoicePdfGenerator {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('PAYMENT STATUS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.w500, color: PdfColors.grey500, letterSpacing: 2)),
+          pw.Text('PAYMENT STATUS', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
           pw.Text(
             data.paymentStatus.toUpperCase().replaceAll('_', ' '),
             style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: statusColor),
