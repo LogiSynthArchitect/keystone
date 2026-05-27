@@ -491,10 +491,10 @@ class _FollowUpButtonState extends ConsumerState<FollowUpButton> {
         message: message,
       );
 
-      ref.read(followUpProvider(widget.job.id).notifier).send(
+      await ref.read(followUpProvider(widget.job.id).notifier).send(
             jobId: widget.job.id,
             customerId: customerId,
-            customerPhone: phoneNumber,
+            messageText: message,
             customerName: customerName,
             technicianName: profile.displayName,
             serviceType: widget.job.serviceType,

@@ -1,5 +1,4 @@
 import '../../../../core/usecases/use_case.dart';
-import '../../../../core/utils/whatsapp_launcher.dart';
 import '../entities/follow_up_entity.dart';
 import '../repositories/follow_up_repository.dart';
 
@@ -7,14 +6,12 @@ class SendFollowupParams {
   final String userId;
   final String jobId;
   final String customerId;
-  final String customerPhone;
   final String messageText;
 
   const SendFollowupParams({
     required this.userId,
     required this.jobId,
     required this.customerId,
-    required this.customerPhone,
     required this.messageText,
   });
 }
@@ -31,12 +28,6 @@ class SendFollowupUsecase implements UseCase<FollowUpEntity, SendFollowupParams>
       return existing;
     }
 
-    // Open WhatsApp
-    await WhatsAppLauncher.openChat(
-      phoneNumber: params.customerPhone,
-      message: params.messageText,
-    );
-
     // Record the follow-up — only persist if jobId is a valid UUID
     final now = DateTime.now();
     final followUp = FollowUpEntity(
@@ -50,9 +41,11 @@ class SendFollowupUsecase implements UseCase<FollowUpEntity, SendFollowupParams>
       createdAt: now,
     );
 
-    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
     if (!uuidRegex.hasMatch(params.jobId)) return followUp;
 
     return _repository.createFollowUp(followUp);
   }
 }
+
+

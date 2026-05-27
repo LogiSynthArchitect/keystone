@@ -90,7 +90,7 @@ class FollowUpNotifier extends StateNotifier<FollowUpState> {
   Future<bool> send({
     required String jobId,
     required String customerId,
-    required String customerPhone,
+    required String messageText,
     required String customerName,
     required String technicianName,
     required String serviceType,
@@ -98,20 +98,13 @@ class FollowUpNotifier extends StateNotifier<FollowUpState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final message = WhatsAppConstants.buildFollowUpMessage(
-        customerName: customerName,
-        technicianName: technicianName,
-        serviceType: serviceType,
-        profileUrl: profileUrl,
-      );
       final followUp = await _sendFollowup(SendFollowupParams(
         userId: _userId,
         jobId: jobId,
         customerId: customerId,
-        customerPhone: customerPhone,
-        messageText: message,
+        messageText: messageText,
       ));
-      state = state.copyWith(isLoading: false, isSent: true, followUp: followUp, previewMessage: message);
+      state = state.copyWith(isLoading: false, isSent: true, followUp: followUp, previewMessage: messageText);
       return true;
     } catch (e) {
 state = state.copyWith(isLoading: false, errorMessage: e.toString());

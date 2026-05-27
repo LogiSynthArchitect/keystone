@@ -1,43 +1,30 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 import 'package:keystone/features/whatsapp_followup/domain/usecases/send_followup_usecase.dart';
 import 'package:keystone/features/whatsapp_followup/domain/entities/follow_up_entity.dart';
 import '../../../../helpers/mocks.dart';
 
 class FakeFollowUp extends Fake implements FollowUpEntity {}
-class FakeLaunchOptions extends Fake implements LaunchOptions {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late SendFollowupUsecase usecase;
   late MockFollowUpRepository mockRepository;
-  late MockUrlLauncher mockUrlLauncher;
 
   setUpAll(() {
     registerFallbackValue(FakeFollowUp());
-    registerFallbackValue(FakeLaunchOptions());
-    mockUrlLauncher = MockUrlLauncher();
-    UrlLauncherPlatform.instance = mockUrlLauncher;
   });
 
   setUp(() {
     mockRepository = MockFollowUpRepository();
     usecase = SendFollowupUsecase(mockRepository);
-
-    // Default mock behavior for url_launcher
-    when(() => mockUrlLauncher.canLaunch(any()))
-        .thenAnswer((_) async => true);
-    when(() => mockUrlLauncher.launchUrl(any(), any()))
-        .thenAnswer((_) async => true);
   });
 
   const validParams = SendFollowupParams(
     userId: 'user-123',
     jobId: '550e8400-e29b-41d4-a716-446655440000',
     customerId: 'customer-123',
-    customerPhone: '+233244123456',
     messageText: 'Hello Kwame, thank you for choosing our service today.',
   );
 
@@ -89,7 +76,6 @@ void main() {
         userId: 'user-123',
         jobId: 'local-temp-id-not-uuid',
         customerId: 'customer-123',
-        customerPhone: '+233244123456',
         messageText: 'Hello Kwame, thank you for choosing our service today.',
       );
 
