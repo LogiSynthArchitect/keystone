@@ -1,21 +1,30 @@
 import 'package:url_launcher/url_launcher.dart';
 import '../errors/network_exception.dart';
+import 'phone_formatter.dart';
 
 class WhatsAppLauncher {
   WhatsAppLauncher._();
 
+  /// Opens WhatsApp chat with the given phone and message.
+  ///
+  /// [phoneNumber] can be in any common format:
+  ///   - International: `+233241234567`
+  ///   - Local: `0241234567`
+  ///   - Bare: `233241234567`
+  ///
+  /// If the number starts with `+`, it's used as-is (supports any country).
+  /// Otherwise, [PhoneFormatter.normalize] converts Ghana formats to `+233...`.
+  /// The leading `+` is stripped for the `wa.me` URL (digits only).
   static Future<bool> openChat({
     required String phoneNumber,
     required String message,
   }) async {
-    // Phone must be in international format (e.g. +233241234567).
-    // All customer phones are normalized by PhoneFormatter.normalize() on creation.
-    // We strip the leading '+' because wa.me expects digits only (e.g. wa.me/233241234567).
-    assert(
-      phoneNumber.startsWith('+'),
-      'WhatsAppLauncher.openChat: phone must be in international format (starts with +). Got: $phoneNumber',
-    );
-    final cleanPhone = phoneNumber.replaceAll('+', '');
+    // Already in international format — use as-is (supports non-Ghana numbers too).
+    // Otherwise, normalize through PhoneFormatter (Ghana formats only).
+    final normalized = phoneNumber.startsWith('+')
+        ? phoneNumber
+        : PhoneFormatter.normalize(phoneNumber);
+    final cleanPhone = normalized.replaceAll('+', '');
     final url = Uri.parse(
       'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}',
     );
