@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/utils/phone_formatter.dart';
+import '../../../../core/utils/whatsapp_launcher.dart';
 import '../providers/public_profile_provider.dart';
 
 class PublicProfileScreen extends ConsumerWidget {
@@ -26,15 +28,22 @@ class PublicProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _openWhatsApp(String number) async {
-    final cleaned = number.replaceAll(RegExp(r'[^0-9]'), '');
-    final uri = Uri.parse('https://wa.me/$cleaned');
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      final normalized = PhoneFormatter.normalize(number);
+      await WhatsAppLauncher.openChat(phoneNumber: normalized, message: 'Hello from Keystone Services.');
+    } catch (_) {
+      // WhatsApp not installed or invalid number — silently handled
+    }
   }
 
   Future<void> _callPhone(String number) async {
-    final cleaned = number.replaceAll(RegExp(r'[^0-9+]'), '');
-    final uri = Uri.parse('tel:$cleaned');
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      final normalized = PhoneFormatter.normalize(number);
+      final uri = Uri.parse('tel:$normalized');
+      if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // Invalid number format — silently handled
+    }
   }
 
   @override

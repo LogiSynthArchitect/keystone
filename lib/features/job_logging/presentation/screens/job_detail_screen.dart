@@ -36,6 +36,12 @@ import 'package:keystone/features/note_links/presentation/providers/note_link_pr
 import 'package:keystone/features/whatsapp_followup/presentation/widgets/follow_up_button.dart';
 import 'package:keystone/features/whatsapp_followup/presentation/widgets/follow_up_message_preview.dart';
 import 'package:keystone/core/providers/permissions_provider.dart';
+import 'package:keystone/core/utils/whatsapp_launcher.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+/// Tracks customer IDs that have been warned about WhatsApp registration.
+/// Prevents showing the info toast more than once per customer per session.
+final Set<String> _warnedWhatsAppCustomers = {};
 
 class JobDetailScreen extends ConsumerWidget {
   final String jobId;
@@ -136,7 +142,7 @@ class JobDetailScreen extends ConsumerWidget {
 
                       _buildSectionHeader(context, "CUSTOMER"),
                       // ✅ 4. Customer card + quick actions
-                      _buildCustomerModule(context, ref, job.customerId),
+                      _buildCustomerModule(context, ref, job.customerId, job),
                       const SizedBox(height: 32),
 
                       _buildServicesSection(context, ref, job),
@@ -629,7 +635,7 @@ class JobDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCustomerModule(BuildContext context, WidgetRef ref, String customerId) {
+  Widget _buildCustomerModule(BuildContext context, WidgetRef ref, String customerId, JobEntity job) {
     final customerAsync = ref.watch(customerDetailProvider(customerId));
     return customerAsync.when(
       loading: () => Container(height: 80).animate().shimmer(),
@@ -683,24 +689,60 @@ class JobDetailScreen extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: _quickActionBtn(context, LineAwesomeIcons.phone_solid, "CALL", context.ksc.success500, () {
+                  child: _quickActionBtn(context, LineAwesomeIcons.phone_solid, "CALL", context.ksc.success500, () async {
                     final phone = customer.phoneNumber;
                     if (phone != null && phone.isNotEmpty) {
-                      // Launch phone dialer via url_launcher
+                      final cleaned = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+                      final uri = Uri.parse('tel:$cleaned');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
                     }
                   }),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _quickActionBtn(context, LineAwesomeIcons.whatsapp, "WHATSAPP", const Color(0xFF25D366), () {
-                    // Open WhatsApp
+                  child: _quickActionBtn(context, LineAwesomeIcons.whatsapp, "WHATSAPP", const Color(0xFF25D366), () async {
+                    final phone = customer.phoneNumber;
+                    if (phone != null && phone.isNotEmpty) {
+                      // Show one-time info toast before redirecting to WhatsApp
+                      if (!_warnedWhatsAppCustomers.contains(customer.id)) {
+                        _warnedWhatsAppCustomers.add(customer.id);
+                        if (context.mounted) {
+                          KsSlidingNotification.show(
+                            context,
+                            message: "If this person doesn't appear in WhatsApp, they may not be on WhatsApp.",
+                            type: KsNotificationType.info,
+                          );
+                        }
+                      }
+                      try {
+                        await WhatsAppLauncher.openChat(
+                          phoneNumber: phone,
+                          message: 'Hello from Keystone Services.',
+                        );
+                      } catch (_) {
+                        // WhatsApp not installed — handled by WhatsAppLauncher
+                      }
+                    }
                   }),
                 ),
-                if (customer.location != null && customer.location!.isNotEmpty) ...[
+                if (customer.location != null && customer.location!.isNotEmpty || job.hasCoordinates) ...[
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _quickActionBtn(context, LineAwesomeIcons.map_marker_solid, "NAVIGATE", context.ksc.accent500, () {
-                      // Open maps
+                    child: _quickActionBtn(context, LineAwesomeIcons.map_marker_solid, "NAVIGATE", context.ksc.accent500, () async {
+                      if (job.hasCoordinates) {
+                        final uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}');
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      } else if (customer.location != null && customer.location!.isNotEmpty) {
+                        final query = Uri.encodeComponent(customer.location!);
+                        final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      }
                     }),
                   ),
                 ],
