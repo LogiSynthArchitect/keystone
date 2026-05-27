@@ -80,6 +80,16 @@ class LogJobUsecase implements UseCase<JobEntity, LogJobParams> {
       );
     }
 
+    // Validation: Payment status must be valid for job status
+    final paymentErr = JobEntity.validatePaymentForStatus(params.status, params.paymentStatus);
+    if (paymentErr != null) {
+      throw ValidationException(
+        message: paymentErr,
+        code: 'INVALID_PAYMENT_FOR_STATUS',
+        field: 'payment_status',
+      );
+    }
+
     final now = DateTime.now();
     final job = JobEntity(
       id: const Uuid().v4(),

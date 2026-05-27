@@ -1,305 +1,249 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/widgets/ks_badge.dart';
 import '../../../../core/widgets/sync_status_indicator.dart';
-import '../../../../core/widgets/cover_image_widget.dart';
 import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
 
+/// Job list card — info only, no action buttons.
+///
+/// Layout: left accent → [icon box | service + name + meta | amount] → badge row
 class JobCard extends StatelessWidget {
   final JobEntity job;
   final CustomerEntity? customer;
   final VoidCallback? onTap;
-  final VoidCallback? onShareInvoice;
 
-  const JobCard({super.key, required this.job, this.customer, this.onTap, this.onShareInvoice});
+  const JobCard({super.key, required this.job, this.customer, this.onTap});
 
-  IconData _serviceIcon(String type) {
-    switch (type) {
-      case 'car_lock_programming':    return LineAwesomeIcons.car_solid;
-      case 'door_lock_installation':  return LineAwesomeIcons.door_closed_solid;
-      case 'door_lock_repair':        return LineAwesomeIcons.tools_solid;
-      case 'smart_lock_installation': return LineAwesomeIcons.lock_solid;
-      default:                        return LineAwesomeIcons.tools_solid;
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'quoted':       return const Color(0xFFC8A84E);
+      case 'in_progress':  return const Color(0xFF6BB5FF);
+      case 'completed':    return const Color(0xFF4CAF50);
+      case 'invoiced':     return const Color(0xFFB388FF);
+      default:             return const Color(0xFF4A5A6A);
     }
   }
 
-  String _serviceLabel(String type) {
-    return type.replaceAll('_', ' ').toUpperCase();
+  KsBadgeVariant _badgeVariant(String status) {
+    switch (status) {
+      case 'completed': return KsBadgeVariant.success;
+      case 'invoiced':  return KsBadgeVariant.success;
+      case 'quoted':    return KsBadgeVariant.info;
+      case 'in_progress': return KsBadgeVariant.neutral;
+      default:          return KsBadgeVariant.neutral;
+    }
+  }
+
+  KsBadgeVariant _paymentVariant(String status) {
+    switch (status) {
+      case 'paid':    return KsBadgeVariant.success;
+      case 'partial': return KsBadgeVariant.warning;
+      default:        return KsBadgeVariant.error;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final accentColor = _statusColor(job.status);
+
+    // Resolve service icon from service type name via icon mapping
+    final serviceIcon = _inferIcon(job.serviceType);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: context.ksc.primary700),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CoverImageWidget(
-              imageUrl: job.coverImageUrl,
-              fallbackIcon: _serviceIcon(job.serviceType),
-              height: 100,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top row: icon + info + amount
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _serviceLabel(job.serviceType),
-                          style: AppTextStyles.caption.copyWith(
-                            color: context.ksc.white,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                      SyncStatusIndicator(status: job.syncStatus, size: 14),
-                      const SizedBox(width: 8),
-                      Text(
-                        DateFormatter.short(job.jobDate).toUpperCase(),
-                        style: AppTextStyles.caption.copyWith(
-                          color: context.ksc.neutral400,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (customer != null)
-                              Text(
-                                customer?.fullName.toUpperCase() ?? "DELETED CUSTOMER",
-                                style: AppTextStyles.h2.copyWith(
-                                  color: context.ksc.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            const SizedBox(height: 4),
-                            if (job.hasLocation)
-                              Row(
-                                children: [
-                                  Icon(LineAwesomeIcons.map_marker_solid, size: 14, color: context.ksc.accent500),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      job.location!.toUpperCase(),
-                                      style: AppTextStyles.caption.copyWith(
-                                        color: context.ksc.neutral400,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (job.hasAmount)
-                        Text(
-                          CurrencyFormatter.formatShort(job.amountCharged!),
-                          style: AppTextStyles.h1.copyWith(
-                            color: context.ksc.white,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                            fontFeatures: [const FontFeature.tabularFigures()],
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildStatusBadge(job.status),
-                      const SizedBox(width: 8),
-                      _buildPaymentBadge(job.paymentStatus),
-                    ],
-                  ),
-
-                  if (customer != null) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _quickActionButton(
-                          context: context,
-                          icon: LineAwesomeIcons.phone_solid,
-                          tooltip: 'Call ${customer!.fullName}',
-                          onTap: () => launchUrl(Uri.parse('tel:${customer!.phoneNumber}'), mode: LaunchMode.externalApplication),
-                        ),
-                        const SizedBox(width: 8),
-                        _quickActionButton(
-                          context: context,
-                          icon: Icons.chat,
-                          tooltip: 'WhatsApp ${customer!.fullName}',
-                          onTap: () => WhatsAppLauncher.openChat(phoneNumber: customer!.phoneNumber, message: 'Hi ${customer!.fullName},'),
-                        ),
-                        if (job.hasCoordinates)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: _quickActionButton(
-                              context: context,
-                              icon: LineAwesomeIcons.location_arrow_solid,
-                              tooltip: 'Navigate',
-                              onTap: () => launchUrl(
-                                Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}'),
-                                mode: LaunchMode.externalApplication,
-                              ),
-                            ),
-                          ),
-                        const Spacer(),
-                        _quickActionButton(
-                          context: context,
-                          icon: LineAwesomeIcons.file_invoice_solid,
-                          tooltip: 'Share invoice',
-                          onTap: onShareInvoice ?? () {},
-                        ),
-                      ],
+                  // Icon box
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
-
-                  if (job.followUpSent || job.syncStatus == SyncStatus.failed) ...[
-                    const SizedBox(height: 16),
-                    Divider(color: context.ksc.primary700, height: 1),
-                    const SizedBox(height: 12),
-                    Column(
+                    child: Icon(serviceIcon, size: 18, color: accentColor),
+                  ),
+                  const SizedBox(width: 12),
+                  // Service + name + meta
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Service type label
+                        Text(
+                          job.serviceType.replaceAll('_', ' ').toUpperCase(),
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.neutral500,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9,
+                            letterSpacing: 0.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        // Customer name
+                        if (customer != null)
+                          Text(
+                            customer!.fullName,
+                            style: AppTextStyles.body.copyWith(
+                              color: context.ksc.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        const SizedBox(height: 4),
+                        // Meta: date + location
                         Row(
                           children: [
-                            if (job.followUpSent)
-                              _CustomBadge(
-                                label: "WHATSAPP OPENED",
-                                color: context.ksc.success500,
-                                icon: LineAwesomeIcons.check_circle_solid,
-                              ),
-                            if (job.syncStatus == SyncStatus.failed)
-                              _CustomBadge(
-                                label: "SAVE FAILED",
-                                color: context.ksc.error500,
-                                icon: LineAwesomeIcons.exclamation_circle_solid,
-                              ),
-                          ],
-                        ),
-                        if (job.syncStatus == SyncStatus.failed && job.syncErrorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              job.syncErrorMessage!.toUpperCase(),
+                            Text(
+                              DateFormatter.short(job.jobDate),
                               style: AppTextStyles.caption.copyWith(
-                                color: context.ksc.error500,
+                                color: context.ksc.neutral500,
                                 fontSize: 9,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
+                            if (job.hasLocation) ...[
+                              const SizedBox(width: 6),
+                              Icon(LineAwesomeIcons.map_marker_solid, size: 10, color: context.ksc.neutral500),
+                              const SizedBox(width: 2),
+                              Flexible(
+                                child: Text(
+                                  job.location!,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: context.ksc.neutral500,
+                                    fontSize: 9,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(width: 6),
+                            SyncStatusIndicator(status: job.syncStatus, size: 10),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 8),
+                  // Amount
+                  if (job.hasAmount)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          CurrencyFormatter.formatShort(job.amountCharged!),
+                          style: AppTextStyles.body.copyWith(
+                            color: context.ksc.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text("AMOUNT",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.neutral500,
+                            fontSize: 7,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              // Badge row
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  KsBadge(
+                    label: job.status.replaceAll('_', ' ').toUpperCase(),
+                    variant: _badgeVariant(job.status),
+                  ),
+                  KsBadge(
+                    label: job.paymentStatus.toUpperCase(),
+                    variant: _paymentVariant(job.paymentStatus),
+                  ),
+                  if (job.followUpSent)
+                    KsBadge(
+                      label: 'WHATSAPP',
+                      variant: KsBadgeVariant.success,
+                      icon: LineAwesomeIcons.check_circle_solid,
+                    ),
+                  if (job.syncStatus == SyncStatus.failed)
+                    KsBadge(
+                      label: 'SAVE FAILED',
+                      variant: KsBadgeVariant.error,
+                      icon: LineAwesomeIcons.exclamation_circle_solid,
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    String label = status.replaceAll('_', ' ').toUpperCase();
-    KsBadgeVariant variant = KsBadgeVariant.neutral;
-    if (status == 'completed' || status == 'invoiced') variant = KsBadgeVariant.success;
-    if (status == 'quoted') variant = KsBadgeVariant.info;
-    return KsBadge(label: label, variant: variant);
-  }
-
-  Widget _buildPaymentBadge(String status) {
-    String label = status.toUpperCase();
-    KsBadgeVariant variant = KsBadgeVariant.error;
-    if (status == 'paid') variant = KsBadgeVariant.success;
-    if (status == 'partial') variant = KsBadgeVariant.warning;
-    return KsBadge(label: label, variant: variant);
-  }
-
-  Widget _quickActionButton({required BuildContext context, required IconData icon, required String tooltip, required VoidCallback onTap}) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: context.ksc.primary700,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 16, color: context.ksc.neutral300),
-        ),
-      ),
-    );
-  }
-}
-
-class _CustomBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-  final IconData icon;
-
-  const _CustomBadge({required this.label, required this.color, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(2),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 10, color: color),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: AppTextStyles.caption.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-              fontSize: 10,
-            ),
-          ),
-        ]
-      ),
-    );
+  /// Map service type slug to an appropriate icon.
+  /// Covers known service types; falls back to tools icon.
+  IconData _inferIcon(String type) {
+    switch (type) {
+      case 'cctv_installation':
+      case 'cctv':
+        return LineAwesomeIcons.video_solid;
+      case 'electric_fence_installation':
+      case 'electric_fence':
+        return LineAwesomeIcons.bolt_solid;
+      case 'intercom_systems':
+      case 'intercom':
+        return LineAwesomeIcons.phone_volume_solid;
+      case 'eviction_services':
+      case 'eviction':
+        return LineAwesomeIcons.shield_alt_solid;
+      case 'ignition_repair':
+      case 'ignition':
+        return LineAwesomeIcons.car_solid;
+      case 'burglar_alarms':
+      case 'alarm':
+        return LineAwesomeIcons.bell_solid;
+      case 'car_lock_programming':
+      case 'key_programming':
+        return LineAwesomeIcons.key_solid;
+      case 'door_lock_installation':
+      case 'door_installation':
+        return LineAwesomeIcons.door_closed_solid;
+      case 'door_lock_repair':
+      case 'door_repair':
+        return LineAwesomeIcons.tools_solid;
+      case 'smart_lock_installation':
+      case 'smart_lock':
+        return LineAwesomeIcons.lock_solid;
+      default:
+        return LineAwesomeIcons.tools_solid;
+    }
   }
 }

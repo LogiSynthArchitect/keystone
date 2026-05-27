@@ -10,7 +10,7 @@ void main() {
   late MockJobRepository mockRepository;
 
   final now = DateTime.now();
-  final updatedJob = JobEntity(
+  final existingJob = JobEntity(
     id: 'job-1',
     userId: 'user-1',
     customerId: 'cust-1',
@@ -19,11 +19,13 @@ void main() {
     followUpSent: false,
     syncStatus: SyncStatus.pending,
     isArchived: false,
-    paymentStatus: 'paid',
-    paymentMethod: 'cash',
+    status: 'completed',
+    paymentStatus: 'unpaid',
     createdAt: now,
     updatedAt: now,
   );
+
+  final updatedJob = existingJob.copyWith(paymentStatus: 'paid', paymentMethod: 'cash');
 
   setUp(() {
     mockRepository = MockJobRepository();
@@ -31,6 +33,7 @@ void main() {
   });
 
   test('delegates to repository.updatePaymentStatus with correct params', () async {
+    when(() => mockRepository.getJobById('job-1')).thenAnswer((_) async => existingJob);
     when(() => mockRepository.updatePaymentStatus('job-1', 'paid', 'cash', 'user-1'))
         .thenAnswer((_) async => updatedJob);
 
@@ -42,12 +45,14 @@ void main() {
     ));
 
     expect(result.paymentStatus, equals('paid'));
+    verify(() => mockRepository.getJobById('job-1')).called(1);
     verify(() => mockRepository.updatePaymentStatus('job-1', 'paid', 'cash', 'user-1')).called(1);
   });
 
   test('passes null paymentMethod when not provided', () async {
+    when(() => mockRepository.getJobById('job-1')).thenAnswer((_) async => existingJob);
     when(() => mockRepository.updatePaymentStatus('job-1', 'unpaid', null, 'user-1'))
-        .thenAnswer((_) async => updatedJob.copyWith(paymentStatus: 'unpaid'));
+        .thenAnswer((_) async => existingJob);
 
     await usecase(const UpdatePaymentStatusParams(
       jobId: 'job-1',
@@ -55,12 +60,41 @@ void main() {
       editedBy: 'user-1',
     ));
 
+    verify(() => mockRepository.getJobById('job-1')).called(1);
     verify(() => mockRepository.updatePaymentStatus('job-1', 'unpaid', null, 'user-1')).called(1);
   });
 
   test('propagates exception from repository', () async {
+    when(() => mockRepository.getJobById('job-1')).thenAnswer((_) async => existingJob);
     when(() => mockRepository.updatePaymentStatus(any(), any(), any(), any()))
         .thenThrow(Exception('network error'));
+
+    expect(
+      () => usecase(const UpdatePaymentStatusParams(
+        jobId: 'job-1',
+        paymentStatus: 'paid',
+        editedBy: 'user-1',
+      )),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('throws when job not found', () async {
+    when(() => mockRepository.getJobById('job-1')).thenAnswer((_) async => null);
+
+    expect(
+      () => usecase(const UpdatePaymentStatusParams(
+        jobId: 'job-1',
+        paymentStatus: 'paid',
+        editedBy: 'user-1',
+      )),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('throws when payment status not allowed for current job status', () async {
+    final quotedJob = existingJob.copyWith(status: 'quoted', paymentStatus: 'unpaid');
+    when(() => mockRepository.getJobById('job-1')).thenAnswer((_) async => quotedJob);
 
     expect(
       () => usecase(const UpdatePaymentStatusParams(

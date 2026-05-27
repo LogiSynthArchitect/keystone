@@ -12,6 +12,7 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../providers/profile_provider.dart';
 import '../../domain/entities/profile_entity.dart';
 
@@ -101,19 +102,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ctx.ksc.primary800,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h2.copyWith(color: ctx.ksc.white)),
-        content: Text('You have unsaved changes. Leave anyway?', style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral300)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true),
-              child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: ctx.ksc.error500))),
-        ],
-      ),
+    return await KsConfirmDialog.show(
+      context,
+      title: 'DISCARD CHANGES?',
+      message: 'You have unsaved changes. Leave anyway?',
+      confirmLabel: 'DISCARD',
+      cancelLabel: 'KEEP EDITING',
+      isDanger: true,
+      onConfirm: () {},
     ) ?? false;
   }
 

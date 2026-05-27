@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Job Record — Redesign Mockup</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#fff;padding:32px;max-width:1100px;margin:0 auto}
+h1{font-weight:900;font-size:22px;margin-bottom:4px;color:#F4A300;letter-spacing:0.3px}
+.subtitle{color:#8899AA;font-size:13px;margin-bottom:28px}
+
+/* ── Phone chassis ── */
+.phone-row{display:flex;gap:32px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+
+.phone{width:350px;min-height:700px;background:#0D1117;border-radius:24px;border:2px solid #1E2A3A;overflow:hidden;position:relative;flex-shrink:0}
+.phone-notch{height:28px;background:#0D1117;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #1E2A3A}
+.phone-notch div{width:120px;height:5px;background:#1E2A3A;border-radius:3px}
+
+/* App Bar */
+.top-bar{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1E2A3A;background:#0A1628}
+.top-bar .back{color:#556677;font-size:18px;width:28px;cursor:default}
+.top-bar .title{font-size:13px;font-weight:900;color:#fff;letter-spacing:0.5px;flex:1}
+.top-bar .action{font-size:16px;width:28px;text-align:center;cursor:default}
+
+/* Body */
+.body{padding:16px}
+
+/* Current version */
+.cur-section{margin-bottom:20px}
+.cur-section .label{font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+
+.cur-header{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.cur-header .icon-box{width:40px;height:40px;border-radius:8px;background:#F4A30015;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.cur-header .icon-box.lock-icon{color:#F4A300}
+.cur-header .info{flex:1}
+.cur-header .info .name{font-size:14px;font-weight:900;color:#fff;letter-spacing:0.3px}
+.cur-header .info .date{font-size:10px;color:#556677;font-weight:700;margin-top:2px}
+.cur-header .sync{font-size:14px;color:#4ADE80}
+
+.badges{display:flex;gap:8px;margin-bottom:8px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:0.3px}
+.badge.info{background:#6BB5FF20;color:#6BB5FF;border:1px solid #6BB5FF40}
+.badge.success{background:#4ADE8020;color:#4ADE80;border:1px solid #4ADE8040}
+
+/* Meta chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.chip{display:flex;align-items:center;gap:4px;padding:4px 8px;border:1px solid #1E2A3A;border-radius:4px;font-size:8px;color:#556677;font-weight:700}
+
+/* Section cards */
+.card{border:1px solid #1E2A3A;border-radius:10px;padding:16px;margin-bottom:12px}
+
+.fin-row{display:flex;justify-content:space-between;padding:4px 0}
+.fin-row .flabel{font-size:10px;color:#556677;font-weight:800;letter-spacing:0.5px}
+.fin-row .fval{font-size:12px;color:#fff;font-weight:700}
+.fin-row .fval.dim{color:#556677}
+.fin-row .fval.big{font-size:18px;font-weight:900}
+.fin-row .fval.green{color:#4ADE80}
+.divider{height:1px;background:#1E2A3A;margin:8px 0}
+
+.customer-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #1E2A3A;border-radius:10px}
+.customer-card .avatar{width:40px;height:40px;border-radius:10px;border:1px solid #1E2A3A;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#F4A300;background:#0A1628}
+.customer-card .cinfo{flex:1}
+.customer-card .cname{font-size:12px;font-weight:800;color:#fff;letter-spacing:0.3px}
+.customer-card .cphone{font-size:10px;color:#556677;margin-top:2px}
+.customer-card .cactions{display:flex;gap:6px}
+.customer-card .cactions div{width:32px;height:32px;border:1px solid #1E2A3A;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:default}
+
+/* Old style list items */
+.list-item{border:1px solid #1E2A3A;border-radius:10px;padding:12px 16px;margin-bottom:6px}
+.list-item .lrow{display:flex;justify-content:space-between;align-items:center}
+.list-item .lname{font-size:11px;font-weight:700;color:#fff}
+.list-item .lqty{font-size:11px;color:#556677}
+.list-item .lprice{font-size:11px;color:#F4A300;font-weight:900}
+.list-item .lsub{font-size:9px;color:#556677;margin-top:2px}
+
+/* ── NEW VERSION (right phone) ── */
+.new-section{margin-bottom:16px}
+.new-section .label{font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+
+.new-header{display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
+.new-header .icon-box{width:40px;height:40px;border-radius:8px;background:#F4A30015;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.new-header .info{flex:1}
+.new-header .info .name{font-size:14px;font-weight:900;color:#fff;letter-spacing:0.3px}
+.new-header .info .date{font-size:10px;color:#556677;font-weight:700;margin-top:2px}
+.new-header .sync{font-size:14px;color:#4ADE80}
+
+/* Summary strip */
+.summary-strip{display:flex;gap:4px;margin:8px 0 14px;overflow-x:auto;padding-bottom:4px}
+.summary-chip{display:flex;align-items:center;gap:4px;padding:4px 10px;background:#111D2E;border:1px solid #1E2A3A;border-radius:16px;font-size:9px;color:#CCD6E0;font-weight:700;white-space:nowrap;flex-shrink:0}
+.summary-chip .ico{font-size:10px}
+
+/* Financials with profit */
+.profit-card{border:1px solid #1E2A3A;border-radius:10px;padding:16px;margin-bottom:12px}
+.profit-card .pheader{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.profit-card .pheader .plabel{font-size:9px;color:#556677;font-weight:800;letter-spacing:0.5px}
+.profit-card .pheader .pvalue{font-size:20px;font-weight:900;color:#4ADE80}
+.profit-card .prows{margin-top:8px}
+.profit-card .prow{display:flex;justify-content:space-between;padding:3px 0}
+.profit-card .prow .pl{font-size:10px;color:#556677}
+.profit-card .prow .pv{font-size:10px;color:#CCD6E0;font-weight:600}
+
+/* Items Used section - unified */
+.items-used-grid{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.items-used-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #1E2A3A;border-radius:6px}
+.items-used-item .dot{width:6px;height:6px;border-radius:3px;flex-shrink:0}
+.items-used-item .dot.parts{background:#6BB5FF}
+.items-used-item .dot.hw{background:#F4A300}
+.items-used-item .exp{flex:1;font-size:10px;font-weight:700;color:#CCD6E0}
+.items-used-item .qty{font-size:9px;color:#556677;margin-right:6px}
+.items-used-item .amt{font-size:10px;font-weight:800;color:#F4A300}
+
+/* Expense with total */
+.expense-total{text-align:right;font-size:11px;font-weight:800;color:#F4A300;padding:6px 0 0;border-top:1px solid #1E2A3A;margin-top:6px}
+
+/* Customer with actions */
+.cust-actions{display:flex;gap:6px;margin-top:8px}
+.cust-action-btn{flex:1;padding:8px;border:1px solid #1E2A3A;border-radius:6px;text-align:center;font-size:9px;font-weight:700;color:#CCD6E0;cursor:default}
+.cust-action-btn.call{color:#4ADE80;border-color:#4ADE8040}
+.cust-action-btn.wa{color:#4ADE80;border-color:#4ADE8040}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:8px;font-weight:800;text-transform:uppercase;margin-left:6px;vertical-align:middle}
+.tag.new{background:#1A2A4A;color:#6BA3FF;border:1px solid #6BA3FF40}
+.tag.fix{background:#1A3A2A;color:#4ADE80;border:1px solid #4ADE8040}
+
+.arrow-col{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#556677;padding:0 4px;flex-shrink:0;width:36px}
+.arrow-col .arr{font-size:28px;line-height:1}
+.arrow-col .lbl{font-size:7px;font-weight:700;text-transform:uppercase;margin-top:2px;letter-spacing:0.2px}
+</style>
+</head>
+<body>
+
+<h1>📋 Job Record — Current vs Proposed</h1>
+<p class="subtitle">Same data, better organization. No new features — just smarter use of what's already there.</p>
+
+<div class="phone-row">
+
+  <!-- ═══ CURRENT ═══ -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="top-bar">
+      <span class="back">‹</span>
+      <span class="title">JOB RECORD</span>
+      <span class="action">✎</span>
+      <span class="action">🗑</span>
+    </div>
+    <div class="body">
+
+      <!-- Header -->
+      <div class="cur-header">
+        <div class="icon-box lock-icon">🔒</div>
+        <div class="info">
+          <div class="name">DOOR LOCK INSTALL</div>
+          <div class="date">22 MAY 2026</div>
+        </div>
+        <div class="sync">✓</div>
+      </div>
+
+      <!-- Status -->
+      <div class="badges">
+        <div class="badge info">QUOTED</div>
+        <div class="badge success">PAID</div>
+      </div>
+
+      <!-- Meta -->
+      <div class="chips">
+        <div class="chip">📍 East Legon</div>
+      </div>
+
+      <!-- Financials -->
+      <div class="card">
+        <div class="fin-row"><span class="flabel">QUOTED</span><span class="fval dim">GHS 450.00</span></div>
+        <div class="divider"></div>
+        <div class="fin-row"><span class="flabel">FINAL CHARGE</span><span class="fval big">GHS 420.00</span></div>
+        <div style="margin-top:6px;font-size:9px;color:#556677;text-align:right;font-weight:700">VIA MOBILE MONEY</div>
+      </div>
+
+      <!-- Customer -->
+      <div class="customer-card" style="margin-bottom:12px">
+        <div class="avatar">E</div>
+        <div class="cinfo">
+          <div class="cname">EMMANUEL MENSAH</div>
+          <div class="cphone">024 123 4567</div>
+        </div>
+        <div>›</div>
+      </div>
+
+      <!-- Parts (separate) -->
+      <div class="new-section">
+        <div class="label">Parts</div>
+        <div class="list-item">
+          <div class="lrow"><span class="lname">Yale 210 Deadbolt</span><span class="lqty">1x</span><span class="lprice">GHS 180</span></div>
+        </div>
+        <div class="list-item">
+          <div class="lrow"><span class="lname">Strike Plate</span><span class="lqty">1x</span><span class="lprice">—</span></div>
+        </div>
+      </div>
+
+      <!-- Hardware (separate) -->
+      <div class="new-section">
+        <div class="label">Hardware</div>
+        <div class="list-item">
+          <div class="lrow"><span class="lname">Guardian GS-300</span><span class="lqty">1x</span><span class="lprice">GHS 250</span></div>
+          <div class="lsub">Gate Lock · KEY: SC1 · Steel</div>
+        </div>
+      </div>
+
+      <!-- Expenses (separate, no total) -->
+      <div class="new-section">
+        <div class="label">Expenses</div>
+        <div class="list-item">
+          <div class="lrow"><span class="lname">🚕 Transport</span><span class="lprice">GHS 25</span></div>
+          <div class="lsub">Troski fare to East Legon</div>
+        </div>
+      </div>
+
+      <!-- Photos -->
+      <div class="new-section">
+        <div class="label">Photos (2)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="aspect-ratio:1;background:#111D2E;border:1px solid #1E2A3A;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>
+          <div style="aspect-ratio:1;background:#111D2E;border:1px solid #1E2A3A;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="new-section">
+        <div class="label">Notes</div>
+        <div style="border:1px solid #1E2A3A;border-radius:10px;padding:12px;font-size:10px;color:#8899AA;line-height:1.6">
+          Customer wants follow-up on key duplication pricing. Gate lock installed but needs additional security bar.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ ARROW ═══ -->
+  <div class="arrow-col">
+    <div class="arr">➡</div>
+    <div class="lbl">same data</div>
+  </div>
+
+  <!-- ═══ PROPOSED ═══ -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="top-bar">
+      <span class="back">‹</span>
+      <span class="title">JOB RECORD</span>
+      <span class="action">✎</span>
+      <span class="action">🗑</span>
+    </div>
+    <div class="body">
+
+      <!-- New Header with summary strip -->
+      <div class="new-header">
+        <div class="icon-box lock-icon">🔒</div>
+        <div class="info">
+          <div class="name">DOOR LOCK INSTALL</div>
+          <div class="date">22 MAY 2026</div>
+        </div>
+        <div class="sync">✓</div>
+      </div>
+
+      <div class="badges">
+        <div class="badge info">QUOTED</div>
+        <div class="badge success">PAID</div>
+      </div>
+
+      <!-- ✅ NEW: Summary strip — instant overview -->
+      <div class="summary-strip">
+        <div class="summary-chip"><span class="ico">📦</span> 3 items</div>
+        <div class="summary-chip"><span class="ico">💰</span> 1 expense</div>
+        <div class="summary-chip"><span class="ico">📷</span> 2 photos</div>
+        <div class="summary-chip"><span class="ico">📝</span> 1 note</div>
+        <div class="summary-chip"><span class="ico">📋</span> 2 linked notes</div>
+      </div>
+
+      <!-- ✅ NEW: Financials + gross profit -->
+      <div class="profit-card">
+        <div class="pheader">
+          <span class="plabel">GROSS PROFIT</span>
+          <span class="pvalue">GHS 155</span>
+        </div>
+        <div style="height:4px;background:#1E2A3A;border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:65%;background:#4ADE80;border-radius:2px"></div>
+        </div>
+        <div class="prows">
+          <div class="prow"><span class="pl">Revenue (final charge)</span><span class="pv">GHS 420</span></div>
+          <div class="prow"><span class="pl">Cost of goods</span><span class="pv" style="color:#FF6B6B">− GHS 265</span></div>
+          <div class="prow"><span class="pl" style="padding-left:12px;color:#556677">Parts (GHS 180) + Hardware (GHS 250)</span><span class="pv" style="color:#556677;font-size:9px">GHS 430</span></div>
+          <div class="prow"><span class="pl" style="padding-left:12px;color:#556677">Less: Expenses</span><span class="pv" style="color:#556677;font-size:9px">− GHS 25</span></div>
+        </div>
+      </div>
+
+      <!-- Customer with action buttons -->
+      <div style="margin-bottom:12px">
+        <div class="label" style="font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;margin-bottom:6px">Customer</div>
+        <div class="customer-card" style="margin-bottom:0;border-radius:10px 10px 0 0;border-bottom:none">
+          <div class="avatar">E</div>
+          <div class="cinfo">
+            <div class="cname">EMMANUEL MENSAH</div>
+            <div class="cphone">024 123 4567</div>
+          </div>
+          <div>›</div>
+        </div>
+        <!-- ✅ NEW: Quick actions -->
+        <div class="cust-actions">
+          <div class="cust-action-btn call">📞 CALL</div>
+          <div class="cust-action-btn wa">💬 WHATSAPP</div>
+          <div class="cust-action-btn">📍 NAVIGATE</div>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: Items Used (unified = parts + hardware merged) -->
+      <div style="margin-bottom:12px">
+        <div class="label" style="font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;margin-bottom:6px">Items Used <span class="tag new">unified</span></div>
+        <div class="items-used-grid">
+          <div class="items-used-item">
+            <div class="dot hw"></div>
+            <span class="exp">Guardian GS-300 Gate Lock</span>
+            <span class="qty">1x</span>
+            <span class="amt">GHS 250</span>
+          </div>
+          <div class="items-used-item">
+            <div class="dot parts"></div>
+            <span class="exp">Yale 210 Deadbolt</span>
+            <span class="qty">1x</span>
+            <span class="amt">GHS 180</span>
+          </div>
+          <div class="items-used-item">
+            <div class="dot parts"></div>
+            <span class="exp">Strike Plate</span>
+            <span class="qty">1x</span>
+            <span class="amt">—</span>
+          </div>
+        </div>
+        <!-- ✅ NEW: Item totals -->
+        <div style="display:flex;justify-content:space-between;padding:6px 4px 0;font-size:9px;color:#556677;border-top:1px solid #1E2A3A;margin-top:2px">
+          <span>3 items · Gold = hardware · Blue = parts</span>
+          <span style="font-weight:800;color:#F4A300">Total: GHS 430</span>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: Expenses with total -->
+      <div style="margin-bottom:12px">
+        <div class="label" style="font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;margin-bottom:6px">Expenses</div>
+        <div class="list-item" style="margin-bottom:4px">
+          <div class="lrow"><span class="lname">🚕 Transport</span><span class="lprice">GHS 25</span></div>
+          <div class="lsub">Troski fare to East Legon</div>
+        </div>
+        <!-- ✅ NEW: running total -->
+        <div class="expense-total">Total: GHS 25</div>
+      </div>
+
+      <!-- Photos -->
+      <div style="margin-bottom:12px">
+        <div class="label" style="font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;margin-bottom:6px">Photos (2)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div style="aspect-ratio:1;background:#111D2E;border:1px solid #1E2A3A;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative">
+            📷
+            <span style="position:absolute;bottom:3px;left:3px;background:#F4A300;color:#000;font-size:6px;font-weight:900;padding:1px 4px;border-radius:2px">PHOTO</span>
+          </div>
+          <div style="aspect-ratio:1;background:#111D2E;border:1px solid #1E2A3A;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative">
+            🎬
+            <span style="position:absolute;bottom:3px;left:3px;background:#6BB5FF;color:#000;font-size:6px;font-weight:900;padding:1px 4px;border-radius:2px">VIDEO</span>
+          </div>
+          <div style="aspect-ratio:1;background:#111D2E;border:1px solid #1E2A3A;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:default;border-style:dashed;color:#556677">+</div>
+        </div>
+      </div>
+
+      <!-- Notes with preview -->
+      <div style="margin-bottom:12px">
+        <div class="label" style="font-size:9px;font-weight:800;color:#556677;letter-spacing:1px;margin-bottom:6px">Notes</div>
+        <div style="border:1px solid #1E2A3A;border-radius:10px;padding:12px;font-size:10px;color:#8899AA;line-height:1.6">
+          Customer wants follow-up on key duplication pricing. Gate lock installed but needs additional security bar.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LEGEND ═══ -->
+<div style="margin-top:40px;padding:20px;background:#111D2E;border-radius:10px;border:1px solid #1E2A3A">
+  <div style="font-size:13px;font-weight:800;color:#F4A300;margin-bottom:12px;letter-spacing:0.3px">Changes Summary — All Using Existing Data</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:11px;color:#CCD6E0;line-height:1.6">
+    <div>
+      <div style="font-weight:800;color:#6BA3FF;margin-bottom:4px">① Summary Strip</div>
+      Compact chip row below header showing counts of items, expenses, photos, notes, links. Instant overview without scrolling.
+    </div>
+    <div>
+      <div style="font-weight:800;color:#4ADE80;margin-bottom:4px">② Gross Profit Calculator</div>
+      Revenue (final charge) minus cost of goods (parts + hardware costs + expenses). Shows margin visually with a progress bar.
+    </div>
+    <div>
+      <div style="font-weight:800;color:#6BA3FF;margin-bottom:4px">③ Unified "Items Used"</div>
+      Merge Parts + Hardware into a single section matching the add/edit job pattern. Color-coded dots (gold = hardware, blue = parts). Shows running total.
+    </div>
+    <div>
+      <div style="font-weight:800;color:#4ADE80;margin-bottom:4px">④ Customer Quick Actions</div>
+      Adds tap-to-call, WhatsApp, and navigate buttons below the customer card. All from existing phone/location data.
+    </div>
+    <div>
+      <div style="font-weight:800;color:#6BA3FF;margin-bottom:4px">⑤ Expense Running Total</div>
+      Sum at the bottom of the expenses list. Same data, just visible.
+    </div>
+    <div>
+      <div style="font-weight:800;color:#4ADE80;margin-bottom:4px">⑥ Photo Type Badges</div>
+      Show PHOTO/VIDEO/AUDIO badge on each media card matching the media drawer pattern.
+    </div>
+  </div>
+  <div style="margin-top:16px;padding:12px;background:#0A1628;border-radius:6px;border:1px solid #1E2A3A;font-size:11px;color:#556677">
+    <span style="font-weight:800;color:#F4A300">Bottom line:</span> Zero new API calls, zero new entities, zero new screens. All improvements use data already loaded by <code style="color:#CCD6E0">jobDetailProvider</code>, <code style="color:#CCD6E0">jobPartsProvider</code>, <code style="color:#CCD6E0">jobHardwareProvider</code>, etc.
+  </div>
+</div>
+
+</body>
+</html>

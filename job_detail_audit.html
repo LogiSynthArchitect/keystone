@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Job Detail Screen — Audit</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px}
+.sub{color:#6B7D8E;font-size:10px;max-width:600px;text-align:center}
+
+/* ── STATS BAR ── */
+.stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.stat{background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:12px 20px;text-align:center;min-width:90px}
+.stat .n{font-size:22px;font-weight:900;color:#fff}
+.stat .l{font-size:8px;color:#6B7D8E;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-top:2px}
+.stat.critical .n{color:#FF6B6B}
+.stat.high .n{color:#FFA726}
+.stat.med .n{color:#6BB5FF}
+.stat.low .n{color:#6B7D8E}
+
+/* ── LAYOUT ── */
+.layout{display:flex;gap:32px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%;max-width:1400px}
+
+/* ── PHONE MOCKUP ── */
+.phone{width:380px;background:#0F1D2F;border-radius:20px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44;flex-shrink:0}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;padding:0}
+.screen-header{background:#0F1D2F;padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #1A2D44}
+.screen-header .back{width:24px;height:24px;border-radius:4px;background:#1A2D44;display:flex;align-items:center;justify-content:center;color:#6B7D8E;font-size:12px}
+.screen-header .title{font-size:12px;font-weight:800;letter-spacing:1px;color:#fff;flex:1}
+.screen-header .edit{color:#C8A84E;font-size:14px}
+.screen-body{overflow-y:auto;max-height:700px;padding:16px}
+
+/* Detail sections */
+.section{padding:0 0 20px 0;border-bottom:1px solid #0D1A2A;margin-bottom:20px}
+.section:last-child{border-bottom:none;margin-bottom:0}
+.section-head{font-size:9px;font-weight:800;color:#6B7D8E;letter-spacing:1.5px;margin-bottom:10px}
+
+/* ── HEADER ── */
+.detail-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.detail-header .left h2{font-size:18px;font-weight:900;color:#fff;letter-spacing:0.3px}
+.detail-header .left .date{font-size:9px;color:#6B7D8E;font-weight:700;margin-top:4px}
+.detail-header .sync-dot{width:16px;height:16px;border-radius:50%;background:#4CAF50;flex-shrink:0}
+
+/* Badge row */
+.badge-row{display:flex;gap:6px;margin-bottom:16px}
+.badge-row .badge{padding:4px 10px;border-radius:3px;font-size:8px;font-weight:800;letter-spacing:0.3px}
+.badge-row .badge.status{background:#6BB5FF15;color:#6BB5FF;border:1px solid #6BB5FF30}
+.badge-row .badge.payment{background:#FF6B6B15;color:#FF6B6B;border:1px solid #FF6B6B30}
+
+/* Container */
+.card{border-radius:4px;border:1px solid #1A2D44;background:#0F1D2F;padding:16px;margin-bottom:10px}
+.card-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.card-row .label{font-size:9px;color:#6B7D8E;font-weight:700;letter-spacing:0.5px}
+.card-row .value{font-size:13px;color:#fff;font-weight:700}
+.card-row .value.bold{font-size:16px;font-weight:900}
+.card-row .value.dim{color:#6B7D8E}
+.card-row .value.gold{color:#C8A84E}
+.card-row .value.red{color:#FF6B6B}
+.divider{height:1px;background:#1A2D44;margin:8px 0}
+
+.customer-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:4px;border:1px solid #1A2D44;background:#0F1D2F;margin-bottom:10px}
+.customer-card .avatar{width:40px;height:40px;border-radius:4px;background:#0A1628;display:flex;align-items:center;justify-content:center;color:#C8A84E;font-weight:900;font-size:16px;border:1px solid #1A2D44}
+.customer-card .info{flex:1}
+.customer-card .info .name{font-size:13px;color:#fff;font-weight:800;letter-spacing:0.3px}
+.customer-card .info .phone{font-size:10px;color:#6B7D8E;font-weight:600;margin-top:2px}
+
+.item-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.item-row:last-child{margin-bottom:0}
+.item-row .name{font-size:12px;color:#fff;font-weight:600}
+.item-row .price{font-size:11px;color:#6B7D8E}
+
+/* ── FINDINGS ── */
+.findings-panel{flex:1;min-width:350px;max-width:700px}
+.findings-panel h2{font-size:14px;font-weight:800;color:#fff;letter-spacing:0.5px;margin-bottom:12px}
+.finding-group{margin-bottom:20px}
+.finding-group h3{font-size:11px;font-weight:800;color:#6B7D8E;letter-spacing:0.8px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #1A2D44}
+
+.finding{background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.finding-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+.finding-icon.critical{background:#FF6B6B15;color:#FF6B6B;border:1px solid #FF6B6B30}
+.finding-icon.high{background:#FFA72615;color:#FFA726;border:1px solid #FFA72630}
+.finding-icon.med{background:#6BB5FF15;color:#6BB5FF;border:1px solid #6BB5FF30}
+.finding-icon.low{background:#6B7D8E15;color:#6B7D8E;border:1px solid #6B7D8E30}
+.finding-body{flex:1;min-width:0}
+.finding-body .f-title{font-size:11px;font-weight:800;color:#fff;margin-bottom:2px}
+.finding-body .f-desc{font-size:10px;color:#6B7D8E;line-height:1.5}
+.finding-body .f-code{font-size:9px;color:#4A5A6A;background:#0A1628;padding:4px 8px;border-radius:4px;margin-top:6px;font-family:'SF Mono','Fira Code',monospace;white-space:pre-wrap;word-break:break-all}
+.finding-body .f-ref{font-size:8px;color:#3A4A5A;margin-top:4px}
+
+.severity-tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:7px;font-weight:800;letter-spacing:0.3px;margin-bottom:4px}
+.severity-tag.critical{background:#FF6B6B20;color:#FF6B6B;border:1px solid #FF6B6B40}
+.severity-tag.high{background:#FFA72620;color:#FFA726;border:1px solid #FFA72640}
+.severity-tag.medium{background:#6BB5FF20;color:#6BB5FF;border:1px solid #6BB5FF40}
+.severity-tag.low{background:#6B7D8E20;color:#6B7D8E;border:1px solid #6B7D8E40}
+
+.missing-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:9px;margin:8px 0 12px}
+.missing-grid .hdr{padding:4px 8px;background:#0A1628;color:#6B7D8E;font-weight:700;font-size:7px;letter-spacing:0.5px;border-radius:3px}
+.missing-grid .cell{padding:4px 8px;border-radius:3px;background:#0F1D2F}
+.missing-grid .cell.yes{color:#4CAF50}
+.missing-grid .cell.no{color:#FF6B6B}
+
+/* Issues on phone mockup */
+.flag-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:3px;font-size:7px;font-weight:800;letter-spacing:0.3px}
+.flag-badge.critical{background:#FF6B6B20;color:#FF6B6B;border:1px solid #FF6B6B40}
+.flag-badge.high{background:#FFA72620;color:#FFA726;border:1px solid #FFA72640}
+.flag-badge.med{background:#6BB5FF20;color:#6BB5FF;border:1px solid #6BB5FF40}
+.flag-badge.low{background:#6B7D8E20;color:#6B7D8E;border:1px solid #6B7D8E40}
+.flag-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+
+.missing-highlight{background:rgba(255,167,38,0.08);border:1px dashed rgba(255,167,38,0.3);border-radius:4px;padding:6px 8px;margin-top:6px;font-size:9px;color:#FFA726;display:flex;align-items:center;gap:6px}
+.missing-highlight .icon{width:16px;height:16px;border-radius:3px;background:#FFA72620;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<h1>JOB DETAIL SCREEN · FULL AUDIT</h1>
+<div class="sub">Review of logic, UI consistency, missing fields, and bugs in job_detail_screen.dart</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat critical"><div class="n">6</div><div class="l">Bugs</div></div>
+  <div class="stat high"><div class="n">4</div><div class="l">Missing Fields</div></div>
+  <div class="stat med"><div class="n">4</div><div class="l">UI Issues</div></div>
+  <div class="stat low"><div class="n">5</div><div class="l">Logic Issues</div></div>
+</div>
+
+<div class="layout">
+
+<!-- PHONE MOCKUP -->
+<div class="phone">
+<div class="screen">
+  <div class="screen-header">
+    <div class="back">←</div>
+    <div class="title">JOB RECORD</div>
+    <div class="edit">✎</div>
+  </div>
+  <div class="screen-body">
+
+    <!-- HEADER -->
+    <div class="section">
+      <div class="detail-header">
+        <div class="left">
+          <h2>DOOR LOCK REPAIR</h2>
+          <div class="date">MAY 26, 2026</div>
+        </div>
+        <div class="sync-dot"></div>
+      </div>
+      <!-- Issue flag -->
+      <div class="flag-row">
+        <span class="flag-badge med">U1 · No service icon</span>
+      </div>
+    </div>
+
+    <!-- STATUS ROW -->
+    <div class="section">
+      <div class="badge-row">
+        <div class="badge status">IN PROGRESS</div>
+        <div class="badge payment">UNPAID</div>
+      </div>
+      <!-- Issue flags -->
+      <div class="flag-row">
+        <span class="flag-badge high">L1 · No status transition validation</span>
+        <span class="flag-badge high">L2 · No payment transition validation</span>
+        <span class="flag-badge low">L3 · Dead onConfirm callbacks</span>
+      </div>
+    </div>
+
+    <!-- FINANCIALS -->
+    <div class="section-head">FINANCIALS</div>
+    <div class="card">
+      <div class="card-row"><div class="label">FINAL CHARGE</div><div class="value bold">GHS 350.00</div></div>
+      <div class="card-row" style="margin-top:4px"><div class="label dim">VIA CASH</div></div>
+    </div>
+    <div class="flag-row" style="margin-bottom:12px">
+      <span class="flag-badge med">U2 · Card uses radius 4 (should be 12)</span>
+    </div>
+
+    <!-- CUSTOMER -->
+    <div class="section-head">CUSTOMER</div>
+    <div class="customer-card">
+      <div class="avatar">K</div>
+      <div class="info">
+        <div class="name">KWAME MENSAH</div>
+        <div class="phone">+233 50 123 4567</div>
+      </div>
+      <div style="color:#1A2D44;font-size:12px">›</div>
+    </div>
+
+    <!-- MISSING FIELDS BANNER -->
+    <div class="section">
+      <div class="missing-highlight">
+        <div class="icon">!</div>
+        <span><strong>Missing:</strong> leadSource, location (job address), createdAt, syncErrorMessage, archived badge</span>
+      </div>
+    </div>
+
+    <!-- SERVICES -->
+    <div class="section-head">SERVICES</div>
+    <div class="card">
+      <div class="item-row"><div class="name">1x DOOR LOCK REPAIR</div><div class="price">GHS 250</div></div>
+      <div class="item-row"><div class="name">1x KEY DUPLICATION</div><div class="price">GHS 80</div></div>
+    </div>
+    <div class="flag-row" style="margin-bottom:12px">
+      <span class="flag-badge critical">U3 · No loading shimmer — invisible during load</span>
+      <span class="flag-badge critical">U4 · Error silently swallowed (SizedBox.shrink)</span>
+    </div>
+
+    <!-- HARDWARE -->
+    <div class="section-head">HARDWARE ITEMS</div>
+    <div class="card">
+      <div class="item-row"><div class="name">ABLOY · 2x</div></div>
+      <div style="font-size:9px;color:#6B7D8E;margin-top:2px">DOOR LOCK · KEY: SC1</div>
+      <div class="divider"></div>
+      <div class="item-row"><div class="label">SALE</div><div class="value gold">GHS 120</div></div>
+    </div>
+    <div class="flag-row" style="margin-bottom:12px">
+      <span class="flag-badge critical">U3 · No loading shimmer</span>
+      <span class="flag-badge critical">U4 · Error silently swallowed</span>
+    </div>
+
+    <!-- PARTS & PROFIT -->
+    <div class="section-head">PARTS & PROFIT</div>
+    <div class="card">
+      <div class="item-row"><div class="name">2x CYLINDER</div><div class="price">GHS 40</div></div>
+      <div class="divider"></div>
+      <div class="card-row"><div class="label">REVENUE</div><div class="value dim">GHS 350</div></div>
+      <div class="card-row"><div class="label">PARTS COST</div><div class="value dim">GHS 40</div></div>
+      <div class="divider"></div>
+      <div class="card-row"><div class="label">GROSS PROFIT</div><div class="value bold">GHS 310</div></div>
+    </div>
+
+    <!-- EXPENSES -->
+    <div class="section-head">EXPENSES</div>
+    <div class="card">
+      <div class="item-row"><div class="name">🚗 TRANSPORT</div><div class="price red">-GHS 20</div></div>
+      <div class="item-row"><div class="name">🅿 PARKING</div><div class="price red">-GHS 5</div></div>
+      <div class="divider"></div>
+      <div class="card-row"><div class="label">TOTAL EXPENSES</div><div class="value red">GHS 25</div></div>
+      <div class="card-row"><div class="label">NET PROFIT</div><div class="value bold">GHS 285</div></div>
+    </div>
+    <div class="flag-row" style="margin-bottom:12px">
+      <span class="flag-badge critical">B2 · Coupled to parts loading (bothLoaded gate)</span>
+    </div>
+
+    <!-- PHOTOS -->
+    <div class="section-head">PHOTOS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="aspect-ratio:1.5;border-radius:4px;background:#0F1D2F;border:1px solid #1A2D44;display:flex;align-items:center;justify-content:center;color:#3A4A5A;font-size:9px">BEFORE</div>
+      <div style="aspect-ratio:1.5;border-radius:4px;background:#0F1D2F;border:1px solid #1A2D44;display:flex;align-items:center;justify-content:center;color:#3A4A5A;font-size:9px">AFTER</div>
+    </div>
+    <div class="flag-row" style="margin-bottom:12px">
+      <span class="flag-badge med">B1/B3 · _playMedia crashes on file:// URIs</span>
+    </div>
+
+    <div style="text-align:center;padding:16px;color:#1A2D44;font-size:9px">▼  scroll continues (notes, communication, timeline)</div>
+
+  </div><!-- /screen-body -->
+</div><!-- /screen -->
+</div><!-- /phone -->
+
+<!-- FINDINGS PANEL -->
+<div class="findings-panel">
+
+  <!-- BUGS -->
+  <div class="finding-group">
+  <h3>🐛 BUGS</h3>
+
+  <div class="finding">
+    <div class="finding-icon critical">!</div>
+    <div class="finding-body">
+      <div class="severity-tag critical">CRITICAL</div>
+      <div class="f-title">B1. _playMedia crashes with file:// URIs</div>
+      <div class="f-desc">Line 1235: <code>VideoPlayerController.networkUrl(Uri.parse(photo.storagePath))</code> — same crash as the photo fix. Demo data has <code>file:///demo/jobs/...</code> paths that have no host. No guard before initializing.</div>
+      <div class="f-code">_playMedia: VideoPlayerController.networkUrl(Uri.parse(photo.storagePath))</div>
+      <div class="f-ref">→ job_detail_screen.dart:1234-1238</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon critical">!</div>
+    <div class="finding-body">
+      <div class="severity-tag critical">HIGH</div>
+      <div class="f-title">B2. Expenses section coupled to parts loading</div>
+      <div class="f-desc">Line 662-666: uses <code>bothLoaded</code> gate — expenses section won't render until BOTH parts AND expenses providers have value. If parts fail or are slow, expenses disappear too. These are independent data streams.</div>
+      <div class="f-code">final bothLoaded = partsAsync.hasValue && expensesAsync.hasValue;</div>
+      <div class="f-ref">→ job_detail_screen.dart:662-666</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon critical">!</div>
+    <div class="finding-body">
+      <div class="severity-tag critical">CRITICAL</div>
+      <div class="f-title">B3. _playMedia onTap has no URI validation</div>
+      <div class="f-desc">Line 790: photo card sets <code>onTap</code> for video/audio unconditionally. Tapping a broken URI triggers the crash from B1. Needs same <code>_isValidNetworkUrl</code> guard as the photo image fix.</div>
+      <div class="f-code">onTap: isVideo || isAudio ? () => _playMedia(context, photo) : null</div>
+      <div class="f-ref">→ job_detail_screen.dart:789-790</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon critical">!</div>
+    <div class="finding-body">
+      <div class="severity-tag critical">HIGH</div>
+      <div class="f-title">B4. No loading shimmer on 5/7 sections</div>
+      <div class="f-desc">Services, Hardware, Parts, Expenses, Photos — all show <code>const SizedBox.shrink()</code> during loading. User sees nothing while data fetches. Only Customer module has a shimmer.</div>
+      <div class="f-code">loading: () => const SizedBox.shrink(),  // ×5 sections</div>
+      <div class="f-ref">→ lines 475, 522, 607, 747, etc.</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon critical">!</div>
+    <div class="finding-body">
+      <div class="severity-tag critical">HIGH</div>
+      <div class="f-title">B5. Silent error swallowing on 5/7 async sections</div>
+      <div class="f-desc">Services, Hardware, Parts, Expenses, Photos, Customer — all silently disappear on error via <code>const SizedBox.shrink()</code>. User never knows something failed.</div>
+      <div class="f-code">error: (_, __) => const SizedBox.shrink(),  // ×6 sections</div>
+      <div class="f-ref">→ lines 476, 523, 608, 748, etc.</div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- MISSING FIELDS -->
+  <div class="finding-group">
+  <h3>❌ MISSING FIELDS</h3>
+
+  <div class="missing-grid">
+    <div class="hdr">Field</div><div class="hdr">Card</div><div class="hdr">Edit</div><div class="hdr">Detail</div>
+    <div class="cell">leadSource</div><div class="cell no">✗</div><div class="cell yes">✓</div><div class="cell no">✗</div>
+    <div class="cell">location</div><div class="cell yes">✓</div><div class="cell yes">✓</div><div class="cell no">✗</div>
+    <div class="cell">createdAt</div><div class="cell no">✗</div><div class="cell no">✗</div><div class="cell no">✗</div>
+    <div class="cell">updatedAt</div><div class="cell no">✗</div><div class="cell no">✗</div><div class="cell no">✗</div>
+    <div class="cell">syncError</div><div class="cell yes">✓</div><div class="cell no">✗</div><div class="cell no">✗</div>
+    <div class="cell">archived badge</div><div class="cell no">✗</div><div class="cell no">✗</div><div class="cell no">✗</div>
+    <div class="cell">followUpSent badge</div><div class="cell yes">✓</div><div class="cell no">✗</div><div class="cell no">✗</div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon high">!</div>
+    <div class="finding-body">
+      <div class="severity-tag high">HIGH</div>
+      <div class="f-title">M1. leadSource not shown on detail</div>
+      <div class="f-desc">Edit screen has a <code>_buildLeadSourceRow()</code> chip picker for referral/walk-in/whatsapp/social etc. The detail screen (canonical record view) doesn't display this at all. Important business intelligence field.</div>
+      <div class="f-ref">→ edit_job_screen.dart:638-668 vs job_detail_screen.dart: (missing)</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon high">!</div>
+    <div class="finding-body">
+      <div class="severity-tag high">HIGH</div>
+      <div class="f-title">M2. location not shown on detail</div>
+      <div class="f-desc"><code>job.location</code> is on JobEntity, shown in job card meta row, editable in edit screen — but absent from the detail screen. Only customer address is shown, not the job site address.</div>
+      <div class="f-ref">→ job_card.dart:143-157 (shows it) vs job_detail_screen.dart: (missing)</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon med">!</div>
+    <div class="finding-body">
+      <div class="severity-tag medium">MEDIUM</div>
+      <div class="f-title">M3. createdAt / updatedAt not shown anywhere</div>
+      <div class="f-desc">Job creation and last modification timestamps exist on the entity but are not displayed in any view. Useful for auditing — especially alongside the timeline entries.</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon med">!</div>
+    <div class="finding-body">
+      <div class="severity-tag medium">MEDIUM</div>
+      <div class="f-title">M4. syncErrorMessage shown on card, not on detail</div>
+      <div class="f-desc">Job card shows red error text + badge when sync fails. Detail screen only shows the sync status icon — no error details when something went wrong syncing.</div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- UI INCONSISTENCIES -->
+  <div class="finding-group">
+  <h3>🔄 UI INCONSISTENCIES</h3>
+
+  <div class="finding">
+    <div class="finding-icon med">!</div>
+    <div class="finding-body">
+      <div class="severity-tag medium">MEDIUM</div>
+      <div class="f-title">U1. No service-type icon in header</div>
+      <div class="f-desc">Job card has a 40×40 icon box with per-service icons (via <code>_inferIcon()</code>). Detail screen just shows text. Breaks visual continuity between list and detail views.</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon med">!</div>
+    <div class="finding-body">
+      <div class="severity-tag medium">MEDIUM</div>
+      <div class="f-title">U2. Container borderRadius: 4 vs design standard 12</div>
+      <div class="f-desc">All detail containers use <code>BorderRadius.circular(4)</code>. Job card uses <code>12</code> (matches AGENTS.md card pattern). Inconsistent visual language.</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon low">!</div>
+    <div class="finding-body">
+      <div class="severity-tag low">LOW</div>
+      <div class="f-title">U3. Container style non-uniform across modules</div>
+      <div class="f-desc">Financials uses dividers, customer has icon box, services are just text rows, hardware has labels, expenses have dot badges. No single card template applied consistently.</div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- LOGIC ISSUES -->
+  <div class="finding-group">
+  <h3>⚠️ LOGIC ISSUES</h3>
+
+  <div class="finding">
+    <div class="finding-icon high">!</div>
+    <div class="finding-body">
+      <div class="severity-tag high">HIGH</div>
+      <div class="f-title">L1. No status transition validation</div>
+      <div class="f-desc"><code>_showStatusSheet</code> allows selecting ANY status regardless of rules. Can skip from 'quoted' → 'invoiced' or go backward. <code>JobEntity.validateStatusTransition()</code> exists but is never called.</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon high">!</div>
+    <div class="finding-body">
+      <div class="severity-tag high">HIGH</div>
+      <div class="f-title">L2. No payment transition validation</div>
+      <div class="f-desc"><code>_showPaymentSheet</code> allows any payment status. Can mark 'paid' on a 'quoted' job, or revert 'paid' → 'unpaid'. <code>JobEntity.validatePaymentTransition()</code> exists but unused.</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon low">!</div>
+    <div class="finding-body">
+      <div class="severity-tag low">LOW</div>
+      <div class="f-title">L3. KsConfirmDialog.onConfirm is dead code</div>
+      <div class="f-desc">All 4 usages pass <code>onConfirm: () {}</code>. The callback is never reached because actual action checks <code>Future&lt;bool?&gt;</code> return value instead. Misleading API usage.</div>
+      <div class="f-ref">→ lines 76, 881, 1111, 1212</div>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div class="finding-icon low">!</div>
+    <div class="finding-body">
+      <div class="severity-tag low">LOW</div>
+      <div class="f-title">L4. _buildExpensesSection unnecessarily watches parts</div>
+      <div class="f-desc">Line 663: watches <code>jobPartsProvider</code> solely to compute net profit. Creates the coupling problem in B2.</div>
+    </div>
+  </div>
+
+  </div>
+
+</div><!-- /findings-panel -->
+</div><!-- /layout -->
+
+</body>
+</html>

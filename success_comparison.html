@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Success Notification — Comparison</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:15px;font-weight:800;letter-spacing:0.5px;text-align:center}
+.sub{color:#6B7D8E;font-size:10px;text-align:center;max-width:540px}
+
+.layout{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+.phone{width:360px;background:#0F1D2F;border-radius:20px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44;flex-shrink:0}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;position:relative;height:620px}
+
+/* app content */
+.app-content{padding:24px 20px}
+.app-content .bar{height:40px;background:#0F1D2F;border-radius:6px;margin-bottom:10px;border:1px solid #1A2D44}
+.app-content .bar.short{width:60%}
+.app-content .title{font-size:11px;font-weight:700;color:#fff;margin-bottom:16px}
+
+/* ── FLUSHBAR (top cover) ── */
+.flushbar{position:absolute;top:0;left:0;right:0;padding:44px 24px 16px;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.flushbar.success{background:#2E7D32}
+.flushbar .left-bar{position:absolute;left:0;top:44px;bottom:16px;width:6px;border-radius:0 3px 3px 0;background:#81C784}
+.flushbar .row{display:flex;align-items:flex-start;gap:12px}
+.flushbar .icon-circle{width:40px;height:40px;border-radius:20px;background:#ffffff33;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:18px}
+.flushbar .text-area{flex:1}
+.flushbar .label{font-size:10px;font-weight:900;color:#ffffffbb;letter-spacing:1px;text-transform:uppercase;margin-bottom:1px}
+.flushbar .msg{font-size:14px;font-weight:900;color:#fff}
+.flushbar .bar{height:3px;background:#ffffff33;border-radius:2px;margin-top:8px;overflow:hidden}
+.flushbar .bar-inner{height:100%;background:#fff;border-radius:2px;width:65%}
+
+/* ── SUCCESS MOMENT (full-screen overlay) ── */
+.overlay{position:absolute;inset:0;background:#0C0C0ED9;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.overlay .check-circle{width:80px;height:80px;border-radius:40px;background:#4CAF50;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.overlay .check{color:#fff;font-size:40px;font-weight:300}
+.overlay .title{font-size:20px;font-weight:900;color:#fff;text-align:center}
+.overlay .subtitle{font-size:13px;color:#8BA0B2;text-align:center;margin-top:4px;font-weight:500}
+.overlay .sparkles{position:absolute;width:100%;height:100%;pointer-events:none}
+.overlay .sp{position:absolute;font-size:10px;opacity:0.5}
+.overlay .sp1{top:30%;left:20%;color:#C8A84E}
+.overlay .sp2{top:25%;right:25%;color:#4CAF50}
+.overlay .sp3{top:45%;left:15%;color:#6BB5FF}
+.overlay .sp4{top:40%;right:18%;color:#B388FF}
+.overlay .sp5{bottom:35%;left:30%;color:#FF6B6B}
+.overlay .sp6{bottom:30%;right:28%;color:#C8A84E}
+
+/* comparison table */
+.comparison{width:100%;max-width:820px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:9px;color:#8BA0B2;background:#0F1D2F;border-radius:8px;overflow:hidden;border:1px solid #1A2D44}
+th{background:#0A1628;padding:8px 12px;font-size:9px;font-weight:800;letter-spacing:0.5px;text-align:left;color:#fff}
+td{padding:7px 12px;border-top:1px solid #1A2D44;color:#6B7D8E}
+td:first-child{font-weight:600;color:#8BA0B2}
+td:nth-child(2){color:#E5E7EB}
+td:nth-child(3){color:#E5E7EB}
+.gold{color:#C8A84E}
+.green{color:#4CAF50}
+
+/* price drawer mockup */
+.price-drawer{border-top:1px solid #1A2D44;padding:16px 20px}
+.price-drawer .field{margin-bottom:12px}
+.price-drawer .field .lbl{font-size:9px;font-weight:800;color:#4A5A6A;letter-spacing:0.5px;margin-bottom:4px}
+.price-drawer .field .input{width:100%;padding:8px 0;border:none;border-bottom:1px solid #1A2D44;background:transparent;color:#C8A84E;font-size:16px;font-weight:900;outline:none}
+.price-drawer .gold-btn{background:#C8A84E;padding:12px 0;text-align:center;border-radius:0;margin-top:16px}
+.price-drawer .gold-btn span{color:#0A1628;font-size:12px;font-weight:900;letter-spacing:0.5px}
+
+/* tag */
+.tag{font-size:8px;font-weight:700;padding:2px 5px;border-radius:2px;margin:1px}
+.tag-green{background:#1A3D1A;color:#4CAF50}
+.tag-gold{background:#3D2A1A;color:#C8A84E}
+.tag-gray{background:#1A1A2A;color:#6B7D8E}
+.tag-blue{background:#1A2A3D;color:#6BB5FF}
+
+/* legend */
+.flow{display:flex;align-items:center;gap:12px;padding:8px 0;color:#fff;font-size:10px;font-weight:600}
+.flow .arrow{color:#C8A84E40;font-size:20px}
+</style>
+</head>
+<body>
+
+<h1>PRICING SCREEN — SUCCESS PATTERN</h1>
+<p class="sub">After saving a price, the pricing screen shows a full-screen KsSuccessMoment overlay with animated checkmark. This is different from the flushbar notification.</p>
+
+<div class="layout">
+
+  <!-- Pricing Drawer (before save) -->
+  <div class="phone">
+    <div class="screen">
+      <div style="padding:14px 20px 0;display:flex;justify-content:space-between">
+        <span style="font-size:13px;font-weight:900;color:#fff">SET PRICE</span>
+        <span style="color:#4A5A6A;font-size:18px">✕</span>
+      </div>
+
+      <div class="price-drawer">
+        <div class="field">
+          <div class="lbl">SERVICE</div>
+          <div style="font-size:13px;font-weight:700;color:#fff">CCTV INSTALLATION</div>
+        </div>
+        <div class="field">
+          <div class="lbl">PRICE (GHS)</div>
+          <input class="input" value="250.00" readonly>
+        </div>
+        <div class="field">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span style="background:#C8A84E20;color:#C8A84E;padding:4px 10px;border-radius:4px;font-size:9px;font-weight:700">GHS 100</span>
+            <span style="background:#C8A84E20;color:#C8A84E;padding:4px 10px;border-radius:4px;font-size:9px;font-weight:700">GHS 200</span>
+            <span style="background:#C8A84E20;color:#C8A84E;padding:4px 10px;border-radius:4px;font-size:9px;font-weight:700">GHS 350</span>
+          </div>
+        </div>
+        <div class="gold-btn"><span>SAVE</span></div>
+      </div>
+
+      <div style="padding:20px;text-align:center">
+        <span class="tag tag-gray">Pricing drawer before save</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <span>SAVE</span>
+    <span class="arrow">→</span>
+  </div>
+
+  <!-- AFTER SAVE: Two possibilities -->
+
+  <!-- PHONE 2: KsSuccessMoment (current) -->
+  <div class="phone">
+    <div class="screen">
+      <!-- Dimmed background (pricing drawer underneath) -->
+      <div class="price-drawer" style="opacity:0.3;filter:blur(1px)">
+        <div class="field">
+          <div class="lbl">SERVICE</div>
+          <div style="font-size:13px;font-weight:700;color:#fff">CCTV INSTALLATION</div>
+        </div>
+        <div class="field">
+          <div class="lbl">PRICE (GHS)</div>
+          <input class="input" value="250.00" readonly>
+        </div>
+        <div class="gold-btn"><span>SAVE</span></div>
+      </div>
+
+      <!-- Full-screen success overlay -->
+      <div class="overlay">
+        <div class="sparkles">
+          <span class="sp sp1">✦</span>
+          <span class="sp sp2">✦</span>
+          <span class="sp sp3">✦</span>
+          <span class="sp sp4">✦</span>
+          <span class="sp sp5">✦</span>
+          <span class="sp sp6">✦</span>
+        </div>
+        <div class="check-circle">
+          <span class="check">✓</span>
+        </div>
+        <div class="title">Price Updated</div>
+        <div class="subtitle">CCTV Installation → GHS 250.00</div>
+      </div>
+
+      <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center">
+        <span class="tag tag-green">CURRENT</span>
+        <span class="tag tag-gold">KsSuccessMoment</span>
+        <span class="tag tag-gray">Full-screen overlay</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHONE 3: KsSlidingNotification (alternative) -->
+  <div class="phone">
+    <div class="screen">
+      <!-- Flushbar at top -->
+      <div class="flushbar success">
+        <div class="left-bar"></div>
+        <div class="row">
+          <div class="icon-circle">✓</div>
+          <div class="text-area">
+            <div class="label">SUCCESS</div>
+            <div class="msg">Price updated to GHS 250.00</div>
+            <div class="bar"><div class="bar-inner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pricing drawer underneath (visible, not dimmed) -->
+      <div style="padding-top:110px">
+        <div class="price-drawer">
+          <div class="field">
+            <div class="lbl">SERVICE</div>
+            <div style="font-size:13px;font-weight:700;color:#fff">CCTV INSTALLATION</div>
+          </div>
+          <div class="field">
+            <div class="lbl">PRICE (GHS)</div>
+            <input class="input" value="250.00" readonly>
+          </div>
+          <div class="gold-btn"><span>SAVE</span></div>
+        </div>
+      </div>
+
+      <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center">
+        <span class="tag tag-blue">ALTERNATIVE</span>
+        <span class="tag tag-gold">KsSlidingNotification</span>
+        <span class="tag tag-gray">Top flushbar, no screen block</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- comparison table -->
+<div class="comparison">
+  <table>
+    <tr><th></th><th>KsSuccessMoment (current)</th><th>KsSlidingNotification (alternative)</th></tr>
+    <tr><td>Position</td><td>Full-screen center</td><td>Top edge-to-edge banner</td></tr>
+    <tr><td>Background</td><td>85% dark overlay — blocks interaction</td><td>Solid color — content visible behind</td></tr>
+    <tr><td>Animation</td><td>Checkmark draw + sparkle + text fade-in (1.8s)</td><td>ElasticOut slide + progress bar shrink (3s)</td></tr>
+    <tr><td>Auto-dismiss</td><td>~1.8 seconds</td><td>~3 seconds (configurable)</td></tr>
+    <tr><td>User interaction</td><td>Blocked during animation</td><td>Not blocked</td></tr>
+    <tr><td>Content behind</td><td>Hidden by overlay</td><td>Visible (dimmed slightly)</td></tr>
+    <tr><td>Celebratory feel</td><td>⭐⭐⭐ High — checkmark + sparkles</td><td>⭐ Low — simple label + icon</td></tr>
+    <tr><td>API</td><td><code>await KsSuccessMoment.show(ctx, title:, subtitle:)</code></td><td><code>KsSlidingNotification.show(ctx, message:, type:)</code></td></tr>
+    <tr><td>File size</td><td><span class="gold">275 lines</span></td><td>N/A (already exists)</td></tr>
+    <tr><td>Dependencies</td><td>None (custom paint)</td><td>another_flushbar</td></tr>
+    <tr><td>Call sites</td><td><span class="gold">1</span> (pricing screen)</td><td>77 (after migration)</td></tr>
+  </table>
+</div>
+
+<div style="max-width:820px;width:100%;background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:16px 20px;margin-top:8px">
+  <h3 style="color:#C8A84E;font-size:10px;font-weight:800;letter-spacing:0.5px;margin-bottom:8px">DECISION</h3>
+  <p style="font-size:9px;color:#8BA0B2;line-height:1.6">
+    <strong style="color:#fff">KsSuccessMoment</strong> is a <em>celebration ritual</em> — it's meant to feel rewarding when you complete an action. 
+    It blocks the screen momentarily so the user can bask in the success before continuing.
+    The pricing screen uses it after a price save because changing a price is a significant action.
+  </p>
+  <p style="font-size:9px;color:#8BA0B2;line-height:1.6;margin-top:6px">
+    <strong style="color:#fff">KsSlidingNotification</strong> is a <em>notification</em> — it informs without interrupting.
+    It's meant for routine feedback (save succeeded, item added, etc.) where the user should continue working.
+  </p>
+  <p style="font-size:9px;color:#C8A84E;line-height:1.6;margin-top:8px;font-weight:600">
+    Options: Replace KsSuccessMoment with KsSlidingNotification (consistent but less celebratory), 
+    or keep KsSuccessMoment as a distinct pattern for significant actions.
+  </p>
+</div>
+
+</body>
+</html>

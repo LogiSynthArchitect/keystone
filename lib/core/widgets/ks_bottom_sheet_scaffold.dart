@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/ks_colors.dart';
+import 'ks_confirm_dialog.dart';
 
 /// Reusable bottom sheet chrome: drag handle → header (title + subtitle + close) →
 /// scrollable content area → optional gold bottom bar.
@@ -33,6 +34,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
   final VoidCallback? onClose;
   final IconData bottomIcon;
   final Widget Function(BuildContext context, StateSetter setSheetState)? stickyHeader;
+  final bool Function()? canPop;
 
   static bool _kNeverDirty() => false;
 
@@ -47,6 +49,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
     this.onClose,
     this.bottomIcon = LineAwesomeIcons.arrow_right_solid,
     this.stickyHeader,
+    this.canPop,
   });
 
   /// Shows the sheet as a modal bottom sheet. Returns the value passed to Navigator.pop.
@@ -61,6 +64,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
     VoidCallback? onClose,
     IconData bottomIcon = LineAwesomeIcons.arrow_right_solid,
     Widget Function(BuildContext context, StateSetter setSheetState)? stickyHeader,
+    bool Function()? canPop,
   }) {
     return showModalBottomSheet<T>(
       context: context,
@@ -79,6 +83,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
         onClose: onClose,
         bottomIcon: bottomIcon,
         stickyHeader: stickyHeader,
+        canPop: canPop,
       ),
     );
   }
@@ -186,7 +191,9 @@ class KsBottomSheetScaffold extends StatelessWidget {
         child: InkWell(
           onTap: () {
             onDone?.call();
-            if (context.mounted) Navigator.pop(context, true);
+            if ((canPop == null || canPop!()) && context.mounted) {
+              Navigator.pop(context, true);
+            }
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -211,41 +218,14 @@ class KsBottomSheetScaffold extends StatelessWidget {
   }
 
   Future<bool> _confirmClose(BuildContext context) async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: context.ksc.primary700),
-        ),
-        title: Text('DISCARD CHANGES?',
-          style: AppTextStyles.h3.copyWith(
-            color: context.ksc.white,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        content: Text('You have unsaved changes. Discard them?',
-          style: AppTextStyles.body.copyWith(color: context.ksc.neutral400),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('KEEP EDITING',
-              style: AppTextStyles.label.copyWith(color: context.ksc.neutral400),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('DISCARD',
-              style: AppTextStyles.label.copyWith(
-                color: context.ksc.error500,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return await KsConfirmDialog.show(
+      context,
+      title: 'DISCARD CHANGES?',
+      message: 'You have unsaved changes. Discard them?',
+      confirmLabel: 'DISCARD',
+      cancelLabel: 'KEEP EDITING',
+      isDanger: true,
+      onConfirm: () {},
     ) ?? false;
   }
 }

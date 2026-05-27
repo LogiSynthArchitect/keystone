@@ -23,7 +23,7 @@ import '../../features/auth/presentation/screens/initial_sync_screen.dart';
 import '../../features/auth/presentation/screens/min_version_gate_screen.dart';
 import '../../core/services/internal_auth/models/unlock_result.dart';
 import '../../features/job_logging/presentation/screens/job_list_screen.dart';
-import '../../features/job_logging/presentation/screens/edit_job_screen.dart';
+
 import '../../features/job_logging/presentation/screens/admin_requests_screen.dart';
 import '../../features/job_logging/presentation/screens/job_detail_screen.dart';
 import '../../features/customer_history/presentation/screens/customer_list_screen.dart';
@@ -150,7 +150,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.hub, builder: (context, state) => const HubScreen()),
       // LogJobScreen is now a bottom sheet — LogJobScreen.show(context) instead of route push.
       routeWithTransition(path: '/jobs/:id', builder: (context, state) => JobDetailScreen(jobId: state.pathParameters['id']!)),
-      routeWithTransition(path: '/jobs/:id/edit', builder: (context, state) => EditJobScreen(jobId: state.pathParameters['id']!)),
+      // EditJobScreen is now a bottom sheet — EditJobScreen.show(context) instead of route push.
       GoRoute(path: RouteNames.customers, builder: (context, state) => const CustomerListScreen()),
       routeWithTransition(path: RouteNames.addCustomer, builder: (context, state) => const AddCustomerScreen()),
       routeWithTransition(path: '/customers/:id', builder: (context, state) => CustomerDetailScreen(customerId: state.pathParameters['id']!)),

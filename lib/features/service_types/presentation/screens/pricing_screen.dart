@@ -605,7 +605,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           saveLabel: "SAVE",
           canAdvance: (step, subStep) => step == 0 ? currentValue.isNotEmpty : true,
           onSave: _save,
-          stepContent: (step, subStep, setSheetState) => Padding(
+          stepContent: (step, subStep, setSheetState, _) => Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,

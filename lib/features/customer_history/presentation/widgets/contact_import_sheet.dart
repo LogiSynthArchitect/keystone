@@ -5,6 +5,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/create_customer_usecase.dart';
@@ -85,7 +86,10 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
     ref.read(customerListProvider.notifier).refresh();
     if (mounted) {
       Navigator.pop(context);
-      KsSlidingNotification.show(context, message: "$count customers imported", type: KsNotificationType.success);
+      await KsSuccessMoment.show(context,
+        title: "$count Imported",
+        subtitle: count == 1 ? "1 customer added" : "$count customers added",
+      );
     }
   }
 

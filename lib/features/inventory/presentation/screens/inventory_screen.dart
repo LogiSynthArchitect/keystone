@@ -13,6 +13,7 @@ import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -1188,20 +1189,15 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           }
           if (ctx.mounted) Navigator.pop(ctx);
           if (context.mounted) {
-            // Small delay to let Navigator pop transition finish
-            Future.delayed(const Duration(milliseconds: 150), () {
-              if (context.mounted) {
-                KsSlidingNotification.show(context,
-                  title: isEditing ? 'Item Updated' : 'Item Added',
-                  message: isEditing ? 'Item updated' : 'Item added',
-                  entity: nameCtrl.text.trim(),
-                  metadata: {
-                    if (_dialogStockQty > 0) 'Qty': '$_dialogStockQty',
-                    if (_dialogStockLocation.isNotEmpty) 'Loc': _dialogStockLocation,
-                  },
-                  type: KsNotificationType.success);
-              }
-            });
+            final itemName = nameCtrl.text.trim();
+            final details = [
+              if (_dialogStockQty > 0) 'Qty: $_dialogStockQty',
+              if (_dialogStockLocation.isNotEmpty) _dialogStockLocation,
+            ].join(' · ');
+            await KsSuccessMoment.show(context,
+              title: isEditing ? 'Item Updated' : 'Item Added',
+              subtitle: details.isNotEmpty ? '$itemName\n$details' : itemName,
+            );
           }
         }
 
@@ -1231,7 +1227,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             return true;
           },
           onSave: _handleSave,
-          stepContent: (step, subStep, setSheetState) => _buildStepContent(
+          stepContent: (step, subStep, setSheetState, _) => _buildStepContent(
             step, subStep,
             nameCtrl, brandCtrl, modelCtrl, keySpecCtrl, materialCtrl,
             finishCtrl, dimsCtrl, costCtrl, saleCtrl,

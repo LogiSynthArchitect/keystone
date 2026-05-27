@@ -27,6 +27,20 @@ class CurrencyFormatter {
     return 'GHS $intPart.${parts[1]}';
   }
 
+  /// Formats a decimal price string (e.g. '5000750.00') with commas and 2 decimals.
+  /// Returns '5,000,750.00'. Strips existing commas first, then reformats.
+  static String formatWithCommas(String input) {
+    final val = double.tryParse(input.replaceAll(',', ''));
+    if (val == null) return input;
+    final formatted = val.toStringAsFixed(2);
+    final parts = formatted.split('.');
+    final intPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+    return '$intPart.${parts[1]}';
+  }
+
   /// Formats pesewas (int) into GHS string without decimals (truncates, does not round).
   static String formatShort(int pesewas) {
     final intPart = (pesewas ~/ 100).toString().replaceAllMapped(
@@ -41,8 +55,8 @@ class CurrencyFormatter {
 /// - Allows only digits and one decimal point
 /// - Limits decimal places to 2
 class CurrencyInputFormatter extends TextInputFormatter {
-  /// Max integer digits to prevent overflow (GHS 999,999).
-  static const int _maxIntegerDigits = 6;
+  /// Max integer digits to prevent overflow (GHS 999,999,999).
+  static const int _maxIntegerDigits = 9;
 
   @override
   TextEditingValue formatEditUpdate(
@@ -93,15 +107,20 @@ class CurrencyInputFormatter extends TextInputFormatter {
 }
 
 /// Returns a [FocusNode] with a listener that formats the controller's
-/// text to 2 decimal places on focus loss.
+/// text with commas and 2 decimal places on focus loss, and strips
+/// commas on focus gain for clean editing.
 FocusNode currencyFocusNode(TextEditingController controller) {
   final node = FocusNode();
   node.addListener(() {
     if (!node.hasFocus && controller.text.isNotEmpty) {
-      final val = double.tryParse(controller.text);
-      if (val != null) {
-        controller.text = val.toStringAsFixed(2);
+      // On focus loss: format with commas + 2 decimals
+      final formatted = CurrencyFormatter.formatWithCommas(controller.text);
+      if (formatted != controller.text) {
+        controller.text = formatted;
       }
+    } else if (node.hasFocus && controller.text.contains(',')) {
+      // On focus gain: strip commas for clean editing
+      controller.text = controller.text.replaceAll(',', '');
     }
   });
   return node;

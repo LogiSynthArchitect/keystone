@@ -17,6 +17,7 @@ import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../features/service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../../../../core/services/cloudinary_service.dart';
@@ -110,7 +111,10 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
     if (result != null) {
       ref.read(notesListProvider.notifier).updateNote(result);
       context.pop();
-      KsSlidingNotification.show(context, message: "Note updated", type: KsNotificationType.success);
+      await KsSuccessMoment.show(context,
+        title: "Note Updated",
+        subtitle: result.title,
+      );
     } else {
       final error = ref.read(editNoteProvider).errorMessage;
       KsSlidingNotification.show(context, message: error ?? "Could not update note", type: KsNotificationType.error);

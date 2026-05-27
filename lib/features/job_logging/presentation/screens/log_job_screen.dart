@@ -21,8 +21,11 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../providers/job_providers.dart';
 import '../../../inventory/presentation/widgets/inventory_item_card.dart';
+import '../../domain/entities/job_entity.dart';
 import '../../domain/entities/job_service_entity.dart';
 import '../../domain/entities/job_part_entity.dart';
 import '../../domain/entities/job_expense_entity.dart';
@@ -73,7 +76,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
   String? _serviceType;
   String? _finalCustomerId;
-  String _status = 'in_progress';
+  String _status = 'quoted';
   String _paymentStatus = 'unpaid';
   String? _leadSource;
 
@@ -102,6 +105,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   List<InventoryItemEntity> _partSuggestions = [];
   int _hwSuggestionIndex = -1;
   List<InventoryItemEntity> _hwSuggestions = [];
+  final List<XFile> _generalPhotos = [];
   final List<XFile> _beforePhotos = [];
   final List<XFile> _afterPhotos = [];
 
@@ -176,8 +180,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
                       _additionalServices.isNotEmpty ||
                       _hardwareItems.isNotEmpty ||
                       _expenses.isNotEmpty ||
-                      _beforePhotos.isNotEmpty ||
-                      _afterPhotos.isNotEmpty;
+                       _generalPhotos.isNotEmpty ||
+                       _beforePhotos.isNotEmpty ||
+                       _afterPhotos.isNotEmpty;
 
   bool _canMoveForwardForStep(int step) {
     final hasCustomer = _finalCustomerId != null;
@@ -341,23 +346,21 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        title: Text('DISCARD DRAFT?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        content: Text('Your entered job details will be lost. Leave anyway?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.bold))),
-        ],
-      ),
+    return await KsConfirmDialog.show(
+      context,
+      title: 'DISCARD DRAFT?',
+      message: 'Your entered job details will be lost. Leave anyway?',
+      confirmLabel: 'DISCARD',
+      cancelLabel: 'KEEP EDITING',
+      isDanger: true,
+      onConfirm: () {},
     ) ?? false;
   }
 
   Future<void> _onSave() async {
     HapticFeedback.heavyImpact();
 
+    // ─── Validation ───────────────────────────────────────
     if (_finalCustomerId == null) {
       final phone = _phoneController.text.trim();
       final valid = (phone.length == 10 && phone.startsWith('0')) ||
@@ -367,6 +370,109 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         return;
       }
     }
+
+    // Recurring check
+    if (_isRecurring && (_recurringInterval == null || _recurringInterval!.isEmpty)) {
+      if (mounted) KsSlidingNotification.show(context, message: "Select a recurring interval or turn off recurring", type: KsNotificationType.error);
+      return;
+    }
+    if (_isRecurring && _finalCustomerId == null) {
+      if (mounted) KsSlidingNotification.show(context, message: "A customer is required for recurring jobs", type: KsNotificationType.error);
+      return;
+    }
+
+    // Pricing cross-validation
+    final quotedPesewas = CurrencyFormatter.parseToPesewas(_quotedAmountController.text.trim());
+    var finalPesewas = CurrencyFormatter.parseToPesewas(_amountController.text.trim());
+
+    if (_paymentStatus == 'paid' && (finalPesewas == null || finalPesewas <= 0)) {
+      if (mounted) KsSlidingNotification.show(context, message: "Payment is 'Paid' but no final amount set", type: KsNotificationType.error);
+      return;
+    }
+
+    // Status cross-validation: completed/invoiced require a final amount
+    if ((_status == 'completed' || _status == 'invoiced') && (finalPesewas == null || finalPesewas <= 0)) {
+      if (mounted) KsSlidingNotification.show(context,
+        message: _status == 'completed'
+            ? "Set a final amount before marking as completed"
+            : "Set a final amount before marking as invoiced",
+        type: KsNotificationType.error);
+      return;
+    }
+
+    // Lead source reminder (non-blocking)
+    if (_leadSource == null && mounted) {
+      KsSlidingNotification.show(context,
+        message: 'Consider adding a lead source for tracking',
+        type: KsNotificationType.info);
+    }
+
+    // Quoted → final amount prompt: if quoted is set but final is empty, suggest copy
+    if (quotedPesewas != null && quotedPesewas > 0 && (finalPesewas == null || finalPesewas <= 0) && mounted) {
+      final useQuoted = await KsConfirmDialog.show(
+        context,
+        title: 'USE QUOTED AMOUNT?',
+        message: 'You entered a quoted amount of ${CurrencyFormatter.format(quotedPesewas)} '
+            'but no final amount.\n\nWould you like to use the quoted amount as the final amount?',
+        confirmLabel: 'USE QUOTED',
+        cancelLabel: 'SKIP',
+        isDanger: false,
+        onConfirm: () {},
+      );
+      if (useQuoted == true && mounted) {
+        _amountController.text = _quotedAmountController.text;
+        // Recalculate finalPesewas for the summary below
+        finalPesewas = CurrencyFormatter.parseToPesewas(_amountController.text.trim());
+      }
+    }
+
+    // Count items with empty names
+    final skippedItems = _items.where((i) => i.nameController.text.trim().isEmpty).length;
+    final validItems = _items.where((i) => i.nameController.text.trim().isNotEmpty).toList();
+
+    // Count expenses with zero amount
+    final zeroAmtExpenses = _expenses.where((e) {
+      final amt = CurrencyFormatter.parseToPesewas(e.amountController.text.trim());
+      return amt == null || amt <= 0;
+    }).length;
+
+    // Build summary for confirmation dialog
+    final summaryParts = <String>[];
+    summaryParts.add('Service: ${_serviceType?.replaceAll('_', ' ')}');
+    if (_additionalServices.isNotEmpty) {
+      summaryParts.add('Additional: ${_additionalServices.length}');
+    }
+    if (validItems.isNotEmpty) {
+      final totalQty = validItems.fold<int>(0, (s, i) => s + (int.tryParse(i.qtyController.text.trim()) ?? 1));
+      summaryParts.add('Items: ${validItems.length} ($totalQty qty)');
+    }
+    if (_expenses.isNotEmpty) {
+      final totalExp = _expenses.fold<int>(0, (s, e) => s + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0));
+      summaryParts.add('Expenses: ${CurrencyFormatter.format(totalExp)}');
+    }
+    if (finalPesewas != null && finalPesewas > 0) {
+      summaryParts.add('Total: ${CurrencyFormatter.format(finalPesewas)}');
+    }
+
+    String summaryMsg = summaryParts.join('\n');
+    if (skippedItems > 0) {
+      summaryMsg += '\n\n⚠️ $skippedItems item${skippedItems > 1 ? 's' : ''} skipped (empty name)';
+    }
+    if (zeroAmtExpenses > 0) {
+      summaryMsg += '\n⚠️ $zeroAmtExpenses expense${zeroAmtExpenses > 1 ? 's' : ''} have no amount';
+    }
+
+    // Confirmation dialog
+    final confirmed = await KsConfirmDialog.show(
+      context,
+      title: 'SAVE THIS JOB?',
+      message: summaryMsg,
+      confirmLabel: 'SAVE JOB',
+      cancelLabel: 'REVIEW',
+      isDanger: false,
+      onConfirm: () {},
+    );
+    if (confirmed != true || !mounted) return;
 
     double? gpsLat;
     double? gpsLng;
@@ -402,6 +508,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       )).toList(),
       hardwareItems: [],
       photos: [
+        ..._generalPhotos.map((p) => (File(p.path), '', _inferMediaType(p.path))),
         ..._beforePhotos.map((p) => (File(p.path), 'before', _inferMediaType(p.path))),
         ..._afterPhotos.map((p) => (File(p.path), 'after', _inferMediaType(p.path))),
       ],
@@ -456,17 +563,14 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
       ref.read(logJobProvider.notifier).reset();
 
-      final saveAsTemplate = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: context.ksc.primary800,
-          title: Text('SAVE AS TEMPLATE?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-          content: Text('Save this job as a reusable template?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('NO', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('YES', style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.bold))),
-          ],
-        ),
+      final saveAsTemplate = await KsConfirmDialog.show(
+        context,
+        title: 'SAVE AS TEMPLATE?',
+        message: 'Save this job as a reusable template?',
+        confirmLabel: 'YES',
+        cancelLabel: 'NO',
+        isDanger: false,
+        onConfirm: () {},
       );
 
       if (saveAsTemplate == true && mounted) {
@@ -559,7 +663,10 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        KsSlidingNotification.show(context, message: job.isSynced ? "Job saved" : "Saved locally.", type: KsNotificationType.success);
+        await KsSuccessMoment.show(context,
+          title: "Job Saved",
+          subtitle: job.isSynced ? null : "Saved locally",
+        );
       }
     } else {
       final error = ref.read(logJobProvider).errorMessage;
@@ -609,7 +716,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       onClose: () => _confirmDiscard().then((ok) {
         if (ok && mounted) Navigator.of(context).pop();
       }),
-      stepContent: (step, subStep, rebuild) {
+      stepContent: (step, subStep, rebuild, advance) {
         // Inject save-as-template button into step 6 (EXTRAS)
         if (step == 6) {
           return Padding(
@@ -617,7 +724,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildStepByIndex(step),
+                _buildStepByIndex(step, advance),
                 const SizedBox(height: 16),
                 if (state.isLoading)
                   const Padding(
@@ -649,15 +756,15 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       }                 // close if block
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: _buildStepByIndex(step),
+        child: _buildStepByIndex(step, advance),
       );
     },
   );
 }
 
-  Widget _buildStepByIndex(int step) {
+  Widget _buildStepByIndex(int step, VoidCallback? advance) {
     switch (step) {
-      case 0: return _buildStep0();
+      case 0: return _buildStep0(advance);
       case 1: return _buildStep1();
       case 2: return _buildStep2();
       case 3: return _buildStep3();
@@ -668,9 +775,19 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     }
   }
 
-  Widget _buildStep0() {
+  Widget _buildStep0(VoidCallback? advance) {
     final templatesAsync = ref.watch(jobTemplateProvider);
     final templates = templatesAsync.valueOrNull ?? [];
+
+    if (templatesAsync.hasError && templates.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          KsSlidingNotification.show(context,
+            message: 'Could not load templates',
+            type: KsNotificationType.error);
+        }
+      });
+    }
 
     if (templates.isEmpty) {
       return Padding(
@@ -680,9 +797,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
           title: 'NO TEMPLATES YET',
           subtitle: 'Save a job as a template from the EXTRAS step\nto reuse it here.',
           actionLabel: 'START FRESH',
-          onAction: () {
-            // No pre-fill — user manually advances to step 1 via NEXT
-          },
+          onAction: advance,
         ),
       );
     }
@@ -690,10 +805,10 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ...templates.map((t) => _buildTemplateCard(t)),
+        ...templates.map((t) => _buildTemplateCard(t, advance)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: advance,
           icon: const Icon(LineAwesomeIcons.plus_solid, size: 14),
           label: Text('START FRESH',
             style: AppTextStyles.label.copyWith(
@@ -714,7 +829,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     );
   }
 
-  Widget _buildTemplateCard(JobTemplateEntity template) {
+  Widget _buildTemplateCard(JobTemplateEntity template, VoidCallback? advance) {
     final serviceIcon = ServiceIconMap.resolve(template.serviceType);
     final partsSummary = <String>[];
     if (template.services.isNotEmpty) {
@@ -731,7 +846,10 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: () => _applyTemplate(template),
+        onTap: () {
+          _applyTemplate(template);
+          advance?.call();
+        },
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
@@ -785,7 +903,14 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     return JobStepStatus(
       status: _status,
       leadSource: _leadSource,
-      onStatusChanged: (v) => setState(() => _status = v),
+      onStatusChanged: (v) => setState(() {
+        _status = v;
+        // Auto-reset payment to the first allowed option if current is invalid
+        final allowed = JobEntity.allowedPaymentStatuses(v);
+        if (!allowed.contains(_paymentStatus)) {
+          _paymentStatus = allowed.first;
+        }
+      }),
       onLeadSourceChanged: (v) => setState(() => _leadSource = v),
     );
   }
@@ -842,31 +967,16 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
 
         if (typedName.isNotEmpty && typedName != matchedName) {
           // Name mismatch — prompt user
-          final useExisting = await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              backgroundColor: context.ksc.primary800,
-              title: Text('CUSTOMER NAME MISMATCH',
-                style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-              content: Text(
-                'Phone belongs to ${customer.fullName.toUpperCase()}.\n\n'
+          final useExisting = await KsConfirmDialog.show(
+            context,
+            title: 'CUSTOMER NAME MISMATCH',
+            message: 'Phone belongs to ${customer.fullName.toUpperCase()}.\n\n'
                 'You entered: ${_customerController.text.trim().toUpperCase()}\n\n'
                 'Use the existing customer name?',
-                style: AppTextStyles.body.copyWith(color: context.ksc.neutral400),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text('KEEP MY NAME',
-                    style: AppTextStyles.label.copyWith(color: context.ksc.neutral400)),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text('USE EXISTING',
-                    style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
+            confirmLabel: 'USE EXISTING',
+            cancelLabel: 'KEEP MY NAME',
+            isDanger: false,
+            onConfirm: () {},
           );
 
           if (useExisting == true && mounted) {
@@ -902,7 +1012,11 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         });
       }
     } catch (_) {
-      // Silently fail — lookup is non-critical
+      if (mounted) {
+        KsSlidingNotification.show(context,
+          message: 'Could not check for existing customer',
+          type: KsNotificationType.error);
+      }
     }
   }
 
@@ -912,6 +1026,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       amountController: _amountController,
       quotedFocusNode: _quotedFocusNode,
       amountFocusNode: _amountFocusNode,
+      jobStatus: _status,
       paymentStatus: _paymentStatus,
       onPaymentStatusChanged: (v) => setState(() => _paymentStatus = v),
     );
@@ -936,8 +1051,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       expenseCount: _expenses.length,
       expenseTotal: _expenses.fold<int>(0, (sum, e) =>
         sum + (CurrencyFormatter.parseToPesewas(e.amountController.text.trim()) ?? 0)),
-      photoCount: _beforePhotos.length + _afterPhotos.length,
-      notesPreview: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      photoCount: _generalPhotos.length + _beforePhotos.length + _afterPhotos.length,
+      notesPreview: _notesController.text.trim().isEmpty ? null : _notesController.text.trim().length > 25 ? '${_notesController.text.trim().substring(0, 25)}…' : _notesController.text.trim(),
       onOpenItems: _showItemsDrawer,
       onOpenExpenses: _showExpensesDrawer,
       onOpenMedia: _showPhotosDrawer,
@@ -1364,17 +1479,14 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   }
 
   Future<bool> _confirmDrawerClose(BuildContext sheetCtx) async {
-    return await showDialog<bool>(
-      context: sheetCtx,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        title: Text('DISCARD CHANGES?', style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-        content: Text('You have unsaved changes. Discard them?', style: AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('KEEP EDITING', style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('DISCARD', style: AppTextStyles.label.copyWith(color: context.ksc.error500, fontWeight: FontWeight.bold))),
-        ],
-      ),
+    return await KsConfirmDialog.show(
+      sheetCtx,
+      title: 'DISCARD CHANGES?',
+      message: 'You have unsaved changes. Discard them?',
+      confirmLabel: 'DISCARD',
+      cancelLabel: 'KEEP EDITING',
+      isDanger: true,
+      onConfirm: () => Navigator.pop(sheetCtx),
     ) ?? false;
   }
 
@@ -1630,11 +1742,20 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     required int? existingIndex,
     required VoidCallback onChanged,
   }) async {
+    bool validationOk = true;
     final result = await KsBottomSheetScaffold.show<bool>(
       context,
       title: existingIndex != null ? "EDIT SERVICE" : "ADD SERVICE",
       bottomLabel: existingIndex != null ? "SAVE" : "ADD",
-      onDone: () {}, // Needed to show the bottom button
+      onDone: () {
+        // Validate qty
+        final qty = int.tryParse(service.qtyController.text.trim());
+        validationOk = qty != null && qty > 0;
+        if (!validationOk) {
+          KsSlidingNotification.show(context, message: 'Quantity must be a positive number', type: KsNotificationType.error);
+        }
+      },
+      canPop: () => validationOk,
       contentBuilder: (ctx, setSheetState) {
         final qty = int.tryParse(service.qtyController.text) ?? 1;
         final customPrice = CurrencyFormatter.parseToPesewas(service.priceController.text.trim());
@@ -2155,11 +2276,20 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     if (expense.category == 'transport') { /* default */ }
     bool dirty = false;
 
+    bool validationOk = true;
+
     final result = await KsBottomSheetScaffold.show<bool>(
       context,
       title: existingIndex != null ? "EDIT EXPENSE" : "ADD EXPENSE",
       bottomLabel: existingIndex != null ? "SAVE" : "ADD",
-      onDone: () {}, // Needed to show the bottom button
+      onDone: () {
+        final amt = CurrencyFormatter.parseToPesewas(expense.amountController.text.trim());
+        validationOk = amt != null && amt > 0;
+        if (!validationOk) {
+          KsSlidingNotification.show(context, message: 'Enter an amount greater than 0', type: KsNotificationType.error);
+        }
+      },
+      canPop: () => validationOk,
       contentBuilder: (ctx, setSheetState) {
         final qty = 1; // single expense
         final amt = CurrencyFormatter.parseToPesewas(expense.amountController.text.trim());
@@ -2361,21 +2491,25 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     );
   }
   void _showPhotosDrawer() {
+    final localGeneral = List<XFile>.from(_generalPhotos);
     final localBefore = List<XFile>.from(_beforePhotos);
     final localAfter = List<XFile>.from(_afterPhotos);
     bool dirty = false;
-    bool tabBefore = true;
+    int selectedTab = 0; // 0=ALL, 1=BEFORE, 2=AFTER
     bool isLoading = false;
 
     KsBottomSheetScaffold.show(
       context,
       title: "MEDIA",
-      subtitle: "${localBefore.length + localAfter.length} items · "
+      subtitle: "${localGeneral.length + localBefore.length + localAfter.length} items · "
           "${localBefore.length} before · ${localAfter.length} after",
       isDirty: () => dirty,
       bottomLabel: "DONE",
       onDone: () {
         setState(() {
+          _generalPhotos
+            ..clear()
+            ..addAll(localGeneral);
           _beforePhotos
             ..clear()
             ..addAll(localBefore);
@@ -2395,21 +2529,34 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         ),
         child: Row(
           children: [
-            _buildTab("BEFORE", localBefore.length, true, tabBefore, () {
-              tabBefore = true;
+            _buildMediaTab("ALL", localGeneral.length + localBefore.length + localAfter.length, 0, selectedTab, () {
+              selectedTab = 0;
               setSheetState(() {});
             }),
             const SizedBox(width: 3),
-            _buildTab("AFTER", localAfter.length, false, tabBefore, () {
-              tabBefore = false;
+            _buildMediaTab("BEFORE", localBefore.length, 1, selectedTab, () {
+              selectedTab = 1;
+              setSheetState(() {});
+            }),
+            const SizedBox(width: 3),
+            _buildMediaTab("AFTER", localAfter.length, 2, selectedTab, () {
+              selectedTab = 2;
               setSheetState(() {});
             }),
           ],
         ),
       ),
       contentBuilder: (ctx, setSheetState) {
-        final activeList = tabBefore ? localBefore : localAfter;
-        final label = tabBefore ? "BEFORE" : "AFTER";
+        final activeList = switch (selectedTab) {
+          1 => localBefore,
+          2 => localAfter,
+          _ => localGeneral,
+        };
+        final label = switch (selectedTab) {
+          1 => "BEFORE",
+          2 => "AFTER",
+          _ => "",
+        };
 
         return _buildMediaGrid(
           files: activeList,
@@ -2464,9 +2611,15 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     );
   }
 
-  /// Tab button for BEFORE / AFTER toggle.
-  Widget _buildTab(String label, int count, bool isBefore, bool isActive, VoidCallback onTap) {
-    final active = (isBefore && isActive) || (!isBefore && !isActive);
+  /// Tab button for ALL / BEFORE / AFTER toggle.
+  Widget _buildMediaTab(String label, int count, int tabIndex, int selectedTab, VoidCallback onTap) {
+    final active = tabIndex == selectedTab;
+    final dotColor = switch (tabIndex) {
+      0 => context.ksc.accent500,
+      1 => const Color(0xFF6BB5FF),
+      2 => const Color(0xFF4CAF50),
+      _ => context.ksc.neutral500,
+    };
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -2483,7 +2636,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
                 width: 6, height: 6,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: active ? context.ksc.primary900 : (isBefore ? const Color(0xFF6BB5FF) : const Color(0xFF4CAF50)),
+                  color: active ? context.ksc.primary900 : dotColor,
                 ),
               ),
               const SizedBox(width: 6),
@@ -2524,7 +2677,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
                   children: [
                     Icon(LineAwesomeIcons.camera_solid, size: 36, color: context.ksc.neutral600),
                     const SizedBox(height: 12),
-                    Text("NO $label MEDIA",
+                    Text(label.isEmpty ? "NO MEDIA" : "NO $label MEDIA",
                       style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 1),
                     ),
                     const SizedBox(height: 12),
@@ -3007,11 +3160,21 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     required int? existingIndex,
     required VoidCallback onChanged,
   }) {
+    bool validationOk = true;
     KsBottomSheetScaffold.show<bool>(
       context,
       title: existingIndex != null ? "EDIT ITEM" : "NEW ITEM",
       bottomLabel: existingIndex != null ? "SAVE" : "ADD",
-      onDone: () {}, // Needed to show the bottom button
+      onDone: () {
+        // Manual entry items need a name
+        if (!item.isFromInventory) {
+          validationOk = item.nameController.text.trim().isNotEmpty;
+          if (!validationOk) {
+            KsSlidingNotification.show(context, message: 'Enter an item name', type: KsNotificationType.error);
+          }
+        }
+      },
+      canPop: () => validationOk,
       contentBuilder: (ctx, setSheetState) {
         return Column(
           children: [
@@ -3166,9 +3329,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     ).then((result) {
       if (result == true) {
         onChanged();
-      } else if (existingIndex == null) {
-        item.dispose();
       }
+      // Note: item is intentionally NOT disposed here — TextFields inside the
+      // drawer still reference item's controllers during unmounting.
     });
   }
 

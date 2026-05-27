@@ -4,6 +4,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/ks_sliding_notification.dart';
 import '../providers/job_providers.dart';
 
 /// Step 6 of the Add New Job wizard: Items, Expenses, Media, Notes cards.
@@ -152,7 +153,16 @@ class JobStepExtras extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (e, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            KsSlidingNotification.show(context,
+              message: 'Could not load past job suggestions',
+              type: KsNotificationType.info);
+          }
+        });
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -195,7 +205,7 @@ class JobStepExtras extends ConsumerWidget {
                 ],
               ),
             ),
-            trailing,
+            Flexible(child: trailing),
             const SizedBox(width: 8),
             Icon(LineAwesomeIcons.angle_right_solid,
               color: context.ksc.neutral500, size: 16),

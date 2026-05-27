@@ -11,6 +11,7 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../providers/customer_providers.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
@@ -121,7 +122,10 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
         ref.invalidate(customerDetailProvider(widget.customerId));
         ref.read(customerListProvider.notifier).load();
         context.pop();
-        KsSlidingNotification.show(context, message: "Customer updated", type: KsNotificationType.success);
+        await KsSuccessMoment.show(context,
+          title: "Customer Updated",
+          subtitle: name,
+        );
       }
     } catch (e) {
       if (mounted) KsSlidingNotification.show(context, message: "Update failed: $e", type: KsNotificationType.error);

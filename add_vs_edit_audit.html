@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Add Job vs Edit Job — UI Comparison</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#fff;padding:32px;max-width:1100px;margin:0 auto}
+
+h1{font-weight:900;font-size:22px;margin-bottom:4px;color:#F4A300;letter-spacing:0.3px}
+.subtitle{color:#8899AA;font-size:13px;margin-bottom:28px}
+
+.section{margin-bottom:40px}
+.section-title{font-weight:800;font-size:15px;color:#fff;margin-bottom:16px;border-bottom:2px solid #F4A300;padding-bottom:8px;letter-spacing:0.3px}
+
+/* ── Phone chassis ── */
+.phone-row{display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+
+.phone{width:320px;min-height:580px;background:#0D1117;border-radius:24px;border:2px solid #1E2A3A;overflow:hidden;position:relative;flex-shrink:0}
+.phone-notch{height:28px;background:#0D1117;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #1E2A3A}
+.phone-notch div{width:120px;height:5px;background:#1E2A3A;border-radius:3px}
+
+.phone-header{padding:14px 16px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1E2A3A}
+.phone-header .back{color:#556677;font-size:16px}
+.phone-header .title{font-size:12px;font-weight:800;color:#fff;letter-spacing:0.5px;flex:1}
+.phone-header .badge{font-size:9px;font-weight:800;padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.badge.good{background:#0D2A1A;color:#4ADE80}
+.badge.bad{background:#2A0D0D;color:#FF6B6B}
+
+.phone-body{padding:16px}
+.phone-label{font-size:10px;font-weight:700;color:#556677;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;padding-left:2px}
+
+/* ── UI mock elements ── */
+.extras-card{background:#111D2E;border-radius:8px;border:1px solid #1E2A3A;margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.extras-card .icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.extras-card .icon.gold{background:#F4A30020;color:#F4A300}
+.extras-card .content{flex:1}
+.extras-card .title-text{font-size:12px;font-weight:700;color:#fff;letter-spacing:0.2px}
+.extras-card .sub{font-size:10px;color:#556677;margin-top:2px}
+.extras-card .trailing{font-size:11px;font-weight:800;color:#F4A300}
+
+/* ── Items list ── */
+.item-card{background:#111D2E;border-radius:6px;border:1px solid #1E2A3A;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.item-card .ico{font-size:14px;width:20px;text-align:center}
+.item-card .info{flex:1}
+.item-card .name{font-size:11px;font-weight:700;color:#fff}
+.item-card .meta{font-size:9px;color:#556677;margin-top:2px}
+.item-card .price{font-size:11px;font-weight:900;color:#F4A300}
+.item-card .del{color:#FF6B6B80;font-size:14px;cursor:default}
+
+.add-btn{width:100%;padding:10px;border:1px dashed #F4A30040;border-radius:6px;text-align:center;font-size:11px;font-weight:700;color:#F4A30080;background:transparent;margin-top:4px;cursor:default}
+.empty-state{padding:40px 20px;text-align:center;color:#556677}
+.empty-state .big-icon{font-size:36px;margin-bottom:12px}
+.empty-state .empty-title{font-size:12px;font-weight:700;color:#556677;margin-bottom:4px}
+.empty-state .empty-sub{font-size:10px;color:#3A4A5A}
+
+/* ── Expense styles ── */
+.expense-row{background:#111D2E;border-radius:6px;border:1px solid #1E2A3A;padding:10px 12px;margin-bottom:8px}
+.expense-row .field-row{display:flex;gap:6px;margin-bottom:6px}
+.expense-row .field{flex:1}
+.expense-row .field-label{font-size:8px;font-weight:700;color:#556677;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px}
+.expense-row .field-input{background:#0A1628;border:1px solid #1E2A3A;border-radius:4px;padding:7px 8px;font-size:11px;color:#fff;min-height:28px}
+.expense-row .field-input.inline{background:transparent;border:none;border-bottom:1px solid #1E2A3A;border-radius:0;padding:4px 0}
+
+/* ── Summary card ── */
+.summary-card{background:#111D2E;border-radius:6px;border:1px solid #1E2A3A;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.summary-card .emoji{font-size:16px;width:28px;height:28px;background:#F4A30015;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.summary-card .info{flex:1}
+.summary-card .cat-name{font-size:11px;font-weight:700;color:#fff}
+.summary-card .cat-desc{font-size:9px;color:#556677;margin-top:1px}
+.summary-card .cat-amt{font-size:12px;font-weight:900;color:#F4A300}
+.summary-card .cat-del{color:#FF6B6B80;font-size:14px;margin-left:4px;cursor:default}
+
+/* ── Expense Edit Drawer ── */
+.edit-drawer{background:#111D2E;border-radius:8px;border:1px solid #1E2A3A;padding:20px}
+.edit-drawer .cat-picker{background:#0A1628;border:1px solid #F4A30040;border-radius:6px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-top:6px;margin-bottom:16px}
+.edit-drawer .field-group{margin-bottom:14px}
+.edit-drawer .field-group .flabel{font-size:9px;font-weight:700;color:#556677;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px}
+.edit-drawer .field-group .finput{border-bottom:1px solid #2A3A4A;padding:4px 0 8px;font-size:14px;color:#F4A300;font-weight:900}
+.edit-drawer .field-group .finput.text{color:#fff;font-weight:600;font-size:13px}
+.edit-drawer .total-display{text-align:right;margin-top:8px}
+.edit-drawer .total-display .tlabel{font-size:9px;color:#556677;font-weight:700;text-transform:uppercase}
+.edit-drawer .total-display .tvalue{font-size:22px;font-weight:900;color:#fff}
+.edit-drawer .bottom-btn{width:100%;padding:14px;background:#F4A300;border:none;border-radius:4px;font-size:12px;font-weight:900;color:#0A1628;letter-spacing:1px;margin-top:20px;cursor:default}
+
+/* ── Diff callout ── */
+.diff-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:800;text-transform:uppercase;margin-left:6px}
+.diff-tag.same{background:#0D2A1A;color:#4ADE80;border:1px solid #4ADE8040}
+.diff-tag.wrong{background:#2A0D0D;color:#FF6B6B;border:1px solid #FF6B6B40}
+.diff-tag.fixed{background:#F4A30020;color:#F4A300;border:1px solid #F4A30040}
+.diff-tag.new{background:#1A2A4A;color:#6BA3FF;border:1px solid #6BA3FF40}
+
+/* ── Flow arrows ── */
+.flow-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 8px;color:#556677;flex-shrink:0;width:40px}
+.flow-arrow .arrow{font-size:28px;line-height:1}
+.flow-arrow .label{font-size:8px;font-weight:700;text-transform:uppercase;margin-top:4px;letter-spacing:0.3px}
+
+/* ── Fix box ── */
+.fix-row{display:flex;gap:24px;margin-top:24px;justify-content:center;flex-wrap:wrap}
+.fix-card{flex:1;min-width:280px;max-width:500px;background:#111D2E;border-radius:8px;border:1px solid #1E2A3A;padding:20px}
+.fix-card .fix-title{font-size:13px;font-weight:800;color:#4ADE80;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.3px}
+.fix-card ul{list-style:none;padding:0}
+.fix-card li{font-size:12px;color:#CCD6E0;padding:5px 0 5px 16px;position:relative;line-height:1.5;border-bottom:1px solid #1E2A3A10}
+.fix-card li:last-child{border-bottom:none}
+.fix-card li::before{content:'→';position:absolute;left:0;color:#F4A300}
+.fix-card .file{font-size:10px;color:#556677;margin-bottom:8px;font-family:monospace}
+</style>
+</head>
+<body>
+
+<h1>📱 Add Job vs Edit Job — UI Comparison</h1>
+<p class="subtitle">How the EXTRAS step drawers look on each screen. Green = correct. Red = broken / inconsistent.</p>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 1: ITEMS USED -->
+<!-- ════════════════════════════════════════════ -->
+
+<div class="section">
+<div class="section-title">🔧 1. Items Used — The items list is EMPTY on Edit Job</div>
+
+<div class="phone-row">
+
+  <!-- ADD JOB PHONE -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="phone-header">
+      <span class="back">‹</span>
+      <span class="title">ADD NEW JOB</span>
+      <span class="badge good">works</span>
+    </div>
+    <div class="phone-body">
+      <div class="phone-label">Step 6: Extras</div>
+      <div class="extras-card">
+        <div class="icon gold">📦</div>
+        <div class="content">
+          <div class="title-text">Items Used</div>
+          <div class="sub">3 items</div>
+        </div>
+        <div class="trailing">›</div>
+      </div>
+      <div class="extras-card" style="opacity:0.6">
+        <div class="icon" style="background:#1A2A3A;color:#556677">💰</div>
+        <div class="content">
+          <div class="title-text" style="color:#556677">Expenses</div>
+          <div class="sub">2 expenses</div>
+        </div>
+        <div class="trailing" style="color:#556677">›</div>
+      </div>
+
+      <div style="margin-top:16px;padding-top:12px;border-top:1px dashed #1E2A3A">
+        <div class="phone-label" style="color:#4ADE80">✓ Items Drawer (tap Items Used)</div>
+
+        <!-- Items appear! -->
+        <div class="item-card">
+          <div class="ico">🔒</div>
+          <div class="info">
+            <div class="name">YALE 210 DEADBOLT</div>
+            <div class="meta">Qty: 2 · From inventory</div>
+          </div>
+          <div class="price">GHS 180</div>
+          <div class="del">✕</div>
+        </div>
+        <div class="item-card">
+          <div class="ico">📦</div>
+          <div class="info">
+            <div class="name">STRIKE PLATE</div>
+            <div class="meta">Qty: 1 · Manual entry</div>
+          </div>
+          <div class="price">—</div>
+          <div class="del">✕</div>
+        </div>
+
+        <div class="add-btn">+ ADD ITEM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div class="flow-arrow">
+    <div class="arrow">➡️</div>
+    <div class="label">Save & → Edit</div>
+  </div>
+
+  <!-- EDIT JOB PHONE -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="phone-header">
+      <span class="back">‹</span>
+      <span class="title">EDIT JOB</span>
+      <span class="badge bad">broken</span>
+    </div>
+    <div class="phone-body">
+      <div class="phone-label">Step 5: Extras</div>
+      <div class="extras-card">
+        <div class="icon gold">📦</div>
+        <div class="content">
+          <div class="title-text">Items Used</div>
+          <div class="sub">0 items <span class="diff-tag wrong">EMPTY</span></div>
+        </div>
+        <div class="trailing">›</div>
+      </div>
+
+      <div style="margin-top:16px;padding-top:12px;border-top:1px dashed #1E2A3A">
+        <div class="phone-label" style="color:#FF6B6B">✗ Items Drawer — shows nothing</div>
+
+        <!-- Empty state -->
+        <div class="empty-state">
+          <div class="big-icon">📦</div>
+          <div class="empty-title">NO ITEMS FOUND</div>
+          <div class="empty-sub">Add items to your inventory first</div>
+        </div>
+
+        <div class="add-btn">+ ADD ITEM</div>
+
+        <div style="margin-top:12px;padding:10px 12px;background:#2A0D0D;border-radius:6px;border:1px solid #FF6B6B40">
+          <div style="font-size:10px;color:#FF6B6B;font-weight:700;margin-bottom:4px">⚠ WHY IS THIS EMPTY?</div>
+          <div style="font-size:10px;color:#CC8899;line-height:1.5">
+            The items were saved as "parts" but <strong style="color:#FF6B6B">hardware items are stored separately</strong> and never merged into the items drawer. Also, <strong style="color:#FF6B6B">inventoryItem reference</strong> is lost on load.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fix-row">
+  <div class="fix-card">
+    <div class="fix-title">🔧 Fix: Items</div>
+    <div class="file">edit_job_screen.dart</div>
+    <ul>
+      <li><strong>Merge hardware + parts</strong> into a single <code>_items</code> list so both appear in the drawer</li>
+      <li><strong>Restore inventoryItem reference</strong> by cross-checking <code>inventoryItemId</code> against inventory provider</li>
+      <li><strong>Add empty-state message</strong> with explanation instead of a blank screen</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 2: EXPENSES -->
+<!-- ════════════════════════════════════════════ -->
+
+<div class="section">
+<div class="section-title">💰 2. Expenses — Edit Job uses INLINE fields instead of proper drawer</div>
+
+<div class="phone-row">
+
+  <!-- ADD JOB EXPENSES -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="phone-header">
+      <span class="back">‹</span>
+      <span class="title">EXPENSES</span>
+      <span class="badge good">correct</span>
+    </div>
+    <div class="phone-body">
+      <div class="phone-label">✱ KsBottomSheetScaffold</div>
+
+      <!-- Summary cards -->
+      <div class="summary-card">
+        <div class="emoji">🚕</div>
+        <div class="info">
+          <div class="cat-name">TRANSPORT</div>
+          <div class="cat-desc">Troski fare to East Legon</div>
+        </div>
+        <div class="cat-amt">GHS 25</div>
+        <div class="cat-del">✕</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="emoji">📦</div>
+        <div class="info">
+          <div class="cat-name">SUPPLIES</div>
+          <div class="cat-desc">Screws and anchors</div>
+        </div>
+        <div class="cat-amt">GHS 12</div>
+        <div class="cat-del">✕</div>
+      </div>
+
+      <div class="add-btn">+ ADD EXPENSE <span style="font-size:8px;color:#556677;margin-left:4px">→ opens edit drawer</span></div>
+
+      <!-- 2-drawer pattern visualization -->
+      <div style="margin-top:16px;padding:12px;background:#0A1628;border-radius:6px;border:1px solid #1E2A3A">
+        <div style="font-size:10px;color:#4ADE80;font-weight:700;margin-bottom:6px">✓ TAP A CARD → OPENS EDIT DRAWER</div>
+        <div class="edit-drawer" style="border-color:#4ADE8040">
+          <div style="font-size:10px;font-weight:700;color:#fff;margin-bottom:12px">✏️ EDIT EXPENSE</div>
+          <div class="field-group">
+            <div class="flabel">Category</div>
+            <div class="cat-picker" style="border-color:#F4A30040;padding:8px 10px">
+              <span>🚕</span>
+              <span style="font-size:11px;font-weight:700;color:#fff;flex:1">TRANSPORT</span>
+              <span style="color:#556677;font-size:12px">▼</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="flabel">Amount (GHS)</div>
+            <div class="finput">25.00</div>
+          </div>
+          <div class="field-group">
+            <div class="flabel">Description</div>
+            <div class="finput text">Troski fare to East Legon</div>
+          </div>
+          <div class="total-display">
+            <div class="tlabel">Total</div>
+            <div class="tvalue">GHS 25.00</div>
+          </div>
+          <div class="bottom-btn">SAVE</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div class="flow-arrow">
+    <div class="arrow">➡️</div>
+    <div class="label">Same data</div>
+  </div>
+
+  <!-- EDIT JOB EXPENSES -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="phone-header">
+      <span class="back">‹</span>
+      <span class="title">EXPENSES</span>
+      <span class="badge bad">inconsistent</span>
+    </div>
+    <div class="phone-body">
+      <div class="phone-label">✗ Raw showModalBottomSheet</div>
+
+      <!-- Inline expense rows -->
+      <div class="expense-row">
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Category</div>
+            <div class="field-input inline">transport</div>
+          </div>
+          <div class="field" style="max-width:100px">
+            <div class="field-label">Amount (GHS)</div>
+            <div class="field-input inline">25.00</div>
+          </div>
+          <div style="display:flex;align-items:center;padding-top:14px">
+            <span style="color:#FF6B6B80;font-size:14px">✕</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Description</div>
+            <div class="field-input inline">Troski fare to East Legon</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="expense-row">
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Category</div>
+            <div class="field-input inline">supplies</div>
+          </div>
+          <div class="field" style="max-width:100px">
+            <div class="field-label">Amount (GHS)</div>
+            <div class="field-input inline">12.00</div>
+          </div>
+          <div style="display:flex;align-items:center;padding-top:14px">
+            <span style="color:#FF6B6B80;font-size:14px">✕</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">Description</div>
+            <div class="field-input inline">Screws and anchors</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="add-btn">+ ADD EXPENSE</div>
+
+      <!-- Problem callout -->
+      <div style="margin-top:12px;padding:10px 12px;background:#2A0D0D;border-radius:6px;border:1px solid #FF6B6B40">
+        <div style="font-size:10px;color:#FF6B6B;font-weight:700;margin-bottom:4px">⚠ PROBLEMS:</div>
+        <div style="font-size:10px;color:#CC8899;line-height:1.6">
+          • All fields are <strong style="color:#FF6B6B">inline &amp; editable</strong> — no summary vs edit separation<br>
+          • No emoji category icons<br>
+          • No <strong style="color:#FF6B6B">KsBottomSheetScaffold</strong> chrome (dirty tracking, subtitle, done bar)<br>
+          • <strong style="color:#FF6B6B">TextEditingControllers</strong> created inside the builder every rebuild
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fix-row">
+  <div class="fix-card">
+    <div class="fix-title">🔧 Fix: Expenses</div>
+    <div class="file">edit_job_screen.dart</div>
+    <ul>
+      <li><strong>Replace raw sheet</strong> with <code>KsBottomSheetScaffold</code> + <code>ExpenseRow</code> (matching add job pattern exactly)</li>
+      <li><strong>Two-drawer flow:</strong> Drawer 1 = summary cards with emoji/category/description/amount/delete. Tap → Drawer 2 = edit drawer with category picker + amount + description + total.</li>
+      <li><strong>Convert</strong> <code>JobExpenseEntity ↔ ExpenseRow</code> at drawer open/close boundaries</li>
+      <li><strong>Remove</strong> inline <code>TextEditingController</code> creation in builder</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>

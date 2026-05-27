@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,7 +11,6 @@ import 'core/storage/hive_service.dart';
 import 'app.dart';
 
 void main() async {
-  enableFlutterDriverExtension();
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   
   // 01. GLOBAL ERROR HANDLER (Avoid Red Screen of Death in field)

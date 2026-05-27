@@ -168,5 +168,22 @@ void main() {
       final result = await usecase(validParams);
       expect(result.followUpSent, isFalse);
     });
+
+    test('throws when payment status not allowed for job status', () async {
+      final invalidParams = LogJobParams(
+        userId: 'user-123',
+        customerId: 'customer-123',
+        serviceType: 'car_lock_programming',
+        jobDate: DateTime.now(),
+        status: 'quoted',
+        paymentStatus: 'paid',
+      );
+
+      expect(
+        () => usecase(invalidParams),
+        throwsA(isA<ValidationException>()),
+      );
+      verifyNever(() => mockRepository.createJob(any()));
+    });
   });
 }

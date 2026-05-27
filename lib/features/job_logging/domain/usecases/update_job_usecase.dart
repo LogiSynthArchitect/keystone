@@ -36,6 +36,16 @@ class UpdateJobUsecase implements UseCase<JobEntity, UpdateJobParams> {
       );
     }
 
+    // Validation: Payment status must be valid for job status
+    final paymentErr = JobEntity.validatePaymentForStatus(job.status, job.paymentStatus);
+    if (paymentErr != null) {
+      throw ValidationException(
+        message: paymentErr,
+        code: 'INVALID_PAYMENT_FOR_STATUS',
+        field: 'payment_status',
+      );
+    }
+
     final updatedJob = job.copyWith(
       updatedAt: DateTime.now(),
     );

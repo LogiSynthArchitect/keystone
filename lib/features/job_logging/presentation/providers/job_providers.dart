@@ -7,7 +7,9 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/errors/validation_exception.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/storage/hive_service.dart';
 import '../../../../core/services/pending_media_upload_service.dart';
 import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../../data/datasources/job_local_datasource.dart';
@@ -364,9 +366,33 @@ int get thisMonthEarnings {
            j.jobDate.month == now.month &&
            j.amountCharged != null;
   });
-
   return thisMonthJobs.fold<int>(0, (sum, j) => sum + j.amountCharged!);
-}}
+}
+
+/// Filter-aware earnings — reflects whatever filters are active.
+int get filteredEarnings {
+  return filteredJobs
+      .where((j) => j.amountCharged != null)
+      .fold<int>(0, (sum, j) => sum + j.amountCharged!);
+}
+
+/// Filter-aware job count.
+int get filteredJobCount => filteredJobs.length;
+
+/// Human-readable label for the current filter context.
+String get summaryLabel {
+  if (filters.dateRange != null) {
+    final r = filters.dateRange!;
+    final start = r.start;
+    final end = r.end;
+    if (start.month == end.month && start.year == end.year) {
+      return DateFormat('MMMM yyyy').format(start).toUpperCase();
+    }
+    return '${start.day}/${start.month} \u2192 ${end.day}/${end.month}';
+  }
+  return 'THIS MONTH';
+}
+}
 
 class JobListNotifier extends StateNotifier<JobListState> {
   final Ref _ref;
@@ -539,6 +565,12 @@ class JobListNotifier extends StateNotifier<JobListState> {
 final jobListProvider = StateNotifierProvider<JobListNotifier, JobListState>((ref) =>
   JobListNotifier(ref, ref.watch(getJobsUsecaseProvider), ref.watch(syncOfflineJobsUsecaseProvider), ref.watch(archiveJobUsecaseProvider))
 );
+
+/// User-configurable monthly revenue target, persisted in Hive settings.
+final monthlyTargetProvider = StateProvider<int>((ref) {
+  final saved = HiveService.settings.get('monthlyTarget');
+  return (saved is int && saved > 0) ? saved : 800000;
+});
 
 class LogJobState {
   final bool isLoading;

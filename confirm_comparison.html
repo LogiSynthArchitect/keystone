@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Confirmation Modal Comparison</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:15px;font-weight:800;letter-spacing:0.5px;text-align:center}
+.sub{color:#6B7D8E;font-size:10px;text-align:center;max-width:600px}
+.layout{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+.phone{width:360px;background:#0F1D2F;border-radius:20px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;min-height:500px;position:relative;display:flex;flex-direction:column}
+
+/* page content behind */
+.page{padding:24px 20px;flex:1}
+.page .card{background:#0F1D2F;border-radius:8px;border:1px solid #1A2D44;padding:14px;margin-bottom:10px}
+.page .card .row{display:flex;align-items:center;gap:10px}
+.page .card .dot{width:6px;height:6px;border-radius:50%;background:#C8A84E;flex-shrink:0}
+.page .card .txt{font-size:10px;color:#4A5A6A}
+
+/* dimmed overlay */
+.overlay{position:absolute;inset:0;background:#00000080;z-index:5;display:flex;align-items:center;justify-content:center;padding:24px}
+
+/* ── KsConfirmDialog ── */
+.ks-dialog{background:#0F1D2F;border-radius:12px;width:100%;max-width:320px;overflow:hidden;border:1px solid #C8A84E40;box-shadow:0 8px 40px rgba(0,0,0,0.4)}
+.ks-dialog .hero{padding:24px 20px 16px;text-align:center}
+.ks-dialog .hero .icon-circle{width:52px;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.ks-dialog .hero .icon-circle.danger{background:#FF6B6B20;color:#FF6B6B}
+.ks-dialog .hero .icon-circle.warning{background:#C8A84E20;color:#C8A84E}
+.ks-dialog .hero .icon-circle.info{background:#6BB5FF20;color:#6BB5FF}
+.ks-dialog .hero .title{font-size:15px;font-weight:900;color:#fff;margin-bottom:4px}
+.ks-dialog .hero .msg{font-size:11px;color:#6B7D8E;line-height:1.4}
+.ks-dialog .left-bar{width:4px;background:#C8A84E;position:absolute;left:0;top:0;bottom:0}
+.ks-dialog .btns{display:flex;border-top:1px solid #1A2D44}
+.ks-dialog .btns .btn{flex:1;text-align:center;padding:14px 0;font-size:11px;font-weight:700;letter-spacing:0.5px;cursor:pointer}
+.ks-dialog .btns .btn.cancel{color:#4A5A6A}
+.ks-dialog .btns .btn.confirm{background:#C8A84E;color:#0A1628}
+.ks-dialog .btns .btn.danger{color:#FF6B6B}
+
+/* ── Raw AlertDialog ── */
+.raw-dialog{background:#0D1A2A;border-radius:8px;width:100%;max-width:320px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.4)}
+.raw-dialog .inner{padding:20px}
+.raw-dialog .title{font-size:15px;font-weight:900;color:#fff;margin-bottom:8px}
+.raw-dialog .msg{font-size:11px;color:#6B7D8E;line-height:1.4;margin-bottom:16px}
+.raw-dialog .btns{display:flex;justify-content:flex-end;gap:8px}
+.raw-dialog .btns .btn{font-size:10px;font-weight:700;letter-spacing:0.5px;padding:6px 12px;border-radius:4px;cursor:pointer;border:none}
+.raw-dialog .btns .btn.cancel{color:#4A5A6A;background:transparent}
+.raw-dialog .btns .btn.delete{color:#FF6B6B;background:transparent}
+.raw-dialog .btns .btn.confirm{color:#C8A84E;background:transparent}
+.raw-dialog .btns .btn.text-only{background:transparent;border:none;padding:6px 8px}
+
+/* truth table */
+.tt{width:100%;max-width:820px;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:9px;color:#8BA0B2;background:#0F1D2F;border-radius:8px;overflow:hidden;border:1px solid #1A2D44}
+th{background:#0A1628;padding:8px 12px;font-size:9px;font-weight:800;letter-spacing:0.5px;text-align:left;color:#fff}
+td{padding:7px 12px;border-top:1px solid #1A2D44}
+td:first-child{font-weight:600;color:#8BA0B2}
+td:nth-child(2), td:nth-child(3){color:#E5E7EB}
+.cent{text-align:center}
+.gold{color:#C8A84E}
+.green{color:#4CAF50}
+.red{color:#FF6B6B}
+.gray{color:#4A5A6A}
+
+/* stats */
+.stats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:4px 0}
+.stat{background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:10px 16px;text-align:center;min-width:90px}
+.stat .num{font-size:18px;font-weight:900;color:#fff}
+.stat .lbl{font-size:8px;color:#4A5A6A;margin-top:2px}
+.stat .lbl.gold{color:#C8A84E}
+.stat .lbl.red{color:#FF6B6B}
+
+/* files */
+.file-list{max-width:820px;width:100%}
+.file-list .file{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0A1628;border-radius:4px;margin:3px 0;font-size:9px;color:#6B7D8E}
+.file-list .file .name{color:#fff;font-weight:600;flex:1}
+.file-list .file .arrow{color:#C8A84E}
+</style>
+</head>
+<body>
+
+<h1>CONFIRMATION MODAL — TWO PATTERNS</h1>
+<p class="sub">KsConfirmDialog (17 calls) vs raw AlertDialog (10 calls). Same purpose, different visual quality.</p>
+
+<div class="stats">
+  <div class="stat"><div class="num">17</div><div class="lbl gold">KsConfirmDialog</div><div class="lbl">standardized component</div></div>
+  <div class="stat"><div class="num">10</div><div class="lbl red">Raw AlertDialog</div><div class="lbl">manual inline</div></div>
+  <div class="stat"><div class="num">27</div><div class="lbl">Total</div><div class="lbl">confirmation modals</div></div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: KsConfirmDialog -->
+  <div class="phone">
+    <div class="screen">
+      <div class="page">
+        <div class="card"><div class="row"><div class="dot"></div><span class="txt">Dashboard with dimmed background</span></div></div>
+        <div class="card"><div class="row"><div class="dot"></div><span class="txt">Content underneath is hidden</span></div></div>
+      </div>
+      <div class="overlay">
+        <div class="ks-dialog" style="position:relative">
+          <div class="left-bar"></div>
+          <div class="hero">
+            <div class="icon-circle danger">✕</div>
+            <div class="title">DELETE CUSTOMER?</div>
+            <div class="msg">This customer and all associated data will be permanently removed.</div>
+          </div>
+          <div class="btns">
+            <div class="btn cancel">CANCEL</div>
+            <div class="btn danger">DELETE</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:8px 16px;text-align:center">
+        <span style="font-size:9px;color:#C8A84E;font-weight:700">KsConfirmDialog.show()</span>
+        <span style="font-size:8px;color:#4A5A6A;margin-left:4px">— hero icon, gold left bar, pop-in anim</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrow -->
+  <div style="display:flex;align-items:center;font-size:24px;color:#C8A84E40;padding-top:200px">→</div>
+
+  <!-- RIGHT: Raw AlertDialog -->
+  <div class="phone">
+    <div class="screen">
+      <div class="page">
+        <div class="card"><div class="row"><div class="dot"></div><span class="txt">Dashboard with dimmed background</span></div></div>
+        <div class="card"><div class="row"><div class="dot"></div><span class="txt">Content underneath is hidden</span></div></div>
+      </div>
+      <div class="overlay">
+        <div class="raw-dialog">
+          <div class="inner">
+            <div class="title">DELETE KEY CODE?</div>
+            <div class="msg">This key code entry will be permanently removed.</div>
+            <div class="btns">
+              <button class="btn cancel text-only">CANCEL</button>
+              <button class="btn delete text-only">DELETE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:8px 16px;text-align:center">
+        <span style="font-size:9px;color:#FF6B6B;font-weight:700">Raw showDialog + AlertDialog</span>
+        <span style="font-size:8px;color:#4A5A6A;margin-left:4px">— no icon, flat buttons, no animation</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Comparison table -->
+<div class="tt">
+  <table>
+    <tr><th>Feature</th><th class="cent">KsConfirmDialog</th><th class="cent">Raw AlertDialog</th></tr>
+    <tr><td>Hero icon</td><td class="cent green">✅ Gold circle with icon</td><td class="cent red">❌ None</td></tr>
+    <tr><td>Gold left accent bar</td><td class="cent green">✅ 4px gold bar</td><td class="cent red">❌ None</td></tr>
+    <tr><td>Pop-in animation</td><td class="cent green">✅ Scale 0.88→1.0 + fade</td><td class="cent red">❌ None (instant pop)</td></tr>
+    <tr><td>Button style</td><td class="cent green">✅ Ghost cancel + gold/danger solid</td><td class="cent red">❌ TextButton only</td></tr>
+    <tr><td>Background color</td><td class="cent">primary800 consistent</td><td class="cent red">Varies (primary800/primary900)</td></tr>
+    <tr><td>Border radius</td><td class="cent">12px</td><td class="cent red">Varies (4px/8px/none)</td></tr>
+    <tr><td>Typography</td><td class="cent">AppTextStyles.h3 + body</td><td class="cent red">Varies</td></tr>
+    <tr><td>File size (lines)</td><td class="cent gold">~60 lines (reusable)</td><td class="cent red">~20 lines each × 10 = 200+ (duplicated)</td></tr>
+  </table>
+</div>
+
+<!-- Raw AlertDialog files -->
+<div class="file-list" style="margin-top:16px">
+  <h3 style="color:#FF6B6B;font-size:10px;font-weight:800;letter-spacing:0.5px;margin-bottom:6px">10 RAW DIALOGS TO MIGRATE</h3>
+  <div class="file"><span class="name">key_codes_screen.dart:109</span><span>Delete key code</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">add_customer_screen.dart:139</span><span>Discard changes</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">edit_profile_screen.dart:104</span><span>Discard changes</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">add_note_screen.dart:121</span><span>Discard changes</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">edit_job_screen.dart:902</span><span>Discard changes</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">log_job_screen.dart:345</span><span>Discard changes</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">log_job_screen.dart:460</span><span>Save as template?</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">log_job_screen.dart:849</span><span>Use existing customer?</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">log_job_screen.dart:1371</span><span>Another dialog</span><span class="arrow">→</span></div>
+  <div class="file"><span class="name">password_entry_screen.dart:69</span><span>Biometric enroll?</span><span class="arrow">→</span></div>
+</div>
+
+<div style="max-width:820px;width:100%;background:#0F1D2F;border:1px solid #1A2D44;border-radius:8px;padding:16px 20px;margin-top:8px">
+  <h3 style="color:#C8A84E;font-size:10px;font-weight:800;letter-spacing:0.5px;margin-bottom:8px">MIGRATION PLAN</h3>
+  <p style="font-size:9px;color:#8BA0B2;line-height:1.6">
+    Each raw dialog follows the same pattern — <code style="color:#fff">AlertDialog(title, content, actions: [CANCEL, CONFIRM])</code>.
+    Migrating to <code style="color:#C8A84E">KsConfirmDialog.show()</code> replaces 20+ lines per site with a single call:
+  </p>
+  <pre style="background:#0A1628;border-radius:6px;padding:10px 14px;margin:8px 0;font-size:9px;line-height:1.6;overflow-x:auto;color:#6B7D8E">
+<span style="color:#4A5A6A">// Before: 20 lines of raw AlertDialog</span>
+<span style="color:#FF6B6B">showDialog&lt;bool&gt;(builder: (ctx) =&gt; AlertDialog(</span>
+<span style="color:#FF6B6B">  backgroundColor: ctx.ksc.primary800,</span>
+<span style="color:#FF6B6B">  title: Text("DELETE ITEM?"),</span>
+<span style="color:#FF6B6B">  content: Text("This will be permanently removed."),</span>
+<span style="color:#FF6B6B">  actions: [TextButton(...), TextButton(...)],</span>
+<span style="color:#FF6B6B">));</span>
+
+<span style="color:#4A5A6A">// After: 1 line of KsConfirmDialog</span>
+<span style="color:#4CAF50">final confirmed = await KsConfirmDialog.show(</span>
+<span style="color:#4CAF50">  context,</span>
+<span style="color:#4CAF50">  title: 'DELETE ITEM?',</span>
+<span style="color:#4CAF50">  message: 'This will be permanently removed.',</span>
+<span style="color:#4CAF50">  confirmLabel: 'DELETE',</span>
+<span style="color:#4CAF50">  isDanger: true,</span>
+<span style="color:#4CAF50">);</span>
+  </pre>
+  <p style="font-size:9px;color:#8BA0B2;line-height:1.6">
+    Result: consistent icon + animation + button styling across all 27 confirmation dialogs.
+    Saves ~100 lines of duplicated code.
+  </p>
+</div>
+
+</body>
+</html>

@@ -24,22 +24,29 @@ void main() {
   final editedBy = 'user-123';
   final changes = {'notes': 'Updated notes', 'status': 'completed'};
 
-  final updatedJob = JobEntity(
+  final now = DateTime.now();
+  final existingJob = JobEntity(
     id: jobId,
     userId: editedBy,
     customerId: 'cust-123',
     serviceType: 'car_lock_programming',
-    jobDate: DateTime.now(),
-    notes: 'Updated notes',
-    status: 'completed',
+    jobDate: now,
+    status: 'in_progress',
+    paymentStatus: 'unpaid',
     followUpSent: false,
     syncStatus: SyncStatus.pending,
     isArchived: false,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  final updatedJob = existingJob.copyWith(
+    notes: 'Updated notes',
+    status: 'completed',
   );
 
   test('calls repository.editJob with correct params', () async {
+    when(() => mockRepository.getJobById(jobId)).thenAnswer((_) async => existingJob);
     when(() => mockRepository.editJob(any(), any(), any()))
         .thenAnswer((_) async => updatedJob);
 
@@ -50,6 +57,33 @@ void main() {
     ));
 
     expect(result, equals(updatedJob));
+    verify(() => mockRepository.getJobById(jobId)).called(1);
     verify(() => mockRepository.editJob(jobId, changes, editedBy)).called(1);
   });
-}
+
+  test('throws when job not found', () async {
+    when(() => mockRepository.getJobById(jobId)).thenAnswer((_) async => null);
+
+    expect(
+      () => usecase(EditJobParams(
+        jobId: jobId,
+        changes: changes,
+        editedBy: editedBy,
+      )),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('throws when paymentStatus in changes is invalid for new status', () async {
+    when(() => mockRepository.getJobById(jobId)).thenAnswer((_) async => existingJob);
+    final badChanges = {'status': 'quoted', 'paymentStatus': 'paid'};
+
+    expect(
+      () => usecase(EditJobParams(
+        jobId: jobId,
+        changes: badChanges,
+        editedBy: editedBy,
+      )),
+      throwsA(isA<Exception>()),
+    );
+  });

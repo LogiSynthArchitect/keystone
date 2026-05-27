@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Job Card Redesign</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#E5E7EB;padding:32px;display:flex;flex-direction:column;align-items:center;gap:24px}
+h1{color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px;text-align:center}
+.sub{color:#6B7D8E;font-size:10px;text-align:center;max-width:600px}
+.layout{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+.phone{width:380px;background:#0F1D2F;border-radius:20px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.6);border:1px solid #1A2D44}
+.screen{background:#0A1628;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:16px}
+
+/* ── CURRENT CARD ── */
+.card-current{background:#0F1D2F;border-radius:8px;border:1px solid #1A2D44;overflow:hidden}
+.card-current .cover{height:80px;background:linear-gradient(135deg,#1A2D44,#0D1A2A);display:flex;align-items:center;justify-content:center;font-size:28px;color:#C8A84E40}
+.card-current .body{padding:12px}
+.card-current .row1{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.card-current .service{font-size:10px;font-weight:700;color:#fff;letter-spacing:0.5px;flex:1;text-transform:uppercase}
+.card-current .sync{width:12px;height:12px;border-radius:50%;background:#4CAF50;flex-shrink:0}
+.card-current .date{font-size:9px;color:#4A5A6A;font-weight:600;letter-spacing:0.3px;flex-shrink:0}
+.card-current .name{font-size:16px;font-weight:800;color:#fff}
+.card-current .loc{display:flex;align-items:center;gap:4px;font-size:9px;color:#4A5A6A;margin:6px 0 10px}
+.card-current .amt{font-size:22px;font-weight:900;color:#fff;margin-bottom:10px}
+.card-current .row3{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.card-current .badge{padding:2px 8px;border-radius:2px;font-size:8px;font-weight:800;letter-spacing:0.3px}
+.card-current .badge.quoted{background:#C8A84E20;color:#C8A84E}
+.card-current .badge.progress{background:#6BB5FF20;color:#6BB5FF}
+.card-current .badge.completed{background:#4CAF5020;color:#4CAF50}
+.card-current .badge.unpaid{background:#FF6B6B20;color:#FF6B6B}
+.card-current .badge.paid{background:#4CAF5020;color:#4CAF50}
+.card-current .badge.partial{background:#FFA72620;color:#FFA726}
+.card-current .badge.invoiced{background:#B388FF20;color:#B388FF}
+
+/* ── PROPOSED CARD (info only, no actions) ── */
+.card-pro{background:#0F1D2F;border-radius:12px;border:1px solid #1A2D44;overflow:hidden;position:relative}
+.card-pro .left-accent{position:absolute;left:0;top:0;bottom:0;width:4px}
+.card-pro .left-accent.quoted{background:#C8A84E}
+.card-pro .left-accent.in_progress{background:#6BB5FF}
+.card-pro .left-accent.completed{background:#4CAF50}
+.card-pro .left-accent.invoiced{background:#B388FF}
+.card-pro .inner{padding:14px 14px 14px 18px}
+.card-pro .top-row{display:flex;align-items:flex-start;gap:12px}
+.card-pro .icon-box{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.card-pro .icon-box.quoted{background:#C8A84E15;color:#C8A84E}
+.card-pro .icon-box.in_progress{background:#6BB5FF15;color:#6BB5FF}
+.card-pro .icon-box.completed{background:#4CAF5015;color:#4CAF50}
+.card-pro .icon-box.invoiced{background:#B388FF15;color:#B388FF}
+.card-pro .info{flex:1;min-width:0}
+.card-pro .info .svc{font-size:9px;font-weight:700;color:#6B7D8E;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px}
+.card-pro .info .name{font-size:15px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-pro .info .meta{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:9px;color:#4A5A6A;flex-wrap:wrap}
+.card-pro .info .meta .dot{width:3px;height:3px;border-radius:50%;background:#4A5A6A}
+.card-pro .amount{text-align:right;flex-shrink:0;margin-left:8px}
+.card-pro .amount .val{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.3px}
+.card-pro .amount .lbl{font-size:7px;color:#4A5A6A;font-weight:600;letter-spacing:0.3px;margin-top:1px;text-transform:uppercase}
+.card-pro .badge-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;padding-left:52px}
+.card-pro .badge-row .b{padding:3px 8px;border-radius:4px;font-size:8px;font-weight:800;letter-spacing:0.3px;display:flex;align-items:center;gap:4px}
+.card-pro .badge-row .b .dot{width:5px;height:5px;border-radius:50%}
+.card-pro .badge-row .b.quoted{background:#C8A84E12;color:#C8A84E;border:1px solid #C8A84E25}
+.card-pro .badge-row .b.in_progress{background:#6BB5FF12;color:#6BB5FF;border:1px solid #6BB5FF25}
+.card-pro .badge-row .b.completed{background:#4CAF5012;color:#4CAF50;border:1px solid #4CAF5025}
+.card-pro .badge-row .b.invoiced{background:#B388FF12;color:#B388FF;border:1px solid #B388FF25}
+.card-pro .badge-row .b.unpaid{background:#FF6B6B12;color:#FF6B6B;border:1px solid #FF6B6B25}
+.card-pro .badge-row .b.paid{background:#4CAF5012;color:#4CAF50;border:1px solid #4CAF5025}
+.card-pro .badge-row .b.partial{background:#FFA72612;color:#FFA726;border:1px solid #FFA72625}
+
+.whatsapp-status{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:4px;font-size:8px;font-weight:700;background:#4CAF5012;color:#4CAF50;border:1px solid #4CAF5025}
+
+/* tags */
+.tag{font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px}
+.tag-blue{background:#1A2A3D;color:#6BB5FF}
+.tag-green{background:#1A3D1A;color:#4CAF50}
+.tag-gold{background:#3D2A1A;color:#C8A84E}
+.tag-red{background:#3D1A1A;color:#FF6B6B}
+.tag-gray{background:#1A1A2A;color:#6B7D8E}
+.tag-purple{background:#2A1A3D;color:#B388FF}
+.vs{font-size:20px;color:#C8A84E40;display:flex;align-items:center;padding:60px 0}
+
+/* table */
+table{width:100%;max-width:820px;border-collapse:collapse;font-size:9px;color:#8BA0B2;background:#0F1D2F;border-radius:8px;overflow:hidden;border:1px solid #1A2D44;margin-top:8px}
+th{background:#0A1628;padding:8px 12px;font-size:9px;font-weight:800;letter-spacing:0.5px;text-align:left;color:#fff}
+td{padding:7px 12px;border-top:1px solid #1A2D44}
+td:first-child{color:#8BA0B2;font-weight:600}
+</style>
+</head>
+<body>
+
+<h1>📋 JOB CARD REDESIGN</h1>
+<p class="sub">Current cards have cover images, action buttons, and dense layout. Proposed is info-only — cleaner hierarchy, no actions.</p>
+
+<div class="layout">
+
+  <!-- CURRENT -->
+  <div class="phone">
+    <div class="screen">
+      <div style="font-size:9px;color:#4A5A6A;font-weight:700;letter-spacing:0.5px;margin-bottom:4px">CURRENT — Job List</div>
+
+      <div class="card-current">
+        <div class="cover">🔧</div>
+        <div class="body">
+          <div class="row1">
+            <span class="service">CCTV Installation</span>
+            <div class="sync"></div>
+            <span class="date">26 MAY</span>
+          </div>
+          <div class="name">KWAME MENSAH</div>
+          <div class="loc">📍 East Legon, Accra</div>
+          <div class="amt">GHS 250</div>
+          <div class="row3">
+            <span class="badge quoted">QUOTED</span>
+            <span class="badge unpaid">UNPAID</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-current">
+        <div class="cover">🔧</div>
+        <div class="body">
+          <div class="row1">
+            <span class="service">Transponder Key Prog.</span>
+            <div class="sync"></div>
+            <span class="date">25 MAY</span>
+          </div>
+          <div class="name">JANE DOE</div>
+          <div class="loc">📍 Tema</div>
+          <div class="amt">GHS 450</div>
+          <div class="row3">
+            <span class="badge completed">COMPLETED</span>
+            <span class="badge paid">PAID</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:4px;text-align:center">
+        <span class="tag tag-red">CURRENT</span>
+        <span class="tag tag-gray">cover image · action buttons omitted here</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARROW -->
+  <div class="vs">→</div>
+
+  <!-- PROPOSED -->
+  <div class="phone">
+    <div class="screen">
+      <div style="font-size:9px;color:#4A5A6A;font-weight:700;letter-spacing:0.5px;margin-bottom:4px">PROPOSED — Job List (info only)</div>
+
+      <!-- Card 1 -->
+      <div class="card-pro">
+        <div class="left-accent quoted"></div>
+        <div class="inner">
+          <div class="top-row">
+            <div class="icon-box quoted">🔧</div>
+            <div class="info">
+              <div class="svc">CCTV Installation</div>
+              <div class="name">Kwame Mensah</div>
+              <div class="meta">
+                <span>📅 26 May 2026</span>
+                <span class="dot"></span>
+                <span>📍 East Legon</span>
+              </div>
+            </div>
+            <div class="amount">
+              <div class="val">GHS 250</div>
+              <div class="lbl">Amount</div>
+            </div>
+          </div>
+          <div class="badge-row">
+            <span class="b quoted"><span class="dot" style="background:#C8A84E"></span>QUOTED</span>
+            <span class="b unpaid"><span class="dot" style="background:#FF6B6B"></span>UNPAID</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="card-pro">
+        <div class="left-accent completed"></div>
+        <div class="inner">
+          <div class="top-row">
+            <div class="icon-box completed">🔑</div>
+            <div class="info">
+              <div class="svc">Transponder Key Programming</div>
+              <div class="name">Jane Doe</div>
+              <div class="meta">
+                <span>📅 25 May 2026</span>
+                <span class="dot"></span>
+                <span>📍 Tema</span>
+              </div>
+            </div>
+            <div class="amount">
+              <div class="val">GHS 450</div>
+              <div class="lbl">Amount</div>
+            </div>
+          </div>
+          <div class="badge-row">
+            <span class="b completed"><span class="dot" style="background:#4CAF50"></span>COMPLETED</span>
+            <span class="b paid"><span class="dot" style="background:#4CAF50"></span>PAID</span>
+            <span class="b completed"><span class="dot" style="background:#4CAF50"></span>✓ WHATSAPP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="card-pro">
+        <div class="left-accent in_progress"></div>
+        <div class="inner">
+          <div class="top-row">
+            <div class="icon-box in_progress">🔒</div>
+            <div class="info">
+              <div class="svc">Smart Lock Installation</div>
+              <div class="name">Akosua Addai</div>
+              <div class="meta">
+                <span>📅 24 May 2026</span>
+                <span class="dot"></span>
+                <span>📍 Airport Residential</span>
+              </div>
+            </div>
+            <div class="amount">
+              <div class="val">GHS 0</div>
+              <div class="lbl">No amount</div>
+            </div>
+          </div>
+          <div class="badge-row">
+            <span class="b in_progress"><span class="dot" style="background:#6BB5FF"></span>IN PROGRESS</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:4px;text-align:center">
+        <span class="tag tag-green">PROPOSED</span>
+        <span class="tag tag-gold">left accent bar</span>
+        <span class="tag tag-blue">icon box + name</span>
+        <span class="tag tag-purple">inline meta row</span>
+        <span class="tag tag-gray">no action buttons</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Summary -->
+<div style="max-width:820px;width:100%;background:#0F1D2F;border:1px solid #1A2D44;border-radius:10px;padding:16px 20px;margin-top:8px">
+  <h3 style="color:#C8A84E;font-size:10px;font-weight:800;letter-spacing:0.5px;margin-bottom:8px">WHAT CHANGES IN CODE</h3>
+  <p style="font-size:9px;color:#8BA0B2;line-height:1.6">
+    1. Delete <code style="color:#fff">CoverImageWidget</code> — no longer needed<br>
+    2. Delete <code style="color:#fff">_quickActionButton</code> and all action icons (call, whatsapp, navigate, invoice)<br>
+    3. Add 4px <strong style="color:#fff">left accent bar</strong> based on job status<br>
+    4. Replace cover image with 40×40 <strong style="color:#fff">icon box</strong> (matches InventoryItemCard pattern)<br>
+    5. Inline date + location into a single <strong style="color:#fff">meta row</strong><br>
+    6. Change card radius 8px → <strong style="color:#fff">12px</strong><br>
+    7. Update <code style="color:#fff">_buildStatusBadge</code> and <code style="color:#fff">_buildPaymentBadge</code> to use pill style with colored dot<br>
+    8. Move WhatsApp status / sync error into badge row
+  </p>
+</div>
+
+</body>
+</html>

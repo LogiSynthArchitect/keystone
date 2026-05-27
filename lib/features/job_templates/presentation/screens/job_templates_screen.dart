@@ -372,7 +372,7 @@ class _JobTemplatesScreenState extends ConsumerState<JobTemplatesScreen> {
           readOnly: true,
           saveLabel: "CLOSE",
           onSave: () async => Navigator.pop(context),
-          stepContent: (step, subStep, rebuild) => Padding(
+          stepContent: (step, subStep, rebuild, _) => Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

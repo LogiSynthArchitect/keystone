@@ -41,63 +41,62 @@ class JobStepCustomer extends ConsumerWidget {
           readOnly: preSelectedCustomerId,
           maxLength: 100,
         ),
-        if (!preSelectedCustomerId) ...[
-          const SizedBox(height: 16),
-          _buildCustomerField(
-            context: context,
-            icon: LineAwesomeIcons.phone_alt_solid,
-            label: "Phone Number",
-            hint: "024 123 4567",
-            controller: phoneController,
-            fieldHint: "Required for WhatsApp follow-ups.",
-            isNumeric: true,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
-            onChanged: onPhoneChanged,
-          ),
-          if (matchedCustomerName != null && matchedCustomerId != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.ksc.accent500.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: context.ksc.accent500),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("LINKED TO EXISTING CUSTOMER",
-                            style: AppTextStyles.caption.copyWith(
-                              color: context.ksc.accent500,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 10,
-                              letterSpacing: 0.5,
-                            ),
+        const SizedBox(height: 16),
+        _buildCustomerField(
+          context: context,
+          icon: LineAwesomeIcons.phone_alt_solid,
+          label: "Phone Number",
+          hint: "024 123 4567",
+          controller: phoneController,
+          readOnly: preSelectedCustomerId,
+          fieldHint: preSelectedCustomerId ? null : "Required for WhatsApp follow-ups.",
+          isNumeric: true,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
+          onChanged: onPhoneChanged,
+        ),
+        if (matchedCustomerName != null && matchedCustomerId != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.ksc.accent500.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(LineAwesomeIcons.check_circle_solid, size: 20, color: context.ksc.accent500),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("LINKED TO EXISTING CUSTOMER",
+                          style: AppTextStyles.caption.copyWith(
+                            color: context.ksc.accent500,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            letterSpacing: 0.5,
                           ),
-                          const SizedBox(height: 2),
-                          Text(matchedCustomerName!.toUpperCase(),
-                            style: AppTextStyles.body.copyWith(
-                              color: context.ksc.white,
-                              fontWeight: FontWeight.w900,
-                            ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(matchedCustomerName!.toUpperCase(),
+                          style: AppTextStyles.body.copyWith(
+                            color: context.ksc.white,
+                            fontWeight: FontWeight.w900,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-        ],
+          ),
       ],
     );
   }
@@ -155,7 +154,7 @@ class JobStepCustomer extends ConsumerWidget {
                 onChanged: onChanged,
                 keyboardType: isNumeric ? TextInputType.phone : TextInputType.text,
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: readOnly ? context.ksc.neutral500 : context.ksc.white,
+                  color: readOnly ? context.ksc.neutral300 : context.ksc.white,
                   fontWeight: FontWeight.bold,
                 ),
                 decoration: InputDecoration(

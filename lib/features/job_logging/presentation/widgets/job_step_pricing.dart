@@ -4,6 +4,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../job_logging/domain/entities/job_entity.dart';
 
 /// Step 4 of the Add New Job wizard: Pricing (Quoted + Final amounts, Payment status).
 class JobStepPricing extends ConsumerWidget {
@@ -11,6 +12,7 @@ class JobStepPricing extends ConsumerWidget {
   final TextEditingController amountController;
   final FocusNode? quotedFocusNode;
   final FocusNode? amountFocusNode;
+  final String jobStatus;
   final String paymentStatus;
   final ValueChanged<String> onPaymentStatusChanged;
 
@@ -20,6 +22,7 @@ class JobStepPricing extends ConsumerWidget {
     required this.amountController,
     this.quotedFocusNode,
     this.amountFocusNode,
+    required this.jobStatus,
     required this.paymentStatus,
     required this.onPaymentStatusChanged,
   });
@@ -132,7 +135,10 @@ class JobStepPricing extends ConsumerWidget {
   }
 
   Widget _buildPaymentStatusRow(BuildContext context) {
-    final statusOpts = [('unpaid', 'UNPAID'), ('partial', 'PARTIAL'), ('paid', 'PAID')];
+    final allowedValues = JobEntity.allowedPaymentStatuses(jobStatus);
+    final statusOpts = [('unpaid', 'UNPAID'), ('partial', 'PARTIAL'), ('paid', 'PAID')]
+        .where((o) => allowedValues.contains(o.$1))
+        .toList();
     return Row(
       children: statusOpts.map((opt) {
         final isSel = paymentStatus == opt.$1;

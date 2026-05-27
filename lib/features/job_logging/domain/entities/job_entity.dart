@@ -92,6 +92,28 @@ class JobEntity {
   static const validStatuses = ['quoted', 'in_progress', 'completed', 'invoiced'];
   static const validPaymentStatuses = ['unpaid', 'partial', 'paid'];
 
+  /// Payment statuses allowed for each job status.
+  static const _paymentByStatus = <String, List<String>>{
+    'quoted':      ['unpaid'],
+    'in_progress': ['unpaid'],
+    'completed':   ['unpaid', 'partial', 'paid'],
+    'invoiced':    ['unpaid', 'partial', 'paid'],
+  };
+
+  /// Returns allowed payment statuses for a given job status.
+  static List<String> allowedPaymentStatuses(String jobStatus) =>
+      _paymentByStatus[jobStatus] ?? ['unpaid'];
+
+  /// Returns an error string if [paymentStatus] is not valid for [jobStatus].
+  static String? validatePaymentForStatus(String jobStatus, String paymentStatus) {
+    if (!validStatuses.contains(jobStatus)) return 'Invalid job status "$jobStatus".';
+    if (!validPaymentStatuses.contains(paymentStatus)) return 'Invalid payment status "$paymentStatus".';
+    if (!allowedPaymentStatuses(jobStatus).contains(paymentStatus)) {
+      return 'Cannot set payment to "$paymentStatus" when job status is "$jobStatus".';
+    }
+    return null;
+  }
+
   static const _statusOrder = ['quoted', 'in_progress', 'completed', 'invoiced'];
 
   static String? validateStatusTransition(String? from, String to) {
@@ -105,13 +127,11 @@ class JobEntity {
     return null;
   }
 
-  static String? validatePaymentTransition(String status, String? from, String to) {
+  static String? validatePaymentTransition(String? from, String to) {
     if (!validPaymentStatuses.contains(to)) return 'Invalid payment status "$to".';
     if (from == to) return null;
     if (from == 'paid') return 'Cannot revert payment status from "paid".';
     if (from == 'partial' && to == 'unpaid') return 'Cannot revert from partial to unpaid. Use correction request.';
-    if (to == 'paid' && status != 'invoiced') return 'Cannot mark as paid until job is invoiced.';
-    if (to == 'partial' && status == 'quoted') return 'Cannot mark partial payment on a quoted job.';
     return null;
   }
 

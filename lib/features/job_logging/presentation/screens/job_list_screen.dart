@@ -9,16 +9,15 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
-import 'log_job_screen.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import 'log_job_screen.dart';
 import '../providers/job_providers.dart';
 import '../widgets/job_card.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -157,28 +156,29 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                   },
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: draft.dateRange != null
-                          ? context.ksc.accent100
-                          : context.ksc.primary700,
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                      border: Border.all(
-                        color: draft.dateRange != null
-                            ? context.ksc.accent500
-                            : context.ksc.primary600,
+                    padding: const EdgeInsets.only(bottom: 8, top: 4),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFF2A3A4A), width: 1),
                       ),
                     ),
-                    child: Text(
-                      draft.dateRange == null
-                          ? 'Select date range...'
-                          : '${draft.dateRange!.start.day}/${draft.dateRange!.start.month}/${draft.dateRange!.start.year} → ${draft.dateRange!.end.day}/${draft.dateRange!.end.month}/${draft.dateRange!.end.year}',
-                      style: AppTextStyles.body.copyWith(
-                        color: draft.dateRange != null
-                            ? context.ksc.accent500
-                            : context.ksc.neutral500,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            draft.dateRange == null
+                                ? 'Select date range...'
+                                : '${draft.dateRange!.start.day}/${draft.dateRange!.start.month}/${draft.dateRange!.start.year} → ${draft.dateRange!.end.day}/${draft.dateRange!.end.month}/${draft.dateRange!.end.year}',
+                            style: AppTextStyles.body.copyWith(
+                              color: draft.dateRange != null
+                                  ? context.ksc.accent500
+                                  : context.ksc.neutral500,
+                            ),
+                          ),
+                        ),
+                        Icon(LineAwesomeIcons.calendar_solid,
+                            color: context.ksc.neutral500, size: 16),
+                      ],
                     ),
                   ),
                 ),
@@ -204,11 +204,36 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
     final state = ref.watch(jobListProvider);
     final remindersCount = ref.watch(remindersProvider).activeCount;
     return Scaffold(
+      floatingActionButton: _selectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => LogJobScreen.show(context),
+              backgroundColor: context.ksc.accent500,
+              foregroundColor: context.ksc.primary900,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
+            ),
       backgroundColor: context.ksc.primary900,
       appBar: KsAppBar(
         title: _selectionMode ? "${_selectedIds.length} SELECTED" : "MY JOBS",
         actions: _selectionMode
             ? [
+                TextButton(
+                  onPressed: _selectedIds.length < state.filteredJobs.length
+                      ? () => setState(() {
+                          _selectedIds.addAll(state.filteredJobs.map((j) => j.id));
+                        })
+                      : null,
+                  child: Text(
+                    "SELECT ALL",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.accent500,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
                 IconButton(
                   icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral400, size: 22),
                   onPressed: () => setState(() { _selectionMode = false; _selectedIds.clear(); }),
@@ -283,31 +308,36 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                     ? _buildErrorState(context, ref)
                     : state.filteredJobs.isEmpty
                         ? _buildEmptyState()
-                    : NotificationListener<ScrollNotification>(
-                        onNotification: (n) {
-                          if (n is ScrollEndNotification && n.metrics.extentAfter < 200) {
-                            ref.read(jobListProvider.notifier).loadMore();
-                          }
-                          return false;
-                        },
-                        child: RefreshIndicator(
-                        onRefresh: () => ref.read(jobListProvider.notifier).refresh(),
-                        color: context.ksc.accent500,
-                        backgroundColor: context.ksc.primary800,
-                        child: CustomScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: _SummaryStrip(
-                                totalJobs: state.totalJobs,
-                                monthEarnings: state.thisMonthEarnings,
-                                pendingCount: state.pendingCount,
-                                isSyncing: state.isSyncing,
-                              ).animate().fadeIn().slideY(begin: 0.1, end: 0)
-                            ),
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                              sliver: SliverList(
+                    : Column(
+                        children: [
+                          _SummaryStrip(
+                            filteredEarnings: state.filteredEarnings,
+                            filteredJobCount: state.filteredJobCount,
+                            summaryLabel: state.summaryLabel,
+                            monthEarnings: state.thisMonthEarnings,
+                            pendingCount: state.pendingCount,
+                            isSyncing: state.isSyncing,
+                            hasActiveFilters: state.filters.hasActive,
+                            monthlyTarget: ref.watch(monthlyTargetProvider),
+                          ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+                          Expanded(
+                            child: NotificationListener<ScrollNotification>(
+                              onNotification: (n) {
+                                if (n is ScrollEndNotification && n.metrics.extentAfter < 200) {
+                                  ref.read(jobListProvider.notifier).loadMore();
+                                }
+                                return false;
+                              },
+                              child: RefreshIndicator(
+                                onRefresh: () => ref.read(jobListProvider.notifier).refresh(),
+                                color: context.ksc.accent500,
+                                backgroundColor: context.ksc.primary800,
+                                child: CustomScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                                      sliver: SliverList(
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final jobs = state.pagedJobs;
@@ -333,59 +363,52 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                                             _selectedIds.add(job.id);
                                           });
                                         },
-                                        child: Stack(
-                                          children: [
-                                            JobCard(
-                                              job: job,
-                                              onShareInvoice: () {
-                                                final invoice = StringBuffer();
-                                                invoice.writeln('KEYSTONE INVOICE');
-                                                invoice.writeln('===============');
-                                                invoice.writeln('Job: ${job.serviceType.replaceAll('_', ' ')}');
-                                                invoice.writeln('Date: ${DateFormatter.display(job.jobDate)}');
-                                                invoice.writeln('Status: ${job.status.toUpperCase()}');
-                                                if (job.hasAmount) {
-                                                  invoice.writeln('Amount: ${CurrencyFormatter.format(job.amountCharged!)}');
-                                                }
-                                                invoice.writeln('Payment: ${job.paymentStatus.toUpperCase()}');
-                                                if (job.location != null && job.location!.isNotEmpty) {
-                                                  invoice.writeln('Location: ${job.location}');
-                                                }
-                                                Share.share(invoice.toString(), subject: 'Invoice - ${job.serviceType.replaceAll('_', ' ')}');
-                                              },
-                                              onTap: () {
-                                                if (_selectionMode) {
-                                                  setState(() {
-                                                    if (isSelected) {
-                                                      _selectedIds.remove(job.id);
-                                                      if (_selectedIds.isEmpty) _selectionMode = false;
-                                                    } else {
-                                                      _selectedIds.add(job.id);
-                                                    }
-                                                  });
-                                                } else {
-                                                  context.push(RouteNames.jobDetail(job.id));
-                                                }
-                                              },
-                                            ),
-                                            if (_selectionMode)
-                                              Positioned(
-                                                top: 8,
-                                                left: 8,
-                                                child: Container(
-                                                  width: 24,
-                                                  height: 24,
-                                                  decoration: BoxDecoration(
-                                                    color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
-                                                    borderRadius: BorderRadius.circular(4),
-                                                    border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.neutral500),
-                                                  ),
-                                                  child: isSelected
-                                                      ? Icon(LineAwesomeIcons.check_solid, size: 14, color: context.ksc.primary900)
-                                                      : null,
-                                                ),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: _selectionMode && isSelected
+                                                ? Border.all(color: context.ksc.accent500, width: 2)
+                                                : null,
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              JobCard(
+                                                job: job,
+                                                onTap: () {
+                                                  if (_selectionMode) {
+                                                    setState(() {
+                                                      if (isSelected) {
+                                                        _selectedIds.remove(job.id);
+                                                        if (_selectedIds.isEmpty) _selectionMode = false;
+                                                      } else {
+                                                        _selectedIds.add(job.id);
+                                                      }
+                                                    });
+                                                  } else {
+                                                    context.push(RouteNames.jobDetail(job.id));
+                                                  }
+                                                },
                                               ),
-                                          ],
+                                              if (_selectionMode)
+                                                Positioned(
+                                                  top: 8,
+                                                  left: 8,
+                                                  child: Container(
+                                                    width: 10,
+                                                    height: 10,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      color: isSelected ? context.ksc.accent500 : Colors.transparent,
+                                                      border: Border.all(
+                                                        color: isSelected ? context.ksc.accent500 : context.ksc.neutral500,
+                                                        width: 1.5,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );
@@ -398,20 +421,13 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                           ],
                         ),
                       ),
-                      ),   // NotificationListener
-          ),
-        ],
-      ),
-      floatingActionButton: _selectionMode
-          ? null
-          : FloatingActionButton(
-              onPressed: () => LogJobScreen.show(context),
-              backgroundColor: context.ksc.accent500,
-              foregroundColor: context.ksc.primary900,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-              child: const Icon(LineAwesomeIcons.plus_solid, size: 28),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+        ),
       bottomNavigationBar: _selectionMode
           ? _buildBulkActionBar()
           : KsBottomNav(currentIndex: 1, onTabTapped: _onTabTapped),
@@ -543,75 +559,111 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
 }
 
 class _SummaryStrip extends StatelessWidget {
-  final int totalJobs;
+  final int filteredEarnings;
+  final int filteredJobCount;
+  final String summaryLabel;
   final int monthEarnings;
   final int pendingCount;
   final bool isSyncing;
+  final bool hasActiveFilters;
+  final int monthlyTarget;
 
-  const _SummaryStrip({required this.totalJobs, required this.monthEarnings, required this.pendingCount, required this.isSyncing});
+  const _SummaryStrip({
+    required this.filteredEarnings,
+    required this.filteredJobCount,
+    required this.summaryLabel,
+    required this.monthEarnings,
+    required this.pendingCount,
+    required this.isSyncing,
+    required this.hasActiveFilters,
+    required this.monthlyTarget,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final displayEarnings = hasActiveFilters ? filteredEarnings : monthEarnings;
+    final progress = monthEarnings > 0 ? (monthEarnings / monthlyTarget).clamp(0.0, 1.0) : 0.0;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
         color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.ksc.primary700, width: 1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.ksc.primary700),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _Stat(value: "$totalJobs", label: "TOTAL LOGS"),
-              Container(width: 1, height: 40, color: context.ksc.primary700),
-              _Stat(value: CurrencyFormatter.formatShort(monthEarnings), label: "THIS MONTH"),
-            ],
+          // Main earnings number
+          Text(
+            CurrencyFormatter.formatShort(displayEarnings),
+            style: AppTextStyles.h1.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 28),
           ),
-          if (pendingCount > 0) ...[
-            const SizedBox(height: 16),
+          const SizedBox(height: 2),
+          Text(
+            hasActiveFilters ? "$summaryLabel EARNINGS" : "${summaryLabel}'S EARNINGS",
+            style: AppTextStyles.caption.copyWith(
+              color: context.ksc.neutral500, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+          ),
+          // Progress bar — only for unfiltered this-month view
+          if (!hasActiveFilters && monthEarnings > 0) ...[
+            const SizedBox(height: 14),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.sync, size: 14, color: context.ksc.accent500),
+                Text("${(progress * 100).toStringAsFixed(0)}% of ${CurrencyFormatter.formatShort(monthlyTarget)} target",
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 9, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 5),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: Container(
+                height: 4,
+                decoration: BoxDecoration(color: context.ksc.primary700, borderRadius: BorderRadius.circular(2)),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: progress,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: context.ksc.success500,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Container(height: 1, color: context.ksc.primary700),
+          const SizedBox(height: 12),
+          // Secondary stats row
+          Row(
+            children: [
+              Icon(LineAwesomeIcons.box_solid, size: 12, color: context.ksc.neutral500),
+              const SizedBox(width: 4),
+              Text("$filteredJobCount jobs", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 10, fontWeight: FontWeight.w700)),
+              if (pendingCount > 0) ...[
+                const SizedBox(width: 14),
+                Icon(LineAwesomeIcons.sync_solid, size: 12, color: context.ksc.accent500),
                 const SizedBox(width: 4),
                 Text(
-                  '$pendingCount uploading...',
-                  style: AppTextStyles.label.copyWith(color: context.ksc.accent500),
+                  '$pendingCount uploading${isSyncing ? "…" : ""}',
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10, fontWeight: FontWeight.w700),
                 ),
                 if (isSyncing) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500)
+                    width: 10, height: 10,
+                    child: CircularProgressIndicator(strokeWidth: 1.5, color: context.ksc.accent500),
                   ),
                 ],
               ],
-            ),
-          ]
+            ],
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _Stat({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value, style: AppTextStyles.h1.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, letterSpacing: 0)),
-        const SizedBox(height: 4),
-        Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-      ]
     );
   }
 }

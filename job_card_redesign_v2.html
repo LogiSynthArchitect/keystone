@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Job List — Card & Summary Redesign</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#fff;padding:32px;max-width:960px;margin:0 auto}
+h1{font-weight:900;font-size:20px;margin-bottom:4px;color:#F4A300}
+.subtitle{color:#8899AA;font-size:13px;margin-bottom:28px}
+
+/* Phone */
+.phone{width:360px;background:#0D1117;border-radius:24px;border:2px solid #1E2A3A;overflow:hidden;margin:0 auto}
+.phone-notch{height:28px;background:#0D1117;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #1E2A3A}
+.phone-notch div{width:120px;height:5px;background:#1E2A3A;border-radius:3px}
+.phone-top{padding:10px 14px;display:flex;align-items:center;border-bottom:1px solid #1E2A3A}
+.phone-top .title{font-size:12px;font-weight:800;color:#fff;letter-spacing:0.5px}
+
+/* ── Summary Strip ── */
+.summary{padding:12px 14px 0}
+.summary .strip{background:#111D2E;border:1px solid #1E2A3A;border-radius:10px;padding:16px}
+.summary .srow{display:flex;gap:8px}
+.summary .scard{flex:1;background:#0A1628;border:1px solid #1E2A3A;border-radius:8px;padding:10px;text-align:center}
+.summary .scard .sval{font-size:18px;font-weight:900;color:#fff}
+.summary .scard .slabel{font-size:8px;color:#556677;font-weight:800;letter-spacing:0.5px;margin-top:2px}
+.summary .scard .sval.gold{color:#F4A300}
+.summary .scard .sval.green{color:#4ADE80}
+.summary .scard .sval.blue{color:#6BB5FF}
+
+/* ── Divider ── */
+.divider{height:1px;background:#1E2A3A;margin:12px 14px}
+
+/* ── Job Card (current) ── */
+.card-wrap{padding:0 14px 8}
+.card{background:#111D2E;border-radius:10px;border:1px solid #1E2A3A;overflow:hidden;display:flex;margin-bottom:8px}
+.card-accent{width:4px;flex-shrink:0}
+.card-accent.quoted{background:#C8A84E}
+.card-body{padding:12px;flex:1}
+.card-top{display:flex;gap:10px}
+.card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-icon.quoted{background:#C8A84E20;color:#C8A84E}
+.card-info{flex:1;min-width:0}
+.card-info .svc{font-size:8px;color:#556677;font-weight:700;letter-spacing:0.3px}
+.card-info .name{font-size:13px;font-weight:900;color:#fff;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-info .meta{font-size:9px;color:#556677;margin-top:3px;display:flex;align-items:center;gap:4px}
+.card-amt{text-align:right;flex-shrink:0}
+.card-amt .amt{font-size:14px;font-weight:900;color:#fff}
+.card-amt .amtab{font-size:7px;color:#556677;font-weight:600;letter-spacing:0.3px}
+
+.card-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.badge{padding:3px 8px;border-radius:4px;font-size:8px;font-weight:800;letter-spacing:0.3px;display:inline-flex;align-items:center;gap:3px}
+.badge.info{background:#C8A84E20;color:#C8A84E;border:1px solid #C8A84E40}
+.badge.success{background:#4ADE8020;color:#4ADE80;border:1px solid #4ADE8040}
+.badge.error{background:#FF6B6B20;color:#FF6B6B;border:1px solid #FF6B6B40}
+.badge.neutral{background:#55667720;color:#8899AA;border:1px solid #55667740}
+.badge.warning{background:#F4A30020;color:#F4A300;border:1px solid #F4A30040}
+
+/* ── Inline error (current) ── */
+.inline-error{font-size:8px;color:#FF6B6B;font-weight:600;margin-top:4px;padding:4px 0 0;border-top:1px dashed #FF6B6B30}
+
+/* ── Side by side ── */
+.row{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.arrow-col{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#556677;padding:0 4px;flex-shrink:0;width:32px}
+.arrow-col .arr{font-size:24px}
+
+/* ── Issue callouts ── */
+.issue{background:#2A0D0D;border:1px solid #FF6B6B40;border-radius:6px;padding:8px;margin-top:6px;font-size:9px;color:#CC8899;line-height:1.5}
+.issue strong{color:#FF6B6B}
+
+.fix-box{background:#1A2A1A;border:1px solid #2A4A2A;border-radius:6px;padding:16px;margin:20px 0}
+.fix-box h4{color:#4ADE80;font-size:12px;font-weight:800;margin-bottom:8px;text-transform:uppercase}
+.fix-box ul{list-style:none;padding:0}
+.fix-box li{color:#CCD6E0;font-size:11px;padding:3px 0 3px 14px;position:relative;line-height:1.5}
+.fix-box li::before{content:'→';position:absolute;left:0;color:#F4A300}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:8px;font-weight:800;text-transform:uppercase;margin-left:4px}
+.tag.bad{background:#2A0D0D;color:#FF6B6B;border:1px solid #FF6B6B40}
+.tag.good{background:#0D2A1A;color:#4ADE80;border:1px solid #4ADE8040}
+.tag.new{background:#1A2A4A;color:#6BA3FF;border:1px solid #6BA3FF40}
+</style>
+</head>
+<body>
+
+<h1>Jobs Page — Card & Summary Redesign</h1>
+<p class="subtitle">Three issues: card complexity, inline errors, basic summary strip</p>
+
+<div class="row">
+
+  <!-- ═══ CURRENT ═══ -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="phone-top"><span class="title">MY JOBS</span></div>
+
+    <!-- Summary strip (current: basic) -->
+    <div class="summary">
+      <div class="strip">
+        <div class="srow">
+          <div class="scard">
+            <div class="sval">18</div>
+            <div class="slabel">TOTAL LOGS</div>
+          </div>
+          <div class="scard">
+            <div class="sval">GHS 4,520</div>
+            <div class="slabel">THIS MONTH</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:8px;font-size:9px;color:#F4A300;font-weight:700">
+          ⏳ 2 uploading...
+        </div>
+      </div>
+      <div style="margin-top:4px;font-size:8px;color:#556677;text-align:center">← too basic</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Card 1: normal -->
+    <div class="card-wrap">
+      <div class="card">
+        <div class="card-accent quoted"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="card-icon quoted">🔒</div>
+            <div class="card-info">
+              <div class="svc">DOOR LOCK INSTALL</div>
+              <div class="name">Emmanuel Mensah</div>
+              <div class="meta">📅 22 MAY · 📍 East Legon</div>
+            </div>
+            <div class="card-amt">
+              <div class="amt">GHS 420</div>
+              <div class="amtab">AMOUNT</div>
+            </div>
+          </div>
+          <div class="card-badges">
+            <span class="badge info">QUOTED</span>
+            <span class="badge success">PAID</span>
+            <span class="badge success">✓ WHATSAPP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: with inline error -->
+    <div class="card-wrap">
+      <div class="card">
+        <div class="card-accent" style="background:#6BB5FF"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="card-icon" style="background:#6BB5FF20;color:#6BB5FF">🔑</div>
+            <div class="card-info">
+              <div class="svc">CAR LOCK PROGRAMMING</div>
+              <div class="name">Amma Owusu</div>
+              <div class="meta">📅 20 MAY</div>
+            </div>
+            <div class="card-amt">
+              <div class="amt">GHS 250</div>
+              <div class="amtab">AMOUNT</div>
+            </div>
+          </div>
+          <div class="card-badges">
+            <span class="badge neutral">IN PROGRESS</span>
+            <span class="badge error">UNPAID</span>
+            <span class="badge error">! SAVE FAILED</span>
+          </div>
+          <!-- ❌ INLINE ERROR: user says this shouldn't exist -->
+          <div class="inline-error">
+            ⚠ CONNECTION TIMEOUT — COULD NOT REACH SERVER
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ARROW ═══ -->
+  <div class="arrow-col">
+    <div class="arr">→</div>
+  </div>
+
+  <!-- ═══ PROPOSED ═══ -->
+  <div class="phone">
+    <div class="phone-notch"><div></div></div>
+    <div class="phone-top"><span class="title">MY JOBS</span></div>
+
+    <!-- ✅ NEW: Summary strip -->
+    <div class="summary">
+      <div class="strip" style="border-color:#1E2A3A">
+        <div class="srow">
+          <div class="scard" style="border-color:#F4A30030">
+            <div class="sval gold">18</div>
+            <div class="slabel">TOTAL JOBS</div>
+          </div>
+          <div class="scard" style="border-color:#4ADE8030">
+            <div class="sval green">GHS 4,520</div>
+            <div class="slabel">THIS MONTH</div>
+          </div>
+          <div class="scard" style="border-color:#6BB5FF30">
+            <div class="sval blue">5</div>
+            <div class="slabel">PENDING</div>
+          </div>
+        </div>
+        <!-- Mini progress: this month vs target -->
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:#556677;font-weight:700;margin-bottom:3px">
+            <span>Monthly target: GHS 8,000</span>
+            <span>57%</span>
+          </div>
+          <div style="height:4px;background:#1E2A3A;border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:57%;background:#4ADE80;border-radius:2px"></div>
+          </div>
+        </div>
+        <!-- Pending sync chip — pill style -->
+        <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#F4A30010;border:1px solid #F4A30030;border-radius:12px;font-size:8px;color:#F4A300;font-weight:700">
+            ⏳ 2 uploading
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ✅ NEW: Simplified card (#1) -->
+    <div class="card-wrap">
+      <div class="card" style="border-color:#1E2A3A">
+        <div class="card-body">
+          <div class="card-top">
+            <div class="card-icon quoted">🔒</div>
+            <div class="card-info">
+              <div class="svc">DOOR LOCK INSTALL</div>
+              <div class="name">Emmanuel Mensah</div>
+              <div class="meta">📅 22 MAY · 📍 East Legon</div>
+            </div>
+            <div class="card-amt">
+              <div class="amt">GHS 420</div>
+              <div class="amtab">AMOUNT</div>
+            </div>
+          </div>
+          <div class="card-badges">
+            <span class="badge info">QUOTED</span>
+            <span class="badge success">PAID</span>
+            <span class="badge success">✓ WHATSAPP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ NEW: Card with sync failure — NO inline error text -->
+    <div class="card-wrap">
+      <div class="card" style="border-color:#1E2A3A">
+        <div class="card-body">
+          <div class="card-top">
+            <div class="card-icon" style="background:#6BB5FF20;color:#6BB5FF">🔑</div>
+            <div class="card-info">
+              <div class="svc">CAR LOCK PROGRAMMING</div>
+              <div class="name">Amma Owusu</div>
+              <div class="meta">📅 20 MAY · 📍 Spintex</div>
+            </div>
+            <div class="card-amt">
+              <div class="amt">GHS 0</div>
+              <div class="amtab">AMOUNT</div>
+            </div>
+          </div>
+          <div class="card-badges">
+            <span class="badge neutral">IN PROGRESS</span>
+            <span class="badge error">UNPAID</span>
+            <span class="badge error">! SAVE FAILED</span>
+          </div>
+          <!-- ✅ NO inline error text — just the badge -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div>
+  <div class="fix-box">
+    <h4>🔧 Changes Summary</h4>
+    <ul>
+      <li><strong>Remove left accent bar</strong> — The 4px colored strip adds visual noise. The icon box already conveys the status color.</li>
+      <li><strong>Remove inline error text</strong> — Lines 225-236 in job_card.dart show <code>syncErrorMessage</code> as inline text below the card. Delete it. The "SAVE FAILED" badge is sufficient.</li>
+      <li><strong>Simplify card border</strong> — Use single border color (<code>primary700</code>) instead of accent-colored left bar.</li>
+      <li><strong>Redesign summary strip</strong> — Three columns (Total Jobs / This Month / Pending) with colored accents, monthly target progress bar, and pill-style pending chip. Replace plain stats with the richer card-per-stat layout.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

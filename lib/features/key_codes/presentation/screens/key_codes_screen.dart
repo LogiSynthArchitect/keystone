@@ -8,6 +8,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../customer_history/domain/entities/key_code_entry_entity.dart';
 import '../providers/key_code_provider.dart';
@@ -106,17 +107,13 @@ class KeyCodesScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref, String id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ctx.ksc.primary800,
-        title: Text("DELETE KEY CODE?", style: AppTextStyles.h3.copyWith(color: ctx.ksc.white)),
-        content: Text("This key code entry will be permanently removed.", style: AppTextStyles.body.copyWith(color: ctx.ksc.neutral400)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: ctx.ksc.neutral400))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("DELETE", style: AppTextStyles.label.copyWith(color: ctx.ksc.error500))),
-        ],
-      ),
+    final confirmed = await KsConfirmDialog.show(
+      context,
+      title: 'DELETE KEY CODE?',
+      message: 'This key code entry will be permanently removed.',
+      confirmLabel: 'DELETE',
+      isDanger: true,
+      onConfirm: () {},
     );
     if (confirmed == true && context.mounted) {
       await ref.read(keyCodeProvider(customerId).notifier).delete(id);

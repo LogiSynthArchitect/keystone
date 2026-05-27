@@ -33,7 +33,7 @@ class KsStepDrawer extends StatefulWidget {
   final List<KsStep>? steps;
   final bool showBackArrow;
   final VoidCallback? onBack;
-  final Widget Function(int step, int subStep, StateSetter rebuild) stepContent;
+  final Widget Function(int step, int subStep, StateSetter rebuild, VoidCallback advance) stepContent;
   final bool Function(int step, int subStep)? canAdvance;
   final Future<void> Function()? onSave;
   final String nextLabel;
@@ -103,12 +103,7 @@ class _KsStepDrawerState extends State<KsStepDrawer>
     }
   }
 
-  void _handleBottomTap() {
-    if (!_canProceed) return;
-    if (widget.readOnly) {
-      widget.onSave?.call();
-      return;
-    }
+  void _handleNextStep() {
     if (_isComplete) {
       widget.onSave?.call();
     } else if (_isLastSubStep) {
@@ -119,6 +114,15 @@ class _KsStepDrawerState extends State<KsStepDrawer>
     } else {
       setState(() => _subStep++);
     }
+  }
+
+  void _handleBottomTap() {
+    if (!_canProceed) return;
+    if (widget.readOnly) {
+      widget.onSave?.call();
+      return;
+    }
+    _handleNextStep();
   }
 
   void _showTip(BuildContext context) {
@@ -282,7 +286,7 @@ class _KsStepDrawerState extends State<KsStepDrawer>
                 return SingleChildScrollView(
                   padding: EdgeInsets.only(bottom: bottomInset + 16),
                   child: Center(
-                    child: widget.stepContent(_currentStep, _subStep, (fn) => setState(fn)),
+                    child: widget.stepContent(_currentStep, _subStep, (fn) => setState(fn), _handleNextStep),
                   ),
                 );
               },

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Payment Drawer — Use KsBottomSheetScaffold</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0A1628;color:#fff;padding:32px;max-width:900px;margin:0 auto}
+h1{font-weight:900;font-size:20px;margin-bottom:4px;color:#F4A300}
+.subtitle{color:#8899AA;font-size:13px;margin-bottom:28px}
+
+/* Phone */
+.phone{width:340px;background:#0D1117;border-radius:24px;border:2px solid #1E2A3A;overflow:hidden;margin:0 auto}
+.phone-notch{height:28px;background:#0D1117;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #1E2A3A}
+.phone-notch div{width:120px;height:5px;background:#1E2A3A;border-radius:3px}
+
+/* Drawer content */
+.drawer{padding:0 24px 0}
+.handle{width:40px;height:4px;background:#556677;border-radius:2px;margin:12px auto}
+.header{display:flex;align-items:flex-start;margin:16px 0 20px}
+.header-text{flex:1}
+.header-text .title{font-size:15px;font-weight:900;color:#fff;letter-spacing:0.3px}
+.header-text .sub{font-size:11px;color:#556677;margin-top:2px}
+.close{color:#556677;font-size:18px;cursor:default}
+
+.label{font-size:9px;font-weight:800;color:#556677;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.chip{padding:8px 14px;border-radius:6px;font-size:10px;font-weight:900;letter-spacing:0.3px;cursor:default}
+.chip.current{background:#F4A30020;border:1.5px solid #F4A300;color:#F4A300}
+.chip.selectable{background:#111D2E;border:1px solid #1E2A3A;color:#CCD6E0}
+.chip.selected{background:#F4A30020;border:1px solid #F4A300;color:#F4A300}
+.chip .check{color:#F4A300;margin-left:4px}
+
+/* Edge-to-edge bottom bar */
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;width:100%;background:#F4A300;padding:14px 24px;color:#0A1628;font-weight:900;font-size:14px;letter-spacing:0.5px;cursor:default}
+
+/* Code block */
+.code{background:#0D1117;border:1px solid #1E2A3A;border-radius:8px;padding:16px;margin:16px 0;font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.7;color:#CCD6E0;overflow-x:auto}
+.code .k{color:#FF79C6}
+.code .s{color:#F1FA8C}
+.code .c{color:#6272A4;font-style:italic}
+.code .hl{color:#F4A300}
+.code .grn{color:#4ADE80}
+.code .red{color:#FF6B6B}
+.code .dim{color:#556677}
+
+.fix-box{background:#1A2A1A;border:1px solid #2A4A2A;border-radius:6px;padding:16px;margin:20px 0}
+.fix-box h4{color:#4ADE80;font-size:12px;font-weight:800;margin-bottom:8px;text-transform:uppercase}
+.fix-box ul{list-style:none;padding:0}
+.fix-box li{color:#CCD6E0;font-size:12px;padding:4px 0;padding-left:16px;position:relative;line-height:1.5}
+.fix-box li::before{content:'→';position:absolute;left:0;color:#F4A300}
+</style>
+</head>
+<body>
+
+<h1>Payment Drawer — Fix</h1>
+<p class="subtitle">Use existing <code>KsBottomSheetScaffold</code> with edge-to-edge bottom bar</p>
+
+<div class="phone">
+  <div class="phone-notch"><div></div></div>
+  <div class="drawer">
+    <div class="handle"></div>
+    <div class="header">
+      <div class="header-text">
+        <div class="title">PAYMENT</div>
+        <div class="sub">Update payment status and method</div>
+      </div>
+      <div class="close">✕</div>
+    </div>
+
+    <div class="label">Status</div>
+    <div class="chips">
+      <div class="chip current">UNPAID ✓</div>
+      <div class="chip selected">PAID</div>
+      <div class="chip selectable" style="opacity:0.4">PARTIAL</div>
+    </div>
+
+    <div class="label">Payment Method</div>
+    <div class="chips">
+      <div class="chip selected">CASH</div>
+      <div class="chip selectable">MOBILE MONEY</div>
+      <div class="chip selectable">BANK TRANSFER</div>
+      <div class="chip selectable">OTHER</div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+
+  <!-- Edge-to-edge bottom bar -->
+  <div class="bottom-bar">
+    <span>UPDATE PAYMENT</span>
+    <span>→</span>
+  </div>
+</div>
+
+<div style="margin-top:32px">
+<h2 style="font-size:14px;font-weight:800;color:#F4A300;margin-bottom:12px">How to implement (reuse KsBottomSheetScaffold)</h2>
+
+<div class="code">
+<span class="c">// Current: custom ElevatedButton inside contentBuilder → NOT edge-to-edge</span><br>
+<br>
+KsBottomSheetScaffold.show(<br>
+&nbsp;&nbsp;context,<br>
+&nbsp;&nbsp;title: "PAYMENT",<br>
+&nbsp;&nbsp;subtitle: "Update payment status and method",<br>
+&nbsp;&nbsp;<span class="red">bottomLabel: null,</span>  <span class="c">// ← no bottom bar!</span><br>
+&nbsp;&nbsp;<span class="red">contentBuilder: (ctx, setSheetState) {</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">return Column(children: [</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...chips...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">SizedBox(</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">child: ElevatedButton(...)  // ← not edge-to-edge</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">),</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="red">]);</span><br>
+&nbsp;&nbsp;},<br>
+);
+</div>
+</div>
+
+<div class="fix-box">
+  <h4>🔧 Fix: Use bottomLabel instead</h4>
+  <ul>
+    <li><strong>Set <code>bottomLabel: "UPDATE PAYMENT"</code></strong> — The built-in bottom bar renders edge-to-edge, gold, with arrow icon. Same as every other drawer in the app.</li>
+    <li><strong>Set <code>canPop: () => false</code></strong> — Prevents automatic pop after <code>onDone</code>. We pop manually inside the async flow.</li>
+    <li><strong>Use <code>onDone</code> to kick off async work</strong> — The button fires <code>onDone</code> synchronously, then checks <code>canPop</code>. Since <code>canPop</code> returns false, sheet stays open. The async work (confirm dialog → API call → pop) completes and calls <code>Navigator.pop(ctx)</code> manually.</li>
+    <li><strong>Status/method selection stays inside <code>contentBuilder</code></strong> — No change needed there.</li>
+  </ul>
+</div>
+
+<div class="code">
+<span class="c">// Fixed: uses bottomLabel for edge-to-edge bar</span><br>
+<br>
+KsBottomSheetScaffold.show(<br>
+&nbsp;&nbsp;context,<br>
+&nbsp;&nbsp;title: "PAYMENT",<br>
+&nbsp;&nbsp;subtitle: "Update payment status and method",<br>
+&nbsp;&nbsp;<span class="hl">bottomLabel: "UPDATE PAYMENT",</span>  <span class="grn">← edge-to-edge!</span><br>
+&nbsp;&nbsp;<span class="hl">canPop: () => false,</span>  <span class="grn">← prevent auto-pop</span><br>
+&nbsp;&nbsp;<span class="hl">onDone: () {</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl">_executePaymentUpdate(context, ref, job,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl">selectedStatus!, selectedMethod, ctx);</span><br>
+&nbsp;&nbsp;<span class="hl">},</span><br>
+&nbsp;&nbsp;contentBuilder: (ctx, setSheetState) { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="grn">return Column(children: [</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="grn">// Just the chips — no button here!</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STATUS chips...,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;METHOD chips...,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="grn">]);</span><br>
+&nbsp;&nbsp;},<br>
+);
+</div>
+
+<div style="margin-top:20px;padding:16px;background:#111D2E;border-radius:8px;border:1px solid #1E2A3A">
+  <div style="font-size:12px;color:#CCD6E0;line-height:1.6">
+    <strong style="color:#F4A300">Challenge:</strong> <code>onDone</code> is <code>VoidCallback</code> (synchronous).<br>
+    The async flow (confirm dialog → API call) can't be awaited inside it.<br><br>
+    <strong style="color:#4ADE80">Solution:</strong> Start the async flow as fire-and-forget from <code>onDone</code>.<br>
+    The sheet stays open (canPop returns false). The async flow completes,<br>
+    then calls <code>Navigator.pop(ctx)</code> + shows notification.
+  </div>
+</div>
+
+</body>
+</html>

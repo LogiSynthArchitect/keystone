@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../entities/job_entity.dart';
 import '../entities/job_part_entity.dart';
 import '../entities/job_photo_entity.dart';
@@ -19,6 +21,8 @@ abstract class JobRepository {
   Future<List<JobPartEntity>> getPartsForJob(String jobId);
   Future<void> saveParts(String jobId, List<JobPartEntity> parts);
   Future<List<JobPhotoEntity>> getPhotosForJob(String jobId);
+  Future<void> savePhotos(String jobId, List<(File, String, String)> photos); // file, label, mediaType
+  Future<void> deletePhoto(String photoId);
   Future<List<JobAuditEntryEntity>> getAuditLogForJob(String jobId);
 
   Future<JobEntity> editJob(String jobId, Map<String, dynamic> changes, String editedBy);

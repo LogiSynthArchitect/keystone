@@ -13,6 +13,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
+import '../../../../core/widgets/ks_confirm_dialog.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../features/service_types/presentation/widgets/service_type_picker_v2.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
@@ -117,38 +119,15 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
 
   Future<bool> _confirmDiscard() async {
     if (!_isDirty) return true;
-    return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: context.ksc.primary800,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-              side: BorderSide(color: context.ksc.primary700),
-            ),
-            title: Text('DISCARD CHANGES?',
-                style: AppTextStyles.h3.copyWith(
-                    color: context.ksc.white, fontWeight: FontWeight.w900)),
-            content: Text('You have unsaved notes. Leave anyway?',
-                style:
-                    AppTextStyles.body.copyWith(color: context.ksc.neutral400)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text('KEEP EDITING',
-                    style: AppTextStyles.label.copyWith(
-                        color: context.ksc.neutral400)),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text('DISCARD',
-                    style: AppTextStyles.label.copyWith(
-                        color: context.ksc.error500,
-                        fontWeight: FontWeight.w900)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return await KsConfirmDialog.show(
+      context,
+      title: 'DISCARD CHANGES?',
+      message: 'You have unsaved notes. Leave anyway?',
+      confirmLabel: 'DISCARD',
+      cancelLabel: 'KEEP EDITING',
+      isDanger: true,
+      onConfirm: () {},
+    ) ?? false;
   }
 
   Future<void> _onSave() async {
@@ -198,8 +177,10 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
       if (!mounted) return;
       if (note != null) {
         Navigator.of(context).pop(note);
-        KsSlidingNotification.show(context, message: "Note saved",
-            type: KsNotificationType.success);
+        await KsSuccessMoment.show(context,
+          title: "Note Saved",
+          subtitle: note.title,
+        );
       } else {
         final error = ref.read(addNoteProvider).errorMessage;
         KsSlidingNotification.show(context, message: error ?? "Could not save note",
@@ -246,7 +227,7 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         saveLabel: _isEditMode ? "SAVE CHANGES" : "SAVE NOTE",
         canAdvance: _canAdvance,
         onSave: _onSave,
-        stepContent: (step, subStep, setSheetState) {
+        stepContent: (step, subStep, setSheetState, _) {
           // Use the drawer's setState for UI updates triggered by callbacks
           switch (step) {
             case 0:

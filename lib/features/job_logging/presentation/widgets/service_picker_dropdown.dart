@@ -6,6 +6,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/service_icon_map.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/ks_sliding_notification.dart';
 import '../../../service_types/presentation/providers/service_type_provider.dart';
 
 /// A compact dropdown-style service type selector.
@@ -119,8 +120,16 @@ class ServicePickerDropdown extends ConsumerWidget {
   }
 
   void _openSheet(BuildContext context, WidgetRef ref) {
-    final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
-    if (types.isEmpty) return;
+    final typesAsync = ref.read(serviceTypeProvider);
+    final types = typesAsync.valueOrNull ?? [];
+    if (types.isEmpty) {
+      if (typesAsync.hasError) {
+        KsSlidingNotification.show(context,
+          message: 'Could not load services',
+          type: KsNotificationType.error);
+      }
+      return;
+    }
 
     showModalBottomSheet(
       context: context,

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -34,6 +35,7 @@ import '../models/job_audit_entry_model.dart';
 import '../models/job_service_model.dart';
 import '../models/job_hardware_model.dart';
 import '../models/job_expense_model.dart';
+import '../models/job_photo_model.dart';
 
 class JobRepositoryImpl implements JobRepository {
   final JobRemoteDatasource _remote;
@@ -46,6 +48,7 @@ class JobRepositoryImpl implements JobRepository {
   final JobPartsLocalDatasource _partsLocal;
   final JobPartsRemoteDatasource _partsRemote;
   final JobPhotosLocalDatasource _photosLocal;
+  final JobPhotosRemoteDatasource _photosRemote;
   final JobAuditLocalDatasource _auditLocal;
   final JobAuditRemoteDatasource _auditRemote;
   final JobServicesLocalDatasource _servicesLocal;
@@ -65,7 +68,7 @@ class JobRepositoryImpl implements JobRepository {
     this._partsLocal,
     this._partsRemote,
     this._photosLocal,
-    JobPhotosRemoteDatasource _photosRemote,
+    this._photosRemote,
     this._auditLocal,
     this._auditRemote,
     this._servicesLocal,
@@ -390,6 +393,46 @@ class JobRepositoryImpl implements JobRepository {
   }
 
   @override
+  Future<void> savePhotos(String jobId, List<(File, String, String)> photos) async {
+    for (final p in photos) {
+      final model = JobPhotoModel(
+        id: const Uuid().v4(),
+        jobId: jobId,
+        storagePath: p.$1.path,
+        label: p.$2,
+        mediaType: p.$3,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      await _photosLocal.savePhoto(model);
+      try {
+        await _photosRemote.createPhotoRecord(model.toJson());
+      } catch (e) {
+        debugPrint('[KS:PHOTOS] Remote save failed (offline): $e');
+      }
+    }
+  }
+
+  @override
+  Future<void> deletePhoto(String photoId) async {
+    // Get storage path before deleting locally
+    String? storagePath;
+    try {
+      final photos = await _photosLocal.getPhotosForJob('');
+      final photo = photos.where((p) => p.id == photoId).firstOrNull;
+      storagePath = photo?.storagePath;
+    } catch (_) {}
+
+    await _photosLocal.deletePhoto(photoId);
+    if (storagePath != null) {
+      try {
+        await _photosRemote.deletePhoto(photoId, storagePath);
+      } catch (e) {
+        debugPrint('[KS:PHOTOS] Remote delete failed (offline): $e');
+      }
+    }
+  }
+
+  @override
   Future<List<JobAuditEntryEntity>> getAuditLogForJob(String jobId) async {
     final models = await _auditLocal.getEntriesForJob(jobId);
     return models.map((m) => m.toEntity()).toList();
@@ -401,7 +444,7 @@ class JobRepositoryImpl implements JobRepository {
     if (existing == null) throw Exception('Job not found.');
 
     if (changes.containsKey('payment_status')) {
-      final error = JobEntity.validatePaymentTransition(existing.status, existing.paymentStatus, changes['payment_status'] as String);
+      final error = JobEntity.validatePaymentTransition(existing.paymentStatus, changes['payment_status'] as String);
       if (error != null) throw Exception(error);
     }
 
@@ -479,7 +522,7 @@ class JobRepositoryImpl implements JobRepository {
   Future<JobEntity> updatePaymentStatus(String jobId, String newStatus, String? method, String editedBy) async {
     final existing = await getJobById(jobId);
     if (existing == null) throw Exception('Job not found.');
-    final error = JobEntity.validatePaymentTransition(existing.status, existing.paymentStatus, newStatus);
+    final error = JobEntity.validatePaymentTransition(existing.paymentStatus, newStatus);
     if (error != null) throw Exception(error);
     return editJob(jobId, {
       'payment_status': newStatus,
