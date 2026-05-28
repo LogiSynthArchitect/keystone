@@ -1007,113 +1007,116 @@ class JobDetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(context, "MEDIA"),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.5
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: photos.length,
+                itemBuilder: (ctx, i) => _buildPhotoCard(context, ref, photos, i),
               ),
-              itemCount: photos.length,
-              itemBuilder: (ctx, i) => _buildPhotoCard(context, ref, photos[i]),
             ),
             const SizedBox(height: 12),
           ],
         );
-      }
+      },
     );
   }
 
-  Widget _buildPhotoCard(BuildContext context, WidgetRef ref, JobPhotoEntity photo) {
+  Widget _buildPhotoCard(BuildContext context, WidgetRef ref, List<JobPhotoEntity> photos, int index) {
+    final photo = photos[index];
     final isVideo = photo.mediaType == 'video';
     final isAudio = photo.mediaType == 'audio';
-    final isValidUrl = _isValidNetworkUrl(photo.storagePath);
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: isValidUrl
-              ? () {
-                  if (isVideo || isAudio) {
-                    _playMedia(context, photo);
-                  } else {
-                    _viewImage(context, photo);
-                  }
-                }
-              : null,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: context.ksc.primary700),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(11),
-              child: isValidUrl && !isVideo && !isAudio
-                  ? Image.network(
-                      photo.storagePath,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      loadingBuilder: (ctx, child, progress) {
-                        if (progress == null) return child;
-                        return Center(
-                          child: SizedBox(
-                            width: 24, height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: context.ksc.accent500,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (ctx, error, stack) => Center(
-                        child: Icon(LineAwesomeIcons.image_solid, color: context.ksc.neutral600, size: 28),
-                      ),
-                    )
-                  : Center(
-                      child: isVideo
-                          ? Icon(LineAwesomeIcons.play_circle_solid, color: context.ksc.accent500, size: 40)
-                          : isAudio
-                              ? Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.accent500, size: 40)
-                              : Icon(LineAwesomeIcons.image_solid, color: context.ksc.neutral600, size: 28),
+    return GestureDetector(
+      onTap: () => _openMediaViewer(context, photos, index),
+      child: Container(
+        width: 120,
+        height: 140,
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.ksc.primary700),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(11),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Image thumbnail or media placeholder
+              if (isVideo || isAudio)
+                Container(
+                  color: context.ksc.primary800,
+                  child: Center(
+                    child: Icon(
+                      isVideo ? LineAwesomeIcons.play_circle_solid : LineAwesomeIcons.microphone_solid,
+                      color: context.ksc.accent500,
+                      size: 36,
                     ),
-            ),
+                  ),
+                )
+              else
+                Image.network(
+                  photo.storagePath,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  loadingBuilder: (ctx, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      color: context.ksc.primary800,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (ctx, error, stack) => Container(
+                    color: context.ksc.primary800,
+                    child: Icon(LineAwesomeIcons.image_solid, color: context.ksc.neutral500, size: 28),
+                  ),
+                ),
+              // Label overlay at bottom
+              if (photo.label != null)
+                Positioned(
+                  bottom: 0, left: 0, right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    color: Colors.black54,
+                    child: Text(
+                      photo.label!.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.caption.copyWith(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              // Media type badge — top-left
+              Positioned(
+                top: 4, left: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isVideo
+                        ? const Color(0xFF6BB5FF).withValues(alpha: 0.85)
+                        : isAudio
+                            ? const Color(0xFFB388FF).withValues(alpha: 0.85)
+                            : context.ksc.accent500.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    isVideo ? "VIDEO" : isAudio ? "AUDIO" : "PHOTO",
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.ksc.primary900,
+                      fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-          if (photo.label != null)
-            Positioned(
-              bottom: 0, left: 0, right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                color: Colors.black54,
-                child: Text(
-                  photo.label!.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.caption.copyWith(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
-                ),
-              ),
-            ),
-          // Media type badge — top-left
-          Positioned(
-            top: 4, left: 4,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: isVideo
-                    ? const Color(0xFF6BB5FF).withValues(alpha: 0.85)
-                    : isAudio
-                        ? const Color(0xFFB388FF).withValues(alpha: 0.85)
-                        : context.ksc.accent500.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                isVideo ? "VIDEO" : isAudio ? "AUDIO" : "PHOTO",
-                style: AppTextStyles.caption.copyWith(
-                  color: context.ksc.primary900,
-                  fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5,
-                ),
-              ),
-            ),
-          ),
-        ],
+      ),
     );
   }
 
@@ -1585,175 +1588,17 @@ class JobDetailScreen extends ConsumerWidget {
     }
   }
 
-  void _viewImage(BuildContext context, JobPhotoEntity photo) {
-    if (!_isValidNetworkUrl(photo.storagePath)) return;
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                photo.storagePath,
-                fit: BoxFit.contain,
-                width: double.infinity,
-                height: MediaQuery.of(context).size.height * 0.7,
-                loadingBuilder: (ctx, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    decoration: BoxDecoration(
-                      color: context.ksc.primary800,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: CircularProgressIndicator(color: context.ksc.accent500),
-                    ),
-                  );
-                },
-                errorBuilder: (ctx, error, stack) => Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: context.ksc.primary800,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(LineAwesomeIcons.image_solid, color: context.ksc.neutral600, size: 40),
-                        const SizedBox(height: 8),
-                        Text("Could not load image", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8, right: 8,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(LineAwesomeIcons.times_solid, color: Colors.white, size: 16),
-                ),
-              ),
-            ),
-            if (photo.label != null)
-              Positioned(
-                bottom: 12, left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    photo.label!.toUpperCase(),
-                    style: AppTextStyles.caption.copyWith(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                  ),
-                ),
-              ),
-          ],
+  void _openMediaViewer(BuildContext context, List<JobPhotoEntity> photos, int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _FullScreenMediaViewer(
+          photos: photos,
+          initialIndex: initialIndex,
         ),
       ),
     );
-  }
-
-  Future<void> _playMedia(BuildContext context, JobPhotoEntity photo) async {
-    if (!_isValidNetworkUrl(photo.storagePath)) {
-      if (context.mounted) {
-        KsSlidingNotification.show(context, message: "Media file not available offline", type: KsNotificationType.info);
-      }
-      return;
-    }
-    final controller = VideoPlayerController.networkUrl(Uri.parse(photo.storagePath));
-    try {
-      await controller.initialize();
-    } catch (_) {
-      controller.dispose();
-      if (context.mounted) {
-        KsSlidingNotification.show(context, message: "Could not play media", type: KsNotificationType.error);
-      }
-      return;
-    }
-    if (!context.mounted) { controller.dispose(); return; }
-    controller.play();
-
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (ctx) => Dialog(
-          backgroundColor: photo.mediaType == 'audio' ? context.ksc.primary800 : Colors.transparent,
-          insetPadding: const EdgeInsets.all(24),
-          child: Stack(
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (photo.mediaType == 'video')
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: MediaQuery.of(context).size.height * 0.4,
-                        child: VideoPlayer(controller),
-                      ),
-                    ),
-                  if (photo.mediaType == 'audio') ...[
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(LineAwesomeIcons.microphone_solid, color: context.ksc.accent500, size: 48),
-                          const SizedBox(height: 16),
-                          Text("AUDIO RECORDING", style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 12),
-                          Text(photo.label?.toUpperCase() ?? "RECORDING", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400)),
-                          const SizedBox(height: 20),
-                          _AudioPlayerWidget(controller: controller),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () { controller.dispose(); Navigator.of(ctx).pop(); },
-                    child: const Text("CLOSE"),
-                  ),
-                ],
-              ),
-              // Close button overlay
-              Positioned(
-                top: 8, right: 8,
-                child: GestureDetector(
-                  onTap: () { controller.dispose(); Navigator.of(ctx).pop(); },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(LineAwesomeIcons.times_solid, color: Colors.white, size: 14),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
   }
 }
 
@@ -1953,5 +1798,220 @@ class _LinkedNotesList extends ConsumerWidget {
         );
       },
     );
+  }
+}
+
+/// Full-screen media viewer with swipe navigation, pinch-to-zoom for images,
+/// and native video playback controls.
+class _FullScreenMediaViewer extends StatefulWidget {
+  final List<JobPhotoEntity> photos;
+  final int initialIndex;
+
+  const _FullScreenMediaViewer({
+    required this.photos,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_FullScreenMediaViewer> createState() => _FullScreenMediaViewerState();
+}
+
+class _FullScreenMediaViewerState extends State<_FullScreenMediaViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+  VideoPlayerController? _videoController;
+  bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentIndex);
+    _initVideoForIndex(_currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _videoController?.removeListener(_onVideoUpdate);
+    _videoController?.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initVideoForIndex(int index) async {
+    final photo = widget.photos[index];
+    if (photo.mediaType != 'video') return;
+
+    final controller = VideoPlayerController.networkUrl(Uri.parse(photo.storagePath));
+    try {
+      await controller.initialize();
+    } catch (_) {
+      controller.dispose();
+      if (mounted) setState(() {});
+      return;
+    }
+    if (!mounted) { controller.dispose(); return; }
+    controller.play();
+    controller.addListener(_onVideoUpdate);
+    if (mounted) {
+      setState(() { _videoController = controller; });
+    }
+  }
+
+  void _onVideoUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  void _onPageChanged(int index) {
+    _videoController?.removeListener(_onVideoUpdate);
+    _videoController?.dispose();
+    _videoController = null;
+    _currentIndex = index;
+    _initVideoForIndex(index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final photo = widget.photos[_currentIndex];
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "${_currentIndex + 1} / ${widget.photos.length}",
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        centerTitle: true,
+        actions: [
+          if (photo.label != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    photo.label!.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.photos.length,
+        onPageChanged: _onPageChanged,
+        itemBuilder: (ctx, i) => _buildMediaItem(widget.photos[i]),
+      ),
+    );
+  }
+
+  Widget _buildMediaItem(JobPhotoEntity photo) {
+    switch (photo.mediaType) {
+      case 'video':
+        if (_videoController != null && _videoController!.value.isInitialized) {
+          return GestureDetector(
+            onTap: () => setState(() { _showControls = !_showControls; }),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: _videoController!.value.aspectRatio,
+                    child: VideoPlayer(_videoController!),
+                  ),
+                ),
+                AnimatedOpacity(
+                  opacity: _showControls ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (_videoController!.value.isPlaying) {
+                        _videoController!.pause();
+                      } else {
+                        _videoController!.play();
+                      }
+                      setState(() { _showControls = false; });
+                    },
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Center(
+                        child: AnimatedOpacity(
+                          opacity: _videoController!.value.isPlaying ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: const Icon(Icons.play_circle, color: Colors.white70, size: 72),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const Center(child: CircularProgressIndicator(color: Colors.white));
+
+      case 'audio':
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(LineAwesomeIcons.microphone_solid, color: Colors.white54, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                photo.label?.toUpperCase() ?? "AUDIO RECORDING",
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        );
+
+      default: // image
+        return InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Center(
+            child: Image.network(
+              photo.storagePath,
+              fit: BoxFit.contain,
+              loadingBuilder: (ctx, child, progress) {
+                if (progress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
+              },
+              errorBuilder: (ctx, error, stack) => const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LineAwesomeIcons.image_solid, color: Colors.white38, size: 48),
+                  SizedBox(height: 8),
+                  Text(
+                    "Could not load image",
+                    style: TextStyle(color: Colors.white38, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    }
   }
 }
