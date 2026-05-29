@@ -20,6 +20,8 @@ class _TestServiceTypeNotifier extends ServiceTypeNotifier {
         id: 'st1',
         userId: 'u1',
         name: 'Safe Opening',
+        category: 'Specialty',
+        iconName: 'unlock',
         createdAt: DateTime(2024),
         updatedAt: DateTime(2024),
       ),

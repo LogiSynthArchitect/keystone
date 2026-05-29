@@ -6,7 +6,15 @@ import '../repositories/service_type_repository.dart';
 class CreateServiceTypeParams {
   final String userId;
   final String name;
-  const CreateServiceTypeParams({required this.userId, required this.name});
+  final String category;
+  final String iconName;
+
+  const CreateServiceTypeParams({
+    required this.userId,
+    required this.name,
+    required this.category,
+    required this.iconName,
+  });
 }
 
 class CreateServiceTypeUsecase implements UseCase<ServiceTypeEntity, CreateServiceTypeParams> {
@@ -20,6 +28,8 @@ class CreateServiceTypeUsecase implements UseCase<ServiceTypeEntity, CreateServi
       id: const Uuid().v4(),
       userId: params.userId,
       name: params.name,
+      category: params.category,
+      iconName: params.iconName,
       createdAt: now,
       updatedAt: now,
     );

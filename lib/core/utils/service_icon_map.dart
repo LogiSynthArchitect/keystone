@@ -5,6 +5,15 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 class ServiceIconMap {
   ServiceIconMap._();
 
+  /// All available icon names for the icon picker.
+  static const List<String> allIcons = [
+    'car', 'unlock', 'wifi', 'key', 'tools', 'motorcycle',
+    'door-open', 'lock', 'wrench', 'mobile-alt', 'envelope',
+    'building', 'network-wired', 'door-closed', 'bolt',
+    'shield-alt', 'archive', 'store', 'video', 'id-card',
+    'bell', 'phone', 'cut', 'gavel',
+  ];
+
   static IconData resolve(String? iconName) {
     if (iconName == null) return LineAwesomeIcons.tools_solid;
     switch (iconName) {

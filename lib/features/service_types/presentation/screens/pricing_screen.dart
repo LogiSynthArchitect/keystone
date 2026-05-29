@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import '../../../../core/constants/service_categories.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
@@ -123,38 +124,11 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   void _showFilterSheet(BuildContext context, {List<ServiceTypeEntity>? types}) {
     String draftCategory = _activeCategory;
 
-    // Derive categories from actual data, with "All" first
-    final dynamicCats = types
-        ?.map((t) => t.category)
-        .toSet()
-        .where((c) => c.isNotEmpty)
-        .toList();
-    dynamicCats?.sort();
-
-    final allCats = {'All': types?.length ?? 0};
-    if (types != null) {
-      for (final c in dynamicCats ?? <String>[]) {
-        allCats[c] = types.where((t) => t.category == c).length;
-      }
+    // Build category counts from data using the standardized list
+    final countByCategory = <String, int>{'All': types?.length ?? 0};
+    for (final cat in ServiceCategory.all) {
+      countByCategory[cat.key] = types?.where((t) => t.category == cat.key).length ?? 0;
     }
-
-    const catIcons = <String, String>{
-      'All': '📍',
-      'Residential': '🏠',
-      'Automotive': '🚗',
-      'Commercial': '🏢',
-      'Security Systems': '📡',
-      'Specialty': '⚡',
-    };
-
-    const catDesc = <String, String>{
-      'All': 'Clear all filters',
-      'Residential': 'Home & apartment services',
-      'Automotive': 'Vehicle lock & key',
-      'Commercial': 'Business & office',
-      'Security Systems': 'CCTV, alarms, access',
-      'Specialty': 'Safe, gate, high-security',
-    };
 
     final selectedCat = draftCategory;
     final selectedCount = selectedCat == 'All'
@@ -188,13 +162,21 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                 label: "CATEGORY",
                 selected: draftCategory,
                 onSelect: (v) => setInnerState(() => draftCategory = v ?? 'All'),
-                options: allCats.entries.map((e) => KsFilterOption(
-                  value: e.key,
-                  display: e.key == 'All' ? 'All Services' : e.key,
-                  icon: catIcons[e.key] ?? '📋',
-                  count: e.value,
-                  description: catDesc[e.key],
-                )).toList(),
+                options: [
+                  const KsFilterOption(
+                    value: 'All',
+                    display: 'ALL SERVICES',
+                    icon: '📍',
+                    description: 'Clear all filters',
+                  ),
+                  ...ServiceCategory.all.map((c) => KsFilterOption(
+                    value: c.key,
+                    display: c.display,
+                    icon: c.emoji,
+                    count: countByCategory[c.key] ?? 0,
+                    description: c.description,
+                  )),
+                ],
               ),
             ],
           ),

@@ -19,6 +19,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(ServiceTypeModel(
       id: 'fallback', userId: 'u0', name: 'Fallback',
+      category: 'General', iconName: 'tools',
       createdAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',
     ));
@@ -33,7 +34,8 @@ void main() {
 
   final now = DateTime.now();
   final entity = ServiceTypeEntity(
-    id: '1', userId: 'u1', name: 'Test', createdAt: now, updatedAt: now
+    id: '1', userId: 'u1', name: 'Test', category: 'General', iconName: 'tools',
+    createdAt: now, updatedAt: now
   );
   final model = ServiceTypeModel.fromEntity(entity);
 

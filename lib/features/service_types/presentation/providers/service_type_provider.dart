@@ -61,12 +61,17 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
     }
   }
 
-  Future<void> createServiceType(String name) async {
+  Future<void> createServiceType(String name, String category, String iconName) async {
     final userId = _ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (userId == null) return;
 
     try {
-      await _ref.read(createServiceTypeUsecaseProvider).call(CreateServiceTypeParams(userId: userId, name: name));
+      await _ref.read(createServiceTypeUsecaseProvider).call(CreateServiceTypeParams(
+        userId: userId,
+        name: name,
+        category: category,
+        iconName: iconName,
+      ));
       await loadServiceTypes();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
