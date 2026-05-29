@@ -192,7 +192,9 @@ class _JobTemplatesScreenState extends ConsumerState<JobTemplatesScreen> {
                 return KsSummaryStrip(
                   value: '${items.length}',
                   label: "TEMPLATES",
-                  subtitle: '$withServices with services',
+                  subtitleSegments: [
+                    KsSubtitleSegment('$withServices with services', color: context.ksc.accent500),
+                  ],
                   subtitleIcon: LineAwesomeIcons.file_solid,
                 );
               },

@@ -87,36 +87,43 @@ class ServiceTypesScreen extends ConsumerWidget {
 
   void _showAddDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    final focusNode = FocusNode();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        title: Text("ADD SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: TextStyle(color: context.ksc.white),
-          decoration: InputDecoration(
-            hintText: "e.g. Safe Opening",
-            hintStyle: TextStyle(color: context.ksc.neutral500),
-            filled: true,
-            fillColor: context.ksc.primary900,
+      builder: (ctx) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => focusNode.requestFocus());
+        return AlertDialog(
+          backgroundColor: context.ksc.primary800,
+          title: Text("ADD SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
+          content: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            style: TextStyle(color: context.ksc.white),
+            decoration: InputDecoration(
+              hintText: "e.g. Safe Opening",
+              hintStyle: TextStyle(color: context.ksc.neutral500),
+              filled: true,
+              fillColor: context.ksc.primary900,
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                ref.read(serviceTypeProvider.notifier).createServiceType(controller.text.trim());
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text("ADD", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
-          ),
-        ],
-      ),
-    ).then((_) => controller.dispose());
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+            TextButton(
+              onPressed: () {
+                if (controller.text.trim().isNotEmpty) {
+                  ref.read(serviceTypeProvider.notifier).createServiceType(controller.text.trim());
+                  Navigator.pop(ctx);
+                }
+              },
+              child: Text("ADD", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      focusNode.dispose();
+      Future.microtask(() => controller.dispose());
+    });
   }
 }
 
@@ -159,34 +166,41 @@ class _ServiceTypeTile extends ConsumerWidget {
 
   void _showEditDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController(text: type.name);
+    final focusNode = FocusNode();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        title: Text("EDIT SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: TextStyle(color: context.ksc.white),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: context.ksc.primary900,
+      builder: (ctx) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => focusNode.requestFocus());
+        return AlertDialog(
+          backgroundColor: context.ksc.primary800,
+          title: Text("EDIT SERVICE TYPE", style: AppTextStyles.h2.copyWith(color: context.ksc.white)),
+          content: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            style: TextStyle(color: context.ksc.white),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: context.ksc.primary900,
+            ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                ref.read(serviceTypeProvider.notifier).updateServiceType(type.copyWith(name: controller.text.trim()));
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text("SAVE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
-          ),
-        ],
-      ),
-    ).then((_) => controller.dispose());
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text("CANCEL", style: AppTextStyles.label.copyWith(color: context.ksc.neutral400))),
+            TextButton(
+              onPressed: () {
+                if (controller.text.trim().isNotEmpty) {
+                  ref.read(serviceTypeProvider.notifier).updateServiceType(type.copyWith(name: controller.text.trim()));
+                  Navigator.pop(ctx);
+                }
+              },
+              child: Text("SAVE", style: AppTextStyles.label.copyWith(color: context.ksc.accent500)),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      focusNode.dispose();
+      Future.microtask(() => controller.dispose());
+    });
   }
 
   void _showDeleteConfirm(BuildContext context, WidgetRef ref) {

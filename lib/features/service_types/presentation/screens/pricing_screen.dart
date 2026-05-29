@@ -230,14 +230,17 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           label: _hasActiveFilter || _searchQuery.isNotEmpty
               ? "FILTERED SERVICES"
               : "SERVICE PRICING",
-          subtitle: () {
+          subtitleSegments: () {
             final withPrices = categoryFiltered.where((t) => t.defaultPrice != null).length;
             final totalCats = types.map((t) => t.category).toSet().length;
-            final parts = <String>['$withPrices with prices', '$totalCats categories'];
+            final segments = <KsSubtitleSegment>[
+              KsSubtitleSegment('$withPrices with prices', color: context.ksc.success500),
+              KsSubtitleSegment('$totalCats categories'),
+            ];
             if (_hasActiveFilter || _searchQuery.isNotEmpty) {
-              parts.add('${categoryFiltered.length} shown');
+              segments.add(KsSubtitleSegment('${categoryFiltered.length} shown', color: context.ksc.accent500));
             }
-            return parts.join(' ● ');
+            return segments;
           }(),
           subtitleIcon: LineAwesomeIcons.tags_solid,
         ),

@@ -595,7 +595,13 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 return KsSummaryStrip(
                   value: hasFilter ? '${filtered.length}' : '${items.length}',
                   label: hasFilter ? "FILTERED ITEMS" : (_showArchived ? "ALL ITEMS (INCL. ARCHIVED)" : "ALL ITEMS"),
-                  subtitle: '$lowStockCount low stock ● $categories categories${hasFilter ? ' ● ${filtered.length} shown' : ''}',
+                  subtitleSegments: [
+                    if (lowStockCount > 0)
+                      KsSubtitleSegment('$lowStockCount low stock', color: context.ksc.warning500),
+                    KsSubtitleSegment('$categories categories'),
+                    if (hasFilter)
+                      KsSubtitleSegment('${filtered.length} shown', color: context.ksc.accent500),
+                  ],
                   subtitleIcon: LineAwesomeIcons.cubes_solid,
                 );
               },

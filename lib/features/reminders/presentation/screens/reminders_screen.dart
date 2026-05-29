@@ -63,12 +63,16 @@ class RemindersScreen extends ConsumerWidget {
             KsSummaryStrip(
               value: '${active.length}',
               label: "ACTIVE REMINDERS",
-              subtitle: [
-                if (unpaidCount > 0) '$unpaidCount unpaid',
-                if (stuckCount > 0) '$stuckCount stuck',
-                if (followUpCount > 0) '$followUpCount follow-up',
-                if (recurringCount > 0) '$recurringCount recurring',
-              ].join(' ● '),
+              subtitleSegments: [
+                if (unpaidCount > 0)
+                  KsSubtitleSegment('$unpaidCount unpaid', color: context.ksc.accent500),
+                if (stuckCount > 0)
+                  KsSubtitleSegment('$stuckCount stuck', color: context.ksc.error500),
+                if (followUpCount > 0)
+                  KsSubtitleSegment('$followUpCount follow-up', color: context.ksc.warning500),
+                if (recurringCount > 0)
+                  KsSubtitleSegment('$recurringCount recurring', color: context.ksc.success500),
+              ],
               subtitleIcon: LineAwesomeIcons.bell_solid,
             ),
             // List

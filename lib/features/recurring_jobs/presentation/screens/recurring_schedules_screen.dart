@@ -9,6 +9,10 @@ import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/ks_bottom_sheet_scaffold.dart';
+import '../../../../core/widgets/ks_filter_sheet.dart';
+import '../../../../features/job_logging/presentation/widgets/service_picker_dropdown.dart';
+import '../../../../features/job_logging/presentation/widgets/customer_picker_dropdown.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/storage/hive_service.dart';
 import '../../../../features/customer_history/data/models/customer_model.dart';
@@ -32,7 +36,6 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
   }
 
   void _showAddSchedule() {
-    // Load customers and service types from local Hive
     final customers = HiveService.customers.values
         .map((e) => CustomerModel.fromJson(Map<String, dynamic>.from(e)))
         .toList();
@@ -45,197 +48,197 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
     String interval = 'monthly';
     DateTime startDate = DateTime.now().add(const Duration(days: 7));
     final notesCtrl = TextEditingController();
+    var isSubmitting = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.ksc.primary800,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                left: 24, right: 24, top: 24,
+    final _drawer = KsBottomSheetScaffold.show<void>(
+      context,
+      title: "ADD RECURRING SCHEDULE",
+      subtitle: "Set up a new recurring service schedule",
+      isDirty: () => selectedCustomer != null || selectedService != null || notesCtrl.text.isNotEmpty,
+      contentBuilder: (ctx, setSheetState) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 4),
+          // ── Customer ──
+          CustomerPickerDropdown(
+            selected: selectedCustomer,
+            customers: customers,
+            onSelected: (c) {
+              setSheetState(() => selectedCustomer = c?.fullName.isNotEmpty == true ? c : null);
+            },
+          ),
+          const SizedBox(height: 24),
+          // ── Service type ──
+          ServicePickerDropdown(
+            selected: selectedService?.name,
+            onSelected: (name) {
+              setSheetState(() => selectedService = services.firstWhere((s) => s.name == name));
+            },
+          ),
+          const SizedBox(height: 24),
+          // ── Interval ──
+          KsFilterChipGroup(
+            label: "INTERVAL *",
+            options: const [
+              KsFilterOption(value: 'weekly', display: 'WEEKLY'),
+              KsFilterOption(value: 'monthly', display: 'MONTHLY'),
+              KsFilterOption(value: 'quarterly', display: 'QUARTERLY'),
+              KsFilterOption(value: 'yearly', display: 'YEARLY'),
+            ],
+            selected: interval,
+            onSelect: (v) {
+              if (v != null) setSheetState(() => interval = v);
+            },
+            borderRadius: 4,
+            unselectedColor: context.ksc.primary900,
+          ),
+          const SizedBox(height: 24),
+          // ── Start date ──
+          Text("START DATE *",
+            style: AppTextStyles.caption.copyWith(
+              color: context.ksc.neutral500,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0)),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: ctx,
+                initialDate: startDate,
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                builder: (_, child) => Theme(
+                  data: Theme.of(ctx).copyWith(
+                    dialogTheme: DialogThemeData(backgroundColor: context.ksc.primary800),
+                    datePickerTheme: DatePickerThemeData(
+                      backgroundColor: context.ksc.primary800,
+                      headerBackgroundColor: context.ksc.primary900,
+                      todayForegroundColor: WidgetStatePropertyAll(context.ksc.accent500),
+                      dayForegroundColor: WidgetStatePropertyAll(context.ksc.white),
+                    ),
+                  ),
+                  child: child!,
+                ),
+              );
+              if (picked != null) setSheetState(() => startDate = picked);
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              decoration: BoxDecoration(
+                color: context.ksc.primary900,
+                border: Border(bottom: BorderSide(color: context.ksc.primary700)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Text(DateFormatter.short(startDate),
+                style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // ── Notes ──
+          Text("NOTES",
+            style: AppTextStyles.caption.copyWith(
+              color: context.ksc.neutral500,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: notesCtrl,
+            maxLines: null,
+            minLines: 3,
+            style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white),
+            decoration: InputDecoration(
+              hintText: "Optional notes",
+              hintStyle: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral600),
+              isDense: true,
+              contentPadding: const EdgeInsets.only(bottom: 4),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.primary700),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.accent500),
+              ),
+              border: UnderlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.primary700),
+              ),
+              filled: false,
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+      bottomWidget: (ctx, setSheetState) => Container(
+        width: double.infinity,
+        color: context.ksc.accent500,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isSubmitting
+                ? null
+                : () async {
+                    setSheetState(() => isSubmitting = true);
+                    if (selectedCustomer == null || selectedService == null) {
+                      KsSlidingNotification.show(ctx,
+                        message: "Select a customer and service type",
+                        type: KsNotificationType.error);
+                      setSheetState(() => isSubmitting = false);
+                      return;
+                    }
+                    final userId = ref.read(currentUserProvider).valueOrNull?.id;
+                    if (userId == null) {
+                      setSheetState(() => isSubmitting = false);
+                      return;
+                    }
+                    await ref.read(recurringScheduleProvider.notifier).add(
+                      customerId: selectedCustomer!.id,
+                      customerName: selectedCustomer!.fullName,
+                      serviceType: selectedService!.name,
+                      serviceTypeId: selectedService!.id,
+                      intervalType: interval,
+                      nextDueDate: startDate,
+                      notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (mounted) {
+                      KsSlidingNotification.show(context,
+                        message: "Recurring schedule created",
+                        type: KsNotificationType.success);
+                    }
+                  },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("ADD RECURRING SCHEDULE", style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 20),
-                  // Customer picker
-                  Text("CUSTOMER *", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
+                  Text("CREATE SCHEDULE",
+                    style: AppTextStyles.body.copyWith(
                       color: context.ksc.primary900,
-                      border: Border(bottom: BorderSide(color: context.ksc.primary700)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedCustomer?.id,
-                        isExpanded: true,
-                        dropdownColor: context.ksc.primary800,
-                        hint: Text("Select customer", style: TextStyle(color: context.ksc.neutral500)),
-                        items: customers.map((c) => DropdownMenuItem(
-                          value: c.id,
-                          child: Text(c.fullName, style: TextStyle(color: context.ksc.white)),
-                        )).toList(),
-                        onChanged: (id) {
-                          setSheetState(() => selectedCustomer = customers.firstWhere((c) => c.id == id));
-                        },
-                      ),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      letterSpacing: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Service type picker
-                  Text("SERVICE TYPE *", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: context.ksc.primary900,
-                      border: Border(bottom: BorderSide(color: context.ksc.primary700)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedService?.name,
-                        isExpanded: true,
-                        dropdownColor: context.ksc.primary800,
-                        hint: Text("Select service type", style: TextStyle(color: context.ksc.neutral500)),
-                        items: services.map((s) => DropdownMenuItem(
-                          value: s.name,
-                          child: Text(s.name, style: TextStyle(color: context.ksc.white)),
-                        )).toList(),
-                        onChanged: (name) {
-                          setSheetState(() => selectedService = services.firstWhere((s) => s.name == name));
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Interval picker
-                  Text("INTERVAL *", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: ['weekly', 'monthly', 'quarterly', 'yearly'].map((v) {
-                      final label = v == 'weekly' ? 'WEEKLY' : v == 'monthly' ? 'MONTHLY' : v == 'quarterly' ? 'QUARTERLY' : 'YEARLY';
-                      final selected = interval == v;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => setSheetState(() => interval = v),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: selected ? context.ksc.accent500.withValues(alpha: 0.15) : context.ksc.primary900,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: selected ? context.ksc.accent500 : context.ksc.primary700),
-                            ),
-                            child: Text(label, style: AppTextStyles.caption.copyWith(
-                              color: selected ? context.ksc.accent500 : context.ksc.neutral400,
-                              fontWeight: FontWeight.w900,
-                            )),
+                  isSubmitting
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.ksc.primary900,
                           ),
+                        )
+                      : Icon(
+                          LineAwesomeIcons.arrow_right_solid,
+                          color: context.ksc.primary900,
+                          size: 20,
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  // Start date
-                  Text("START DATE *", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 6),
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: ctx,
-                        initialDate: startDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-                        builder: (ctx, child) => Theme(data: Theme.of(context).copyWith(
-                          dialogBackgroundColor: context.ksc.primary800,
-                          datePickerTheme: DatePickerThemeData(
-                            backgroundColor: context.ksc.primary800,
-                            headerBackgroundColor: context.ksc.primary900,
-                            todayForegroundColor: WidgetStatePropertyAll(context.ksc.accent500),
-                            dayForegroundColor: WidgetStatePropertyAll(context.ksc.white),
-                          ),
-                        ), child: child!),
-                      );
-                      if (picked != null) setSheetState(() => startDate = picked);
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: context.ksc.primary900,
-                        border: Border(bottom: BorderSide(color: context.ksc.primary700)),
-                      ),
-                      child: Text(DateFormatter.short(startDate), style: TextStyle(color: context.ksc.white)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Notes
-                  Text("NOTES", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: notesCtrl,
-                    style: TextStyle(color: context.ksc.white),
-                    decoration: InputDecoration(
-                      hintText: "Optional notes",
-                      hintStyle: TextStyle(color: context.ksc.neutral500),
-                      filled: true,
-                      fillColor: context.ksc.primary900,
-                      border: InputBorder.none,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.ksc.accent500,
-                        foregroundColor: context.ksc.primary900,
-                        padding: const EdgeInsets.all(16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      onPressed: () async {
-                        if (selectedCustomer == null || selectedService == null) {
-                          KsSlidingNotification.show(ctx, message: "Select a customer and service type", type: KsNotificationType.error);
-                          return;
-                        }
-                        final userId = ref.read(currentUserProvider).valueOrNull?.id;
-                        if (userId == null) return;
-                        await ref.read(recurringScheduleProvider.notifier).add(
-                          customerId: selectedCustomer!.id,
-                          customerName: selectedCustomer!.fullName,
-                          serviceType: selectedService!.name,
-                          serviceTypeId: selectedService!.id,
-                          intervalType: interval,
-                          nextDueDate: startDate,
-                          notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
-                        );
-                        if (ctx.mounted) Navigator.pop(ctx);
-                        if (context.mounted) {
-                          KsSlidingNotification.show(context, message: "Recurring schedule created", type: KsNotificationType.success);
-                        }
-                      },
-                      child: Text("CREATE SCHEDULE", style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          ),
+        ),
+      ),
     );
+    _drawer.whenComplete(() => notesCtrl.dispose());
   }
 
   @override
@@ -256,7 +259,10 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
               return KsSummaryStrip(
                 value: '${schedules.length}',
                 label: "RECURRING SCHEDULES",
-                subtitle: '$active active ● $due due now',
+                subtitleSegments: [
+                  KsSubtitleSegment('$active active', color: context.ksc.success500),
+                  KsSubtitleSegment('$due due now', color: context.ksc.error500),
+                ],
                 subtitleIcon: LineAwesomeIcons.calendar_solid,
               );
             },

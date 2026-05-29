@@ -149,7 +149,11 @@ class _ErrorBoundaryState extends State<_ErrorBoundary> {
     FlutterError.onError = (details) {
       debugPrint('[KS:ERROR] ${details.exception}');
       debugPrint('[KS:ERROR] Stack: ${details.stack}');
-      if (mounted) WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => _hasError = true));
+      // Only show error screen for actual exceptions (with stack trace),
+      // not non-fatal layout warnings like RenderFlex overflow.
+      if (details.stack != null) {
+        if (mounted) WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => _hasError = true));
+      }
     };
   }
 

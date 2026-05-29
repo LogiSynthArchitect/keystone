@@ -1,45 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/utils/service_icon_map.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
-import '../../../../core/widgets/ks_sliding_notification.dart';
-import '../../../service_types/presentation/providers/service_type_provider.dart';
+import '../../../customer_history/data/models/customer_model.dart';
 
-/// A compact dropdown-style service type selector.
+/// A compact dropdown-style customer selector.
 ///
-/// Matches the Customer step's input field pattern:
+/// Matches ServicePickerDropdown's visual pattern:
 /// icon + label + underline border + value/placeholder row.
-/// Tap opens a bottom sheet with service types for selection.
-class ServicePickerDropdown extends ConsumerWidget {
-  final String? selected;
-  final ValueChanged<String> onSelected;
+/// Tap opens a bottom sheet with customers for selection.
+class CustomerPickerDropdown extends StatelessWidget {
+  final CustomerModel? selected;
+  final List<CustomerModel> customers;
+  final ValueChanged<CustomerModel?> onSelected;
 
-  const ServicePickerDropdown({
+  const CustomerPickerDropdown({
     super.key,
     required this.selected,
+    required this.customers,
     required this.onSelected,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hasSelection = selected != null && selected!.isNotEmpty;
-    final iconName = hasSelection ? _iconNameFor(ref, selected!) : null;
+  Widget build(BuildContext context) {
+    final hasSelection = selected != null;
 
     return InkWell(
-      onTap: () => _openSheet(context, ref),
+      onTap: () => _openSheet(context),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 14),
             child: Icon(
-              iconName != null
-                  ? ServiceIconMap.resolve(iconName)
-                  : LineAwesomeIcons.wrench_solid,
+              LineAwesomeIcons.user_solid,
               size: 20,
               color: hasSelection
                   ? context.ksc.accent500
@@ -59,20 +55,20 @@ class ServicePickerDropdown extends ConsumerWidget {
                         child: hasSelection
                             ? Row(
                                 children: [
-                                  Text(
-                                    selected!
-                                        .replaceAll('_', ' ')
-                                        .toUpperCase(),
-                                    style: AppTextStyles.bodyLarge.copyWith(
-                                      color: context.ksc.white,
-                                      fontWeight: FontWeight.bold,
+                                  Expanded(
+                                    child: Text(
+                                      selected!.fullName.toUpperCase(),
+                                      style: AppTextStyles.bodyLarge.copyWith(
+                                        color: context.ksc.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(width: 8),
                                   GestureDetector(
-                                    onTap: () => onSelected(''),
+                                    onTap: () => onSelected(null),
                                     child: Icon(
                                       LineAwesomeIcons.times_solid,
                                       size: 14,
@@ -82,7 +78,7 @@ class ServicePickerDropdown extends ConsumerWidget {
                                 ],
                               )
                             : Text(
-                                'SELECT SERVICE TYPE',
+                                'SELECT CUSTOMER',
                                 style: AppTextStyles.bodyLarge.copyWith(
                                   color: context.ksc.neutral600,
                                   fontWeight: FontWeight.bold,
@@ -114,22 +110,8 @@ class ServicePickerDropdown extends ConsumerWidget {
     );
   }
 
-  String? _iconNameFor(WidgetRef ref, String name) {
-    final types = ref.read(serviceTypeProvider).valueOrNull ?? [];
-    return types.where((t) => t.name == name).firstOrNull?.iconName;
-  }
-
-  void _openSheet(BuildContext context, WidgetRef ref) {
-    final typesAsync = ref.read(serviceTypeProvider);
-    final types = typesAsync.valueOrNull ?? [];
-    if (types.isEmpty) {
-      if (typesAsync.hasError) {
-        KsSlidingNotification.show(context,
-          message: 'Could not load services',
-          type: KsNotificationType.error);
-      }
-      return;
-    }
+  void _openSheet(BuildContext context) {
+    if (customers.isEmpty) return;
 
     final searchCtrl = TextEditingController();
     showModalBottomSheet(
@@ -143,12 +125,11 @@ class ServicePickerDropdown extends ConsumerWidget {
           builder: (ctx, setSheetState) {
             final query = searchCtrl.text.toLowerCase().trim();
             final filtered = query.isEmpty
-                ? types
-                : types
-                    .where((t) =>
-                        t.name.toLowerCase().contains(query) ||
-                        (t.category?.toLowerCase().contains(query) ??
-                            false))
+                ? customers
+                : customers
+                    .where((c) =>
+                        c.fullName.toLowerCase().contains(query) ||
+                        c.phoneNumber.toLowerCase().contains(query))
                     .toList();
 
             return Padding(
@@ -172,12 +153,11 @@ class ServicePickerDropdown extends ConsumerWidget {
                   ),
                   // Header
                   Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text("SELECT SERVICE",
+                          child: Text("SELECT CUSTOMER",
                               style: AppTextStyles.h2.copyWith(
                                   color: context.ksc.white,
                                   fontWeight: FontWeight.w900)),
@@ -191,28 +171,27 @@ class ServicePickerDropdown extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Search field — using KsSearchBar for consistent gold-accent focus
+                  // Search field
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: KsSearchBar(
-                      hint: "Search services...",
+                      hint: "Search customers...",
                       controller: searchCtrl,
                       onChanged: (_) => setSheetState(() {}),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Service list — transparent + border only
+                  // Customer list
                   ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxHeight:
-                          MediaQuery.of(ctx).size.height * 0.45,
+                      maxHeight: MediaQuery.of(ctx).size.height * 0.45,
                     ),
                     child: filtered.isEmpty
                         ? const Padding(
                             padding: EdgeInsets.only(top: 40),
                             child: KsEmptyState(
                               icon: LineAwesomeIcons.search_solid,
-                              title: "No services found",
+                              title: "No customers found",
                               subtitle: "Try a different search term",
                             ),
                           )
@@ -222,22 +201,19 @@ class ServicePickerDropdown extends ConsumerWidget {
                                 horizontal: 24),
                             itemCount: filtered.length,
                             itemBuilder: (ctx, i) {
-                              final type = filtered[i];
+                              final customer = filtered[i];
                               final isSelected =
-                                  selected == type.name;
+                                  selected?.id == customer.id;
                               return Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.only(bottom: 8),
                                 child: InkWell(
                                   onTap: () {
-                                    onSelected(type.name);
+                                    onSelected(customer);
                                     Navigator.pop(ctx);
                                   },
                                   child: Container(
-                                    padding:
-                                        const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 14),
                                     decoration: BoxDecoration(
                                       color: Colors.transparent,
                                       borderRadius:
@@ -247,15 +223,13 @@ class ServicePickerDropdown extends ConsumerWidget {
                                             ? context.ksc.accent500
                                             : context.ksc.accent500
                                                 .withValues(alpha: 0.25),
-                                        width:
-                                            isSelected ? 2.0 : 1.0,
+                                        width: isSelected ? 2.0 : 1.0,
                                       ),
                                     ),
                                     child: Row(
                                       children: [
                                         Icon(
-                                          ServiceIconMap.resolve(
-                                              type.iconName),
+                                          LineAwesomeIcons.user_solid,
                                           size: 20,
                                           color: isSelected
                                               ? context.ksc.accent500
@@ -264,21 +238,38 @@ class ServicePickerDropdown extends ConsumerWidget {
                                         ),
                                         const SizedBox(width: 14),
                                         Expanded(
-                                          child: Text(
-                                            type.name.toUpperCase(),
-                                            style: AppTextStyles
-                                                .bodyMedium
-                                                .copyWith(
-                                              color: isSelected
-                                                  ? context.ksc.white
-                                                  : context.ksc
-                                                      .neutral400,
-                                              fontWeight:
-                                                  isSelected
-                                                      ? FontWeight.w900
-                                                      : FontWeight.w700,
-                                              letterSpacing: 0.5,
-                                            ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                customer.fullName
+                                                    .toUpperCase(),
+                                                style: AppTextStyles
+                                                    .bodyMedium
+                                                    .copyWith(
+                                                  color: isSelected
+                                                      ? context.ksc.white
+                                                      : context.ksc
+                                                          .neutral400,
+                                                  fontWeight:
+                                                      isSelected
+                                                          ? FontWeight.w900
+                                                          : FontWeight.w700,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                customer.phoneNumber,
+                                                style: AppTextStyles
+                                                    .caption
+                                                    .copyWith(
+                                                  color: context
+                                                      .ksc.neutral500,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         if (isSelected)

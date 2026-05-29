@@ -33,6 +33,8 @@ class KsFilterChipGroup extends StatefulWidget {
   final List<KsFilterOption> options;
   final String? selected;
   final ValueChanged<String?> onSelect;
+  final double borderRadius;
+  final Color? unselectedColor;
 
   const KsFilterChipGroup({
     super.key,
@@ -40,6 +42,8 @@ class KsFilterChipGroup extends StatefulWidget {
     required this.options,
     required this.selected,
     required this.onSelect,
+    this.borderRadius = 6,
+    this.unselectedColor,
   });
 
   @override
@@ -71,6 +75,8 @@ class _KsFilterChipGroupState extends State<KsFilterChipGroup> {
               option: opt,
               isSelected: isSel,
               onTap: () => widget.onSelect(isSel ? null : opt.value),
+              borderRadius: widget.borderRadius,
+              unselectedColor: widget.unselectedColor,
             );
           }).toList(),
         ),
@@ -84,11 +90,15 @@ class _FilterChip extends StatelessWidget {
   final KsFilterOption option;
   final bool isSelected;
   final VoidCallback onTap;
+  final double borderRadius;
+  final Color? unselectedColor;
 
   const _FilterChip({
     required this.option,
     required this.isSelected,
     required this.onTap,
+    this.borderRadius = 6,
+    this.unselectedColor,
   });
 
   @override
@@ -103,8 +113,8 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? theme.accent500.withValues(alpha: 0.15)
-              : theme.primary800,
-          borderRadius: BorderRadius.circular(6),
+              : (unselectedColor ?? theme.primary800),
+          borderRadius: BorderRadius.circular(borderRadius),
           border: Border.all(
             color: isSelected ? theme.accent500 : theme.primary700,
             width: isSelected ? 1.5 : 1,

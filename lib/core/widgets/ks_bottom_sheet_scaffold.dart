@@ -5,10 +5,13 @@ import '../theme/ks_colors.dart';
 import 'ks_confirm_dialog.dart';
 
 /// Reusable bottom sheet chrome: drag handle → header (title + subtitle + close) →
-/// scrollable content area → optional gold bottom bar.
+/// scrollable content area → optional gold bottom bar or custom bottom widget.
 ///
 /// Saves ~40 lines of boilerplate per drawer. Handles the modal bottom sheet setup,
 /// dirty-close confirmation, and the standard gold DONE button.
+///
+/// Provide [bottomWidget] instead of [bottomLabel]/[onDone] for custom bottom bars
+/// that need async operations or loading state.
 ///
 /// Usage:
 /// ```dart
@@ -31,6 +34,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
   final Widget Function(BuildContext context, StateSetter setSheetState) contentBuilder;
   final String? bottomLabel;
   final VoidCallback? onDone;
+  final Widget Function(BuildContext context, StateSetter setSheetState)? bottomWidget;
   final VoidCallback? onClose;
   final IconData bottomIcon;
   final Widget Function(BuildContext context, StateSetter setSheetState)? stickyHeader;
@@ -46,6 +50,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
     required this.contentBuilder,
     this.bottomLabel,
     this.onDone,
+    this.bottomWidget,
     this.onClose,
     this.bottomIcon = LineAwesomeIcons.arrow_right_solid,
     this.stickyHeader,
@@ -61,6 +66,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
     required Widget Function(BuildContext context, StateSetter setSheetState) contentBuilder,
     String? bottomLabel,
     VoidCallback? onDone,
+    Widget Function(BuildContext context, StateSetter setSheetState)? bottomWidget,
     VoidCallback? onClose,
     IconData bottomIcon = LineAwesomeIcons.arrow_right_solid,
     Widget Function(BuildContext context, StateSetter setSheetState)? stickyHeader,
@@ -80,6 +86,7 @@ class KsBottomSheetScaffold extends StatelessWidget {
         contentBuilder: contentBuilder,
         bottomLabel: bottomLabel,
         onDone: onDone,
+        bottomWidget: bottomWidget,
         onClose: onClose,
         bottomIcon: bottomIcon,
         stickyHeader: stickyHeader,
@@ -113,7 +120,9 @@ class KsBottomSheetScaffold extends StatelessWidget {
                   child: contentBuilder(ctx, setSheetState),
                 ),
               ),
-              if (bottomLabel != null && onDone != null)
+              if (bottomWidget != null)
+                bottomWidget!(ctx, setSheetState)
+              else if (bottomLabel != null && onDone != null)
                 _buildBottomBar(ctx),
             ],
           );

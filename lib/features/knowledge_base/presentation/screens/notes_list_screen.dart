@@ -155,8 +155,14 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
             label: state.filterCategory != null || state.searchQuery.isNotEmpty
                 ? "FILTERED NOTES"
                 : (state.showArchived ? "ALL NOTES (INCL. ARCHIVED)" : "ALL NOTES"),
-            subtitle: state.displayed.length != state.notes.length
-                ? "${state.displayed.length} shown${state.filterCategory != null ? ' ● filtered' : ''}${state.searchQuery.isNotEmpty ? ' ● search' : ''}"
+            subtitleSegments: state.displayed.length != state.notes.length
+                ? [
+                    KsSubtitleSegment('${state.displayed.length} shown', color: context.ksc.accent500),
+                    if (state.filterCategory != null)
+                      KsSubtitleSegment('filtered', color: context.ksc.accent500),
+                    if (state.searchQuery.isNotEmpty)
+                      KsSubtitleSegment('search', color: context.ksc.warning500),
+                  ]
                 : null,
             subtitleIcon: LineAwesomeIcons.book_solid,
           ),

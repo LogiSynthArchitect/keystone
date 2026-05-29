@@ -161,7 +161,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Note editing via AddNoteScreen.show(context, existingNote: note) — no dedicated route
       routeWithTransition(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       // Link screen replaced by bottom sheet — NoteJobLinkScreen.show(context, noteId)
-      routeWithTransition(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       routeWithTransition(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
       routeWithTransition(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),
       routeWithTransition(path: RouteNames.pricing, builder: (context, state) => const PricingScreen()),
