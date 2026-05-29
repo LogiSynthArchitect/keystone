@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keystone Analytics — Full Visualization</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --bg2: #141416;
+    --bg3: #1c1c1e;
+    --bg4: #222;
+    --gold: #f5b342;
+    --gold-dim: rgba(245,179,66,0.15);
+    --green: #4ade80;
+    --red: #f87171;
+    --orange: #fb923c;
+    --blue: #60a5fa;
+    --white: #f5f5f7;
+    --gray: #6b7280;
+    --gray2: #9ca3af;
+    --radius: 8px;
+    --phone-w: 380px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { color: var(--gold); margin-bottom: 0.5rem; font-size: 1.4rem; letter-spacing: 2px; }
+  h2 { color: var(--gold); font-size: 1.1rem; margin-bottom: 1rem; letter-spacing: 1.5px; border-bottom: 1px solid var(--bg4); padding-bottom: 0.5rem; }
+  h3 { color: var(--gray2); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 0.75rem; }
+  .subtitle { color: var(--gray); font-size: 0.8rem; margin-bottom: 2rem; }
+  .layout { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1400px; }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: var(--phone-w);
+    background: var(--bg2);
+    border-radius: 24px;
+    border: 2px solid var(--bg4);
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone-notch {
+    height: 36px; background: var(--bg); display: flex; align-items: center; justify-content: center;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .phone-notch-inner { width: 120px; height: 6px; background: #333; border-radius: 3px; }
+  .phone-header {
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg2); border-bottom: 1px solid var(--bg4);
+  }
+  .phone-header .back { width: 24px; height: 24px; border-radius: 4px; position: relative; }
+  .phone-header .back::before, .phone-header .back::after {
+    content: ''; position: absolute; width: 10px; height: 2px; background: var(--gray); top: 11px;
+  }
+  .phone-header .back::before { left: 5px; transform: rotate(-45deg); }
+  .phone-header .back::after { left: 5px; transform: rotate(45deg); }
+  .phone-header h4 { font-size: 0.8rem; letter-spacing: 2px; font-weight: 800; }
+  .phone-body {
+    height: 700px; overflow-y: auto; padding: 0 0 16px 0;
+    scrollbar-width: thin; scrollbar-color: var(--bg4) transparent;
+  }
+  .phone-body::-webkit-scrollbar { width: 3px; }
+  .phone-body::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  /* ── Period selector ── */
+  .period-row {
+    display: flex; gap: 6px; padding: 12px 16px; background: var(--bg3);
+    overflow-x: auto; white-space: nowrap; position: sticky; top: 0; z-index: 5;
+  }
+  .period-row::-webkit-scrollbar { height: 2px; }
+  .period-chip {
+    padding: 4px 14px; border-radius: 20px; font-size: 0.65rem; font-weight: 800;
+    letter-spacing: 1px; cursor: default; flex-shrink: 0;
+  }
+  .period-chip.active { background: var(--gold); color: var(--bg); }
+  .period-chip.inactive { background: var(--bg4); color: var(--gray); }
+
+  /* ── Section card ── */
+  .card {
+    background: var(--bg3); border-radius: var(--radius); padding: 14px 16px;
+    margin: 0 16px 12px 16px;
+  }
+  .card-title {
+    font-size: 0.6rem; letter-spacing: 1.5px; color: var(--gray); font-weight: 900;
+    margin-bottom: 10px;
+  }
+
+  /* Summary cards */
+  .sum-card { background: var(--bg3); border-radius: var(--radius); padding: 14px; }
+  .sum-card .label { font-size: 0.6rem; letter-spacing: 1px; color: var(--gray); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .sum-card .value { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+  .sum-card .value.accent { color: var(--gold); }
+  .sum-card .value.green { color: var(--green); }
+  .sum-card .value.red { color: var(--red); }
+
+  /* ── Chart bars ── */
+  .chart-row { display: flex; gap: 4px; align-items: flex-end; height: 100px; padding: 8px 0; }
+  .bar-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bar { width: 80%; border-radius: 3px 3px 0 0; background: rgba(245,179,66,0.5); min-height: 4px; }
+  .bar-label { font-size: 0.55rem; color: var(--gray); margin-top: 4px; }
+  .bar-value { font-size: 0.5rem; color: var(--gold); font-weight: 800; margin-bottom: 2px; }
+
+  /* ── Data rows in cards ── */
+  .data-row {
+    display: flex; align-items: center; padding: 10px 0;
+    border-bottom: 1px solid var(--bg4);
+  }
+  .data-row:last-child { border-bottom: none; }
+  .row-label { flex: 2; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--white); }
+  .row-stat { flex: 1; text-align: center; font-size: 0.65rem; color: var(--gray); }
+  .row-value { font-size: 0.75rem; font-weight: 700; color: var(--gold); text-align: right; }
+  .row-value.green { color: var(--green); }
+  .row-value.red { color: var(--red); }
+
+  /* Visual bars */
+  .vis-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin: 8px 0; }
+  .vis-bar-seg { transition: width 0.3s; }
+
+  /* ── Right side: architecture ── */
+  .arch-side {
+    flex: 1; min-width: 350px; max-width: 800px;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .arch-box {
+    background: var(--bg3); border-radius: var(--radius); padding: 1.2rem;
+    border: 1px solid var(--bg4);
+  }
+  .arch-box h3 { margin-bottom: 0.5rem; }
+  .arch-box p { font-size: 0.8rem; color: var(--gray2); line-height: 1.6; }
+
+  /* ── Code blocks ── */
+  .code-block {
+    background: #0a0a0c; border: 1px solid var(--bg4); border-radius: 6px;
+    padding: 1rem; font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 0.7rem; line-height: 1.6; overflow-x: auto; color: #cdd6f4;
+  }
+  .code-block .kw { color: #cba6f7; }
+  .code-block .str { color: #a6e3a1; }
+  .code-block .num { color: #fab387; }
+  .code-block .cmt { color: #6c7086; }
+  .code-block .type { color: #89b4fa; }
+  .code-block .fn { color: #f5c2e7; }
+
+  /* ── Data flow diagram ── */
+  .flow {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 1rem 0;
+  }
+  .flow-node {
+    background: var(--bg4); border-radius: var(--radius); padding: 10px 20px;
+    text-align: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;
+    border: 1px solid #333; width: 100%; max-width: 300px;
+  }
+  .flow-node.gold { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+  .flow-node.green { border-color: var(--green); }
+  .flow-node.blue { border-color: var(--blue); }
+  .flow-arrow { color: var(--gray); font-size: 1.2rem; }
+  .flow-label { font-size: 0.6rem; color: var(--gray); margin-bottom: 2px; }
+
+  .model-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+  }
+  .model-grid.single { grid-template-columns: 1fr; }
+  .model-card {
+    background: var(--bg4); border-radius: 6px; padding: 0.8rem; border: 1px solid #2a2a2c;
+  }
+  .model-card h4 { font-size: 0.7rem; color: var(--gold); margin-bottom: 6px; letter-spacing: 0.5px; }
+  .model-card .field { font-size: 0.65rem; color: var(--gray2); padding: 2px 0; display: flex; }
+  .model-card .field-name { color: var(--blue); min-width: 90px; }
+  .model-card .field-desc { color: var(--gray); }
+  .model-card .field-type { color: #a6e3a1; }
+
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
+  .stat-card {
+    background: var(--bg4); border-radius: 6px; padding: 0.8rem; text-align: center;
+  }
+  .stat-card .num { font-size: 1.5rem; font-weight: 800; color: var(--gold); }
+  .stat-card .lbl { font-size: 0.6rem; color: var(--gray); letter-spacing: 1px; margin-top: 4px; }
+
+  .toggle-group { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .toggle { font-size: 0.6rem; padding: 4px 12px; border-radius: 12px; border: 1px solid var(--bg4); color: var(--gray); background: transparent; letter-spacing: 0.5px; }
+  .toggle.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  .overview-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+  }
+  .uninvoiced-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 6px; padding: 8px 12px; margin: 4px 0;
+  }
+  .uninvoiced-badge .val { font-size: 1rem; font-weight: 800; color: var(--red); }
+  .uninvoiced-badge .lbl { font-size: 0.6rem; color: var(--gray); letter-spacing: 0.5px; }
+
+  .legend { font-size: 0.65rem; color: var(--gray); display: flex; gap: 12px; margin: 6px 0; flex-wrap: wrap; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<h1>KEYSTONE ANALYTICS &mdash; FULL REFERENCE</h1>
+<p class="subtitle">Screen layout &bull; UI components &bull; Data models &bull; Rollup engine &bull; Data flow</p>
+
+<div class="layout">
+
+  <!-- ─── LEFT: PHONE FRAME ─── -->
+  <div class="phone">
+    <div class="phone-notch"><div class="phone-notch-inner"></div></div>
+    <div class="phone-header">
+      <div class="back"></div>
+      <h4 style="color:var(--white)">ANALYTICS</h4>
+      <div style="width:24px"></div>
+    </div>
+
+    <div class="phone-body">
+      <!-- Period selector -->
+      <div class="period-row">
+        <div class="period-chip active">THIS MONTH</div>
+        <div class="period-chip inactive">LAST MONTH</div>
+        <div class="period-chip inactive">LAST 3 MOS</div>
+        <div class="period-chip inactive">CUSTOM</div>
+      </div>
+
+      <!-- Revenue trend chart -->
+      <div class="card" style="margin-top:12px">
+        <div class="card-title">REVENUE TREND</div>
+        <div class="chart-row">
+          <div class="bar-container"><div class="bar-value">2.5K</div><div class="bar" style="height:35px"></div><div class="bar-label">May 5</div></div>
+          <div class="bar-container"><div class="bar-value">3.8K</div><div class="bar" style="height:55px"></div><div class="bar-label">May 12</div></div>
+          <div class="bar-container"><div class="bar-value">4.2K</div><div class="bar" style="height:65px"></div><div class="bar-label">May 19</div></div>
+          <div class="bar-container"><div class="bar-value">5.1K</div><div class="bar" style="height:80px"></div><div class="bar-label">May 26</div></div>
+          <div class="bar-container"><div class="bar-value">3.2K</div><div class="bar" style="height:50px"></div><div class="bar-label">May 28</div></div>
+          <div class="bar-container"><div class="bar-value">2.9K</div><div class="bar" style="height:40px"></div><div class="bar-label">May 29</div></div>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="card">
+        <div class="sum-card" style="background:transparent;padding:0;margin-bottom:10px">
+          <div class="label"><span style="color:var(--gray)">&#9679;</span> TOTAL REVENUE</div>
+          <div class="value accent">GHS 21,700</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="sum-card" style="flex:1">
+            <div class="label"><span style="color:var(--gray)">&#9679;</span> TOTAL JOBS</div>
+            <div class="value" style="color:var(--white);font-size:1rem">47</div>
+          </div>
+          <div class="sum-card" style="flex:1">
+            <div class="label"><span style="color:var(--gray)">&#9679;</span> GROSS PROFIT</div>
+            <div class="value green" style="font-size:1rem">GHS 9,850</div>
+          </div>
+        </div>
+        <!-- Uninvoiced value banner (NEW) -->
+        <div class="uninvoiced-badge" style="margin-top:10px;width:100%">
+          <div>
+            <div class="lbl">LEAKING REVENUE (jobs stuck &gt;7 days)</div>
+            <div class="val">GHS 2,340</div>
+          </div>
+          <div style="font-size:0.6rem;color:var(--gray);margin-left:auto">1 job: &quot;Odoi-&hellip;&quot;</div>
+        </div>
+      </div>
+
+      <!-- Customer Retention -->
+      <div class="card">
+        <div class="card-title">CUSTOMER RETENTION</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <div><div style="font-size:0.6rem;color:var(--gold);font-weight:900;letter-spacing:1px">NEW</div><div style="font-size:1rem;font-weight:800;color:var(--gold)">18</div></div>
+          <div style="text-align:right"><div style="font-size:0.6rem;color:var(--green);font-weight:900;letter-spacing:1px">REPEAT</div><div style="font-size:1rem;font-weight:800;color:var(--green)">29</div></div>
+        </div>
+        <div class="vis-bar">
+          <div class="vis-bar-seg" style="flex:18;background:var(--gold)"></div>
+          <div style="width:2px"></div>
+          <div class="vis-bar-seg" style="flex:29;background:var(--green)"></div>
+        </div>
+        <div style="font-size:0.6rem;color:var(--gray)">62% repeat rate</div>
+      </div>
+
+      <!-- Jobs by Day -->
+      <div class="card">
+        <div class="card-title">JOBS BY DAY</div>
+        <div class="data-row"><span class="row-label">Mon</span><span class="row-stat">8</span><span class="row-value">GHS 5.2K</span></div>
+        <div class="data-row"><span class="row-label">Tue</span><span class="row-stat">6</span><span class="row-value">GHS 3.1K</span></div>
+        <div class="data-row"><span class="row-label">Wed</span><span class="row-stat">10</span><span class="row-value">GHS 6.8K</span></div>
+        <div class="data-row"><span class="row-label">Thu</span><span class="row-stat">7</span><span class="row-value">GHS 4.0K</span></div>
+        <div class="data-row"><span class="row-label">Fri</span><span class="row-stat">9</span><span class="row-value">GHS 5.5K</span></div>
+        <div class="data-row"><span class="row-label">Sat</span><span class="row-stat">5</span><span class="row-value">GHS 2.1K</span></div>
+        <div class="data-row" style="border:none"><span class="row-label">Sun</span><span class="row-stat">2</span><span class="row-value">GHS 0.9K</span></div>
+      </div>
+
+      <!-- Service Type -->
+      <div class="card">
+        <div class="card-title">SERVICE TYPE BREAKDOWN</div>
+        <div class="data-row">
+          <span class="row-label">AC REPAIR</span>
+          <span class="row-stat">12 jobs</span>
+          <span class="row-value">GHS 6.8K<br><span style="font-size:0.55rem;color:var(--green)">GP: GHS 3.2K</span></span>
+        </div>
+        <div class="data-row">
+          <span class="row-label">REFRIGERATION</span>
+          <span class="row-stat">8 jobs</span>
+          <span class="row-value">GHS 4.5K<br><span style="font-size:0.55rem;color:var(--green)">GP: GHS 2.1K</span></span>
+        </div>
+        <div class="data-row" style="border:none">
+          <span class="row-label">ELECTRICAL</span>
+          <span class="row-stat">6 jobs</span>
+          <span class="row-value">GHS 3.2K<br><span style="font-size:0.55rem;color:var(--red)">GP: GHS 0.8K</span></span>
+        </div>
+      </div>
+
+      <!-- Payment Health -->
+      <div class="card">
+        <div class="card-title">PAYMENT HEALTH</div>
+        <div class="data-row">
+          <span style="background:rgba(248,113,113,0.15);padding:2px 10px;border-radius:12px;font-size:0.6rem;font-weight:900;color:var(--red);letter-spacing:1px">UNPAID</span>
+          <span class="row-stat">5 jobs</span>
+          <span class="row-value red">GHS 3.2K</span>
+        </div>
+        <div class="data-row">
+          <span style="background:rgba(251,146,60,0.15);padding:2px 10px;border-radius:12px;font-size:0.6rem;font-weight:900;color:var(--orange);letter-spacing:1px">PARTIAL</span>
+          <span class="row-stat">3 jobs</span>
+          <span class="row-value" style="color:var(--orange)">GHS 1.1K</span>
+        </div>
+        <div class="data-row" style="border:none;padding-bottom:4px">
+          <span style="background:rgba(74,222,128,0.15);padding:2px 10px;border-radius:12px;font-size:0.6rem;font-weight:900;color:var(--green);letter-spacing:1px">PAID</span>
+          <span class="row-stat">39 jobs</span>
+          <span class="row-value green">GHS 17.4K</span>
+        </div>
+        <div class="vis-bar">
+          <div class="vis-bar-seg" style="flex:3200;background:var(--red)"></div>
+          <div class="vis-bar-seg" style="flex:1100;background:var(--orange)"></div>
+          <div class="vis-bar-seg" style="flex:17400;background:var(--green)"></div>
+        </div>
+      </div>
+
+      <!-- Expense, Lead Source, Top Customers, Parts Usage (summary) -->
+      <div class="card">
+        <div class="card-title">EXPENSE BREAKDOWN</div>
+        <div class="data-row"><span class="row-label">PARTS</span><span>45%</span><span class="row-value red">GHS 3.5K</span></div>
+        <div class="data-row"><span class="row-label">TRANSPORT</span><span>25%</span><span class="row-value red">GHS 1.9K</span></div>
+        <div class="data-row" style="border:none"><span class="row-label">LABOR</span><span>20%</span><span class="row-value red">GHS 1.5K</span></div>
+      </div>
+      <div class="card" style="font-size:0.6rem;color:var(--gray);text-align:center">
+        &#8593; scroll for more: Lead Sources, Top Customers, Parts Usage
+      </div>
+
+      <div style="height:20px"></div>
+    </div>
+  </div>
+
+  <!-- ─── RIGHT: ARCHITECTURE ─── -->
+  <div class="arch-side">
+
+    <!-- Overview number -->
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="num">168</div>
+        <div class="lbl">Total Fields</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">17</div>
+        <div class="lbl">Widget Classes</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">3</div>
+        <div class="lbl">Data Layers</div>
+      </div>
+    </div>
+
+    <!-- Data Flow -->
+    <div class="arch-box">
+      <h3>DATA FLOW</h3>
+      <div class="flow">
+        <div class="flow-node" style="max-width:220px">Job Local Datasource</div>
+        <div class="flow-arrow">&#9660;</div>
+        <div class="flow-label">saveJob() calls markAnalyticsDirty()</div>
+        <div class="flow-node gold">Analytics WAL<br><span style="font-weight:400;font-size:0.65rem">_meta:analytics_dirty:&lt;date&gt;</span></div>
+        <div class="flow-arrow">&#9660;</div>
+        <div class="flow-label">reconcileAnalyticsInvalidations() at startup</div>
+        <div class="flow-node blue">DailyRollup Box<br><span style="font-weight:400;font-size:0.65rem">analytics_daily_rollups (Map keyed by ISO date)</span></div>
+        <div class="flow-arrow">&#9660;</div>
+        <div class="flow-label">RollupRepository.sumInRange() &mdash; fast path</div>
+        <div class="flow-node green">AnalyticsState<br><span style="font-weight:400;font-size:0.65rem">Provider &#8594; Screen</span></div>
+      </div>
+    </div>
+
+    <!-- Architecture: Two Paths -->
+    <div class="arch-box">
+      <h3>READ PATH: FAST vs SLOW</h3>
+      <div class="code-block">
+<span class="cmt">// FAST (99% of reads): sum N daily rollup maps</span>
+<span class="kw">final</span> agg = _repo.<span class="fn">sumInRange</span>(start, end);
+<span class="cmt">//   &#8594; iterates ~30 maps, zero job deserialization</span>
+
+<span class="cmt">// SLOW (targeted recompute for a single dirty date):</span>
+<span class="kw">await</span> _repo.<span class="fn">recomputeDate</span>(dateKey);
+<span class="cmt">//   &#8594; reads jobs/parts/expenses for 1 date only</span>
+      </div>
+    </div>
+
+    <!-- Anchor: uninvoicedValue -->
+    <div class="arch-box" style="border-color:rgba(248,113,113,0.3)">
+      <h3 style="color:var(--red)">NEW FIELD: uninvoicedValue</h3>
+      <p style="font-size:0.75rem">
+        Tracks <strong style="color:var(--red)">leaking revenue</strong>: amountCharged of jobs
+        stuck in <code>quoted</code> / <code>in_progress</code> status for &gt;7 days post-<code>jobDate</code>.
+      </p>
+      <div class="code-block" style="margin-top:8px">
+<span class="cmt">// DailyRollup (recomputeDate / seedAll):</span>
+<span class="kw">if</span> ((status == <span class="str">'quoted'</span> || status == <span class="str">'in_progress'</span>) &amp;&amp;
+    dt.<span class="fn">isBefore</span>(DateTime.<span class="fn">now</span>()
+      .<span class="fn">subtract</span>(<span class="kw">const</span> Duration(days: 7)))) {
+  uninvoicedValue += amt;
+}
+
+<span class="cmt">// AnalyticsState:</span>
+<span class="kw">final</span> <span class="type">int</span> uninvoicedValue;
+      </div>
+      <div class="code-block" style="margin-top:6px">
+<span class="cmt">// Invalidation WAL (JobLocalDatasource):</span>
+<span class="kw">await</span> <span class="fn">markAnalyticsDirty</span>(newDateKey, reason: <span class="str">'job_save'</span>);
+<span class="kw">await</span> <span class="fn">markAnalyticsDirtyBatch</span>(
+  [newDateKey, oldDateKey], reason: <span class="str">'job_save_date_changed'</span>);
+      </div>
+    </div>
+
+    <!-- Screen composition -->
+    <div class="arch-box">
+      <h3>SCREEN COMPOSITION (17 widgets)</h3>
+      <div class="model-grid">
+        <div class="model-card"><h4>AnalyticsScreen</h4><div class="field"><span class="field-name">Scaffold</span> <span class="field-desc">KsAppBar + Column</span></div></div>
+        <div class="model-card"><h4>_PeriodSelector</h4><div class="field"><span class="field-name">4 chips</span> <span class="field-desc">This/Last/3Mo/Custom</span></div></div>
+        <div class="model-card"><h4>_PeriodChip</h4><div class="field"><span class="field-name">gold pill</span> <span class="field-desc">GestDetector + Container</span></div></div>
+        <div class="model-card"><h4>_RevenueTrendChart</h4><div class="field"><span class="field-name">bars</span> <span class="field-desc">horizontal ListView</span></div></div>
+        <div class="model-card"><h4>_SummaryCards</h4><div class="field"><span class="field-name">3 cards</span> <span class="field-desc">Rev + Jobs + GP</span></div></div>
+        <div class="model-card"><h4>_SummaryCard</h4><div class="field"><span class="field-name">icon+label</span> <span class="field-desc">reusable container</span></div></div>
+        <div class="model-card"><h4>_SectionHeader</h4><div class="field"><span class="field-name">title</span> <span class="field-desc">label with spacing</span></div></div>
+        <div class="model-card"><h4>_CustomerRetentionSection</h4><div class="field"><span class="field-name">new/repeat</span> <span class="field-desc">numbers + bar</span></div></div>
+        <div class="model-card"><h4>_DayOfWeekSection</h4><div class="field"><span class="field-name">7 rows</span> <span class="field-desc">progress bars</span></div></div>
+        <div class="model-card"><h4>_ServiceTypeSection</h4><div class="field"><span class="field-name">by type</span> <span class="field-desc">revenue + GP</span></div></div>
+        <div class="model-card"><h4>_ServiceTypeRow</h4><div class="field"><span class="field-name">row</span> <span class="field-desc">name / jobs / rev / GP</span></div></div>
+        <div class="model-card"><h4>_ExpenseBreakdownSection</h4><div class="field"><span class="field-name">categories</span> <span class="field-desc">% + amount + total</span></div></div>
+        <div class="model-card"><h4>_PaymentHealthSection</h4><div class="field"><span class="field-name">unpaid/partial/paid</span> <span class="field-desc">rows + bar</span></div></div>
+        <div class="model-card"><h4>_LeadSourceSection</h4><div class="field"><span class="field-name">source rows</span> <span class="field-desc">source / cust / rev</span></div></div>
+        <div class="model-card"><h4>_TopCustomersSection</h4><div class="field"><span class="field-name">tap to navigate</span> <span class="field-desc">rank / name / rev</span></div></div>
+        <div class="model-card"><h4>_PartsUsageSection</h4><div class="field"><span class="field-name">top parts</span> <span class="field-desc">name / qty / cost</span></div></div>
+        <div class="model-card"><h4>_EmptyRow / _ErrorView</h4><div class="field"><span class="field-name">empty/error</span> <span class="field-desc">reusable helper</span></div></div>
+      </div>
+    </div>
+
+    <!-- AnalyticsState -->
+    <div class="arch-box">
+      <h3>AnalyticsState &mdash; 27 fields</h3>
+      <div class="code-block">
+<span class="kw">class</span> <span class="type">AnalyticsState</span> {
+  <span class="cmt">// Period</span>
+  <span class="kw">final</span> <span class="type">AnalyticsPeriod</span> period;
+  <span class="kw">final</span> <span class="type">DateTimeRange</span> range;
+  <span class="kw">final</span> <span class="type">bool</span> isLoading;
+  <span class="kw">final</span> <span class="type">String?</span> errorMessage;
+
+  <span class="cmt">// Summary</span>
+  <span class="kw">final</span> <span class="type">int</span> totalRevenue, totalJobs, grossProfit;
+  <span class="kw">final</span> <span class="type">int</span> netProfit, averageJobValue;
+  <span class="kw">final</span> <span class="type">double</span> profitMargin;
+
+  <span class="cmt">// Stock</span>
+  <span class="kw">final</span> <span class="type">int</span> stockValue, lowStockCount;
+
+  <span class="cmt">// Expense ratio</span>
+  <span class="kw">final</span> <span class="type">int</span> totalExpenses;
+  <span class="kw">final</span> <span class="type">double</span> expenseToRevenuePercent;
+
+  <span class="kw">final</span> <span class="type">int</span> uninvoicedValue;  <span class="cmt">// &lt;-- NEW</span>
+
+  <span class="cmt">// Customer retention</span>
+  <span class="kw">final</span> <span class="type">int</span> newCustomerCount, repeatCustomerCount;
+
+  <span class="cmt">// Previous period (trend comparison)</span>
+  <span class="kw">final</span> <span class="type">int</span> previousRevenue, previousJobs;
+  <span class="kw">final</span> <span class="type">int</span> previousGrossProfit, previousNetProfit;
+  <span class="kw">final</span> <span class="type">int</span> previousAverageJobValue;
+
+  <span class="cmt">// Breakdowns</span>
+  <span class="kw">final</span> <span class="type">List&lt;ServiceTypeBreakdown&gt;</span> serviceTypeBreakdown;
+  <span class="kw">final</span> <span class="type">PaymentHealthData</span> paymentHealth;
+  <span class="kw">final</span> <span class="type">List&lt;LeadSourceBreakdown&gt;</span> leadSourceBreakdown;
+  <span class="kw">final</span> <span class="type">List&lt;PartsUsage&gt;</span> partsUsage;
+  <span class="kw">final</span> <span class="type">List&lt;ExpenseCategoryBreakdown&gt;</span> expenseCategoryBreakdown;
+  <span class="kw">final</span> <span class="type">List&lt;TopCustomer&gt;</span> topCustomers;
+  <span class="kw">final</span> <span class="type">List&lt;DayOfWeekData&gt;</span> dayOfWeekBreakdown;
+  <span class="kw">final</span> <span class="type">List&lt;RevenueTrendPoint&gt;</span> revenueTrend;
+}
+      </div>
+    </div>
+
+    <!-- DailyRollup -->
+    <div class="arch-box">
+      <h3>DailyRollup &mdash; 25 fields</h3>
+      <div class="code-block">
+<span class="kw">class</span> <span class="type">DailyRollup</span> {
+  <span class="kw">final</span> <span class="type">String</span> dateKey;    <span class="cmt">// "2026-05-29"</span>
+  <span class="kw">final</span> <span class="type">int</span> schemaVersion;
+  <span class="kw">final</span> <span class="type">bool</span> dirty;       <span class="cmt">// needs recomputation</span>
+
+  <span class="cmt">// Financials</span>
+  <span class="kw">final</span> <span class="type">int</span> revenue, partsCost, expensesCost;
+  <span class="kw">final</span> <span class="type">int</span> jobCount, completedJobCount;
+  <span class="kw">final</span> <span class="type">int</span> uninvoicedValue;  <span class="cmt">// &lt;-- NEW</span>
+
+  <span class="cmt">// Payment health</span>
+  <span class="kw">final</span> <span class="type">int</span> unpaidAmount, partialAmount, paidAmount;
+  <span class="kw">final</span> <span class="type">int</span> unpaidCount, partialCount, paidCount;
+
+  <span class="cmt">// Customers</span>
+  <span class="kw">final</span> <span class="type">int</span> newCustomerCount;
+  <span class="kw">final</span> <span class="type">Map&lt;String,int&gt;</span> customerRevenue;
+
+  <span class="cmt">// Breakdown maps</span>
+  <span class="kw">final</span> <span class="type">Map&lt;String,int&gt;</span> stRevenue, stJobs, stPartsCost;
+  <span class="kw">final</span> <span class="type">Map&lt;String,int&gt;</span> partsUsage;
+  <span class="kw">final</span> <span class="type">Map&lt;String,int&gt;</span> expenseCategories;
+  <span class="kw">final</span> <span class="type">Map&lt;String,int&gt;</span> leadSourceRevenue, leadSourceJobs;
+
+  <span class="cmt">// Tracing</span>
+  <span class="kw">final</span> <span class="type">List&lt;String&gt;</span> sourceJobIds;
+}
+      </div>
+    </div>
+
+    <!-- Support models -->
+    <div class="arch-box">
+      <h3>SUPPORTING MODELS (8)</h3>
+      <div class="model-grid">
+        <div class="model-card">
+          <h4>ServiceTypeBreakdown</h4>
+          <div class="field"><span class="field-name">serviceType</span> <span class="field-desc">String</span></div>
+          <div class="field"><span class="field-name">jobCount</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">revenue</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">grossProfit</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">netProfit</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">previous*</span> <span class="field-desc">3 fields (trend)</span></div>
+        </div>
+        <div class="model-card">
+          <h4>PaymentHealthData</h4>
+          <div class="field"><span class="field-name">unpaid/partial/paid</span> <span class="field-desc">amount + count each</span></div>
+          <div class="field"><span class="field-name">totalAmount</span> <span class="field-desc">getter</span></div>
+          <div class="field"><span class="field-name">unpaidPercent</span> <span class="field-desc">getter</span></div>
+        </div>
+        <div class="model-card">
+          <h4>LeadSourceBreakdown</h4>
+          <div class="field"><span class="field-name">source</span> <span class="field-desc">String</span></div>
+          <div class="field"><span class="field-name">customerCount</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">jobCount</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">revenue</span> <span class="field-desc">int</span></div>
+        </div>
+        <div class="model-card">
+          <h4>PartsUsage</h4>
+          <div class="field"><span class="field-name">partName</span> <span class="field-desc">String</span></div>
+          <div class="field"><span class="field-name">totalQuantity</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">totalCost</span> <span class="field-desc">int</span></div>
+        </div>
+        <div class="model-card">
+          <h4>ExpenseCategoryBreakdown</h4>
+          <div class="field"><span class="field-name">category</span> <span class="field-desc">String</span></div>
+          <div class="field"><span class="field-name">amount</span> <span class="field-desc">int</span></div>
+        </div>
+        <div class="model-card">
+          <h4>TopCustomer</h4>
+          <div class="field"><span class="field-name">customerId/Name</span> <span class="field-desc">String</span></div>
+          <div class="field"><span class="field-name">revenue</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">jobCount</span> <span class="field-desc">int</span></div>
+        </div>
+        <div class="model-card">
+          <h4>DayOfWeekData</h4>
+          <div class="field"><span class="field-name">weekday</span> <span class="field-desc">int (1-7)</span></div>
+          <div class="field"><span class="field-name">label</span> <span class="field-desc">String (Mon)</span></div>
+          <div class="field"><span class="field-name">jobCount</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">revenue</span> <span class="field-desc">int</span></div>
+        </div>
+        <div class="model-card">
+          <h4>RevenueTrendPoint</h4>
+          <div class="field"><span class="field-name">label</span> <span class="field-desc">String</span></div>
+          <div class="field"><span class="field-name">revenue</span> <span class="field-desc">int</span></div>
+          <div class="field"><span class="field-name">jobCount</span> <span class="field-desc">int</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rollup repository -->
+    <div class="arch-box">
+      <h3>RollupRepository &mdash; KEY METHODS</h3>
+      <div class="code-block">
+<span class="kw">class</span> <span class="type">RollupRepository</span> {
+  <span class="type">bool</span> <span class="fn">isEmpty</span>;
+
+  <span class="cmt">// Fast path</span>
+  <span class="type">bool</span> <span class="fn">hasDirtyInRange</span>(<span class="type">DateTime</span> start, <span class="type">DateTime</span> end);
+  <span class="type">DailyRollup</span> <span class="fn">sumInRange</span>(<span class="type">DateTime</span> start, <span class="type">DateTime</span> end);
+  <span class="type">List&lt;DailyRollup&gt;</span> <span class="fn">listInRange</span>(<span class="type">DateTime</span> start, <span class="type">DateTime</span> end);
+
+  <span class="cmt">// Slow path (targeted)</span>
+  <span class="type">Future&lt;DailyRollup&gt;</span> <span class="fn">recomputeDate</span>(<span class="type">String</span> dateKey);
+
+  <span class="cmt">// Seed</span>
+  <span class="type">Future&lt;int&gt;</span> <span class="fn">seedAll</span>();  <span class="cmt">// full scan, once per box lifetime</span>
+
+  <span class="cmt">// Dirty marking</span>
+  <span class="type">Future&lt;void&gt;</span> <span class="fn">markDirty</span>(<span class="type">String</span> dateKey);
+  <span class="type">Future&lt;void&gt;</span> <span class="fn">markDatesDirty</span>(<span class="type">Iterable&lt;String&gt;</span> keys);
+}
+      </div>
+      <div class="legend" style="margin-top:8px">
+        <span><div class="dot" style="background:var(--gold)"></div> Fast path: 30 rollups instead of 4,000 jobs</span>
+        <span><div class="dot" style="background:var(--green)"></div> Targeted: 1 date only (~8 jobs)</span>
+      </div>
+    </div>
+
+    <!-- Provider flow -->
+    <div class="arch-box">
+      <h3>AnalyticsProvider &mdash; LOAD FLOW</h3>
+      <div class="code-block">
+<span class="kw">async</span> <span class="type">void</span> <span class="fn">loadAnalytics</span>(<span class="type">DateTime</span> start, <span class="type">DateTime</span> end) {
+  <span class="cmt">// Phase 1: seed if empty (first run safeguard)</span>
+  <span class="kw">if</span> (_repo.isEmpty) <span class="kw">await</span> _repo.<span class="fn">seedAll</span>();
+
+  <span class="cmt">// Phase 2: reconcile dirty dates</span>
+  <span class="kw">if</span> (_repo.<span class="fn">hasDirtyInRange</span>(start, end)) {
+    <span class="kw">for</span> (<span class="kw">final</span> r <span class="kw">in</span> _repo.<span class="fn">listInRange</span>(start, end)) {
+      <span class="kw">if</span> (r.dirty) <span class="kw">await</span> _repo.<span class="fn">recomputeDate</span>(r.dateKey);
+    }
+  }
+
+  <span class="cmt">// Phase 3: fast path</span>
+  <span class="kw">final</span> agg = _repo.<span class="fn">sumInRange</span>(start, end);
+
+  <span class="cmt">// Phase 4: previous period (comparison)</span>
+  <span class="kw">final</span> prevAgg = _repo.<span class="fn">isEmpty</span>
+      ? <span class="kw">const</span> <span class="type">DailyRollup</span>(dateKey: <span class="str">'prev'</span>)
+      : _repo.<span class="fn">sumInRange</span>(prevStart, prevEnd);
+
+  <span class="cmt">// Phase 5-6: inventory + customer data</span>
+  <span class="cmt">// Phase 7: derived metrics</span>
+  <span class="kw">final</span> grossProfit = agg.revenue - agg.partsCost;
+
+  <span class="cmt">// Phase 8: breakdowns from rollup maps</span>
+  <span class="cmt">//   service type, payment health, expense,</span>
+  <span class="cmt">//   lead source, top customers, parts,</span>
+  <span class="cmt">//   day-of-week, revenue trend</span>
+
+  state = state.<span class="fn">copyWith</span>(...);
+}
+      </div>
+    </div>
+
+    <!-- Edge cases identified by architect review -->
+    <div class="arch-box" style="border-color:rgba(248,113,113,0.3)">
+      <h3 style="color:var(--red)">EDGE CASES (from Architect Review)</h3>
+      <div style="font-size:0.75rem;color:var(--gray2);line-height:1.8">
+        <div><strong style="color:var(--red)">&#x2716;</strong> OOM death spiral: loading all jobs for the month &#8594; <span style="color:var(--green)">FIXED with rollups</span></div>
+        <div><strong style="color:var(--red)">&#x2716;</strong> Margin drift: inventory cost changes retroactively affect GP &#8594; <span style="color:var(--green)">FIXED (uses historical unitPrice)</span></div>
+        <div><strong style="color:var(--red)">&#x2716;</strong> No cached snapshots: re-scan every screen open &#8594; <span style="color:var(--green)">FIXED (rollup box persists)</span></div>
+        <div><strong style="color:var(--orange)">&#x26A0;</strong> New customer detection on single-date recompute (scans ALL customer jobs) &#8594; <span style="color:var(--white)">acceptable</span></div>
+        <div><strong style="color:var(--orange)">&#x26A0;</strong> Empty date without explicit rollup &#8594; <span style="color:var(--white)">FIXED (writes clean daily rollup)</span></div>
+        <div><strong style="color:var(--orange)">&#x26A0;</strong> Inventory cost changes don't invalidate &#8594; <span style="color:var(--white)">by design (immutable GP)</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<p style="color:var(--gray);font-size:0.65rem;text-align:center;margin-top:2rem;border-top:1px solid var(--bg4);padding-top:1rem;max-width:600px">
+  Generated from <code>analytics_screen.dart</code> (1077 lines, 17 widgets),
+  <code>analytics_models.dart</code> (9 model classes),
+  <code>daily_rollup.dart</code> (25-field daily aggregator),
+  <code>rollup_repository.dart</code> (fast/slow path engine),
+  <code>analytics_provider.dart</code> (8-phase load pipeline),
+  <code>job_local_datasource.dart</code> (invalidation WAL wire-up),
+  <code>reconcile_analytics_invalidations.dart</code> (startup recovery).
+  Open in browser to explore.
+</p>
+
+</body>
+</html>

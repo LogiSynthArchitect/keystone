@@ -22,9 +22,25 @@ class RemindersState {
 class RemindersNotifier extends StateNotifier<RemindersState> {
   final Ref _ref;
   static final Set<String> _notifiedKeys = {};
+  static const _dismissedHiveKey = 'dismissed_reminder_keys';
 
   RemindersNotifier(this._ref) : super(const RemindersState()) {
+    _loadDismissed();
     _compute();
+  }
+
+  void _loadDismissed() {
+    try {
+      final box = HiveService.reminders;
+      final stored = box.get(_dismissedHiveKey);
+      if (stored is List) {
+        final loaded = Set<String>.from(stored);
+        state = RemindersState(reminders: state.reminders, dismissedKeys: loaded);
+        print('[KS:REMINDERS] Loaded ${loaded.length} dismissed keys from Hive');
+      }
+    } catch (e) {
+      print('[KS:REMINDERS] Failed to load dismissed keys: $e');
+    }
   }
 
   void _compute() {
@@ -178,6 +194,15 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
       return r;
     }).toList();
     state = RemindersState(reminders: updated, dismissedKeys: newDismissed);
+
+    // Persist to Hive so dismissal survives app restart
+    try {
+      final box = HiveService.reminders;
+      box.put(_dismissedHiveKey, newDismissed.toList());
+      box.flush();
+    } catch (e) {
+      print('[KS:REMINDERS] Failed to persist dismissed key: $e');
+    }
   }
 
   void refresh() => _compute();

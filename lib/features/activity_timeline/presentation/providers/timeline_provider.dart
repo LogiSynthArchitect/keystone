@@ -69,6 +69,22 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
     load();
   }
 
+  /// Cached job lookup, populated by [load] and reused by [loadMore].
+  Map<String, JobEntity>? _cachedJobMap;
+
+  Map<String, JobEntity> _buildJobMap() {
+    final map = <String, JobEntity>{};
+    for (final j in HiveService.jobs.values) {
+      try {
+        final job = JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity();
+        map[job.id] = job;
+      } catch (err) {
+        debugPrint('[KS:TIMELINE] Skipping bad job entry: $err');
+      }
+    }
+    return map;
+  }
+
   Future<void> load() async {
     state = const TimelineState(isLoading: true);
     try {
@@ -84,16 +100,9 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
         }
       }
 
-      // Build job lookup for descriptions — skip bad entries
-      final jobMap = <String, JobEntity>{};
-      for (final j in HiveService.jobs.values) {
-        try {
-          final job = JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity();
-          jobMap[job.id] = job;
-        } catch (err) {
-          debugPrint('[KS:TIMELINE] Skipping bad job entry: $err');
-        }
-      }
+      // Build job lookup for descriptions — skip bad entries, cache for loadMore
+      _cachedJobMap = _buildJobMap();
+      final jobMap = _cachedJobMap!;
 
       // Sort all by time, newest first
       allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -131,16 +140,8 @@ class TimelineNotifier extends StateNotifier<TimelineState> {
         }
       }
 
-      // Build job lookup for descriptions — skip bad entries
-      final jobMap = <String, JobEntity>{};
-      for (final j in HiveService.jobs.values) {
-        try {
-          final job = JobModel.fromJson(Map<String, dynamic>.from(j)).toEntity();
-          jobMap[job.id] = job;
-        } catch (err) {
-          debugPrint('[KS:TIMELINE] Skipping bad job entry: $err');
-        }
-      }
+      // Reuse cached job map from initial load instead of rebuilding it
+      final jobMap = _cachedJobMap ?? _buildJobMap();
 
       allEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       final newCount = state.loadedCount + 50 > state.totalCount

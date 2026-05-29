@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keystone — Analytics Preview (fl_chart Edition)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --primary900: #0A1628;
+    --primary800: #0F2144;
+    --primary700: #163060;
+    --primary600: #1E3F7A;
+    --primary500: #2952A3;
+    --primary400: #4A6EC4;
+    --primary100: #E8EDF7;
+    
+    --accent600: #B8860B;
+    --accent500: #D4A017;
+    --accent400: #E8B84B;
+    --accent100: #FDF3D0;
+    
+    --neutral600: #5C5C5C;
+    --neutral500: #737373;
+    --neutral400: #9E9E9E;
+    --neutral300: #BDBDBD;
+    --neutral200: #E0E0E0;
+    
+    --white:      #FFFFFF;
+    
+    --success600: #1B6B3A;
+    --success500: #2E7D32;
+    --success100: #E8F5E9;
+    
+    --warning600: #E65100;
+    --warning500: #F57C00;
+    --warning100: #FFF3E0;
+    
+    --error600:   #B71C1C;
+    --error500:   #C62828;
+    --error100:   #FFEBEE;
+    
+    --radius-sm: 8px;
+    --radius-full: 999px;
+    
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    background: var(--primary900);
+    color: var(--white);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  .appbar {
+    background: var(--primary900);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--primary700);
+  }
+  .appbar .back { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: var(--neutral400); font-size: 20px; cursor: default; }
+  .appbar .title { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; color: var(--white); }
+  .appbar .spacer { flex: 1; }
+
+  .period-bar {
+    background: var(--primary800);
+    padding: 12px 20px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .period-bar::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 4px 14px; border-radius: var(--radius-full); font-size: 11px;
+    font-weight: 800; letter-spacing: 0.5px; white-space: nowrap; cursor: default;
+  }
+  .chip--active { background: var(--accent500); color: var(--primary900); }
+  .chip--inactive { background: var(--primary700); color: var(--neutral400); }
+
+  .content { padding: 20px; padding-bottom: 60px; }
+
+  .section-hdr {
+    font-size: 10px; font-weight: 900; letter-spacing: 1.5px;
+    color: var(--neutral500); margin-bottom: 12px; text-transform: uppercase;
+  }
+
+  .card {
+    background: var(--primary800); border-radius: var(--radius-sm); padding: 16px;
+  }
+
+  /* ── Leaking Revenue ── */
+  .leaking-card {
+    background: rgba(198, 40, 40, 0.12); border: 1px solid rgba(198, 40, 40, 0.3);
+    border-radius: var(--radius-sm); padding: 16px;
+  }
+  .leaking-card .label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .leaking-card .label-row .icon { color: var(--error500); font-size: 14px; font-weight: 900; }
+  .leaking-card .label-row .label { font-size: 10px; font-weight: 900; letter-spacing: 0.8px; color: var(--error500); }
+  .leaking-card .value { font-size: 24px; font-weight: 900; color: var(--error500); letter-spacing: -0.5px; margin-bottom: 4px; }
+  .leaking-card .sub { font-size: 11px; color: var(--neutral400); }
+
+  /* ── Summary Cards ── */
+  .summary-card { background: var(--primary800); border-radius: var(--radius-sm); padding: 16px; }
+  .summary-card .meta { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .summary-card .meta .icon { font-size: 14px; color: var(--neutral500); }
+  .summary-card .meta .label { font-size: 10px; font-weight: 700; color: var(--neutral500); letter-spacing: 0.5px; }
+  .summary-card .value { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; }
+  .summary-card .value--accent { color: var(--accent500); }
+  .summary-card .value--white { color: var(--white); }
+  .summary-card .value--positive { color: var(--success500); }
+  .summary-card .value--negative { color: var(--error500); }
+  .row { display: flex; gap: 12px; }
+  .row > * { flex: 1; }
+
+  /* ── Retention ── */
+  .retention-bar { height: 8px; border-radius: var(--radius-full); overflow: hidden; display: flex; gap: 2px; margin: 12px 0 8px; }
+  .retention-bar .new { background: var(--accent500); }
+  .retention-bar .repeat { background: var(--success500); }
+
+  /* ── Service / Lead / Parts ── */
+  .list-row { display: flex; align-items: center; padding: 12px 16px; gap: 8px; }
+  .list-row .name { flex: 3; font-size: 13px; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list-row .stat { flex: 1; text-align: center; font-size: 11px; color: var(--neutral500); }
+  .list-row .rev  { text-align: right; font-size: 13px; color: var(--accent500); white-space: nowrap; }
+  .list-row .gp   { text-align: right; font-size: 11px; white-space: nowrap; }
+  .list-row .gp--pos { color: var(--success600); }
+  .list-row .gp--neg { color: var(--error600); }
+  .list-row .cost   { text-align: right; font-size: 13px; color: var(--neutral300); white-space: nowrap; }
+
+  .divider { height: 1px; background: var(--primary700); margin: 0; }
+  .empty-msg { padding: 16px; font-size: 11px; color: var(--neutral600); }
+  .spacer-xl { height: 24px; }
+  .spacer-lg { height: 16px; }
+  .spacer-md { height: 12px; }
+
+  /* ── Tooltip ── */
+  .tooltip {
+    display: none; position: absolute; background: var(--white); color: var(--primary900);
+    padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: 800;
+    pointer-events: none; white-space: nowrap; z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .chart-container { position: relative; }
+  .chart-container:hover .tooltip { display: block; }
+
+  /* ── Expense Legend Colors ── */
+  .exp-color-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<!-- App Bar -->
+<div class="appbar">
+  <div class="back">&#8592;</div>
+  <div class="title">ANALYTICS</div>
+  <div class="spacer"></div>
+</div>
+
+<!-- Period Selector -->
+<div class="period-bar">
+  <div class="chip chip--active">THIS MONTH</div>
+  <div class="chip chip--inactive">LAST MONTH</div>
+  <div class="chip chip--inactive">LAST 3 MONTHS</div>
+  <div class="chip chip--inactive">CUSTOM</div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- 1. REVENUE TREND — fl_chart LineChart              -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="card chart-container">
+    <div class="section-hdr" style="margin-bottom:16px;">REVENUE TREND</div>
+    <div class="tooltip" id="lineTooltip" style="top:40px;left:160px;">¢5.0k &middot; 6 jobs</div>
+    <svg width="100%" height="190" viewBox="0 0 360 190" style="display:block;">
+      <defs>
+        <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(212,160,23,0.25)"/>
+          <stop offset="100%" stop-color="rgba(212,160,23,0.01)"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid lines -->
+      <line x1="40" y1="30"  x2="350" y2="30"  stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <line x1="40" y1="65"  x2="350" y2="65"  stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <line x1="40" y1="100" x2="350" y2="100" stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <line x1="40" y1="135" x2="350" y2="135" stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <!-- Y axis labels -->
+      <text x="36" y="34" text-anchor="end" font-size="9" fill="var(--neutral500)">¢5k</text>
+      <text x="36" y="69" text-anchor="end" font-size="9" fill="var(--neutral500)">¢3.8k</text>
+      <text x="36" y="104" text-anchor="end" font-size="9" fill="var(--neutral500)">¢2.5k</text>
+      <text x="36" y="139" text-anchor="end" font-size="9" fill="var(--neutral500)">¢1.3k</text>
+      <!-- Area fill -->
+      <path d="M120,125 C133,125 140,75 155,72 C170,69 177,30 192,38 C207,46 214,80 229,62 C244,44 251,55 266,78 C281,101 288,50 303,35 C318,20 325,65 340,68 L340,148 L120,148 Z"
+            fill="url(#lineFill)"/>
+      <!-- Line (smooth curve) -->
+      <path d="M120,125 C133,125 140,75 155,72 C170,69 177,30 192,38 C207,46 214,80 229,62 C244,44 251,55 266,78 C281,101 288,50 303,35 C318,20 325,65 340,68"
+            fill="none" stroke="var(--accent500)" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Dots -->
+      <circle cx="120" cy="125" r="3" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <circle cx="155" cy="72"  r="3" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <circle cx="192" cy="38"  r="4" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <circle cx="229" cy="62"  r="3" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <circle cx="266" cy="78"  r="3" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <circle cx="303" cy="35"  r="4" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <circle cx="340" cy="68"  r="3" fill="var(--accent500)" stroke="var(--primary800)" stroke-width="1.5"/>
+      <!-- X labels -->
+      <text x="120" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">05-12</text>
+      <text x="155" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">05-19</text>
+      <text x="192" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">05-26</text>
+      <text x="229" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">Jun 2</text>
+      <text x="266" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">Jun 9</text>
+      <text x="303" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">Jun 16</text>
+      <text x="340" y="162" text-anchor="middle" font-size="9" fill="var(--neutral500)">Jun 23</text>
+      <!-- Job count below labels -->
+      <text x="120" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">2</text>
+      <text x="155" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">1</text>
+      <text x="192" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">4</text>
+      <text x="229" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">3</text>
+      <text x="266" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">6</text>
+      <text x="303" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">2</text>
+      <text x="340" y="174" text-anchor="middle" font-size="8" fill="var(--neutral400)">5</text>
+    </svg>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Leaking Revenue Card -->
+  <div class="leaking-card">
+    <div class="label-row">
+      <div class="icon">&#9888;</div>
+      <div class="label">LEAKING REVENUE</div>
+    </div>
+    <div class="value">¢ 2,450.00</div>
+    <div class="sub">Jobs stuck in quoted/progress past 7 days</div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Summary Cards -->
+  <div class="summary-card" style="margin-bottom:12px;">
+    <div class="meta">
+      <div class="icon">&#x25E0;</div>
+      <div class="label">TOTAL REVENUE</div>
+    </div>
+    <div class="value value--accent">¢ 19,350.00</div>
+  </div>
+  <div class="row">
+    <div class="summary-card">
+      <div class="meta">
+        <div class="icon">&#x25E1;</div>
+        <div class="label">TOTAL JOBS</div>
+      </div>
+      <div class="value value--white">25</div>
+    </div>
+    <div class="summary-card">
+      <div class="meta">
+        <div class="icon">&#x25E2;</div>
+        <div class="label">GROSS PROFIT</div>
+      </div>
+      <div class="value value--positive">¢ 12,480.00</div>
+    </div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Customer Retention -->
+  <div class="section-hdr">CUSTOMER RETENTION</div>
+  <div class="card">
+    <div class="row" style="margin-bottom:8px;">
+      <div>
+        <div style="font-size:10px;font-weight:900;color:var(--accent500);">NEW</div>
+        <div style="font-size:22px;font-weight:900;color:var(--accent500);">8</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;font-weight:900;color:var(--success500);">REPEAT</div>
+        <div style="font-size:22px;font-weight:900;color:var(--success500);">12</div>
+      </div>
+    </div>
+    <div class="retention-bar">
+      <div class="new" style="flex:8;"></div>
+      <div class="repeat" style="flex:12;"></div>
+    </div>
+    <div style="font-size:11px;color:var(--neutral500);">60% repeat rate</div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- 2. JOBS BY DAY — fl_chart BarChart                 -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-hdr">JOBS BY DAY</div>
+  <div class="card">
+    <svg width="100%" height="180" viewBox="0 0 360 180" style="display:block;">
+      <!-- Grid lines -->
+      <line x1="30" y1="30"  x2="350" y2="30"  stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <line x1="30" y1="65"  x2="350" y2="65"  stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <line x1="30" y1="100" x2="350" y2="100" stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      <line x1="30" y1="135" x2="350" y2="135" stroke="rgba(22,48,96,0.5)" stroke-width="0.5"/>
+      
+      <!-- Bar data (Mon=6.1k max, so scale: 140px = 6.1k) -->
+      <!-- Mon: 4.2k → 96px -->
+      <rect x="34" y="54" width="30" height="116" rx="4" fill="var(--accent500)"/>
+      <!-- Tue: 2.8k → 64px -->
+      <rect x="80" y="86" width="30" height="84" rx="4" fill="var(--accent500)"/>
+      <!-- Wed: 6.1k → 140px -->
+      <rect x="126" y="30" width="30" height="140" rx="4" fill="var(--accent500)"/>
+      <!-- Thu: 2.1k → 48px -->
+      <rect x="172" y="102" width="30" height="68" rx="4" fill="var(--accent500)"/>
+      <!-- Fri: 3.5k → 80px -->
+      <rect x="218" y="70" width="30" height="100" rx="4" fill="var(--accent500)"/>
+      <!-- Sat: 0.5k → 12px -->
+      <rect x="264" y="138" width="30" height="32" rx="4" fill="var(--accent500)"/>
+      <!-- Sun: 0.6k → 14px -->
+      <rect x="310" y="136" width="30" height="34" rx="4" fill="var(--accent500)"/>
+
+      <!-- Day + job count labels -->
+      <text x="49" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Mon</text>
+      <text x="95" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Tue</text>
+      <text x="141" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Wed</text>
+      <text x="187" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Thu</text>
+      <text x="233" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Fri</text>
+      <text x="279" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Sat</text>
+      <text x="325" y="178" text-anchor="middle" font-size="10" font-weight="800" fill="var(--neutral500)">Sun</text>
+      
+      <text x="49" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">5</text>
+      <text x="95" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">3</text>
+      <text x="141" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">7</text>
+      <text x="187" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">3</text>
+      <text x="233" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">5</text>
+      <text x="279" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">1</text>
+      <text x="325" y="168" text-anchor="middle" font-size="9" fill="var(--neutral400)">1</text>
+    </svg>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Service Type -->
+  <div class="section-hdr">SERVICE TYPE BREAKDOWN</div>
+  <div class="card" style="padding:0;">
+    <div class="list-row">
+      <div class="name">DIAGNOSTIC</div>
+      <div class="stat">8 jobs</div>
+      <div style="text-align:right;">
+        <div class="rev">¢7.2k</div>
+        <div class="gp gp--pos">GP: ¢5.1k</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">REPAIR</div>
+      <div class="stat">10 jobs</div>
+      <div style="text-align:right;">
+        <div class="rev">¢8.4k</div>
+        <div class="gp gp--pos">GP: ¢5.8k</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">MAINTENANCE</div>
+      <div class="stat">4 jobs</div>
+      <div style="text-align:right;">
+        <div class="rev">¢2.3k</div>
+        <div class="gp gp--pos">GP: ¢1.1k</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">INSTALLATION</div>
+      <div class="stat">3 jobs</div>
+      <div style="text-align:right;">
+        <div class="rev">¢1.5k</div>
+        <div class="gp gp--pos">GP: ¢0.5k</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- 3. EXPENSE BREAKDOWN — fl_chart PieChart           -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-hdr">EXPENSE BREAKDOWN</div>
+  <div class="card">
+    <svg width="100%" height="170" viewBox="0 0 360 170" style="display:block;">
+      <!-- Pie slices. Total=6.9k. Center at (80,85), r=60 -->
+      <!-- Parts: 3.7k → 54% → 193° (FF6B6B) -->
+      <!-- Labour: 2.0k → 29% → 104° (4D96FF) -->
+      <!-- Misc: 0.7k → 10% → 36° (FFD93D) -->
+      <!-- Travel: 0.5k → 7% → 25° (6BCB77) -->
+      <!-- Starting at -90° (12 o'clock), clockwise -->
+      <!--
+        Parts:   -90° to  -90+193=103°  → path
+        Labour:  103° to 103+104=207°    → path
+        Misc:    207° to 207+36=243°     → path
+        Travel:  243° to 270° (= -90+360) → path
+      -->
+      <g transform="translate(80,85)">
+        <!-- Parts 193° → arc from -90° to 103° -->
+        <path d="M0,-60 L0,0 L-14.0,-58.4 A60,60 0 0,1 58.4,13.5 Z" fill="#FF6B6B"/>
+        <!-- Labour 104° → arc from 103° to 207° -->
+        <path d="M58.4,13.5 L0,0 L-54.5,-25.0 A60,60 0 0,1 -27.3,53.4 Z" fill="#4D96FF"/>
+        <!-- Misc 36° → arc from 207° to 243° -->
+        <path d="M-27.3,53.4 L0,0 L-54.5,25.0 A60,60 0 0,1 -38.0,46.4 Z" fill="#FFD93D"/>
+        <!-- Travel 25° → arc from 243° to 268° (rounded to 270°) -->
+        <path d="M-38.0,46.4 L0,0 L0.0,60.0 A60,60 0 0,1 -14.0,58.4 Z" fill="#6BCB77"/>
+        
+        <!-- Percentage labels -->
+        <text x="20" y="-20" text-anchor="middle" font-size="11" font-weight="900" fill="#0A1628">54%</text>
+        <text x="-35" y="-5" text-anchor="middle" font-size="11" font-weight="900" fill="#0A1628">29%</text>
+        <text x="-32" y="28" text-anchor="middle" font-size="10" font-weight="900" fill="#0A1628">10%</text>
+        <text x="5" y="40" text-anchor="middle" font-size="10" font-weight="900" fill="#0A1628">7%</text>
+      </g>
+      
+      <!-- Legend -->
+      <g transform="translate(170,20)">
+        <!-- Parts -->
+        <rect x="0" y="0" width="8" height="8" rx="2" fill="#FF6B6B"/>
+        <text x="14" y="8" font-size="10" fill="var(--white)">PARTS</text>
+        <text x="130" y="8" text-anchor="end" font-size="10" fill="var(--neutral500)">54%</text>
+        <text x="170" y="8" text-anchor="end" font-size="10" fill="var(--error500)">¢3.7k</text>
+        <!-- Labour -->
+        <rect x="0" y="20" width="8" height="8" rx="2" fill="#4D96FF"/>
+        <text x="14" y="28" font-size="10" fill="var(--white)">LABOUR</text>
+        <text x="130" y="28" text-anchor="end" font-size="10" fill="var(--neutral500)">29%</text>
+        <text x="170" y="28" text-anchor="end" font-size="10" fill="var(--error500)">¢2.0k</text>
+        <!-- Misc -->
+        <rect x="0" y="40" width="8" height="8" rx="2" fill="#FFD93D"/>
+        <text x="14" y="48" font-size="10" fill="var(--white)">MISC</text>
+        <text x="130" y="48" text-anchor="end" font-size="10" fill="var(--neutral500)">10%</text>
+        <text x="170" y="48" text-anchor="end" font-size="10" fill="var(--error500)">¢0.7k</text>
+        <!-- Travel -->
+        <rect x="0" y="60" width="8" height="8" rx="2" fill="#6BCB77"/>
+        <text x="14" y="68" font-size="10" fill="var(--white)">TRAVEL</text>
+        <text x="130" y="68" text-anchor="end" font-size="10" fill="var(--neutral500)">7%</text>
+        <text x="170" y="68" text-anchor="end" font-size="10" fill="var(--error500)">¢0.5k</text>
+        <!-- Divider -->
+        <line x1="0" y1="80" x2="180" y2="80" stroke="var(--primary700)" stroke-width="1"/>
+        <!-- Total -->
+        <text x="0" y="96" font-size="11" font-weight="900" fill="var(--white)">TOTAL</text>
+        <text x="170" y="96" text-anchor="end" font-size="13" font-weight="600" fill="var(--error500)">¢6.9k</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- 4. PAYMENT HEALTH — fl_chart Donut                 -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="section-hdr">PAYMENT HEALTH</div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <!-- Donut -->
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <!-- Total: 19.4k. Unpaid: 5.2k → 27%, Partial: 2.1k → 11%, Paid: 12.1k → 62% -->
+        <!-- Starting at -90° (12 o'clock), going clockwise, r=40, hole=20 -->
+        <!-- Unpaid: 27% → 97° → -90° to 7° -->
+        <!-- Partial: 11% → 40° → 7° to 47° -->
+        <!-- Paid: 62% → 223° → 47° to 270° -->
+        <g transform="translate(60,60)">
+          <!-- Unpaid segment (red) -->
+          <path d="M0,-40 L0,0 L-4.7,-39.7 A40,40 0 0,1 39.7,4.7 Z" fill="var(--error500)"/>
+          <!-- Partial segment (amber) -->
+          <path d="M39.7,4.7 L0,0 L29.2,27.3 A40,40 0 0,1 -4.7,39.7 Z" fill="var(--warning500)"/>
+          <!-- Paid segment (green) -->
+          <path d="M-4.7,39.7 L0,0 L15.4,36.9 A40,40 0 0,1 0,-40 Z" fill="var(--success500)"/>
+          <!-- Inner circle (donut hole) -->
+          <circle cx="0" cy="0" r="18" fill="var(--primary800)"/>
+          <!-- Center total -->
+          <text x="0" y="4" text-anchor="middle" font-size="10" font-weight="900" fill="var(--white)">¢19.4k</text>
+        </g>
+      </svg>
+      <!-- Legend -->
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:8px;height:8px;border-radius:2px;background:var(--error500);margin-right:6px;"></div>
+          <div style="flex:1;font-size:10px;font-weight:900;color:var(--error500);">UNPAID</div>
+          <div style="font-size:9px;color:var(--neutral500);margin-right:6px;">4 jobs</div>
+          <div style="font-size:10px;font-weight:700;color:var(--white);">¢5.2k</div>
+        </div>
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:8px;height:8px;border-radius:2px;background:var(--warning500);margin-right:6px;"></div>
+          <div style="flex:1;font-size:10px;font-weight:900;color:var(--warning600);">PARTIAL</div>
+          <div style="font-size:9px;color:var(--neutral500);margin-right:6px;">3 jobs</div>
+          <div style="font-size:10px;font-weight:700;color:var(--white);">¢2.1k</div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:2px;background:var(--success500);margin-right:6px;"></div>
+          <div style="flex:1;font-size:10px;font-weight:900;color:var(--success600);">PAID</div>
+          <div style="font-size:9px;color:var(--neutral500);margin-right:6px;">18 jobs</div>
+          <div style="font-size:10px;font-weight:700;color:var(--white);">¢12.1k</div>
+        </div>
+      </div>
+    </div>
+    <div class="spacer-md"></div>
+    <!-- Payment bar (below) -->
+    <div style="height:6px;border-radius:var(--radius-full);overflow:hidden;display:flex;">
+      <div style="flex:27;background:var(--error500);"></div>
+      <div style="flex:11;background:var(--warning500);"></div>
+      <div style="flex:62;background:var(--success500);"></div>
+    </div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Lead Source -->
+  <div class="section-hdr">LEAD SOURCE BREAKDOWN</div>
+  <div class="card" style="padding:0;">
+    <div class="list-row">
+      <div class="name">REFERRAL</div>
+      <div class="stat">10 cust.</div>
+      <div class="rev">¢8.5k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">WHATSAPP</div>
+      <div class="stat">7 cust.</div>
+      <div class="rev">¢5.2k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">WALK-IN</div>
+      <div class="stat">5 cust.</div>
+      <div class="rev">¢3.8k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">SOCIAL MEDIA</div>
+      <div class="stat">3 cust.</div>
+      <div class="rev">¢1.9k</div>
+    </div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Top Customers -->
+  <div class="section-hdr">TOP CUSTOMERS</div>
+  <div class="card" style="padding:0;">
+    <div class="list-row">
+      <div style="width:28px;height:28px;border-radius:14px;background:var(--primary700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--neutral400);">1</div>
+      <div class="name">KWAME ASANTE</div>
+      <div class="stat" style="flex:none;margin-right:12px;">4 jobs</div>
+      <div class="rev">¢3.8k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div style="width:28px;height:28px;border-radius:14px;background:var(--primary700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--neutral400);">2</div>
+      <div class="name">AMA OFORI</div>
+      <div class="stat" style="flex:none;margin-right:12px;">3 jobs</div>
+      <div class="rev">¢2.9k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div style="width:28px;height:28px;border-radius:14px;background:var(--primary700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--neutral400);">3</div>
+      <div class="name">YAO MENSAH</div>
+      <div class="stat" style="flex:none;margin-right:12px;">3 jobs</div>
+      <div class="rev">¢2.4k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div style="width:28px;height:28px;border-radius:14px;background:var(--primary700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--neutral400);">4</div>
+      <div class="name">EKUA QUARTEY</div>
+      <div class="stat" style="flex:none;margin-right:12px;">2 jobs</div>
+      <div class="rev">¢1.8k</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div style="width:28px;height:28px;border-radius:14px;background:var(--primary700);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--neutral400);">5</div>
+      <div class="name">YAW BOATENG</div>
+      <div class="stat" style="flex:none;margin-right:12px;">2 jobs</div>
+      <div class="rev">¢1.5k</div>
+    </div>
+  </div>
+
+  <div class="spacer-xl"></div>
+
+  <!-- Parts Usage -->
+  <div class="section-hdr">TOP PARTS USAGE</div>
+  <div class="card" style="padding:0;">
+    <div class="list-row">
+      <div class="name">SCREEN PROTECTOR</div>
+      <div class="stat">x12</div>
+      <div class="rev cost">¢240</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">USB CABLE</div>
+      <div class="stat">x8</div>
+      <div class="rev cost">¢160</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">CHARGING PORT</div>
+      <div class="stat">x5</div>
+      <div class="rev cost">¢375</div>
+    </div>
+    <div class="divider"></div>
+    <div class="list-row">
+      <div class="name">BATTERY</div>
+      <div class="stat">x4</div>
+      <div class="rev cost">¢520</div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+</body>
+</html>

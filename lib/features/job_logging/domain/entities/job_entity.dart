@@ -33,6 +33,8 @@ class JobEntity {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool subEntitiesSaved; // false during multi-step child save; gated in sync pipeline
+  final String? generatedFromScheduleId; // FK to recurring_job_schedules.id when auto-generated
+  final String? generationBatchId;       // UUID batch to tie jobs from same generation run
 
   const JobEntity({
     required this.id,
@@ -67,6 +69,8 @@ class JobEntity {
     required this.createdAt,
     required this.updatedAt,
     this.subEntitiesSaved = true,
+    this.generatedFromScheduleId,
+    this.generationBatchId,
   });
 
   bool get isSynced        => syncStatus == SyncStatus.synced;
@@ -170,6 +174,8 @@ class JobEntity {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? subEntitiesSaved,
+    String? generatedFromScheduleId,
+    String? generationBatchId,
   }) {
     return JobEntity(
       id: id ?? this.id,
@@ -204,6 +210,8 @@ class JobEntity {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       subEntitiesSaved: subEntitiesSaved ?? this.subEntitiesSaved,
+      generatedFromScheduleId: generatedFromScheduleId ?? this.generatedFromScheduleId,
+      generationBatchId: generationBatchId ?? this.generationBatchId,
     );
   }
 

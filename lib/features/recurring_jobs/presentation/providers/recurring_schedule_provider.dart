@@ -115,6 +115,7 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
   }
 
   /// Generate jobs for all due schedules, advance their nextDueDate.
+  /// Uses Write-Ahead Log for crash atomicity — payload-first, trigger-second.
   /// Returns the number of jobs created.
   Future<int> generateDueJobs() async {
     final items = state.valueOrNull ?? [];
@@ -124,13 +125,29 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
     final userId = _ref.read(currentUserProvider).valueOrNull?.id;
     if (userId == null) return 0;
 
+    final batchId = const Uuid().v4();
+    final meta = HiveService.meta;
     int count = 0;
-    final jobsBox = HiveService.jobs;
-    final localDs = _ref.read(recurringScheduleLocalDatasourceProvider);
 
-    for (final schedule in due) {
-      try {
+    // Phase 0: Write WAL entry (proves generation STARTED)
+    await meta.put('pending_schedule_gen:$batchId', {
+      'batch_id': batchId,
+      'target_schedule_ids': due.map((s) => s.id).toList(),
+      'state': 'pending',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    await meta.flush();
+    debugPrint('[KS:RECURRING] WAL written for batch $batchId (${due.length} schedules)');
+
+    try {
+      final jobsBox = HiveService.jobs;
+      final localDs = _ref.read(recurringScheduleLocalDatasourceProvider);
+
+      // Phase 1: Write jobs (payload first)
+      final jobsToWrite = <String, Map<String, dynamic>>{};
+      for (final schedule in due) {
         final jobId = const Uuid().v4();
+        final createdAt = DateTime.now();
         final jobModel = JobModel(
           id: jobId,
           userId: userId,
@@ -145,25 +162,46 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
           isArchived: false,
           status: 'quoted',
           paymentStatus: 'unpaid',
-          createdAt: DateTime.now().toIso8601String(),
-          updatedAt: DateTime.now().toIso8601String(),
+          createdAt: createdAt.toIso8601String(),
+          updatedAt: createdAt.toIso8601String(),
           isDeleted: false,
           subEntitiesSaved: false,
+          generatedFromScheduleId: schedule.id,
+          generationBatchId: batchId,
         );
-        await jobsBox.put(jobId, jobModel.toJson().cast<String, dynamic>());
-        await jobsBox.flush();
+        jobsToWrite[jobId] = jobModel.toJson().cast<String, dynamic>();
+      }
 
-        // Advance nextDueDate
+      for (final entry in jobsToWrite.entries) {
+        await jobsBox.put(entry.key, entry.value);
+      }
+      await jobsBox.flush();
+
+      // Phase 2: Advance schedules (trigger second)
+      for (final schedule in due) {
         final advanced = _advanceNextDueDate(schedule);
         final updated = schedule.copyWith(nextDueDate: advanced, updatedAt: DateTime.now());
         await localDs.save(updated);
-
-        count++;
-        debugPrint('[KS:RECURRING] Generated job $jobId from schedule ${schedule.id}');
-      } catch (e) {
-        debugPrint('[KS:RECURRING] Failed to generate job for ${schedule.id}: $e');
       }
+
+      count = due.length;
+      debugPrint('[KS:RECURRING] Generated $count jobs from batch $batchId');
+    } catch (e) {
+      debugPrint('[KS:RECURRING] Failed to generate jobs for batch $batchId: $e');
+      // WAL remains — recovery hook replays on next startup
+      await load();
+      return 0;
     }
+
+    // Phase 3: Mark WAL completed and clear
+    await meta.put('pending_schedule_gen:$batchId', {
+      'batch_id': batchId,
+      'target_schedule_ids': due.map((s) => s.id).toList(),
+      'state': 'completed',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    await meta.delete('pending_schedule_gen:$batchId');
+    await meta.flush();
 
     await load();
     return count;

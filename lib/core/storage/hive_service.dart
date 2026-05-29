@@ -30,6 +30,7 @@ class HiveService {
   static const String recurringSchedulesBox = 'recurring_schedules';
   static const String authBox = 'auth';
   static const String pendingMediaUploadsBox = 'pending_media_uploads';
+  static const String analyticsDailyRollupsBox = 'analytics_daily_rollups';
   static const String metaBox = '_meta';
   static const String lastOnlineSyncKey   = 'last_online_sync';
   static const String backupDirName      = 'hive_backups';
@@ -38,7 +39,7 @@ class HiveService {
     jobsBox, customersBox, notesBox, followUpsBox, profileBox,
     settingsBox, serviceTypesBox, jobPartsBox, jobPhotosBox,
     jobAuditLogBox, keyCodeHistoryBox, noteJobLinksBox,
-    remindersBox, activityEventsBox, jobServicesBox, jobHardwareBox, jobExpensesBox, jobTemplatesBox, inventoryItemsBox, inventoryStockAdjustmentsBox, inventoryRestocksBox, recurringSchedulesBox, authBox, pendingMediaUploadsBox,
+    remindersBox, activityEventsBox, jobServicesBox, jobHardwareBox, jobExpensesBox, jobTemplatesBox, inventoryItemsBox, inventoryStockAdjustmentsBox, inventoryRestocksBox, recurringSchedulesBox, authBox, pendingMediaUploadsBox, analyticsDailyRollupsBox,
   ];
 
   static Future<void> initialize() async {

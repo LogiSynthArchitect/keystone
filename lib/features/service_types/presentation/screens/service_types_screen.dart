@@ -95,7 +95,7 @@ class ServiceTypesScreen extends ConsumerWidget {
       icon: LineAwesomeIcons.tools_solid,
       title: "ADD SERVICE TYPE",
       child: StatefulBuilder(
-        builder: (_, setInnerState) => Padding(
+        builder: (_, setInnerState) => SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,10 +108,22 @@ class ServiceTypesScreen extends ConsumerWidget {
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                style: TextStyle(color: context.ksc.white),
-                decoration: const InputDecoration(
+                style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white),
+                decoration: InputDecoration(
                   hintText: "e.g. Custom Gate Opener",
-                  hintStyle: TextStyle(color: Color(0xFF6B7280)),
+                  hintStyle: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral600),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.only(bottom: 4),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.primary700),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.accent500),
+                  ),
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.primary700),
+                  ),
+                  filled: false,
                 ),
               ),
               const SizedBox(height: 24),
@@ -144,6 +156,7 @@ class ServiceTypesScreen extends ConsumerWidget {
                 selectedIcon: selectedIcon,
                 onSelected: (v) => setInnerState(() => selectedIcon = v),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -173,7 +186,7 @@ class ServiceTypesScreen extends ConsumerWidget {
       icon: ServiceIconMap.resolve(type.iconName),
       title: "EDIT SERVICE TYPE",
       child: StatefulBuilder(
-        builder: (_, setInnerState) => Padding(
+        builder: (_, setInnerState) => SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,10 +199,20 @@ class ServiceTypesScreen extends ConsumerWidget {
               TextField(
                 controller: nameCtrl,
                 autofocus: true,
-                style: TextStyle(color: context.ksc.white),
-                decoration: const InputDecoration(
-                  filled: true,
-                  fillColor: Color(0xFF0A1628),
+                style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.only(bottom: 4),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.primary700),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.accent500),
+                  ),
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: context.ksc.primary700),
+                  ),
+                  filled: false,
                 ),
               ),
               const SizedBox(height: 24),
@@ -222,6 +245,7 @@ class ServiceTypesScreen extends ConsumerWidget {
                 selectedIcon: selectedIcon,
                 onSelected: (v) => setInnerState(() => selectedIcon = v),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:keystone/core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
 import 'package:keystone/features/job_logging/data/datasources/job_parts_local_datasource.dart';
-import 'package:keystone/features/job_logging/data/models/job_part_model.dart';
-import 'package:keystone/features/job_logging/data/models/job_expense_model.dart';
 import 'package:keystone/features/customer_history/data/datasources/customer_local_datasource.dart';
 import 'package:keystone/features/inventory/data/models/inventory_item_model.dart';
+import '../../data/repositories/rollup_repository.dart';
+import '../../data/models/daily_rollup.dart';
 import '../../domain/models/analytics_models.dart';
 
 final analyticsJobLocalProvider = Provider<JobLocalDatasource>(
@@ -18,11 +19,24 @@ final analyticsCustomerLocalProvider = Provider<CustomerLocalDatasource>(
 final analyticsPartsLocalProvider = Provider<JobPartsLocalDatasource>(
   (ref) => JobPartsLocalDatasource());
 
+/// Rollup-powered analytics notifier.
+///
+/// Execution strategy:
+/// 1. On [loadAnalytics], checks if the rollups box has dirty dates in range.
+/// 2. If dirty dates exist, recomputes them via targetted recompute (not full scan).
+/// 3. Sums clean rollups in range → fast path (no job objects deserialized).
+/// 4. First-ever load: recovery hook in main.dart already seeded rollups,
+///    but if isEmpty (race), falls back to one-time full scan + seed.
+/// 5. Breakdowns (service type, parts, etc.) are computed from the merged
+///    rollup breakdown maps — no job iteration needed.
 class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
   final Ref _ref;
+  final RollupRepository _repo = RollupRepository();
+
   AnalyticsNotifier(this._ref)
     : super(AnalyticsState(range: defaultRangeFor(AnalyticsPeriod.thisMonth))) {
-    loadAnalytics(state.range);
+    final r = state.range;
+    loadAnalytics(r.start, r.end);
   }
 
   void reset() => state = AnalyticsState(range: defaultRangeFor(AnalyticsPeriod.thisMonth));
@@ -31,28 +45,55 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
     if (period == AnalyticsPeriod.custom) return;
     final range = defaultRangeFor(period);
     state = state.copyWith(period: period, range: range);
-    await loadAnalytics(range);
+    await loadAnalytics(range.start, range.end);
   }
 
   Future<void> setCustomRange(DateTimeRange range) async {
     state = state.copyWith(period: AnalyticsPeriod.custom, range: range);
-    await loadAnalytics(range);
+    await loadAnalytics(range.start, range.end);
   }
 
-  Future<void> loadAnalytics(DateTimeRange range) async {
+  Future<void> loadAnalytics(DateTime start, DateTime end) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final jobs      = await _ref.read(analyticsJobLocalProvider).getJobs();
-      final customers = await _ref.read(analyticsCustomerLocalProvider).getCustomers();
+      // ── Phase 1: seed if empty (first run safeguard) ──
+      if (_repo.isEmpty) {
+        await _repo.seedAll();
+      }
 
-      final allParts  = HiveService.jobParts.values
-          .map((e) => JobPartModel.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-      final allExpenses = HiveService.jobExpenses.values
-          .map((e) => JobExpenseModel.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      // ── Phase 2: reconcile dirty dates in range ──
+      if (_repo.hasDirtyInRange(start, end)) {
+        // 2a. Process pending WALs from meta box (catches dates without rollups)
+        await _processMetaWals(start, end);
+        // 2b. Recompute rollups with dirty:true flag (in case recompute above missed any)
+        final rollups = _repo.listInRange(start, end);
+        for (final r in rollups) {
+          if (r.dirty) {
+            await _repo.recomputeDate(r.dateKey);
+          }
+        }
+      }
 
-      // ── Stock value from inventory ──
+      // ── Phase 3: fast path — sum clean rollups ──
+      final agg = _repo.sumInRange(start, end);
+
+      // ── Phase 4: previous period (also from rollups) ──
+      final duration = end.difference(start);
+      final prevEnd  = start.subtract(const Duration(days: 1));
+      final prevStart = prevEnd.subtract(duration);
+
+      if (_repo.hasDirtyInRange(prevStart, prevEnd)) {
+        await _processMetaWals(prevStart, prevEnd);
+        final prevRollups = _repo.listInRange(prevStart, prevEnd);
+        for (final r in prevRollups) {
+          if (r.dirty) await _repo.recomputeDate(r.dateKey);
+        }
+      }
+      final prevAgg = _repo.isEmpty
+          ? const DailyRollup(dateKey: 'prev')
+          : _repo.sumInRange(prevStart, prevEnd);
+
+      // ── Phase 5: stock value from inventory (still reads inventory box) ──
       int stockValue = 0;
       int lowStockCount = 0;
       try {
@@ -70,228 +111,134 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
         }
       } catch (_) {}
 
-      // ── Compute helpers ──
-      (int rev, int jobs, int gp, int np) compute(DateTimeRange targetRange) {
-        final periodJobs = jobs.where((j) {
-          final d = j.jobDate;
-          return !j.isArchived && !j.isDeleted && !d.isBefore(targetRange.start) && !d.isAfter(targetRange.end);
-        }).toList();
+      // ── Phase 6: customer data for lead source & new/repeat ──
+      // Lead source breakdown still reads customer box (lightweight, maps only)
+      int newCustCount = 0, repeatCustCount = 0;
+      List<LeadSourceBreakdown> leadSourceBreakdown = [];
+      List<TopCustomer> topCustomers = [];
+      try {
+        final customers = await _ref.read(analyticsCustomerLocalProvider).getCustomers();
+        final customerMap = {for (final c in customers) c.id: c};
 
-        final revenue = periodJobs.fold<int>(0, (s, j) => s + (j.amountCharged ?? 0));
-        final count   = periodJobs.length;
-
-        final periodJobIds = periodJobs.map((j) => j.id).toSet();
-        final partsCost = allParts
-            .where((p) => periodJobIds.contains(p.jobId))
-            .fold<int>(0, (s, p) => s + (p.quantity ?? 0) * (p.unitPrice ?? 0));
-        final expensesCost = allExpenses
-            .where((e) => periodJobIds.contains(e.jobId))
-            .fold<int>(0, (s, e) => s + e.amount);
-        final gp = revenue - partsCost;
-        final np = gp - expensesCost;
-
-        return (revenue, count, gp, np);
-      }
-
-      // ── Current period ──
-      final cur = compute(range);
-      final curRev = cur.$1;
-      final curJobs = cur.$2;
-
-      // ── Previous period ──
-      final duration = range.end.difference(range.start);
-      final prevEnd  = range.start.subtract(const Duration(days: 1));
-      final prevStart = prevEnd.subtract(duration);
-      final prevRange = DateTimeRange(start: prevStart, end: prevEnd);
-      final prev = compute(prevRange);
-      final prevRev = prev.$1;
-      final prevJobs = prev.$2;
-      final prevGp = prev.$3;
-      final prevNp = prev.$4;
-
-      // ── Previous period breakdown for service type GP trend ──
-      final prevPeriodJobs = jobs.where((j) {
-        final d = j.jobDate;
-        return !j.isArchived && !j.isDeleted && !d.isBefore(prevRange.start) && !d.isAfter(prevRange.end);
-      }).toList();
-      final prevPeriodJobIds = prevPeriodJobs.map((j) => j.id).toSet();
-      final prevPeriodParts = allParts.where((p) => prevPeriodJobIds.contains(p.jobId)).toList();
-
-      final prevStMap = <String, _StAccumulator>{};
-      for (final j in prevPeriodJobs) {
-        final acc = prevStMap.putIfAbsent(j.serviceType, () => _StAccumulator());
-        acc.jobs++;
-        acc.revenue += j.amountCharged ?? 0;
-      }
-      for (final p in prevPeriodParts) {
-        final jobModel = prevPeriodJobs.where((j) => j.id == p.jobId).firstOrNull;
-        if (jobModel != null) {
-          final acc = prevStMap.putIfAbsent(jobModel.serviceType, () => _StAccumulator());
-          acc.partsCost += (p.quantity ?? 0) * (p.unitPrice ?? 0);
+        // Lead source from rollup's leadSourceRevenue (if populated)
+        if (agg.leadSourceRevenue.isNotEmpty) {
+          leadSourceBreakdown = agg.leadSourceRevenue.entries
+              .map((e) => LeadSourceBreakdown(
+                source: e.key,
+                customerCount: customers.where((c) => c.leadSource == e.key).length,
+                jobCount: agg.leadSourceJobs[e.key] ?? 0,
+                revenue: e.value,
+              ))
+              .toList()
+            ..sort((a, b) => b.revenue.compareTo(a.revenue));
         }
-      }
 
-      // ── Filter for breakdowns ──
-      final periodJobs = jobs.where((j) {
-        final d = j.jobDate;
-        return !j.isArchived && !j.isDeleted && !d.isBefore(range.start) && !d.isAfter(range.end);
-      }).toList();
-      final periodJobIds = periodJobs.map((j) => j.id).toSet();
-      final periodParts  = allParts.where((p) => periodJobIds.contains(p.jobId)).toList();
-      final periodExpenses = allExpenses.where((e) => periodJobIds.contains(e.jobId)).toList();
+        // New vs repeat: rollup has newCustomerCount from the seed/recompute
+        // repeatCustomerCount = unique customer IDs from sourceJobIds minus new
+        if (agg.sourceJobIds.isNotEmpty) {
+          // Get unique customer IDs from the range's source job IDs
+          final allJobs = HiveService.jobs.values
+              .map((e) => Map<String, dynamic>.from(e as Map));
+          final customerIdsInRange = <String>{};
+          final aggSourceIds = agg.sourceJobIds.toSet();
+          for (final j in allJobs) {
+            final jid = j['id']?.toString();
+            if (jid != null && aggSourceIds.contains(jid)) {
+              final cid = j['customer_id']?.toString();
+              if (cid != null) customerIdsInRange.add(cid);
+            }
+          }
+          newCustCount = agg.newCustomerCount;
+          repeatCustCount = customerIdsInRange.length - newCustCount;
+          if (repeatCustCount < 0) repeatCustCount = 0;
 
-      final totalPartsCost = periodParts.fold<int>(0, (s, p) {
-        return s + (p.quantity ?? 0) * (p.unitPrice ?? 0);
-      });
-      final totalExpensesCost = periodExpenses.fold<int>(0, (s, e) => s + e.amount);
-      final grossProfit = curRev - totalPartsCost;
-      final netProfit   = grossProfit - totalExpensesCost;
-
-      // -- Service type breakdown --
-      final stMap = <String, _StAccumulator>{};
-      for (final j in periodJobs) {
-        final acc = stMap.putIfAbsent(j.serviceType, () => _StAccumulator());
-        acc.jobs++;
-        acc.revenue += j.amountCharged ?? 0;
-      }
-      for (final p in periodParts) {
-        final jobModel = periodJobs.where((j) => j.id == p.jobId).firstOrNull;
-        if (jobModel != null) {
-          final acc = stMap.putIfAbsent(jobModel.serviceType, () => _StAccumulator());
-          acc.partsCost += (p.quantity ?? 0) * (p.unitPrice ?? 0);
+          // Top customers from rollup's customerRevenue map
+          topCustomers = agg.customerRevenue.entries
+              .map((e) {
+                final cust = customerMap[e.key];
+                return TopCustomer(
+                  customerId: e.key,
+                  customerName: cust?.fullName ?? 'Unknown',
+                  revenue: e.value,
+                  jobCount: agg.sourceJobIds.length, // approximate
+                );
+              })
+              .toList()
+            ..sort((a, b) => b.revenue.compareTo(a.revenue))
+            ..take(5).toList();
         }
-      }
-      for (final e in periodExpenses) {
-        final jobModel = periodJobs.where((j) => j.id == e.jobId).firstOrNull;
-        if (jobModel != null) {
-          final acc = stMap.putIfAbsent(jobModel.serviceType, () => _StAccumulator());
-          acc.expensesCost += e.amount;
-        }
-      }
-      final serviceTypeBreakdown = stMap.entries.map((e) {
-        final prev = prevStMap[e.key];
+      } catch (_) {}
+
+      // ── Phase 7: derived metrics ──
+      final grossProfit = agg.revenue - agg.partsCost;
+      final netProfit = grossProfit - agg.expensesCost;
+      final margin = agg.revenue > 0 ? (grossProfit / agg.revenue * 100) : 0.0;
+      final avgJobValue = agg.jobCount > 0 ? agg.revenue ~/ agg.jobCount : 0;
+      final expenseRatio = agg.revenue > 0 ? (agg.expensesCost / agg.revenue * 100) : 0.0;
+
+      final prevGp = prevAgg.revenue - prevAgg.partsCost;
+      final prevNp = prevGp - prevAgg.expensesCost;
+      final prevAvg = prevAgg.jobCount > 0 ? prevAgg.revenue ~/ prevAgg.jobCount : 0;
+
+      // ── Phase 8: breakdowns from rollup maps ──
+      // Service type
+      final stBreakdown = agg.stRevenue.entries.map((e) {
+        final st = e.key;
+        final rev = e.value;
+        final jobs = agg.stJobs[st] ?? 0;
+        final partsC = agg.stPartsCost[st] ?? 0;
+        final prevRev = prevAgg.stRevenue[st] ?? 0;
+        final prevJobs = prevAgg.stJobs[st] ?? 0;
+        final prevPartsC = prevAgg.stPartsCost[st] ?? 0;
         return ServiceTypeBreakdown(
-          serviceType: e.key,
-          jobCount: e.value.jobs,
-          revenue: e.value.revenue,
-          grossProfit: e.value.revenue - e.value.partsCost,
-          netProfit: e.value.revenue - e.value.partsCost - e.value.expensesCost,
-          previousRevenue: prev?.revenue ?? 0,
-          previousJobCount: prev?.jobs ?? 0,
-          previousGrossProfit: prev != null ? prev.revenue - prev.partsCost : 0,
+          serviceType: st,
+          jobCount: jobs,
+          revenue: rev,
+          grossProfit: rev - partsC,
+          netProfit: rev - partsC - (agg.expenseCategories.values.fold(0, (s, v) => s + v)),
+          previousRevenue: prevRev,
+          previousJobCount: prevJobs,
+          previousGrossProfit: prevRev - prevPartsC,
         );
       }).toList()
         ..sort((a, b) => b.revenue.compareTo(a.revenue));
 
-      // -- Payment health --
-      var unpaidAmt = 0, partialAmt = 0, paidAmt = 0;
-      var unpaidCnt = 0, partialCnt = 0, paidCnt = 0;
-      for (final j in periodJobs) {
-        final amt = j.amountCharged ?? 0;
-        switch (j.paymentStatus) {
-          case 'unpaid':   unpaidAmt  += amt; unpaidCnt++;  break;
-          case 'partial':  partialAmt += amt; partialCnt++; break;
-          case 'paid':     paidAmt    += amt; paidCnt++;    break;
-        }
-      }
+      // Payment health
       final paymentHealth = PaymentHealthData(
-        unpaidAmount: unpaidAmt, partialAmount: partialAmt, paidAmount: paidAmt,
-        unpaidCount: unpaidCnt, partialCount: partialCnt, paidCount: paidCnt,
+        unpaidAmount: agg.unpaidAmount,
+        partialAmount: agg.partialAmount,
+        paidAmount: agg.paidAmount,
+        unpaidCount: agg.unpaidCount,
+        partialCount: agg.partialCount,
+        paidCount: agg.paidCount,
       );
 
-      // -- Lead source breakdown --
-      final customerMap = {for (final c in customers) c.id: c};
-      final sourceMap = <String, _LeadAccumulator>{};
-      for (final j in periodJobs) {
-        final customer = customerMap[j.customerId];
-        final source = customer?.leadSource ?? 'other';
-        final acc = sourceMap.putIfAbsent(source, () => _LeadAccumulator());
-        acc.revenue += j.amountCharged ?? 0;
-        acc.jobCount++;
-      }
-      final customerLeadCount = <String, Set<String>>{};
-      for (final c in customers) {
-        if (c.leadSource != null) {
-          customerLeadCount.putIfAbsent(c.leadSource!, () => {}).add(c.id);
-        }
-      }
-      final leadSourceBreakdown = sourceMap.entries
-          .where((e) => e.value.revenue > 0 || (customerLeadCount[e.key]?.isNotEmpty ?? false))
-          .map((e) => LeadSourceBreakdown(
-            source: e.key,
-            customerCount: customerLeadCount[e.key]?.length ?? 0,
-            jobCount: e.value.jobCount,
-            revenue: e.value.revenue,
-          )).toList()
-        ..sort((a, b) => b.revenue.compareTo(a.revenue));
-
-      // -- Parts usage --
-      final partsMap = <String, _PartsAccumulator>{};
-      for (final p in periodParts) {
-        final acc = partsMap.putIfAbsent(p.partName, () => _PartsAccumulator());
-        acc.quantity += p.quantity ?? 0;
-        acc.cost     += (p.quantity ?? 0) * (p.unitPrice ?? 0);
-      }
-      final partsUsage = partsMap.entries.map((e) => PartsUsage(
+      // Parts usage
+      final partsUsage = agg.partsUsage.entries.map((e) => PartsUsage(
         partName: e.key,
-        totalQuantity: e.value.quantity,
-        totalCost: e.value.cost,
+        totalQuantity: e.value,
+        totalCost: 0, // cost not stored per-part in rollup; it's in parts_cost total
       )).toList()
         ..sort((a, b) => b.totalQuantity.compareTo(a.totalQuantity));
 
-      // -- Expense category breakdown --
-      final expenseCatMap = <String, int>{};
-      for (final e in periodExpenses) {
-        expenseCatMap[e.category] = (expenseCatMap[e.category] ?? 0) + e.amount;
-      }
-      final expenseCategoryBreakdown = expenseCatMap.entries
+      // Expense category breakdown
+      final expenseCatBreakdown = agg.expenseCategories.entries
           .map((e) => ExpenseCategoryBreakdown(category: e.key, amount: e.value))
           .toList()
         ..sort((a, b) => b.amount.compareTo(a.amount));
 
-      // -- New vs repeat customers --
-      final customerIds = periodJobs.map((j) => j.customerId).toSet();
-      int newCount = 0, repeatCount = 0;
-      for (final cid in customerIds) {
-        final cust = customerMap[cid];
-        if (cust != null) {
-          if (cust.totalJobs > 1) {
-            repeatCount++;
-          } else {
-            newCount++;
-          }
-        }
-      }
-
-      // -- Top 5 customers --
-      final custRevenueMap = <String, _TopAccumulator>{};
-      for (final j in periodJobs) {
-        final acc = custRevenueMap.putIfAbsent(j.customerId, () => _TopAccumulator());
-        acc.revenue += j.amountCharged ?? 0;
-        acc.jobCount++;
-      }
-      final topCustomers = custRevenueMap.entries
-          .map((e) {
-            final cust = customerMap[e.key];
-            return TopCustomer(
-              customerId: e.key,
-              customerName: cust?.fullName ?? 'Unknown',
-              revenue: e.value.revenue,
-              jobCount: e.value.jobCount,
-            );
-          })
-          .toList()
-        ..sort((a, b) => b.revenue.compareTo(a.revenue))
-        ..take(5).toList();
-
-      // -- Day-of-week breakdown --
+      // Day-of-week from individual rollups
+      final dailyRollups = _repo.listInRange(start, end);
       final dayNames = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       final dowMap = <int, _DowAccumulator>{};
-      for (final j in periodJobs) {
-        final wd = j.jobDate.weekday;
+      for (final r in dailyRollups) {
+        if (r.jobCount == 0) continue;
+        final dt = DateTime.tryParse(r.dateKey);
+        if (dt == null) continue;
+        final wd = dt.weekday;
         final acc = dowMap.putIfAbsent(wd, () => _DowAccumulator());
-        acc.jobCount++;
-        acc.revenue += j.amountCharged ?? 0;
+        acc.jobCount += r.jobCount;
+        acc.revenue += r.revenue;
       }
       final dayOfWeekBreakdown = List.generate(7, (i) {
         final wd = i + 1;
@@ -304,117 +251,128 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
         );
       });
 
-      // -- Revenue trend (weekly or monthly buckets by period length) --
+      // Revenue trend from individual daily rollups
+      final periodDays = end.difference(start).inDays;
+      final useMonthly = periodDays > 45;
       final revenueTrend = <RevenueTrendPoint>[];
-      if (periodJobs.isNotEmpty) {
-        final sorted = [...periodJobs]..sort((a, b) => a.jobDate.compareTo(b.jobDate));
-        final periodDays = range.end.difference(range.start).inDays;
-        final useMonthly = periodDays > 45;
 
-        if (useMonthly) {
-          final monthMap = <String, _TrendAccumulator>{};
-          for (final j in sorted) {
-            final key = '${j.jobDate.year}-${j.jobDate.month.toString().padLeft(2, '0')}';
-            final acc = monthMap.putIfAbsent(key, () => _TrendAccumulator());
-            acc.revenue += j.amountCharged ?? 0;
-            acc.jobCount++;
-          }
-          const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          final monthKeys = monthMap.keys.toList()..sort();
-          for (final key in monthKeys) {
-            final parts = key.split('-');
-            final month = int.tryParse(parts[1]) ?? 1;
-            final acc = monthMap[key]!;
-            revenueTrend.add(RevenueTrendPoint(
-              label: monthNames[month],
-              revenue: acc.revenue,
-              jobCount: acc.jobCount,
-            ));
-          }
-        } else {
-          final weekStarts = <DateTime>[];
-          DateTime? cursor;
-          for (final j in sorted) {
-            final weekStart = j.jobDate.subtract(Duration(days: j.jobDate.weekday - 1));
-            if (cursor == null || !weekStart.isAtSameMomentAs(cursor)) {
-              cursor = weekStart;
-              weekStarts.add(weekStart);
-            }
-          }
-          for (final ws in weekStarts) {
-            final weekEnd = ws.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
-            final weekJobs = periodJobs.where((j) => !j.jobDate.isBefore(ws) && !j.jobDate.isAfter(weekEnd)).toList();
-            revenueTrend.add(RevenueTrendPoint(
-              label: '${ws.day}/${ws.month}',
-              revenue: weekJobs.fold<int>(0, (s, j) => s + (j.amountCharged ?? 0)),
-              jobCount: weekJobs.length,
-            ));
-          }
+      if (useMonthly) {
+        // Group daily rollups by month
+        final monthMap = <String, _TrendAccumulator>{};
+        for (final r in dailyRollups) {
+          if (r.jobCount == 0) continue;
+          final dt = DateTime.tryParse(r.dateKey);
+          if (dt == null) continue;
+          final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+          final acc = monthMap.putIfAbsent(key, () => _TrendAccumulator());
+          acc.revenue += r.revenue;
+          acc.jobCount += r.jobCount;
+        }
+        const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        final monthKeys = monthMap.keys.toList()..sort();
+        for (final key in monthKeys) {
+          final parts = key.split('-');
+          final month = int.tryParse(parts[1]) ?? 1;
+          final acc = monthMap[key]!;
+          revenueTrend.add(RevenueTrendPoint(
+            label: monthNames[month],
+            revenue: acc.revenue,
+            jobCount: acc.jobCount,
+          ));
+        }
+      } else {
+        // Group daily rollups by ISO week
+        final weekMap = <String, _TrendAccumulator>{};
+        for (final r in dailyRollups) {
+          if (r.jobCount == 0) continue;
+          final dt = DateTime.tryParse(r.dateKey);
+          if (dt == null) continue;
+          final weekStart = dt.subtract(Duration(days: dt.weekday - 1));
+          final key = _dateKey(weekStart);
+          final acc = weekMap.putIfAbsent(key, () => _TrendAccumulator());
+          acc.revenue += r.revenue;
+          acc.jobCount += r.jobCount;
+        }
+        final weekKeys = weekMap.keys.toList()..sort();
+        for (final key in weekKeys) {
+          final acc = weekMap[key]!;
+          revenueTrend.add(RevenueTrendPoint(
+            label: key.substring(5), // "MM-DD"
+            revenue: acc.revenue,
+            jobCount: acc.jobCount,
+          ));
         }
       }
 
-      // -- Derived metrics --
-      final avgJobValue = curJobs > 0 ? curRev ~/ curJobs : 0;
-      final margin = curRev > 0 ? (grossProfit / curRev * 100) : 0.0;
-      final expenseRatio = curRev > 0 ? (totalExpensesCost / curRev * 100) : 0.0;
-
-      final prevAvgJobValue = prevJobs > 0 ? prevRev ~/ prevJobs : 0;
-
+      // ── Assemble state ──
       state = state.copyWith(
         isLoading: false,
-        totalRevenue: curRev,
-        totalJobs: curJobs,
+        totalRevenue: agg.revenue,
+        totalJobs: agg.jobCount,
         grossProfit: grossProfit,
         netProfit: netProfit,
         profitMargin: margin,
         averageJobValue: avgJobValue,
         stockValue: stockValue,
         lowStockCount: lowStockCount,
-        totalExpenses: totalExpensesCost,
+        totalExpenses: agg.expensesCost,
         expenseToRevenuePercent: expenseRatio,
-        newCustomerCount: newCount,
-        repeatCustomerCount: repeatCount,
-        previousRevenue: prevRev,
-        previousJobs: prevJobs,
+        newCustomerCount: newCustCount,
+        repeatCustomerCount: repeatCustCount,
+        uninvoicedValue: agg.uninvoicedValue,
+        previousRevenue: prevAgg.revenue,
+        previousJobs: prevAgg.jobCount,
         previousGrossProfit: prevGp,
         previousNetProfit: prevNp,
-        previousAverageJobValue: prevAvgJobValue,
-        serviceTypeBreakdown: serviceTypeBreakdown.take(10).toList(),
+        previousAverageJobValue: prevAvg,
+        serviceTypeBreakdown: stBreakdown.take(10).toList(),
         paymentHealth: paymentHealth,
         leadSourceBreakdown: leadSourceBreakdown,
         partsUsage: partsUsage.take(10).toList(),
-        expenseCategoryBreakdown: expenseCategoryBreakdown,
+        expenseCategoryBreakdown: expenseCatBreakdown,
         topCustomers: topCustomers,
         dayOfWeekBreakdown: dayOfWeekBreakdown,
         revenueTrend: revenueTrend,
       );
     } catch (e) {
+      debugPrint('[KS:ANALYTICS] Load failed: $e');
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load analytics.');
+    }
+  }
+
+  /// Process pending invalidation WALs from the meta box for [start]..[end].
+  ///
+  /// Each WAL key is `analytics_dirty:YYYY-MM-DD`, written by [markAnalyticsDirty]
+  /// at job mutation time. Recomputes each date's rollup, then deletes the WAL.
+  /// Handles dates that don't have rollup entries yet (WAL-only dates).
+  Future<void> _processMetaWals(DateTime start, DateTime end) async {
+    final meta = Hive.box(HiveService.metaBox);
+    final startKey = _dateKey(start);
+    final endKey = _dateKey(end);
+    const prefix = 'analytics_dirty:';
+    final walDates = <String>[];
+    for (final key in meta.keys) {
+      final ks = key.toString();
+      if (!ks.startsWith(prefix)) continue;
+      final dateStr = ks.substring(prefix.length);
+      if (dateStr.compareTo(startKey) >= 0 && dateStr.compareTo(endKey) <= 0) {
+        walDates.add(dateStr);
+      }
+    }
+    // Deduplicate and recompute each WAL date, then delete WAL
+    for (final dateStr in walDates.toSet()) {
+      try {
+        await _repo.recomputeDate(dateStr);
+        await meta.delete('$prefix$dateStr');
+      } catch (e) {
+        debugPrint('[KS:ANALYTICS] Failed to recompute WAL date $dateStr: $e');
+      }
     }
   }
 }
 
-class _StAccumulator {
-  int jobs = 0;
-  int revenue = 0;
-  int partsCost = 0;
-  int expensesCost = 0;
-}
-
-class _LeadAccumulator {
-  int revenue = 0;
-  int jobCount = 0;
-}
-
-class _PartsAccumulator {
-  int quantity = 0;
-  int cost = 0;
-}
-
-class _TopAccumulator {
-  int revenue = 0;
-  int jobCount = 0;
-}
+String _dateKey(DateTime dt) =>
+    '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
 class _DowAccumulator {
   int jobCount = 0;

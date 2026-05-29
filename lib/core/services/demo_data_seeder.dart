@@ -198,6 +198,8 @@ class DemoDataSeeder {
       ));
     }
     debugPrint('[KS:DEMO] Created 8 customers');
+    // Yield to let UI process touch events between sections
+    await Future.delayed(Duration.zero);
 
     // ── Jobs ───────────────────────────────────────────────
     final statuses = [
@@ -429,6 +431,8 @@ class DemoDataSeeder {
           createdAt: jobDate.add(const Duration(hours: 3)).toIso8601String(),
         ));
       }
+      // Yield after each job so the UI stays responsive during bulk seed
+      await Future.delayed(Duration.zero);
     }
     debugPrint('[KS:DEMO] Created 12 demo jobs with children');
 
@@ -487,6 +491,8 @@ class DemoDataSeeder {
       }
     }
     debugPrint('[KS:DEMO] Created 12 inventory items');
+    // Yield before the remaining smaller sections
+    await Future.delayed(Duration.zero);
 
     // ── Inventory Restocks (4) ────────────────────────────
     final restockData = [
@@ -870,12 +876,14 @@ class DemoDataSeeder {
       await HiveService.followUps.delete(jobId);
 
       await _jobLocal.deleteJob(jobId);
+      await Future.delayed(Duration.zero); // yield after each job during remove
     }
 
     // Remove customers
     for (final custId in _demoCustomerIds) {
       await _customerLocal.deleteCustomer(custId);
     }
+    await Future.delayed(Duration.zero); // yield after customer removal
 
     // Remove inventory items + children
     for (final invId in _createdInventoryIds) {
@@ -883,6 +891,7 @@ class DemoDataSeeder {
       await _stockAdjustmentsLocal.deleteForItem(invId);
       await _inventoryLocal.deleteItem(invId);
     }
+    await Future.delayed(Duration.zero); // yield after inventory removal
 
     // Remove knowledge notes
     for (final noteId in _createdNoteIds) {

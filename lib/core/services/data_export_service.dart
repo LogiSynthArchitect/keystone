@@ -21,7 +21,7 @@ class DataExportService {
     final jobs = HiveService.jobs.values.toList();
     final rawList = jobs.map((j) => Map<String, dynamic>.from(j)).toList();
     final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes');
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes,coverImageUrl');
     for (final m in rawList) {
       final amount = (m['amount_charged'] as num?)?.toInt();
       buffer.writeln([
@@ -33,6 +33,7 @@ class DataExportService {
         _csv(m['created_at']),
         _csv(m['location']),
         _csv(m['notes']),
+        _csv(m['cover_image_url']),
       ].join(','));
     }
     final file = await _writeTempFile('keystone_jobs.csv', buffer.toString());
@@ -44,7 +45,7 @@ class DataExportService {
 
   static Future<void> exportJobsAsCsv(dynamic selectedJobs) async {
     final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged,createdAt,location,notes,customerId,partsSummary,partsCost,expensesSummary,expensesTotal,grossProfit');
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged,createdAt,location,notes,customerId,coverImageUrl,partsSummary,partsCost,expensesSummary,expensesTotal,grossProfit');
     for (final job in selectedJobs) {
       final jobId = job.id;
 
@@ -90,6 +91,7 @@ class DataExportService {
         _csv(job.location),
         _csv(job.notes),
         _csv(job.customerId),
+        _csv(job.coverImageUrl ?? ''),
         _csv(partsSummary),
         _csv(partsCost / 100.0),
         _csv(expensesSummary),
@@ -106,7 +108,7 @@ class DataExportService {
 
   static Future<void> _exportJobCsv(List<dynamic> jobs, String filename) async {
     final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes');
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes,coverImageUrl');
     for (final raw in jobs) {
       final m = Map<String, dynamic>.from(raw);
       final amount = (m['amount_charged'] as num?)?.toInt();
@@ -119,6 +121,7 @@ class DataExportService {
         _csv(m['created_at']),
         _csv(m['location']),
         _csv(m['notes']),
+        _csv(m['cover_image_url']),
       ].join(','));
     }
     final file = await _writeTempFile(filename, buffer.toString());
@@ -136,6 +139,7 @@ class DataExportService {
       'notes': HiveService.notes.values.map((e) => Map<String, dynamic>.from(e)).toList(),
       'service_types': HiveService.serviceTypes.values.map((e) => Map<String, dynamic>.from(e)).toList(),
       'job_parts': HiveService.jobParts.values.map((e) => Map<String, dynamic>.from(e)).toList(),
+      'job_photos': HiveService.jobPhotos.values.map((e) => Map<String, dynamic>.from(e)).toList(),
     };
   }
 
@@ -221,7 +225,7 @@ class DataExportService {
   static Future<void> exportDetailedJobsCsv() async {
     final jobs = HiveService.jobs.values.toList();
     final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),date,location,notes,customerId,partsSummary,partsCost(GHS),expensesSummary,expensesTotal(GHS),grossProfit(GHS)');
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),date,location,notes,customerId,coverImageUrl,partsSummary,partsCost(GHS),expensesSummary,expensesTotal(GHS),grossProfit(GHS)');
     for (final raw in jobs) {
       final m = Map<String, dynamic>.from(raw);
       final jobId = m['id'] as String? ?? '';
@@ -270,6 +274,7 @@ class DataExportService {
         _csv(m['location']),
         _csv(m['notes']),
         _csv(m['customer_id']),
+        _csv(m['cover_image_url']),
         _csv(partsSummary),
         (partsCost / 100).toStringAsFixed(2),
         _csv(expensesSummary),

@@ -10,6 +10,8 @@ import 'core/services/local_notification_service.dart';
 import 'core/storage/hive_service.dart';
 import 'core/recovery/reconcile_pending_edits.dart';
 import 'core/recovery/reconcile_pending_restocks.dart';
+import 'core/recovery/reconcile_pending_schedule_generation.dart';
+import 'core/recovery/reconcile_analytics_invalidations.dart';
 import 'app.dart';
 
 void main() async {
@@ -72,6 +74,12 @@ void main() async {
 
   // 02c. RECOVER PENDING RESTOCK TRANSACTIONS (restock WAL replay)
   await reconcilePendingRestocks();
+
+  // 02d. RECOVER PENDING SCHEDULE GENERATION (schedule gen WAL replay)
+  await reconcilePendingScheduleGeneration();
+
+  // 02e. RECOVER ANALYTICS ROLLUPS (invalidation WAL replay + initial seed)
+  await reconcileAnalyticsInvalidations();
 
   // Init local notifications
   await LocalNotificationService.initialize(

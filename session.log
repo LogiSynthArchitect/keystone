@@ -1,0 +1,1 @@
+[Fri May 29 03:49:13 PM GMT 2026] feat: Added search + filter to Recurring Schedules — KsSearchBar in appBar.bottom, KsFilterSheet with interval/status chips, KsEmptyState for no-results. Push: b3d61b9

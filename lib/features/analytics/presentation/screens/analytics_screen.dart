@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
@@ -134,7 +134,10 @@ class _RevenueTrendChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (trend.isEmpty) return const SizedBox.shrink();
 
-    final maxRev = trend.map((t) => t.revenue).reduce((a, b) => a > b ? a : b);
+    final maxRev = trend.map((t) => t.revenue).reduce((a, b) => a > b ? a : b).toDouble();
+    final spots = trend.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.revenue.toDouble())).toList();
+    final accent = context.ksc.accent500;
+    final neutral = context.ksc.neutral500;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -148,39 +151,101 @@ class _RevenueTrendChart extends StatelessWidget {
           Text('REVENUE TREND', style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(
-            height: 160,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: trend.length,
-              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (context, i) {
-                final point = trend[i];
-                final pct = maxRev > 0 ? point.revenue / maxRev : 0.0;
-                return SizedBox(
-                  width: 60,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(CurrencyFormatter.formatShort(point.revenue),
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 9, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: (140 * pct).clamp(20, 140),
-                        decoration: BoxDecoration(
-                          color: context.ksc.accent500.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(point.label,
-                        style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 9)),
-                      if (point.jobCount > 0)
-                        Text('${point.jobCount}',
-                          style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 8)),
-                    ],
+            height: 180,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: maxRev > 0 ? (maxRev / 4).ceilToDouble().clamp(1, double.infinity) : 1,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: context.ksc.primary700.withValues(alpha: 0.5),
+                    strokeWidth: 0.5,
                   ),
-                );
-              },
+                ),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      interval: (trend.length > 10 ? (trend.length / 5).ceil() : 1).toDouble(),
+                      getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i < 0 || i >= trend.length) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(trend[i].label,
+                              style: AppTextStyles.caption.copyWith(color: neutral, fontSize: 9)),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 44,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(CurrencyFormatter.formatShort(value.toInt()),
+                              style: AppTextStyles.caption.copyWith(color: neutral, fontSize: 9)),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: false),
+                minY: 0,
+                maxY: maxRev * 1.15,
+                clipData: const FlClipData.none(),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    preventCurveOverShooting: true,
+                    color: accent,
+                    barWidth: 2.5,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                        radius: 3,
+                        color: accent,
+                        strokeWidth: 1.5,
+                        strokeColor: context.ksc.primary800,
+                      ),
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: accent.withValues(alpha: 0.15),
+                      cutOffY: 0,
+                    ),
+                  ),
+                ],
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (_) => context.ksc.white,
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        final i = spot.spotIndex;
+                        final pt = trend[i];
+                        return LineTooltipItem(
+                          '${CurrencyFormatter.formatShort(pt.revenue)}\n${pt.jobCount} job${pt.jobCount == 1 ? '' : 's'}',
+                          TextStyle(
+                            color: context.ksc.primary900,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -202,6 +267,10 @@ class _AnalyticsBody extends StatelessWidget {
       children: [
         _RevenueTrendChart(trend: state.revenueTrend),
         const SizedBox(height: AppSpacing.xl),
+        if (state.uninvoicedValue > 0) ...[
+          _LeakingRevenueCard(uninvoiced: state.uninvoicedValue),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         _SummaryCards(state: state),
         const SizedBox(height: AppSpacing.xxl),
         _CustomerRetentionSection(state: state),
@@ -220,6 +289,49 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.xxl),
         _PartsUsageSection(parts: state.partsUsage),
       ],
+    );
+  }
+}
+
+// ── Leaking revenue card ──────────────────────────────────────────────────────
+
+class _LeakingRevenueCard extends StatelessWidget {
+  final int uninvoiced;
+  const _LeakingRevenueCard({required this.uninvoiced});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: context.ksc.error500.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        border: Border.all(color: context.ksc.error500.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LineAwesomeIcons.exclamation_triangle_solid,
+                  size: 14, color: context.ksc.error500),
+              const SizedBox(width: AppSpacing.xs),
+              Text('LEAKING REVENUE',
+                  style: AppTextStyles.captionMedium.copyWith(
+                      color: context.ksc.error500, fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(CurrencyFormatter.format(uninvoiced),
+              style: AppTextStyles.h2.copyWith(
+                  color: context.ksc.error500, letterSpacing: -0.5)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Jobs stuck in quoted/progress past 7 days',
+            style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -427,57 +539,95 @@ class _DayOfWeekSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasData = data.any((d) => d.jobCount > 0);
+    final maxRev = hasData ? data.map((d) => d.revenue).reduce((a, b) => a > b ? a : b).toDouble() : 1.0;
+    final accent = context.ksc.accent500;
+    final neutral400 = context.ksc.neutral400;
+    final neutral500 = context.ksc.neutral500;
+    final primary700 = context.ksc.primary700;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionHeader('JOBS BY DAY'),
         Container(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.lg, AppSpacing.sm, AppSpacing.lg),
           decoration: BoxDecoration(
             color: context.ksc.primary800,
             borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           ),
           child: !hasData
               ? const _EmptyRow(message: 'No jobs in this period')
-              : Column(
-                  children: data.map((d) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 40,
-                            child: Text(d.label, style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800)),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(2),
-                                  child: LinearProgressIndicator(
-                                    value: d.revenue / (data.map((e) => e.revenue).reduce((a, b) => a > b ? a : b)),
-                                    backgroundColor: context.ksc.primary700,
-                                    valueColor: AlwaysStoppedAnimation<Color>(context.ksc.accent500),
-                                    minHeight: 6,
-                                  ),
+              : SizedBox(
+                  height: 170,
+                  child: BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: maxRev * 1.25,
+                      barTouchData: BarTouchData(
+                        enabled: true,
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (_) => context.ksc.white,
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final d = data[group.x.toInt() - 1];
+                            return BarTooltipItem(
+                              '${CurrencyFormatter.formatShort(d.revenue)}\n${d.jobCount} job${d.jobCount == 1 ? '' : 's'}',
+                              TextStyle(color: context.ksc.primary900, fontWeight: FontWeight.w800, fontSize: 11),
+                            );
+                          },
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final i = value.toInt() - 1;
+                              if (i < 0 || i >= data.length) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Column(
+                                  children: [
+                                    Text(data[i].label,
+                                        style: AppTextStyles.caption.copyWith(color: neutral500, fontSize: 10, fontWeight: FontWeight.w800)),
+                                    const SizedBox(height: 2),
+                                    Text('${data[i].jobCount}',
+                                        style: AppTextStyles.caption.copyWith(color: neutral400, fontSize: 9)),
+                                  ],
                                 ),
-                              ],
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: (maxRev / 4).ceilToDouble().clamp(1, double.infinity),
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: primary700.withValues(alpha: 0.5),
+                          strokeWidth: 0.5,
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      barGroups: data.map((d) => BarChartGroupData(
+                        x: d.weekday,
+                        barRods: [
+                          BarChartRodData(
+                            toY: d.revenue.toDouble(),
+                            color: accent,
+                            width: 20,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(4),
+                              topRight: Radius.circular(4),
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.md),
-                          SizedBox(
-                            width: 50,
-                            child: Text('${d.jobCount}', textAlign: TextAlign.right, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          SizedBox(
-                            width: 70,
-                            child: Text(CurrencyFormatter.formatShort(d.revenue), textAlign: TextAlign.right, style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.accent500)),
-                          ),
                         ],
-                      ),
-                    );
-                  }).toList(),
+                      )).toList(),
+                    ),
+                  ),
                 ),
         ),
       ],
@@ -487,6 +637,12 @@ class _DayOfWeekSection extends StatelessWidget {
 
 // ── Expense breakdown ──────────────────────────────────────────────────────────
 
+const _expenseChartColors = [
+  Color(0xFFFF6B6B), Color(0xFFFFA94D), Color(0xFFFFD93D),
+  Color(0xFF6BCB77), Color(0xFF4D96FF), Color(0xFF9B59B6),
+  Color(0xFF1ABC9C), Color(0xFFE74C3C), Color(0xFF3498DB),
+];
+
 class _ExpenseBreakdownSection extends StatelessWidget {
   final List<ExpenseCategoryBreakdown> expenses;
   const _ExpenseBreakdownSection({required this.expenses});
@@ -494,77 +650,98 @@ class _ExpenseBreakdownSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = expenses.fold<int>(0, (sum, e) => sum + e.amount);
+    final primary800 = context.ksc.primary800;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionHeader('EXPENSE BREAKDOWN'),
         Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: context.ksc.primary800,
+            color: primary800,
             borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           ),
-          child: Column(
-            children: [
-              ...expenses.asMap().entries.map((entry) {
-                final i = entry.key;
-                final row = entry.value;
-                return Column(
+          child: expenses.isEmpty
+              ? const _EmptyRow(message: 'No expenses in this period')
+              : Column(
                   children: [
-                    if (i > 0) Divider(height: 1, color: context.ksc.primary700),
-                    _ExpenseRow(row: row, total: total),
-                  ],
-                );
-              }),
-              Divider(height: 1, color: context.ksc.primary700),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                child: Row(
-                  children: [
-                    Text('TOTAL', style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                    const Spacer(),
-                    Text(CurrencyFormatter.format(total), style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.error500)),
+                    // Pie chart
+                    SizedBox(
+                      height: 160,
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 1,
+                          centerSpaceRadius: 0,
+                          sections: expenses.asMap().entries.map((e) {
+                            final i = e.key;
+                            final row = e.value;
+                            final pct = total > 0 ? (row.amount / total * 100) : 0.0;
+                            return PieChartSectionData(
+                              value: row.amount.toDouble(),
+                              color: _expenseChartColors[i % _expenseChartColors.length],
+                              radius: 50,
+                              title: '${pct.toStringAsFixed(0)}%',
+                              titleStyle: AppTextStyles.captionMedium.copyWith(
+                                  color: context.ksc.primary900, fontWeight: FontWeight.w900, fontSize: 11),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    // Legend rows
+                    ...expenses.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final row = entry.value;
+                      final pct = total > 0 ? (row.amount / total * 100) : 0.0;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          top: AppSpacing.sm,
+                          bottom: i < expenses.length - 1 ? AppSpacing.sm : 0,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8, height: 8,
+                              decoration: BoxDecoration(
+                                color: _expenseChartColors[i % _expenseChartColors.length],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(row.category.toUpperCase(),
+                                  style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white)),
+                            ),
+                            Text('${(pct).toStringAsFixed(0)}%',
+                                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
+                            const SizedBox(width: AppSpacing.md),
+                            SizedBox(
+                              width: 60,
+                              child: Text(
+                                CurrencyFormatter.formatShort(row.amount),
+                                textAlign: TextAlign.right,
+                                style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.error500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    Divider(height: 24, color: context.ksc.primary700),
+                    Row(
+                      children: [
+                        Text('TOTAL', style: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+                        const Spacer(),
+                        Text(CurrencyFormatter.format(total),
+                            style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.error500)),
+                      ],
+                    ),
                   ],
                 ),
-              ),
-            ],
-          ),
         ),
       ],
-    );
-  }
-}
-
-class _ExpenseRow extends StatelessWidget {
-  final ExpenseCategoryBreakdown row;
-  final int total;
-  const _ExpenseRow({required this.row, required this.total});
-
-  @override
-  Widget build(BuildContext context) {
-    final pct = total > 0 ? row.amount / total : 0.0;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              row.category.toUpperCase(),
-              style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white),
-            ),
-          ),
-          Text('${(pct * 100).toStringAsFixed(0)}%', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
-          const SizedBox(width: AppSpacing.lg),
-          SizedBox(
-            width: 60,
-            child: Text(
-              CurrencyFormatter.formatShort(row.amount),
-              textAlign: TextAlign.right,
-              style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.error500),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -667,41 +844,93 @@ class _PaymentHealthSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = health.unpaidAmount + health.partialAmount + health.paidAmount;
+    final primary800 = context.ksc.primary800;
+
+    final sections = [
+      _PaymentSectionData('UNPAID', health.unpaidAmount, health.unpaidCount,
+          context.ksc.error500, context.ksc.error100),
+      _PaymentSectionData('PARTIAL', health.partialAmount, health.partialCount,
+          context.ksc.warning600, context.ksc.warning100),
+      _PaymentSectionData('PAID', health.paidAmount, health.paidCount,
+          context.ksc.success600, context.ksc.success100),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionHeader('PAYMENT HEALTH'),
         Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: context.ksc.primary800,
+            color: primary800,
             borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           ),
           child: total == 0
               ? const _EmptyRow(message: 'No jobs in this period')
-              : Column(
+              : Row(
                   children: [
-                    _PaymentRow(
-                      label: 'UNPAID',
-                      count: health.unpaidCount,
-                      amount: health.unpaidAmount,
-                      color: context.ksc.error500,
-                      bgColor: context.ksc.error100,
+                    // Donut chart
+                    SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          PieChart(
+                            PieChartData(
+                              sectionsSpace: 0,
+                              centerSpaceRadius: 32,
+                              startDegreeOffset: -90,
+                              sections: sections.asMap().entries.map((e) =>
+                                PieChartSectionData(
+                                  value: e.value.amount.toDouble(),
+                                  color: e.value.color,
+                                  radius: 40,
+                                  showTitle: false,
+                                ),
+                              ).toList(),
+                            ),
+                          ),
+                          Text(CurrencyFormatter.formatShort(total),
+                              style: AppTextStyles.captionMedium.copyWith(
+                                  color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                        ],
+                      ),
                     ),
-                    Divider(height: 1, color: context.ksc.primary700),
-                    _PaymentRow(
-                      label: 'PARTIAL',
-                      count: health.partialCount,
-                      amount: health.partialAmount,
-                      color: context.ksc.warning600,
-                      bgColor: context.ksc.warning100,
-                    ),
-                    Divider(height: 1, color: context.ksc.primary700),
-                    _PaymentRow(
-                      label: 'PAID',
-                      count: health.paidCount,
-                      amount: health.paidAmount,
-                      color: context.ksc.success600,
-                      bgColor: context.ksc.success100,
+                    const SizedBox(width: AppSpacing.lg),
+                    // Legend rows
+                    Expanded(
+                      child: Column(
+                        children: sections.asMap().entries.map((e) {
+                          final s = e.value;
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: e.key < sections.length - 1 ? AppSpacing.sm : 0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8, height: 8,
+                                  decoration: BoxDecoration(
+                                    color: s.color,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(s.label,
+                                      style: AppTextStyles.captionMedium.copyWith(
+                                          color: s.color, fontWeight: FontWeight.w900, fontSize: 10)),
+                                ),
+                                Text('${s.count} job${s.count == 1 ? '' : 's'}',
+                                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 9)),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(CurrencyFormatter.formatShort(s.amount),
+                                    style: AppTextStyles.captionMedium.copyWith(
+                                        color: context.ksc.white, fontWeight: FontWeight.w700, fontSize: 10)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
                 ),
@@ -715,56 +944,13 @@ class _PaymentHealthSection extends StatelessWidget {
   }
 }
 
-class _PaymentRow extends StatelessWidget {
+class _PaymentSectionData {
   final String label;
-  final int count;
   final int amount;
+  final int count;
   final Color color;
   final Color bgColor;
-
-  const _PaymentRow({
-    required this.label,
-    required this.count,
-    required this.amount,
-    required this.color,
-    required this.bgColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-            ),
-            child: Text(
-              label,
-              style: AppTextStyles.captionMedium.copyWith(
-                  color: color, fontWeight: FontWeight.w900),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              '$count job${count == 1 ? '' : 's'}',
-              style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
-            ),
-          ),
-          Text(
-            CurrencyFormatter.format(amount),
-            style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white),
-          ),
-        ],
-      ),
-    );
-  }
+  const _PaymentSectionData(this.label, this.amount, this.count, this.color, this.bgColor);
 }
 
 class _PaymentBar extends StatelessWidget {

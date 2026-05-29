@@ -134,76 +134,71 @@ class _EventTile extends StatelessWidget {
       onTap: () => context.push(RouteNames.jobDetail(event.jobId)),
       child: Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Timeline line + dot
-              SizedBox(
-                width: 24,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-                    ),
-                    Expanded(
-                      child: Container(
-                        width: 1,
-                        color: context.ksc.primary700.withValues(alpha: 0.4),
-                      ),
-                    ),
-                  ],
-                ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Timeline dot + fixed-height connector line
+            SizedBox(
+              width: 24,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 24,
+                    color: context.ksc.primary700.withValues(alpha: 0.4),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              // Content — no background container
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            // Content — no background container
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              event.type.label,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: dot,
-                                letterSpacing: 1,
-                              ),
-                            ),
+                      Expanded(
+                        child: Text(
+                          event.type.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: dot,
+                            letterSpacing: 1,
                           ),
-                          Text(
-                            _timeString(event.timestamp),
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: context.ksc.neutral600,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 4),
                       Text(
-                        event.description,
+                        _timeString(event.timestamp),
                         style: TextStyle(
-                          fontSize: 13,
-                          color: context.ksc.white,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                          color: context.ksc.neutral600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    event.description,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

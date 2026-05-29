@@ -40,11 +40,14 @@ class KsContentDrawer {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          height: MediaQuery.of(ctx).size.height * heightFactor,
-          child: Column(
+      builder: (ctx) {
+        final viewHeight = MediaQuery.of(ctx).size.height;
+        final insets = MediaQuery.of(ctx).viewInsets;
+        return Padding(
+          padding: EdgeInsets.only(bottom: insets.bottom),
+          child: Container(
+            height: viewHeight * heightFactor - insets.bottom,
+            child: Column(
             children: [
               _buildHandle(ctx),
               _buildHeader(ctx, icon, title),
@@ -57,7 +60,8 @@ class KsContentDrawer {
             ],
           ),
         ),
-      ),
+      );
+    },
     );
   }
 

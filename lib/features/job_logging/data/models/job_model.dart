@@ -34,6 +34,8 @@ class JobModel {
   final String createdAt;
   final String updatedAt;
   final bool subEntitiesSaved;
+  final String? generatedFromScheduleId;
+  final String? generationBatchId;
 
   JobModel({
     required this.id,
@@ -68,6 +70,8 @@ class JobModel {
     required this.createdAt,
     required this.updatedAt,
     this.subEntitiesSaved = true,
+    this.generatedFromScheduleId,
+    this.generationBatchId,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) => JobModel(
@@ -101,6 +105,8 @@ class JobModel {
     deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
     coverImageUrl: json['cover_image_url'] as String?,
     subEntitiesSaved: json['sub_entities_saved'] as bool? ?? true,
+    generatedFromScheduleId: json['generated_from_schedule_id'] as String?,
+    generationBatchId: json['generation_batch_id'] as String?,
     createdAt: json['created_at'],
     updatedAt: json['updated_at'],
   );
@@ -136,6 +142,8 @@ class JobModel {
     deletedAt: entity.deletedAt,
     coverImageUrl: entity.coverImageUrl,
     subEntitiesSaved: entity.subEntitiesSaved,
+    generatedFromScheduleId: entity.generatedFromScheduleId,
+    generationBatchId: entity.generationBatchId,
     createdAt: entity.createdAt.toIso8601String(),
     updatedAt: entity.updatedAt.toIso8601String(),
   );
@@ -171,6 +179,8 @@ class JobModel {
     'deleted_at': deletedAt?.toIso8601String(),
     'cover_image_url': coverImageUrl,
     'sub_entities_saved': subEntitiesSaved,
+    'generated_from_schedule_id': generatedFromScheduleId,
+    'generation_batch_id': generationBatchId,
     'created_at': createdAt,
     'updated_at': updatedAt,
   };
@@ -206,6 +216,8 @@ class JobModel {
     deletedAt: deletedAt,
     coverImageUrl: coverImageUrl,
     subEntitiesSaved: subEntitiesSaved,
+    generatedFromScheduleId: generatedFromScheduleId,
+    generationBatchId: generationBatchId,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
   );
@@ -241,6 +253,8 @@ class JobModel {
     DateTime? deletedAt,
     String? coverImageUrl,
     bool? subEntitiesSaved,
+    String? generatedFromScheduleId,
+    String? generationBatchId,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -275,6 +289,8 @@ class JobModel {
       deletedAt: deletedAt ?? this.deletedAt,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       subEntitiesSaved: subEntitiesSaved ?? this.subEntitiesSaved,
+      generatedFromScheduleId: generatedFromScheduleId ?? this.generatedFromScheduleId,
+      generationBatchId: generationBatchId ?? this.generationBatchId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

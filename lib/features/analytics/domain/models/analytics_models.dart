@@ -192,6 +192,9 @@ class AnalyticsState {
   final int totalExpenses;
   final double expenseToRevenuePercent;
 
+  // Leaking revenue (jobs stuck in quoted/in_progress > 7 days)
+  final int uninvoicedValue;
+
   // Customer retention
   final int newCustomerCount;
   final int repeatCustomerCount;
@@ -228,6 +231,7 @@ class AnalyticsState {
     this.lowStockCount = 0,
     this.totalExpenses = 0,
     this.expenseToRevenuePercent = 0,
+    this.uninvoicedValue = 0,
     this.newCustomerCount = 0,
     this.repeatCustomerCount = 0,
     this.previousRevenue = 0,
@@ -272,6 +276,7 @@ class AnalyticsState {
     int? lowStockCount,
     int? totalExpenses,
     double? expenseToRevenuePercent,
+    int? uninvoicedValue,
     int? newCustomerCount,
     int? repeatCustomerCount,
     int? previousRevenue,
@@ -303,6 +308,7 @@ class AnalyticsState {
       lowStockCount: lowStockCount ?? this.lowStockCount,
       totalExpenses: totalExpenses ?? this.totalExpenses,
       expenseToRevenuePercent: expenseToRevenuePercent ?? this.expenseToRevenuePercent,
+      uninvoicedValue: uninvoicedValue ?? this.uninvoicedValue,
       newCustomerCount: newCustomerCount ?? this.newCustomerCount,
       repeatCustomerCount: repeatCustomerCount ?? this.repeatCustomerCount,
       previousRevenue: previousRevenue ?? this.previousRevenue,

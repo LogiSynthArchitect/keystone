@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/errors/storage_exception.dart';
+import '../../../../core/recovery/reconcile_analytics_invalidations.dart';
 import '../../../../core/storage/hive_service.dart';
 import '../models/job_model.dart';
 
@@ -21,8 +23,26 @@ class JobLocalDatasource {
 
   Future<void> saveJob(JobModel job) async {
     try {
+      // Read existing record to detect date changes (needed for analytics WAL)
+      final existingRaw = _box.get(job.id);
+      String? oldDateKey;
+      if (existingRaw != null) {
+        final existingDate = Map<String, dynamic>.from(existingRaw)['job_date'] as String?;
+        if (existingDate != null) {
+          oldDateKey = existingDate.substring(0, 10);
+        }
+      }
+
       await _box.put(job.id, job.toJson().cast<String, dynamic>());
       await _box.flush(); // Force immediate disk persistence
+
+      // Mark job date for analytics rollup recomputation
+      final newDateKey = job.jobDate.toIso8601String().substring(0, 10);
+      if (oldDateKey != null && oldDateKey != newDateKey) {
+        await markAnalyticsDirtyBatch([newDateKey, oldDateKey], reason: 'job_save_date_changed');
+      } else {
+        await markAnalyticsDirty(newDateKey, reason: 'job_save');
+      }
     } catch (e) {
       throw StorageException(message: 'Could not save job locally.', code: 'LOCAL_SAVE_FAILED', cause: e);
     }
@@ -85,8 +105,25 @@ class JobLocalDatasource {
   }
 
   Future<void> deleteJob(String id) async {
-    await _box.delete(id);
-    await _box.flush();
+    try {
+      // Read existing record before deleting (needed for analytics WAL)
+      final existingRaw = _box.get(id);
+      String? dateKey;
+      if (existingRaw != null) {
+        final date = Map<String, dynamic>.from(existingRaw)['job_date'] as String?;
+        if (date != null) dateKey = date.substring(0, 10);
+      }
+
+      await _box.delete(id);
+      await _box.flush();
+
+      if (dateKey != null) {
+        await markAnalyticsDirty(dateKey, reason: 'job_delete');
+      }
+    } catch (e) {
+      // Non-critical: deletion succeeded but analytics WAL may be stale
+      debugPrint('[KS:JOBS] deleteJob analytics WAL failed: $e');
+    }
   }
 
   Future<void> cascadeCustomerId(String oldId, String newId) async {
