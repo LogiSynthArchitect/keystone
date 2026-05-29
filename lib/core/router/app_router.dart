@@ -34,7 +34,6 @@ import '../../features/key_codes/presentation/screens/key_codes_screen.dart';
 import '../../features/knowledge_base/presentation/screens/notes_list_screen.dart';
 import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
-import '../../features/knowledge_base/presentation/screens/edit_note_screen.dart';
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
@@ -159,7 +158,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.notes, builder: (context, state) => const NotesListScreen()),
       routeWithTransition(path: RouteNames.addNote, builder: (context, state) => const AddNoteScreen()),
       routeWithTransition(path: '/notes/:id', builder: (context, state) => NoteDetailScreen(noteId: state.pathParameters['id']!)),
-      routeWithTransition(path: '/notes/:id/edit', builder: (context, state) => EditNoteScreen(noteId: state.pathParameters['id']!)),
+      // Note editing via AddNoteScreen.show(context, existingNote: note) — no dedicated route
+      routeWithTransition(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       // Link screen replaced by bottom sheet — NoteJobLinkScreen.show(context, noteId)
       routeWithTransition(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       routeWithTransition(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),

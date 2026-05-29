@@ -175,7 +175,11 @@ class KsFilterSheet extends StatefulWidget {
 }
 
 class _KsFilterSheetState extends State<KsFilterSheet> {
-  void _clear() => widget.onClear();
+  void _clear() {
+    widget.onClear();     // reset draft
+    widget.onApply();     // persist cleared values to provider
+    Navigator.of(context).pop(); // close sheet
+  }
   void _apply() {
     widget.onApply();
     Navigator.of(context).pop();
@@ -211,7 +215,7 @@ class _KsFilterSheetState extends State<KsFilterSheet> {
             ),
             const SizedBox(height: 16),
 
-            // ── Header: title + X close ──
+            // ── Header: title + CLEAR + X close ──
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
               child: Row(
@@ -221,6 +225,16 @@ class _KsFilterSheetState extends State<KsFilterSheet> {
                         style: AppTextStyles.h2.copyWith(
                             color: theme.white, fontWeight: FontWeight.w900)),
                   ),
+                  GestureDetector(
+                    onTap: _clear,
+                    child: Text('CLEAR',
+                        style: AppTextStyles.caption.copyWith(
+                            color: theme.neutral500,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0)),
+                  ),
+                  const SizedBox(width: 16),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Icon(LineAwesomeIcons.times_solid,

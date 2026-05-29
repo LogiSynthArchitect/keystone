@@ -7,6 +7,7 @@ import '../entities/job_audit_entry_entity.dart';
 import '../entities/job_service_entity.dart';
 import '../entities/job_hardware_entity.dart';
 import '../entities/job_expense_entity.dart';
+import '../../data/models/pending_edit_transaction.dart';
 
 abstract class JobRepository {
   Future<List<JobEntity>> getJobs({int limit = 200, int offset = 0, bool includeArchived = false});
@@ -40,4 +41,27 @@ abstract class JobRepository {
   // Expenses (transport, parking, subcontractor, etc.)
   Future<List<JobExpenseEntity>> getExpensesForJob(String jobId);
   Future<void> saveExpenses(String jobId, List<JobExpenseEntity> expenses);
+
+  /// Atomic child replacement with cross-box Write-Ahead Log.
+  ///
+  /// Replaces parts for [jobId] and records [cogsAdjustments] in a WAL entry
+  /// written to the `_meta` box BEFORE any mutations. Uses the provided [transactionId]
+  /// so the caller can build [InventoryCogsAdjustment] entries with matching IDs.
+  ///
+  /// Returns the [transactionId] for idempotent inventory adjustments via
+  /// [InventoryRepository.adjustStock].
+  ///
+  /// On crash recovery, [reconcilePendingEdits] replays orphan deletions and
+  /// applies any COGS deltas whose transaction ID isn't already in the item's
+  /// [appliedTransactionIds] list (preventing double-refund).
+  Future<String> replacePartsWithCogs(
+    String jobId,
+    List<JobPartEntity> newParts,
+    List<InventoryCogsAdjustment> cogsAdjustments,
+    String transactionId,
+  );
+
+  /// Toggle the [subEntitiesSaved] flag on a job.
+  /// Used by save flows to mark children as (in)complete for crash-safe sync gating.
+  Future<void> setSubEntitiesSaved(String jobId, bool saved);
 }

@@ -13,6 +13,8 @@ import '../../../../core/storage/hive_service.dart';
 import '../../../../core/services/pending_media_upload_service.dart';
 import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../../data/datasources/job_local_datasource.dart';
+import '../../data/models/job_model.dart';
+import '../../domain/usecases/recovery_save_usecase.dart';
 import '../../data/datasources/job_remote_datasource.dart';
 import '../../data/datasources/job_parts_local_datasource.dart';
 import '../../data/datasources/job_parts_remote_datasource.dart';
@@ -108,6 +110,10 @@ final archiveJobUsecaseProvider = Provider<ArchiveJobUsecase>((ref) => ArchiveJo
 final editJobUsecaseProvider = Provider<EditJobUsecase>((ref) => EditJobUsecase(ref.watch(jobRepositoryProvider)));
 final updatePaymentStatusUsecaseProvider = Provider<UpdatePaymentStatusUsecase>((ref) => UpdatePaymentStatusUsecase(ref.watch(jobRepositoryProvider)));
 final requestCorrectionUsecaseProvider = Provider<RequestCorrectionUsecase>((ref) => RequestCorrectionUsecase(ref.watch(correctionRequestRepositoryProvider)));
+final recoverySaveUsecaseProvider = Provider<RecoverySaveUsecase>((ref) => RecoverySaveUsecase(
+  ref.watch(jobRepositoryProvider),
+  ref.watch(inventoryRepositoryProvider),
+));
 
 final adminRequestsProvider = FutureProvider<List<CorrectionRequestEntity>>((ref) async {
   return await ref.watch(correctionRequestRepositoryProvider).getAllPendingRequests();
@@ -123,6 +129,17 @@ class AdminRequestsNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _repo.approveRequest(requestId, jobId, updates);
+
+      // Write approved corrections back to local Hive so the UI reflects them immediately
+      // (invalidating jobDetailProvider triggers a read, which hits local storage first)
+      final localDs = _ref.read(jobLocalDatasourceProvider);
+      final existing = await localDs.getJob(jobId);
+      if (existing != null) {
+        final json = existing.toJson();
+        json.addAll(updates.cast<String, dynamic>());
+        await localDs.saveJob(JobModel.fromJson(json));
+      }
+
       _ref.invalidate(adminRequestsProvider);
       _ref.invalidate(jobDetailProvider(jobId));
       state = const AsyncValue.data(null);
@@ -447,8 +464,14 @@ class JobListNotifier extends StateNotifier<JobListState> {
     _isRefreshing = true;
     state = state.copyWith(isSyncing: true);
     try {
+      // SYNC PHASE 1: Customers first — tombstone source, upsert target
+      // Phase ordering is critical: FK constraints require target customer
+      // to exist on server BEFORE jobs referencing it are pushed.
       await _ref.read(syncOfflineCustomersUsecaseProvider).call();
+      // SYNC PHASE 2: Jobs second — cascaded FKs now point to existing target
       await _syncOffline();
+      // SYNC PHASE 3: Pull remote changes via delta sync
+      await _ref.read(customerRepositoryProvider).pullRemoteChanges();
       await load();
     } finally {
       _isRefreshing = false;

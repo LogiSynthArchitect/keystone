@@ -29,19 +29,58 @@ class CustomerRepositoryImpl implements CustomerRepository {
   }
 
   @override
-  Future<List<CustomerEntity>> getCustomers({int limit = 25, int offset = 0}) async {
-    if (await _connectivity.isConnected) {
-      try {
-        final models = await _remote.getCustomers(userId: _userId, limit: limit, offset: offset);
-        for (var m in models) {
-          await _local.saveCustomer(m);
-        }
-      } catch (e) {
-        debugPrint('[KS:CUSTOMERS] Remote fetch failed, serving from cache: $e');
-      }
-    }
+  Future<List<CustomerEntity>> getCustomers() async {
+    // Serve exclusively from local cache — the sync daemon handles
+    // incremental delta pulls via pullRemoteChanges().
     final localModels = await _local.getCustomers();
     return localModels.map((m) => m.toEntity()).toList();
+  }
+
+  /// Pull incremental changes from the server using delta sync.
+  /// On first launch (no prior sync), fetches ALL non-deleted customers.
+  /// On subsequent calls, fetches only records with updated_at > last_synced_at.
+  /// Handles soft-deletes: records with deleted_at > last_synced are hard-deleted
+  /// from the local cache.
+  ///
+  /// Returns the number of changed records processed (0 if offline or no changes).
+  @override
+  Future<int> pullRemoteChanges() async {
+    if (!await _connectivity.isConnected) return 0;
+    try {
+      var updatedAfter = _local.getLastSyncTimestamp();
+
+      // Seed timestamp for existing users upgrading from pre-delta-sync version.
+      // Without this, a null timestamp triggers a full re-download of all
+      // customers on first background sync — wasteful for accounts with 500+
+      // records. If there's already local data, assume it's up-to-date and
+      // only pull changes from 24 hours ago onward.
+      if (updatedAfter == null && (await _local.getCustomers()).isNotEmpty) {
+        updatedAfter = DateTime.now().toUtc().subtract(const Duration(hours: 24)).toIso8601String();
+        await _local.setLastSyncTimestamp(updatedAfter);
+      }
+
+      final models = await _remote.getCustomers(userId: _userId, updatedAfter: updatedAfter);
+      if (models.isEmpty) {
+        await _local.setLastSyncTimestamp();
+        return 0;
+      }
+
+      for (final model in models) {
+        if (model.deletedAt != null) {
+          // Server-side soft-delete: remove from local cache
+          await _local.deleteCustomer(model.id);
+        } else {
+          // Upsert: server state is authoritative for pulled records
+          await _local.saveCustomer(model.copyWith(syncStatus: SyncStatus.synced));
+        }
+      }
+
+      await _local.setLastSyncTimestamp();
+      return models.length;
+    } catch (e) {
+      debugPrint('[KS:SYNC:CUSTOMERS] Delta pull failed: $e');
+      return 0;
+    }
   }
 
   @override

@@ -97,7 +97,10 @@ class HubScreen extends ConsumerWidget {
             _sectionHeader(context, "DATA"),
             const SizedBox(height: 16),
             _buildActionTile(context, LineAwesomeIcons.file_csv_solid, "EXPORT JOBS CSV", "Download jobs as spreadsheet", () => DataExportService.exportAsCsv()),
+            _buildActionTile(context, LineAwesomeIcons.file_invoice_solid, "EXPORT JOBS DETAILED CSV", "With parts, expenses, and profit", () => DataExportService.exportDetailedJobsCsv()),
             _buildActionTile(context, LineAwesomeIcons.users_solid, "EXPORT CUSTOMERS CSV", "Download customers as spreadsheet", () => DataExportService.exportCustomersAsCsv()),
+            _buildActionTile(context, LineAwesomeIcons.boxes_solid, "EXPORT INVENTORY CSV", "Download inventory as spreadsheet", () => DataExportService.exportInventoryAsCsv()),
+            _buildActionTile(context, LineAwesomeIcons.book_solid, "EXPORT NOTES CSV", "Download notes as spreadsheet", () => DataExportService.exportNotesAsCsv()),
             _buildActionTile(context, LineAwesomeIcons.file_code_solid, "EXPORT ALL JSON", "Full data export as JSON", () => DataExportService.exportAsJson()),
             if (isAdmin) ...[
               const SizedBox(height: 32),

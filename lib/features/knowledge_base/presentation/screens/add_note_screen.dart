@@ -16,6 +16,8 @@ import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../features/service_types/presentation/widgets/service_type_picker_v2.dart';
+import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/providers/supabase_provider.dart';
 import '../providers/notes_providers.dart';
 import '../widgets/tag_input_field.dart';
 import '../../domain/entities/note_attachment.dart';
@@ -693,8 +695,10 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         mimeType: 'audio/mp4',
         duration: _recordingDuration,
         createdAt: DateTime.now(),
+        localPath: saved,
       );
-      setState(() => _attachments.add(attachment));
+      final uploaded = await _uploadAttachment(file, attachment);
+      setState(() => _attachments.add(uploaded));
     } catch (e) {
       if (mounted) {
         KsSlidingNotification.show(context, message: "Could not save audio",
@@ -722,8 +726,10 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         size: fileSize,
         mimeType: 'image/jpeg',
         createdAt: DateTime.now(),
+        localPath: saved,
       );
-      setState(() => _attachments.add(attachment));
+      final uploaded = await _uploadAttachment(file, attachment);
+      setState(() => _attachments.add(uploaded));
     } catch (e) {
       if (mounted) {
         KsSlidingNotification.show(context, message: "Could not save image",
@@ -760,8 +766,10 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
         size: fileSize,
         mimeType: 'application/pdf',
         createdAt: DateTime.now(),
+        localPath: saved,
       );
-      setState(() => _attachments.add(attachment));
+      final uploaded = await _uploadAttachment(file, attachment);
+      setState(() => _attachments.add(uploaded));
     } catch (e) {
       debugPrint('[KS:KB] FilePicker failed: $e');
       if (mounted) {
@@ -780,6 +788,50 @@ class _AddNoteScreenState extends ConsumerState<AddNoteScreen> {
     final destPath = '${dir.path}/${const Uuid().v4()}$extension';
     await file.copy(destPath);
     return 'file://$destPath';
+  }
+
+  /// Upload [file] and return updated [NoteAttachment] with [remoteUrl] set.
+  ///
+  /// Idempotent: if [attachment.remoteUrl] is already set, skips upload.
+  /// Tries Cloudinary first, falls back to Supabase Storage.
+  Future<NoteAttachment> _uploadAttachment(File file, NoteAttachment attachment) async {
+    if (attachment.remoteUrl != null) return attachment;
+
+    setState(() => _isUploading = true);
+    try {
+      // Try Cloudinary
+      final cloudService = CloudinaryService();
+      final cloudUrl = await cloudService.uploadMedia(
+        file: file,
+        publicId: 'note_${const Uuid().v4()}',
+      );
+      if (cloudUrl != null) {
+        final updated = attachment.copyWith(
+          url: cloudUrl,
+          remoteUrl: cloudUrl,
+        );
+        setState(() => _isUploading = false);
+        return updated;
+      }
+
+      // Fallback to Supabase Storage
+      final supabase = ref.read(supabaseClientProvider);
+      final userId = supabase.auth.currentUser?.id ?? 'unknown';
+      final fileName = '${const Uuid().v4()}.bin';
+      final storagePath = '$userId/attachments/$fileName';
+      await supabase.storage.from('note-attachments').upload(storagePath, file);
+      final publicUrl = supabase.storage.from('note-attachments').getPublicUrl(storagePath);
+      final updated = attachment.copyWith(
+        url: publicUrl,
+        remoteUrl: publicUrl,
+      );
+      setState(() => _isUploading = false);
+      return updated;
+    } catch (_) {
+      setState(() => _isUploading = false);
+      // Upload failed — keep attachment with localPath only; note stays pending
+      return attachment;
+    }
   }
 
   String _formatSize(int bytes) {

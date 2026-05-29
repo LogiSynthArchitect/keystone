@@ -3,24 +3,27 @@ enum ReminderType {
   stuckInProgress,
   followUpPending,
   followUpNoResponse,
+  recurringJobOverdue,
 }
 
 extension ReminderTypeLabel on ReminderType {
   String get label {
     switch (this) {
-      case ReminderType.unpaidJob:       return 'UNPAID JOB';
-      case ReminderType.stuckInProgress: return 'JOB IN PROGRESS';
-      case ReminderType.followUpPending: return 'FOLLOW-UP NEEDED';
-      case ReminderType.followUpNoResponse: return 'AWAITING RESPONSE';
+      case ReminderType.unpaidJob:            return 'UNPAID JOB';
+      case ReminderType.stuckInProgress:      return 'JOB IN PROGRESS';
+      case ReminderType.followUpPending:      return 'FOLLOW-UP NEEDED';
+      case ReminderType.followUpNoResponse:   return 'AWAITING RESPONSE';
+      case ReminderType.recurringJobOverdue:  return 'RECURRING JOB DUE';
     }
   }
 
   String get description {
     switch (this) {
-      case ReminderType.unpaidJob:       return 'Payment not yet collected';
-      case ReminderType.stuckInProgress: return 'Job still in progress';
-      case ReminderType.followUpPending: return 'Follow-up not sent yet';
-      case ReminderType.followUpNoResponse: return 'No response — resend WhatsApp';
+      case ReminderType.unpaidJob:            return 'Payment not yet collected';
+      case ReminderType.stuckInProgress:      return 'Job still in progress';
+      case ReminderType.followUpPending:      return 'Follow-up not sent yet';
+      case ReminderType.followUpNoResponse:   return 'No response — resend WhatsApp';
+      case ReminderType.recurringJobOverdue:  return 'Schedule is past due date';
     }
   }
 }

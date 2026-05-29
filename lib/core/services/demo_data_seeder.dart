@@ -911,7 +911,7 @@ class DemoDataSeeder {
 
     // Remove job templates (fixed IDs — survives app restarts)
     for (final tId in _demoTemplateIds) {
-      await _jobTemplateLocal.deleteTemplate(tId);
+      await _jobTemplateLocal.hardDeleteTemplate(tId);
     }
 
     debugPrint('[KS:DEMO] Removed all demo data');

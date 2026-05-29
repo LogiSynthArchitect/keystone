@@ -43,11 +43,19 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
   Future<ServiceTypeEntity> updateServiceType(ServiceTypeEntity serviceType) async {
     final model = ServiceTypeModel.fromEntity(serviceType);
     await _local.saveServiceType(model);
+
     if (await _connectivity.isConnected) {
       try {
-        final remoteModel = await _remote.updateServiceType(serviceType.id, model.toJson());
-        await _local.saveServiceType(remoteModel);
-        return remoteModel.toEntity();
+        // Use PATCH payload when correction_fields are set, full payload otherwise
+        final payload = model.correctionFields.isNotEmpty ? model.toPatchJson() : model.toJson();
+        final remoteModel = await _remote.updateServiceType(serviceType.id, payload);
+        // Merge remote correction_fields into local state
+        final merged = model.copyWith(
+          correctionFields: remoteModel.correctionFields,
+          updatedBy: remoteModel.updatedBy,
+        );
+        await _local.saveServiceType(merged);
+        return merged.toEntity();
       } catch (e) {
         debugPrint('[KS:SERVICE_TYPES] Remote update failed: $e');
       }
@@ -71,74 +79,103 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
   Future<void> syncServiceTypes() async {
     try {
       final remoteModels = await _remote.getServiceTypes();
-      if (remoteModels.isNotEmpty) {
-        // Preserve local defaultPrice when remote has null;
-        // also apply default prices for common service types
-        const defaultPrices = {
-          'Car Key Replacement':        25000,
-          'Transponder Key Programming': 25000,
-          'Car Lockout':                6500,
-          'Trunk/Boot Unlock':          5000,
-          'Key Fob Programming':        20000,
-          'Ignition Repair':            15000,
-          'Broken Key Extraction':      12000,
-          'Motorcycle Keys':            15000,
-          'House Lockout':              6500,
-          'Lock Installation':          15000,
-          'Lock Rekeying':              8000,
-          'Lock Repair':                8000,
-          'Key Duplication':            1500,
-          'Smart Lock Install':         25000,
-          'Garage Door Locks':          12000,
-          'Padlock Sales/Installation': 8000,
-          'Mailbox Locks':              6000,
-          'Window Locks':               6000,
-          'Commercial Lockout':         8000,
-          'Master Key Systems':         50000,
-          'Panic Bar Installation':     25000,
-          'Door Closer Install':        15000,
-          'Electric Strike Installation': 18000,
-          'High-Security Locks':        35000,
-          'File Cabinet Locks':         8000,
-          'Storefront Locks':           12000,
-          'CCTV Installation':          25000,
-          'Video Doorbell Installation': 15000,
-          'Access Control':             30000,
-          'Burglar Alarms':             20000,
-          'Intercom Systems':           25000,
-          'Electric Gate Motor Repair': 20000,
-          'Electric Fence Installation': 35000,
-          'Rolling Shutter Repair':      15000,
-          'Key Cutting':                1000,
-          'Safe Opening':               35000,
-          'Safe Installation':          25000,
-          'Gate Automation':            45000,
-          'Eviction Services':          30000,
-        };
+      final localModels = await _local.getServiceTypes();
 
-        final localModels = await _local.getServiceTypes();
-        await _local.clear();
-        final merged = remoteModels.map((remote) {
-          final local = localModels.where((l) => l.name == remote.name).firstOrNull;
-          final existingPrice = local?.defaultPrice;
-          final price = existingPrice ?? defaultPrices[remote.name];
-          if (price != null && price != remote.defaultPrice) {
-            return ServiceTypeModel(
-              id: remote.id,
-              userId: remote.userId,
-              name: remote.name,
-              isDefault: remote.isDefault,
-              category: remote.category,
-              iconName: remote.iconName,
-              defaultPrice: price,
-              createdAt: remote.createdAt,
-              updatedAt: DateTime.now().toIso8601String(),
-            );
-          }
-          return remote;
-        }).toList();
-        await _local.saveServiceTypes(merged);
-      }
+      // Build remote-by-UUID map for merge
+      final remoteByUuid = {for (final m in remoteModels) m.id: m};
+
+      // Preserve local services not on server (offline-created, pending sync)
+      final localOnly = localModels.where((l) => !remoteByUuid.containsKey(l.id)).toList();
+
+      // Merge remote into local by UUID (not by name)
+      const defaultPrices = {
+        'Car Key Replacement':        25000,
+        'Transponder Key Programming': 25000,
+        'Car Lockout':                6500,
+        'Trunk/Boot Unlock':          5000,
+        'Key Fob Programming':        20000,
+        'Ignition Repair':            15000,
+        'Broken Key Extraction':      12000,
+        'Motorcycle Keys':            15000,
+        'House Lockout':              6500,
+        'Lock Installation':          15000,
+        'Lock Rekeying':              8000,
+        'Lock Repair':                8000,
+        'Key Duplication':            1500,
+        'Smart Lock Install':         25000,
+        'Garage Door Locks':          12000,
+        'Padlock Sales/Installation': 8000,
+        'Mailbox Locks':              6000,
+        'Window Locks':               6000,
+        'Commercial Lockout':         8000,
+        'Master Key Systems':         50000,
+        'Panic Bar Installation':     25000,
+        'Door Closer Install':        15000,
+        'Electric Strike Installation': 18000,
+        'High-Security Locks':        35000,
+        'File Cabinet Locks':         8000,
+        'Storefront Locks':           12000,
+        'CCTV Installation':          25000,
+        'Video Doorbell Installation': 15000,
+        'Access Control':             30000,
+        'Burglar Alarms':             20000,
+        'Intercom Systems':           25000,
+        'Electric Gate Motor Repair': 20000,
+        'Electric Fence Installation': 35000,
+        'Rolling Shutter Repair':      15000,
+        'Key Cutting':                1000,
+        'Safe Opening':               35000,
+        'Safe Installation':          25000,
+        'Gate Automation':            45000,
+        'Eviction Services':          30000,
+      };
+
+      final localByUuid = {for (final m in localModels) m.id: m};
+      final merged = remoteModels.map((remote) {
+        final local = localByUuid[remote.id];
+
+        // If local has pending edits (correction_fields), merge field-by-field
+        if (local != null && local.correctionFields.isNotEmpty) {
+          final locked = Set<String>.from(local.correctionFields);
+          return ServiceTypeModel(
+            id: remote.id,
+            userId: remote.userId,
+            name: locked.contains('name') ? local.name : remote.name,
+            isDefault: locked.contains('is_default') ? local.isDefault : remote.isDefault,
+            category: locked.contains('category') ? local.category : remote.category,
+            iconName: locked.contains('icon_name') ? local.iconName : remote.iconName,
+            defaultPrice: locked.contains('default_price') ? local.defaultPrice : remote.defaultPrice,
+            createdAt: remote.createdAt,
+            updatedAt: DateTime.now().toIso8601String(),
+            correctionFields: const [],
+            updatedBy: remote.updatedBy,
+          );
+        }
+
+        // No local edits — preserve local price if remote has null
+        final existingPrice = local?.defaultPrice;
+        final price = existingPrice ?? defaultPrices[remote.name];
+        if (price != null && price != remote.defaultPrice) {
+          return ServiceTypeModel(
+            id: remote.id,
+            userId: remote.userId,
+            name: remote.name,
+            isDefault: remote.isDefault,
+            category: remote.category,
+            iconName: remote.iconName,
+            defaultPrice: price,
+            createdAt: remote.createdAt,
+            updatedAt: DateTime.now().toIso8601String(),
+            correctionFields: const [],
+            updatedBy: remote.updatedBy,
+          );
+        }
+        return remote;
+      }).toList();
+
+      // Final list: merged remote items + local-only (offline-created) items
+      final finalList = [...merged, ...localOnly];
+      await _local.saveServiceTypes(finalList);
     } catch (e) {
       debugPrint('[KS:SERVICE_TYPES] Sync failed: $e');
     }

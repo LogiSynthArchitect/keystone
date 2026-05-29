@@ -31,6 +31,7 @@ import '../../domain/entities/job_service_entity.dart';
 import '../../domain/entities/job_expense_entity.dart';
 import '../../domain/entities/job_photo_entity.dart';
 import '../../domain/usecases/edit_job_usecase.dart';
+import '../../data/models/pending_edit_transaction.dart';
 import 'package:keystone/core/providers/shared_feature_providers.dart';
 import '../../../customer_history/domain/entities/customer_entity.dart';
 import '../widgets/job_step_service.dart';
@@ -72,6 +73,7 @@ class _EditJobSheetState extends ConsumerState<_EditJobSheet> {
 
   String? _serviceType;
   String _status = 'in_progress';
+  String? _originalJobStatus; // locked reference for status transition gating
   String _paymentStatus = 'unpaid';
   String? _leadSource;
   DateTime _jobDate = DateTime.now();
@@ -97,6 +99,7 @@ class _EditJobSheetState extends ConsumerState<_EditJobSheet> {
   // EXTRAS step data
   List<ItemRow> _items = [];
   List<JobPartEntity> _parts = [];
+  List<JobPartEntity> _originalParts = []; // snapshot for COGS delta computation
   List<JobHardwareEntity> _hardwareItems = [];
   List<JobExpenseEntity> _expenses = [];
 
@@ -136,6 +139,7 @@ class _EditJobSheetState extends ConsumerState<_EditJobSheet> {
     if (_initialized) return;
     _serviceType = job.serviceType;
     _status = job.status;
+    _originalJobStatus = job.status;
     _paymentStatus = job.paymentStatus;
     _locationController.text = job.location ?? '';
     _amountController.text = job.amountCharged != null ? (job.amountCharged! / 100.0).toStringAsFixed(2) : '';
@@ -207,6 +211,7 @@ class _EditJobSheetState extends ConsumerState<_EditJobSheet> {
     if (mounted) {
       setState(() {
         _parts = items;
+        _originalParts = items; // snapshot for COGS delta computation
         _items = items.map((p) {
           final row = ItemRow();
           row.nameController.text = p.partName;
@@ -308,10 +313,71 @@ class _EditJobSheetState extends ConsumerState<_EditJobSheet> {
           .toList();
 
       final repo = ref.read(jobRepositoryProvider);
+      // Signal that children are being saved — crash before completing means partial data
+      await repo.setSubEntitiesSaved(widget.jobId, false);
       await repo.saveHardwareItems(widget.jobId, _hardwareItems);
       await repo.saveServices(widget.jobId, serviceEntities);
-      await repo.saveParts(widget.jobId, _parts);
+      // Parts — WAL-based COGS-aware replacement
+      final validItems = _items.where((i) => i.displayName.isNotEmpty).toList();
+      if (validItems.isNotEmpty || _originalParts.isNotEmpty) {
+        // Build new part entities, preserving UUIDs for items that match by inventoryItemId
+        final newParts = validItems.map((i) {
+          final matchingOriginal = i.inventoryItemId != null
+              ? _originalParts.where((p) => p.inventoryItemId == i.inventoryItemId).firstOrNull
+              : null;
+          return JobPartEntity(
+            id: matchingOriginal?.id ?? const Uuid().v4(),
+            jobId: widget.jobId,
+            partName: i.displayName,
+            quantity: int.tryParse(i.qtyController.text.trim()) ?? 1,
+            unitPrice: CurrencyFormatter.parseToPesewas(i.priceController.text.trim()),
+            inventoryItemId: i.inventoryItemId,
+            createdAt: matchingOriginal?.createdAt ?? DateTime.now(),
+          );
+        }).toList();
+
+        // Compute COGS delta per inventory item
+        final invRepo = ref.read(inventoryRepositoryProvider);
+        final allInv = await invRepo.getItems(user.id);
+        final adjustments = <InventoryCogsAdjustment>[];
+        final txnId = const Uuid().v4();
+        for (final newPart in newParts) {
+          if (newPart.inventoryItemId == null) continue;
+          final invItem = allInv.where((i) => i.id == newPart.inventoryItemId && i.isAutoCogs).firstOrNull;
+          if (invItem == null) continue;
+          final oldQty = _originalParts
+              .where((p) => p.inventoryItemId == newPart.inventoryItemId)
+              .fold<int>(0, (sum, p) => sum + (p.quantity ?? 1));
+          final newQty = newPart.quantity ?? 1;
+          final delta = oldQty - newQty;
+          if (delta != 0) {
+            adjustments.add(InventoryCogsAdjustment(
+              transactionId: txnId,
+              itemId: invItem.id,
+              delta: delta,
+              reason: 'COGS edit: ${newPart.partName} used in job ${widget.jobId.substring(0, 8)}',
+              referenceType: 'job',
+              referenceId: widget.jobId,
+            ));
+          }
+        }
+
+        await repo.replacePartsWithCogs(widget.jobId, newParts, adjustments, txnId);
+        for (final adj in adjustments) {
+          await invRepo.adjustStock(
+            adj.itemId, user.id, adj.delta, 'job_use',
+            reason: adj.reason,
+            referenceType: adj.referenceType,
+            referenceId: adj.referenceId,
+            transactionId: adj.transactionId,
+          );
+        }
+      }
+
       await repo.saveExpenses(widget.jobId, _expenses);
+
+      // Signal that children are complete — job is safe for sync
+      await repo.setSubEntitiesSaved(widget.jobId, true);
 
       // Handle photo changes
       for (final id in _deletedPhotoIds) {
@@ -935,6 +1001,7 @@ class _EditJobSheetState extends ConsumerState<_EditJobSheet> {
     return JobStepStatus(
       status: _status,
       leadSource: _leadSource,
+      currentJobStatus: _originalJobStatus,
       onStatusChanged: (v) {
         // Check if this is a backward move while payment is set
         final currentStatusIdx = JobEntity.validStatuses.indexOf(_status);

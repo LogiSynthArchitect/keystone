@@ -39,4 +39,11 @@ class JobPartsLocalDatasource {
     await _box.deleteAll(keysToDelete);
     await _box.flush();
   }
+
+  /// Deletes specific keys (used by save-first-then-delete + WAL orphan cleanup).
+  Future<void> deleteKeys(List<String> keys) async {
+    if (keys.isEmpty) return;
+    await _box.deleteAll(keys);
+    await _box.flush();
+  }
 }

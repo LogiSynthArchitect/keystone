@@ -4,6 +4,8 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_summary_strip.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../domain/models/reminder_thresholds.dart';
 
@@ -18,6 +20,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
   late int _stuckDays;
   late int _followUpDays;
   late int _noResponseDays;
+  late int _recurringOverdueDays;
 
   @override
   void initState() {
@@ -27,6 +30,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
     _stuckDays = t.stuckInProgressDays;
     _followUpDays = t.followUpPendingDays;
     _noResponseDays = t.followUpNoResponseDays;
+    _recurringOverdueDays = t.recurringJobOverdueDays;
   }
 
   @override
@@ -37,37 +41,65 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          // Summary strip
+          KsSummaryStrip(
+            value: "5 thresholds",
+            label: "REMINDER CONFIGURATION",
+            subtitle: "unpaid:${_unpaidDays}d ● stuck:${_stuckDays}d ● follow-up:${_followUpDays}d ● no-response:${_noResponseDays}d ● recurring:${_recurringOverdueDays}d",
+            subtitleIcon: LineAwesomeIcons.bell_solid,
+          ),
+          const SizedBox(height: 32),
+          // PAYMENT section
+          _sectionHeader("PAYMENT"),
+          const SizedBox(height: 16),
           _buildSlider("UNPAID JOBS", "Remind about unpaid completed jobs after", _unpaidDays, (v) => setState(() => _unpaidDays = v)),
           const SizedBox(height: 32),
+          // PROGRESS section
+          _sectionHeader("PROGRESS"),
+          const SizedBox(height: 16),
           _buildSlider("STUCK JOBS", "Remind about in-progress jobs after", _stuckDays, (v) => setState(() => _stuckDays = v)),
           const SizedBox(height: 32),
+          // FOLLOW-UP section
+          _sectionHeader("FOLLOW-UP"),
+          const SizedBox(height: 16),
           _buildSlider("FOLLOW-UP PENDING", "Remind about jobs missing follow-up after", _followUpDays, (v) => setState(() => _followUpDays = v)),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           _buildSlider("NO RESPONSE", "Remind about follow-ups with no response after", _noResponseDays, (v) => setState(() => _noResponseDays = v)),
+          const SizedBox(height: 32),
+          // SCHEDULES section
+          _sectionHeader("SCHEDULES"),
+          const SizedBox(height: 16),
+          _buildSlider("RECURRING JOB OVERDUE", "Remind about due recurring schedules after", _recurringOverdueDays, (v) => setState(() => _recurringOverdueDays = v)),
           const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.ksc.accent500,
-                foregroundColor: context.ksc.primary900,
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-              ),
-              onPressed: () async {
-                await ReminderThresholds.save(ReminderThresholds(
-                  unpaidJobDays: _unpaidDays,
-                  stuckInProgressDays: _stuckDays,
-                  followUpPendingDays: _followUpDays,
-                  followUpNoResponseDays: _noResponseDays,
-                ));
-                if (mounted) KsSlidingNotification.show(context, message: "Reminder thresholds saved", type: KsNotificationType.success);
-              },
-              child: Text("SAVE SETTINGS", style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-            ),
+          KsButton(
+            label: "SAVE SETTINGS",
+            onPressed: () async {
+              await ReminderThresholds.save(ReminderThresholds(
+                unpaidJobDays: _unpaidDays,
+                stuckInProgressDays: _stuckDays,
+                followUpPendingDays: _followUpDays,
+                followUpNoResponseDays: _noResponseDays,
+                recurringJobOverdueDays: _recurringOverdueDays,
+              ));
+              if (mounted) KsSlidingNotification.show(context, message: "Reminder thresholds saved", type: KsNotificationType.success);
+            },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _sectionHeader(String label) {
+    return Row(
+      children: [
+        Container(width: 3, height: 16, color: context.ksc.accent500),
+        const SizedBox(width: 10),
+        Text(label, style: AppTextStyles.caption.copyWith(
+          color: context.ksc.neutral500,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.5,
+        )),
+      ],
     );
   }
 

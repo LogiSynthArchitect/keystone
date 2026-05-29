@@ -8,6 +8,9 @@ class ServiceTypeEntity {
   final int? defaultPrice;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<String> correctionFields;
+  final String updatedBy;
+  final bool isDeleted;
 
   const ServiceTypeEntity({
     required this.id,
@@ -19,6 +22,9 @@ class ServiceTypeEntity {
     this.defaultPrice,
     required this.createdAt,
     required this.updatedAt,
+    this.correctionFields = const [],
+    this.updatedBy = 'mobile',
+    this.isDeleted = false,
   });
 
   ServiceTypeEntity copyWith({
@@ -31,6 +37,9 @@ class ServiceTypeEntity {
     int? defaultPrice,
     DateTime? createdAt,
     DateTime? updatedAt,
+    List<String>? correctionFields,
+    String? updatedBy,
+    bool? isDeleted,
   }) {
     return ServiceTypeEntity(
       id: id ?? this.id,
@@ -42,6 +51,9 @@ class ServiceTypeEntity {
       defaultPrice: defaultPrice ?? this.defaultPrice,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      correctionFields: correctionFields ?? this.correctionFields,
+      updatedBy: updatedBy ?? this.updatedBy,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

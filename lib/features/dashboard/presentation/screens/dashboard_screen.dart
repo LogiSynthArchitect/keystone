@@ -158,6 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final followUpCount = reminders.where((r) =>
       r.type == ReminderType.followUpPending || r.type == ReminderType.followUpNoResponse
     ).length;
+    final recurringOverdueCount = reminders.where((r) => r.type == ReminderType.recurringJobOverdue).length;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -248,6 +249,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeroRevenue(context, todayRevenue, todayJobs.length, monthRevenue, monthJobs.length),
+                  const SizedBox(height: 16),
+                  // Reminder breakdown chips
+                  if (reminders.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        children: [
+                          if (unpaidCount > 0)
+                            _reminderChip("$unpaidCount unpaid", context.ksc.error500),
+                          if (stuckCount > 0)
+                            _reminderChip("$stuckCount stuck", context.ksc.warning500),
+                          if (followUpCount > 0)
+                            _reminderChip("$followUpCount follow-up", context.ksc.primary400),
+                          if (recurringOverdueCount > 0)
+                            _reminderChip("$recurringOverdueCount recurring", context.ksc.accent500),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 24),
                   if (todayJobs.isNotEmpty) ...[
                     _sectionHeader(context, "TODAY'S JOBS"),
@@ -375,6 +394,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 6),
           Text("of monthly target ${CurrencyFormatter.format(monthlyTarget)}", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
         ],
+      ),
+    );
+  }
+
+  Widget _reminderChip(String label, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Text(label, style: AppTextStyles.caption.copyWith(
+          color: color, fontWeight: FontWeight.w800, fontSize: 10,
+        )),
       ),
     );
   }

@@ -5,4 +5,5 @@ abstract class NoteLinkRepository {
   Future<List<NoteJobLinkEntity>> getLinksForJob(String jobId);
   Future<NoteJobLinkEntity> createLink(String noteId, String jobId, String userId);
   Future<void> deleteLink(String id);
+  Future<void> syncPendingLinks();
 }

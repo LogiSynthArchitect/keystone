@@ -13,8 +13,8 @@ class JobTemplateRepositoryImpl implements JobTemplateRepository {
 
   @override
   Future<List<JobTemplateEntity>> getTemplates(String userId) async {
-    // Load from local first for speed
-    final localModels = await _local.getAll();
+    // Load active templates from local for speed (excludes soft-deleted)
+    final localModels = await _local.getAllActive();
     final templates = localModels.map((m) => m.toEntity()).toList();
 
     // Silently fetch from remote to stay fresh
@@ -34,9 +34,10 @@ class JobTemplateRepositoryImpl implements JobTemplateRepository {
 
   @override
   Future<void> deleteTemplate(String id) async {
-    await _local.deleteTemplate(id);
+    // Soft-delete locally — hidden from UI but kept for sync reconciliation
+    await _local.softDeleteTemplate(id);
 
-    // Fire-and-forget to remote
+    // Fire-and-forget tombstone to remote
     _deleteRemote(id);
   }
 
@@ -54,12 +55,14 @@ class JobTemplateRepositoryImpl implements JobTemplateRepository {
     if (_remote == null) return;
     try {
       final remoteModels = await _remote!.getTemplates(userId);
-      // Only merge remote templates — never delete local ones.
-      // The old clean-up (delete local not in remote) was destructive:
-      // most users have no cloud templates, so remote returns empty,
-      // and ALL local templates get wiped on every navigation.
       for (final remote in remoteModels) {
-        await _local.saveTemplate(remote);
+        if (remote.isDeleted) {
+          // Tombstone: hard-delete from local Hive
+          await _local.hardDeleteTemplate(remote.id);
+        } else {
+          // Active template: save locally
+          await _local.saveTemplate(remote);
+        }
       }
     } catch (e) {
       debugPrint('[KS:TEMPLATES] Remote sync failed: $e');
@@ -87,7 +90,7 @@ class JobTemplateRepositoryImpl implements JobTemplateRepository {
   Future<void> _renameRemote(String id, String newName) async {
     if (_remote == null) return;
     try {
-      await _remote!.saveTemplate({'id': id, 'name': newName, 'updated_at': DateTime.now().toIso8601String()});
+      await _remote!.renameTemplate(id, newName);
     } catch (e) {
       debugPrint('[KS:TEMPLATES] Remote rename failed: $e');
     }

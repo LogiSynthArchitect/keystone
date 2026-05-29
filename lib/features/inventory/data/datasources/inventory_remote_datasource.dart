@@ -47,11 +47,24 @@ class InventoryRemoteDatasource {
     }
   }
 
+  Future<InventoryItemModel> upsert(Map<String, dynamic> json) async {
+    try {
+      final data = await _supabase
+          .from(SupabaseConstants.inventoryItemsTable)
+          .upsert(json)
+          .select()
+          .single();
+      return InventoryItemModel.fromJson(data);
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not upsert inventory item.', code: 'UPSERT_FAILED', cause: e);
+    }
+  }
+
   Future<void> delete(String id) async {
     try {
       await _supabase
           .from(SupabaseConstants.inventoryItemsTable)
-          .delete()
+          .update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', id);
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not delete inventory item.', code: 'DELETE_FAILED', cause: e);

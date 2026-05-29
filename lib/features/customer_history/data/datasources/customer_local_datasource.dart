@@ -47,4 +47,21 @@ class CustomerLocalDatasource {
       await saveCustomer(customer.copyWith(syncStatus: SyncStatus.deleted));
     }
   }
+
+  // ── Delta sync timestamp ──────────────────────────────────────────
+
+  /// Returns the last successful delta sync timestamp (ISO 8601) or null
+  /// if no sync has ever completed (triggers full initial fetch).
+  String? getLastSyncTimestamp() {
+    final box = HiveService.meta;
+    return box.get(HiveService.lastOnlineSyncKey) as String?;
+  }
+
+  /// Persists the current UTC timestamp after a successful delta sync.
+  /// Optionally accepts an explicit [timestamp] for seeding on upgrade.
+  Future<void> setLastSyncTimestamp([String? timestamp]) async {
+    final box = HiveService.meta;
+    await box.put(HiveService.lastOnlineSyncKey, timestamp ?? DateTime.now().toUtc().toIso8601String());
+    await box.flush();
+  }
 }

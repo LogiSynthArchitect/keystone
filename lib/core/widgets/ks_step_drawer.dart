@@ -40,6 +40,7 @@ class KsStepDrawer extends StatefulWidget {
   final String saveLabel;
   final VoidCallback? onClose;
   final bool readOnly;
+  final bool scrollable;
 
   const KsStepDrawer({
     super.key,
@@ -54,6 +55,7 @@ class KsStepDrawer extends StatefulWidget {
     this.saveLabel = 'SAVE',
     this.onClose,
     this.readOnly = false,
+    this.scrollable = true,
   });
 
   @override
@@ -283,11 +285,13 @@ class _KsStepDrawerState extends State<KsStepDrawer>
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+                final content = widget.stepContent(_currentStep, _subStep, (fn) => setState(fn), _handleNextStep);
+                // Always use SingleChildScrollView to handle infinite constraints
+                // from isScrollControlled bottom sheets. Consumers with lazy lists
+                // (ListView.builder) must use shrinkWrap: true + NeverScrollableScrollPhysics.
                 return SingleChildScrollView(
                   padding: EdgeInsets.only(bottom: bottomInset + 16),
-                  child: Center(
-                    child: widget.stepContent(_currentStep, _subStep, (fn) => setState(fn), _handleNextStep),
-                  ),
+                  child: Center(child: content),
                 );
               },
             ),

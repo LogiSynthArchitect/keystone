@@ -9,6 +9,8 @@ class NoteAttachmentModel {
   final String? mimeType;
   final int? duration;
   final String createdAt;
+  final String? remoteUrl; // canonical remote URL, synced via JSONB
+  final String? localPath; // transient Hive-only field, never synced
 
   const NoteAttachmentModel({
     required this.id,
@@ -19,6 +21,8 @@ class NoteAttachmentModel {
     this.mimeType,
     this.duration,
     required this.createdAt,
+    this.remoteUrl,
+    this.localPath,
   });
 
   factory NoteAttachmentModel.fromEntity(NoteAttachment entity) =>
@@ -31,24 +35,30 @@ class NoteAttachmentModel {
         mimeType: entity.mimeType,
         duration: entity.duration,
         createdAt: entity.createdAt.toIso8601String(),
+        remoteUrl: entity.remoteUrl,
+        localPath: entity.localPath,
       );
 
   factory NoteAttachmentModel.fromJson(Map<String, dynamic> json) =>
       NoteAttachmentModel(
         id: json['id'] as String,
         type: json['type'] as String? ?? 'image',
-        url: json['url'] as String,
+        url: (json['remote_url'] as String?) ?? (json['url'] as String? ?? ''),
         name: json['name'] as String? ?? '',
         size: json['size'] as int?,
         mimeType: json['mime_type'] as String?,
         duration: json['duration'] as int?,
         createdAt: json['created_at'] as String? ?? DateTime.now().toIso8601String(),
+        remoteUrl: json['remote_url'] as String?,
+        // localPath is NEVER read from JSON (transient Hive-only field)
       );
 
+  /// Serializes for sync — only includes [remoteUrl], never [localPath].
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type,
-        'url': url,
+        if (remoteUrl != null) 'remote_url': remoteUrl,
+        if (remoteUrl == null) 'url': url,
         'name': name,
         'size': size,
         'mime_type': mimeType,
@@ -77,6 +87,8 @@ class NoteAttachmentModel {
       mimeType: mimeType,
       duration: duration,
       createdAt: DateTime.parse(createdAt),
+      remoteUrl: remoteUrl,
+      localPath: localPath,
     );
   }
 }

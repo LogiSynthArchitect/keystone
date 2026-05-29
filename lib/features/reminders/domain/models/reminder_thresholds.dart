@@ -2,16 +2,18 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/storage/hive_service.dart';
 
 class ReminderThresholds {
-  final int unpaidJobDays;      // after how many days unpaid completed job triggers
-  final int stuckInProgressDays; // after how many days in-progress is "stuck"
-  final int followUpPendingDays; // after how many days no follow-up triggers
+  final int unpaidJobDays;         // after how many days unpaid completed job triggers
+  final int stuckInProgressDays;   // after how many days in-progress is "stuck"
+  final int followUpPendingDays;   // after how many days no follow-up triggers
   final int followUpNoResponseDays; // after how many days no response triggers
+  final int recurringJobOverdueDays; // after how many days a due schedule triggers
 
   const ReminderThresholds({
     this.unpaidJobDays = 1,
     this.stuckInProgressDays = 3,
     this.followUpPendingDays = 1,
     this.followUpNoResponseDays = 3,
+    this.recurringJobOverdueDays = 2,
   });
 
   ReminderThresholds copyWith({
@@ -19,11 +21,13 @@ class ReminderThresholds {
     int? stuckInProgressDays,
     int? followUpPendingDays,
     int? followUpNoResponseDays,
+    int? recurringJobOverdueDays,
   }) => ReminderThresholds(
     unpaidJobDays: unpaidJobDays ?? this.unpaidJobDays,
     stuckInProgressDays: stuckInProgressDays ?? this.stuckInProgressDays,
     followUpPendingDays: followUpPendingDays ?? this.followUpPendingDays,
     followUpNoResponseDays: followUpNoResponseDays ?? this.followUpNoResponseDays,
+    recurringJobOverdueDays: recurringJobOverdueDays ?? this.recurringJobOverdueDays,
   );
 
   static const _key = 'reminder_thresholds';
@@ -38,6 +42,7 @@ class ReminderThresholds {
           stuckInProgressDays: data['stuckInProgressDays'] as int? ?? 3,
           followUpPendingDays: data['followUpPendingDays'] as int? ?? 1,
           followUpNoResponseDays: data['followUpNoResponseDays'] as int? ?? 3,
+          recurringJobOverdueDays: data['recurringJobOverdueDays'] as int? ?? 2,
         );
       }
     } catch (_) {}
@@ -51,6 +56,7 @@ class ReminderThresholds {
       'stuckInProgressDays': t.stuckInProgressDays,
       'followUpPendingDays': t.followUpPendingDays,
       'followUpNoResponseDays': t.followUpNoResponseDays,
+      'recurringJobOverdueDays': t.recurringJobOverdueDays,
     });
   }
 }

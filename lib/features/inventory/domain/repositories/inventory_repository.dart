@@ -17,6 +17,7 @@ abstract class InventoryRepository {
     String? reason,
     String? referenceType,
     String? referenceId,
+    String? transactionId,
   });
 
   Future<InventoryItemEntity> restockItem({

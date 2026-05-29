@@ -33,6 +33,7 @@ class JobModel {
   final String? coverImageUrl;
   final String createdAt;
   final String updatedAt;
+  final bool subEntitiesSaved;
 
   JobModel({
     required this.id,
@@ -66,6 +67,7 @@ class JobModel {
     this.coverImageUrl,
     required this.createdAt,
     required this.updatedAt,
+    this.subEntitiesSaved = true,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) => JobModel(
@@ -98,6 +100,7 @@ class JobModel {
     isDeleted: json['is_deleted'] as bool? ?? false,
     deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at']) : null,
     coverImageUrl: json['cover_image_url'] as String?,
+    subEntitiesSaved: json['sub_entities_saved'] as bool? ?? true,
     createdAt: json['created_at'],
     updatedAt: json['updated_at'],
   );
@@ -132,6 +135,7 @@ class JobModel {
     isDeleted: entity.isDeleted,
     deletedAt: entity.deletedAt,
     coverImageUrl: entity.coverImageUrl,
+    subEntitiesSaved: entity.subEntitiesSaved,
     createdAt: entity.createdAt.toIso8601String(),
     updatedAt: entity.updatedAt.toIso8601String(),
   );
@@ -166,6 +170,7 @@ class JobModel {
     'is_deleted': isDeleted,
     'deleted_at': deletedAt?.toIso8601String(),
     'cover_image_url': coverImageUrl,
+    'sub_entities_saved': subEntitiesSaved,
     'created_at': createdAt,
     'updated_at': updatedAt,
   };
@@ -200,6 +205,7 @@ class JobModel {
     isDeleted: isDeleted,
     deletedAt: deletedAt,
     coverImageUrl: coverImageUrl,
+    subEntitiesSaved: subEntitiesSaved,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
   );
@@ -234,6 +240,7 @@ class JobModel {
     bool? isDeleted,
     DateTime? deletedAt,
     String? coverImageUrl,
+    bool? subEntitiesSaved,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -267,6 +274,7 @@ class JobModel {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      subEntitiesSaved: subEntitiesSaved ?? this.subEntitiesSaved,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

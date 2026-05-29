@@ -7,6 +7,7 @@ import '../../domain/repositories/knowledge_note_repository.dart';
 import '../datasources/knowledge_note_local_datasource.dart';
 import '../datasources/knowledge_note_remote_datasource.dart';
 import '../models/knowledge_note_model.dart';
+import '../models/note_attachment_model.dart';
 import '../../../../core/errors/auth_exception.dart';
 
 class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
@@ -58,7 +59,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
 
   @override
   Future<KnowledgeNoteEntity> createNote(KnowledgeNoteEntity note) async {
-    // Generate a stable local UUID so we can clean it up after remote sync.
+    // Generate a stable local UUIDv4 — becomes the server PK.
     final localId = note.id.isNotEmpty ? note.id : const Uuid().v4();
     final localModel = KnowledgeNoteModel.fromEntity(note).copyWith(
       id: localId,
@@ -69,21 +70,24 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
+        // Client UUIDv4 is sent as id — server accepts it as the PK
         final remoteModel = await _remote.createNote({
+          'id': localId,
           'user_id': _userId,
           'title': note.title,
           'description': note.description,
           'tags': note.tags,
           'photo_url': note.photoUrl,
+          'cover_image_url': note.coverImageUrl,
           'service_type': note.serviceType,
+          'media_type': note.mediaType,
+          'attachments': note.attachments.map((a) => NoteAttachmentModel.fromEntity(a).toJson()).toList(),
           'is_archived': false,
+          'created_at': note.createdAt.toIso8601String(),
+          'updated_at': note.updatedAt.toIso8601String(),
         });
-        // Remove the local pending entry before saving the server version to
-        // prevent duplicates if the remote assigned a different UUID.
-        if (localId != remoteModel.id) {
-          await _local.deleteNote(localId);
-        }
-        await _local.saveNote(remoteModel);
+        // UUID is stable — no delete-and-replace needed
+        await _local.saveNote(remoteModel.copyWith(syncStatus: 'synced'));
         return remoteModel.toEntity();
       } catch (e) {
         debugPrint('[KS:NOTES] Remote createNote failed, staying pending: $e');
@@ -139,24 +143,25 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
     if (pending.isEmpty) return;
     for (final note in pending) {
       try {
-        final remoteModel = await _remote.createNote({
+        // Idempotent upsert — ON CONFLICT (id) DO UPDATE
+        final remoteModel = await _remote.upsertNote({
+          'id': note.id,
           'user_id': _userId,
           'title': note.title,
           'description': note.description,
           'tags': note.tags,
           'photo_url': note.photoUrl,
+          'cover_image_url': note.coverImageUrl,
           'service_type': note.serviceType,
-          'is_archived': false,
+          'media_type': note.mediaType,
+          'attachments': note.attachments,
+          'is_archived': note.isArchived,
+          'is_pinned': note.isPinned,
+          'created_at': note.createdAt,
+          'updated_at': note.updatedAt,
         });
-        // Step 1: Mark local copy as synced BEFORE deleting it.
-        // If delete/save below fails, the note won't appear in the next getPendingNotes() —
-        // preventing a duplicate from being created on the server.
-        await _local.saveNote(note.copyWith(syncStatus: 'synced'));
-        // Step 2: Replace local entry with the server copy (real server ID).
-        if (note.id != remoteModel.id) {
-          await _local.deleteNote(note.id);
-        }
-        await _local.saveNote(remoteModel);
+        // UUID is stable — no delete-and-replace needed. Just mark synced.
+        await _local.saveNote(remoteModel.copyWith(syncStatus: 'synced'));
       } catch (e) {
         debugPrint('[KS:NOTES] syncPendingNotes failed for ${note.id}: $e');
       }

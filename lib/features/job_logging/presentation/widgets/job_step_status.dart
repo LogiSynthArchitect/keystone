@@ -3,13 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../domain/entities/job_entity.dart';
 
 /// Step 2 of the Add New Job wizard: Job status + Lead source.
+/// When [currentJobStatus] is set (edit mode), backward status transitions
+/// are visually disabled to prevent invalid status moves.
 class JobStepStatus extends ConsumerWidget {
   final String status;
   final String? leadSource;
   final ValueChanged<String> onStatusChanged;
   final ValueChanged<String?> onLeadSourceChanged;
+  final String? currentJobStatus;
 
   const JobStepStatus({
     super.key,
@@ -17,6 +21,7 @@ class JobStepStatus extends ConsumerWidget {
     required this.leadSource,
     required this.onStatusChanged,
     required this.onLeadSourceChanged,
+    this.currentJobStatus,
   });
 
   @override
@@ -54,18 +59,32 @@ class JobStepStatus extends ConsumerWidget {
       spacing: 8, runSpacing: 8,
       children: options.map((opt) {
         final isSelected = status == opt.$1;
+        // When editing an existing job, gate each option by validateStatusTransition.
+        // A null return means the transition is allowed.
+        final isDisallowed = currentJobStatus != null &&
+            JobEntity.validateStatusTransition(currentJobStatus, opt.$1) != null;
         return GestureDetector(
-          onTap: () => onStatusChanged(opt.$1),
+          onTap: isDisallowed ? null : () => onStatusChanged(opt.$1),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected ? context.ksc.accent500.withValues(alpha: 0.1) : context.ksc.primary800,
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: isSelected ? context.ksc.accent500 : context.ksc.primary700),
+              border: Border.all(
+                color: isSelected
+                    ? context.ksc.accent500
+                    : isDisallowed
+                        ? context.ksc.neutral700
+                        : context.ksc.primary700,
+              ),
             ),
             child: Text(opt.$2,
               style: AppTextStyles.caption.copyWith(
-                color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
+                color: isSelected
+                    ? context.ksc.accent500
+                    : isDisallowed
+                        ? context.ksc.neutral700
+                        : context.ksc.neutral400,
                 fontWeight: FontWeight.w900,
               ),
             ),

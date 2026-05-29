@@ -592,7 +592,7 @@ class _AudioAttachmentTileState extends State<_AudioAttachmentTile> {
   @override
   void initState() {
     super.initState();
-    _player.setUrl(widget.attachment.url);
+    _player.setUrl(widget.attachment.remoteUrl ?? widget.attachment.url);
     _player.durationStream.listen((d) {
       if (d != null && mounted) setState(() => _duration = d);
     });
@@ -797,6 +797,15 @@ class _DocumentAttachmentTile extends StatelessWidget {
   }
 
   String get _resolvedPath {
+    // Prefer local file path (transient, for fast offline display)
+    if (attachment.localPath != null) {
+      return attachment.localPath!.startsWith('file://')
+          ? attachment.localPath!.replaceFirst('file://', '')
+          : attachment.localPath!;
+    }
+    // Fall back to remote URL (streaming)
+    if (attachment.remoteUrl != null) return attachment.remoteUrl!;
+    // Legacy: direct url field
     if (attachment.url.startsWith('file://')) {
       return attachment.url.replaceFirst('file://', '');
     }

@@ -164,4 +164,5 @@ class HiveService {
   static Box get recurringSchedules       => Hive.box(recurringSchedulesBox);
   static Box get auth           => Hive.box(authBox);
   static Box get settings        => Hive.box(settingsBox);
+  static Box get meta            => Hive.box(metaBox);
 }

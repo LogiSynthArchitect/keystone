@@ -9,6 +9,7 @@ import '../../../../core/widgets/ks_badge.dart';
 import '../../../../core/widgets/sync_status_indicator.dart';
 import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
 import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
+import 'job_recovery_sheet.dart';
 
 /// Job list card — info only, no action buttons.
 ///
@@ -198,6 +199,15 @@ class JobCard extends StatelessWidget {
                       label: 'SAVE FAILED',
                       variant: KsBadgeVariant.error,
                       icon: LineAwesomeIcons.exclamation_circle_solid,
+                    ),
+                  if (!job.subEntitiesSaved)
+                    GestureDetector(
+                      onTap: () => JobRecoverySheet.show(context, job),
+                      child: KsBadge(
+                        label: 'INCOMPLETE  →',
+                        variant: KsBadgeVariant.warning,
+                        icon: LineAwesomeIcons.exclamation_triangle_solid,
+                      ),
                     ),
                 ],
               ),

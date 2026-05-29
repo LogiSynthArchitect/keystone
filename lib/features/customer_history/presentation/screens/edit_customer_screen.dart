@@ -26,6 +26,7 @@ class EditCustomerScreen extends ConsumerStatefulWidget {
 
 class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
   CustomerEntity? _customer;
+  String? _snapshotUpdatedAt; // OCC guard: capture updatedAt at navigation time
 
   final _nameController     = TextEditingController();
   final _phoneController    = TextEditingController();
@@ -52,20 +53,27 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
   @override
   void initState() {
     super.initState();
+    // Snapshot-on-navigate: one-shot read, decoupled from reactive provider.
+    // Background sync cannot wipe active form state.
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadCustomer());
   }
 
-  void _loadCustomer() {
-    final customer = ref.read(customerDetailProvider(widget.customerId)).valueOrNull;
-    if (customer == null) return;
-    _nameController.text     = customer.fullName;
-    _phoneController.text    = customer.phoneNumber;
-    _locationController.text = customer.location ?? '';
-    _notesController.text    = customer.notes ?? '';
-    _propertyType            = customer.propertyType;
-    _leadSource              = customer.leadSource;
-    _customer = customer;
-    if (mounted) setState(() {});
+  Future<void> _loadCustomer() async {
+    try {
+      final customer = await ref.read(customerDetailProvider(widget.customerId).future);
+      if (customer == null || !mounted) return;
+      _nameController.text     = customer.fullName;
+      _phoneController.text    = customer.phoneNumber;
+      _locationController.text = customer.location ?? '';
+      _notesController.text    = customer.notes ?? '';
+      _propertyType            = customer.propertyType;
+      _leadSource              = customer.leadSource;
+      _snapshotUpdatedAt       = customer.updatedAt.toIso8601String();
+      _customer = customer;
+      setState(() {});
+    } catch (_) {
+      // Provider error handled by build method
+    }
   }
 
   @override
@@ -109,6 +117,22 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
     }
 
     try {
+      // OCC conflict check: if the record was updated in background since
+      // we loaded the edit screen, surface a diff overlay.
+      final latestLocal = await ref.read(customerRepositoryProvider).getCustomerById(customer.id);
+      if (_snapshotUpdatedAt != null && latestLocal.updatedAt.toIso8601String() != _snapshotUpdatedAt) {
+        final shouldOverride = await KsConfirmDialog.show(context,
+          title: 'CONFLICT DETECTED',
+          message: 'This customer was modified by a background sync while you were editing.\n\n'
+            'Your changes will overwrite the synced version.',
+          confirmLabel: 'OVERWRITE',
+          cancelLabel: 'REVIEW',
+          isDanger: true,
+          onConfirm: () => Navigator.of(context, rootNavigator: true).pop(true),
+        );
+        if (shouldOverride != true) return;
+      }
+
       final updated = customer.copyWith(
         fullName: name,
         phoneNumber: phone,
@@ -147,22 +171,22 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
       child: Scaffold(
         backgroundColor: context.ksc.primary900,
         appBar: const KsAppBar(title: "EDIT CUSTOMER", showBack: true),
-        body: customerAsync.when(
-          loading: () => const Center(child: KsLoadingIndicator()),
-          error: (e, _) => KsEmptyState(
-            icon: LineAwesomeIcons.exclamation_triangle_solid,
-            title: "FAILED TO LOAD",
-            subtitle: "Could not load customer details.",
-            actionLabel: "TAP TO RETRY",
-            onAction: () => ref.invalidate(customerDetailProvider(widget.customerId)),
-          ),
-          data: (c) {
-            if (c == null) {
-              return const KsEmptyState(icon: LineAwesomeIcons.user_slash_solid, title: "CUSTOMER NOT FOUND");
-            }
-            if (_customer == null) return const SizedBox.shrink();
-
-            return Column(
+        body: _customer == null
+          ? customerAsync.when(
+              loading: () => const Center(child: KsLoadingIndicator()),
+              error: (e, _) => KsEmptyState(
+                icon: LineAwesomeIcons.exclamation_triangle_solid,
+                title: "FAILED TO LOAD",
+                subtitle: "Could not load customer details.",
+                actionLabel: "TAP TO RETRY",
+                onAction: () { _loadCustomer(); },
+              ),
+              data: (c) {
+                if (c == null) return const KsEmptyState(icon: LineAwesomeIcons.user_slash_solid, title: "CUSTOMER NOT FOUND");
+                return const SizedBox.shrink();
+              },
+            )
+          : Column(
               children: [
                 const KsOfflineBanner(),
                 Expanded(
@@ -174,7 +198,7 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
                         _sectionLabel("CONTACT"),
                         _textField("Full Name", _nameController),
                         const SizedBox(height: 16),
-                        _phoneField(c),
+                        _phoneField(customer!),
                         const SizedBox(height: 32),
                         _sectionLabel("PROPERTY TYPE"),
                         _chipSelector(
@@ -200,9 +224,7 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
                   ),
                 ),
               ],
-            );
-          },
-        ),
+            ),
         bottomNavigationBar: _buildBottomBar(customer),
       ),
     );

@@ -33,14 +33,29 @@ class JobTemplateRemoteDatasource {
     }
   }
 
+  /// Soft-delete: UPDATE is_deleted = true. Row stays on server for sync.
   Future<void> deleteTemplate(String id) async {
     try {
       await _supabase
           .from(SupabaseConstants.jobTemplatesTable)
-          .delete()
+          .update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', id);
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not delete template.', code: 'DELETE_FAILED', cause: e);
+    }
+  }
+
+  /// PATCH-only rename — uses `.update()` so only `name` and `updated_at`
+  /// are touched. Other columns (services_json, hardware_json, parts_json)
+  /// survive unchanged. Never call [saveTemplate] for partial updates.
+  Future<void> renameTemplate(String id, String newName) async {
+    try {
+      await _supabase
+          .from(SupabaseConstants.jobTemplatesTable)
+          .update({'name': newName, 'updated_at': DateTime.now().toIso8601String()})
+          .eq('id', id);
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not rename template.', code: 'RENAME_FAILED', cause: e);
     }
   }
 }

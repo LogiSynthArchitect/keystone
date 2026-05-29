@@ -6,15 +6,30 @@ class CustomerRemoteDatasource {
   final SupabaseClient _supabase;
   CustomerRemoteDatasource(this._supabase);
 
-  Future<List<CustomerModel>> getCustomers({required String userId, int limit = 25, int offset = 0}) async {
+  /// Fetch customers, optionally filtered by [updatedAfter] for delta sync.
+  /// When [updatedAfter] is null, fetches ALL non-deleted customers (initial seed).
+  /// When [updatedAfter] is set, fetches only records with updated_at > updatedAfter.
+  /// Includes soft-deleted records (deleted_at > updatedAfter) so the local
+  /// cache can remove them.
+  Future<List<CustomerModel>> getCustomers({
+    required String userId,
+    String? updatedAfter,
+  }) async {
     try {
-      final data = await _supabase
+      final baseQuery = _supabase
           .from('customers')
           .select()
-          .eq('user_id', userId)
-          .isFilter('deleted_at', null)
-          .order('full_name')
-          .range(offset, offset + limit - 1);
+          .eq('user_id', userId);
+
+      final filteredQuery = (updatedAfter != null)
+          // Delta: customers updated OR deleted since last sync
+          ? baseQuery.or(
+              'updated_at.gt.$updatedAfter,deleted_at.gt.$updatedAfter',
+            )
+          // Initial full seed: only non-deleted
+          : baseQuery.isFilter('deleted_at', null);
+
+      final data = await filteredQuery.order('updated_at');
       return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
     } on PostgrestException catch (e) {
       throw NetworkException(message: 'Could not load customers.', code: 'CUSTOMERS_FETCH_FAILED', cause: e);

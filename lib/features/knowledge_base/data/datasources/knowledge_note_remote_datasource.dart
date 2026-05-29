@@ -39,6 +39,18 @@ class KnowledgeNoteRemoteDatasource {
     }
   }
 
+  /// Idempotent upsert for sync — uses ON CONFLICT (id) DO UPDATE.
+  Future<KnowledgeNoteModel> upsertNote(Map<String, dynamic> json) async {
+    try {
+      final data = await _supabase.rpc('upsert_knowledge_note', params: {'payload': json});
+      return KnowledgeNoteModel.fromJson(data as Map<String, dynamic>);
+    } on PostgrestException catch (e) {
+      throw NetworkException(message: 'Could not sync note.', code: 'NOTE_UPSERT_FAILED', cause: e);
+    } catch (e) {
+      throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
+    }
+  }
+
   Future<KnowledgeNoteModel> updateNote(String id, Map<String, dynamic> json) async {
     try {
       final data = await _supabase.from('knowledge_notes').update(json).eq('id', id).select().single();

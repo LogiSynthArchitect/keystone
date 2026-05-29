@@ -8,6 +8,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'core/constants/supabase_constants.dart';
 import 'core/services/local_notification_service.dart';
 import 'core/storage/hive_service.dart';
+import 'core/recovery/reconcile_pending_edits.dart';
+import 'core/recovery/reconcile_pending_restocks.dart';
 import 'app.dart';
 
 void main() async {
@@ -64,6 +66,12 @@ void main() async {
     await HiveService.clearDataBoxes();
     await metaBox.put('hive_schema_version', currentVersion);
   }
+
+  // 02b. RECOVER PENDING EDIT TRANSACTIONS (cross-box WAL replay)
+  await reconcilePendingEdits();
+
+  // 02c. RECOVER PENDING RESTOCK TRANSACTIONS (restock WAL replay)
+  await reconcilePendingRestocks();
 
   // Init local notifications
   await LocalNotificationService.initialize(

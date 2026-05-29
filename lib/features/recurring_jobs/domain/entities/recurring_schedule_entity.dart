@@ -4,6 +4,7 @@ class RecurringScheduleEntity {
   final String customerId;
   final String customerName;
   final String serviceType;
+  final String? serviceTypeId; // FK to service_types.id for name-drift resilience
   final String intervalType;
   final int? dayOfWeek;
   final int? dayOfMonth;
@@ -19,6 +20,7 @@ class RecurringScheduleEntity {
     required this.customerId,
     required this.customerName,
     required this.serviceType,
+    this.serviceTypeId,
     required this.intervalType,
     this.dayOfWeek,
     this.dayOfMonth,
@@ -35,6 +37,7 @@ class RecurringScheduleEntity {
     String? customerId,
     String? customerName,
     String? serviceType,
+    String? serviceTypeId,
     String? intervalType,
     int? dayOfWeek,
     int? dayOfMonth,
@@ -50,6 +53,7 @@ class RecurringScheduleEntity {
       customerId: customerId ?? this.customerId,
       customerName: customerName ?? this.customerName,
       serviceType: serviceType ?? this.serviceType,
+      serviceTypeId: serviceTypeId ?? this.serviceTypeId,
       intervalType: intervalType ?? this.intervalType,
       dayOfWeek: dayOfWeek ?? this.dayOfWeek,
       dayOfMonth: dayOfMonth ?? this.dayOfMonth,

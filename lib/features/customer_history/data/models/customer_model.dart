@@ -15,6 +15,7 @@ class CustomerModel {
   final String? propertyType;
   final String? leadSource;
   final String? coverImageUrl;
+  final String? deletedAt;
   final String createdAt;
   final String updatedAt;
 
@@ -32,6 +33,7 @@ class CustomerModel {
     this.propertyType,
     this.leadSource,
     this.coverImageUrl,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -50,6 +52,7 @@ class CustomerModel {
         propertyType: json['property_type'] as String?,
         leadSource: json['lead_source'] as String?,
         coverImageUrl: json['cover_image_url'] as String?,
+        deletedAt: json['deleted_at'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
@@ -75,6 +78,7 @@ class CustomerModel {
         'property_type': propertyType,
         'lead_source': leadSource,
         'cover_image_url': coverImageUrl,
+        if (deletedAt != null) 'deleted_at': deletedAt,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -111,6 +115,7 @@ class CustomerModel {
     String? propertyType,
     String? leadSource,
     String? coverImageUrl,
+    Object? deletedAt = _sentinel,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -128,8 +133,11 @@ class CustomerModel {
       propertyType: propertyType ?? this.propertyType,
       leadSource: leadSource ?? this.leadSource,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      deletedAt: deletedAt == _sentinel ? this.deletedAt : deletedAt as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  static const _sentinel = Object();
 }

@@ -1,4 +1,5 @@
 import 'package:keystone/core/storage/hive_service.dart';
+import '../../../../core/constants/app_enums.dart';
 import '../models/note_job_link_model.dart';
 
 class NoteLinkLocalDatasource {
@@ -14,6 +15,10 @@ class NoteLinkLocalDatasource {
 
   Future<List<NoteJobLinkModel>> getForJob(String jobId) async {
     return _all().where((m) => m.jobId == jobId).toList();
+  }
+
+  Future<List<NoteJobLinkModel>> getPending() async {
+    return _all().where((m) => m.syncStatus == SyncStatus.pending).toList();
   }
 
   Future<void> save(NoteJobLinkModel model) async {

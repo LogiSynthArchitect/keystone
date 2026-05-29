@@ -11,7 +11,6 @@ import '../../domain/usecases/get_service_types_usecase.dart';
 import '../../domain/usecases/create_service_type_usecase.dart';
 import '../../domain/usecases/update_service_type_usecase.dart';
 import '../../domain/usecases/delete_service_type_usecase.dart';
-import '../../domain/usecases/seed_default_service_types_usecase.dart';
 
 final serviceTypeLocalDatasourceProvider = Provider<ServiceTypeLocalDatasource>((ref) => ServiceTypeLocalDatasource());
 final serviceTypeRemoteDatasourceProvider = Provider<ServiceTypeRemoteDatasource>((ref) => ServiceTypeRemoteDatasource(ref.watch(supabaseClientProvider)));
@@ -26,7 +25,6 @@ final getServiceTypesUsecaseProvider = Provider<GetServiceTypesUsecase>((ref) =>
 final createServiceTypeUsecaseProvider = Provider<CreateServiceTypeUsecase>((ref) => CreateServiceTypeUsecase(ref.watch(serviceTypeRepositoryProvider)));
 final updateServiceTypeUsecaseProvider = Provider<UpdateServiceTypeUsecase>((ref) => UpdateServiceTypeUsecase(ref.watch(serviceTypeRepositoryProvider)));
 final deleteServiceTypeUsecaseProvider = Provider<DeleteServiceTypeUsecase>((ref) => DeleteServiceTypeUsecase(ref.watch(serviceTypeRepositoryProvider)));
-final seedDefaultServiceTypesUsecaseProvider = Provider<SeedDefaultServiceTypesUseCase>((ref) => SeedDefaultServiceTypesUseCase(ref.watch(serviceTypeRepositoryProvider)));
 
 class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntity>>> {
   final Ref _ref;
@@ -38,19 +36,27 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
     state = const AsyncValue.loading();
     try {
       final types = await _ref.read(getServiceTypesUsecaseProvider).call(const NoParams());
-      
+
       if (types.isEmpty) {
         final userId = _ref.read(supabaseClientProvider).auth.currentUser?.id;
         if (userId != null) {
-          await _ref.read(seedDefaultServiceTypesUsecaseProvider).call(userId);
-          final seededTypes = await _ref.read(getServiceTypesUsecaseProvider).call(const NoParams());
-          state = AsyncValue.data(seededTypes);
+          // Server-authoritative seed — RPC atomically checks flag, inserts,
+          // and marks seeded. No client-side seed logic needed.
+          final seeded = await _ref.read(supabaseClientProvider)
+              .rpc('seed_default_service_types', params: {'p_user_id': userId});
+
+          // Pull remote types (newly seeded or already existed)
+          final repo = _ref.read(serviceTypeRepositoryProvider);
+          await repo.syncServiceTypes();
+          final syncedTypes = await repo.getServiceTypes();
+          state = AsyncValue.data(syncedTypes);
           return;
         }
       }
-      
+
       state = AsyncValue.data(types);
     } catch (e, st) {
+      // Network error: show error state with retry — never fall through to seeding
       state = AsyncValue.error(e, st);
     }
   }
@@ -77,14 +83,17 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
   }
 
   /// Save price locally. Returns true if local save succeeded.
-  /// Does NOT update screen state — caller is responsible for
-  /// calling [applyPriceUpdate] after any UI animation.
+  /// Uses scoped PATCH payload — only transmits default_price, never name/category/icon.
   Future<bool> savePriceOnly(String id, int? defaultPrice) async {
     final current = state.valueOrNull;
     if (current == null) return false;
     final index = current.indexWhere((t) => t.id == id);
     if (index == -1) return false;
-    final updated = current[index].copyWith(defaultPrice: defaultPrice);
+    final updated = current[index].copyWith(
+      defaultPrice: defaultPrice,
+      correctionFields: ['default_price'],
+      updatedBy: 'mobile',
+    );
 
     try {
       await _ref.read(updateServiceTypeUsecaseProvider).call(UpdateServiceTypeParams(updated));

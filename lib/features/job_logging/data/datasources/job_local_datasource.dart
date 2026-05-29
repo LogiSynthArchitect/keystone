@@ -30,16 +30,33 @@ class JobLocalDatasource {
 
   Future<List<JobModel>> getJobs({int limit = 500, int offset = 0}) async {
     try {
-      // PERFORMANCE FIX: Use keys to selectively load models from memory
-      final keys = _box.keys.toList().reversed.skip(offset).take(limit);
-      final list = <JobModel>[];
-      for (var key in keys) {
+      // Eviction-safe query: always include actionable jobs (needs follow-up
+      // or unpaid), then pad with newest non-actionable jobs up to [limit].
+      // This prevents follow-up green dots from silently vanishing on techs
+      // with 500+ jobs.
+      final actionable = <JobModel>[];
+      final nonActionable = <JobModel>[];
+
+      // Iterate newest-first for natural sort preservation
+      for (var key in _box.keys.toList().reversed) {
         final raw = _box.get(key);
-        if (raw != null) {
-          list.add(JobModel.fromJson(Map<String, dynamic>.from(raw)));
+        if (raw == null) continue;
+        final job = JobModel.fromJson(Map<String, dynamic>.from(raw));
+        // Actionable = follow-up not yet sent, or payment not fully collected
+        if (!job.followUpSent || job.paymentStatus != 'paid') {
+          actionable.add(job);
+        } else {
+          nonActionable.add(job);
         }
       }
-      return list;
+
+      // Actionable jobs are always included regardless of limit
+      final result = actionable;
+      final remaining = limit - result.length;
+      if (remaining > 0 && offset < nonActionable.length) {
+        result.addAll(nonActionable.skip(offset).take(remaining));
+      }
+      return result;
     } catch (e) {
       throw StorageException(message: 'Could not read local jobs.', code: 'LOCAL_READ_FAILED', cause: e);
     }
@@ -47,7 +64,10 @@ class JobLocalDatasource {
 
   Future<List<JobModel>> getPendingJobs() async {
     final all = await getJobs();
-    return all.where((j) => j.syncStatus == 'pending').toList();
+    return all.where((j) =>
+      j.syncStatus == 'pending' &&
+      j.subEntitiesSaved == true
+    ).toList();
   }
 
   Future<void> updateSyncStatus(String id, String status) async {
@@ -86,6 +106,7 @@ class JobLocalDatasource {
         if (raw == null) continue;
         final jobMap = Map<String, dynamic>.from(raw);
         jobMap['customer_id'] = newId;
+        jobMap['sync_status'] = 'pending'; // Re-flag for re-sync with new FK
         await _box.put(key, jobMap);
       }
       if (keysToUpdate.isNotEmpty) await _box.flush();

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:keystone/core/network/connectivity_service.dart';
 import 'package:keystone/features/knowledge_base/domain/entities/note_job_link_entity.dart';
+import '../../../../core/constants/app_enums.dart';
 import '../datasources/note_link_local_datasource.dart';
 import '../datasources/note_link_remote_datasource.dart';
 import '../models/note_job_link_model.dart';
@@ -54,16 +55,17 @@ class NoteLinkRepositoryImpl implements NoteLinkRepository {
       jobId: jobId,
       userId: userId,
       createdAt: DateTime.now().toIso8601String(),
+      syncStatus: SyncStatus.pending,
     );
     await _local.save(localModel);
 
     if (await _connectivity.isConnected) {
       try {
         final remoteModel = await _remote.create(localModel.toJson());
-        await _local.save(remoteModel);
+        await _local.save(remoteModel.copyWith(syncStatus: SyncStatus.synced));
         return remoteModel.toEntity();
       } catch (e) {
-        debugPrint('[KS:NOTELINKS] Remote createLink failed, using local: $e');
+        debugPrint('[KS:NOTELINKS] Remote createLink failed, staying pending: $e');
       }
     }
     return localModel.toEntity();
@@ -77,6 +79,21 @@ class NoteLinkRepositoryImpl implements NoteLinkRepository {
         await _remote.delete(id);
       } catch (e) {
         debugPrint('[KS:NOTELINKS] Remote deleteLink failed, local deleted: $e');
+      }
+    }
+  }
+
+  @override
+  Future<void> syncPendingLinks() async {
+    if (!await _connectivity.isConnected) return;
+    final pending = await _local.getPending();
+    if (pending.isEmpty) return;
+    for (final link in pending) {
+      try {
+        final remoteModel = await _remote.create(link.toJson());
+        await _local.save(remoteModel.copyWith(syncStatus: SyncStatus.synced));
+      } catch (e) {
+        debugPrint('[KS:NOTELINKS] syncPendingLinks failed for ${link.id}: $e');
       }
     }
   }

@@ -34,4 +34,11 @@ class JobExpensesLocalDatasource {
     await HiveService.jobExpenses.deleteAll(keys);
     await HiveService.jobExpenses.flush();
   }
+
+  /// Deletes specific keys (used by save-first-then-delete orphan cleanup).
+  Future<void> deleteKeys(List<String> keys) async {
+    if (keys.isEmpty) return;
+    await HiveService.jobExpenses.deleteAll(keys);
+    await HiveService.jobExpenses.flush();
+  }
 }

@@ -13,6 +13,7 @@ class JobTemplateEntity {
   final List<TemplatePartItem> parts;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isDeleted;
 
   const JobTemplateEntity({
     required this.id,
@@ -25,6 +26,7 @@ class JobTemplateEntity {
     this.parts = const [],
     required this.createdAt,
     required this.updatedAt,
+    this.isDeleted = false,
   });
 
   JobTemplateEntity copyWith({
@@ -38,6 +40,7 @@ class JobTemplateEntity {
     List<TemplatePartItem>? parts,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isDeleted,
   }) {
     return JobTemplateEntity(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class JobTemplateEntity {
       parts: parts ?? this.parts,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

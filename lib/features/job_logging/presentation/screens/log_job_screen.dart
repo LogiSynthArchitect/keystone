@@ -222,6 +222,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         final row = ServiceRow();
         row.serviceType = s.serviceType;
         row.qtyController.text = s.quantity.toString();
+        if (s.unitPrice != null) {
+          row.priceController.text = CurrencyFormatter.format(s.unitPrice!);
+        }
         _additionalServices.add(row);
       }
 
@@ -235,6 +238,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         final row = ItemRow();
         row.nameController.text = h.name;
         row.qtyController.text = h.quantity.toString();
+        if (h.unitSalePrice != null) {
+          row.priceController.text = CurrencyFormatter.format(h.unitSalePrice!);
+        }
         row.inventoryItemId = h.inventoryItemId;
         if (h.inventoryItemId != null) {
           row.inventoryItem = invItems.where((i) => i.id == h.inventoryItemId).firstOrNull;
@@ -309,7 +315,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
           id: '${const Uuid().v4()}-svc-${e.key}',
           serviceType: s.serviceType ?? '',
           quantity: int.tryParse(s.qtyController.text.trim()) ?? 1,
-          unitPrice: (ref.read(serviceTypeProvider).valueOrNull ?? []).where((t) => t.name == s.serviceType).firstOrNull?.defaultPrice,
+          unitPrice: CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
           sortOrder: e.key,
         );
       }).toList(),
@@ -376,10 +382,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       if (mounted) KsSlidingNotification.show(context, message: "Select a recurring interval or turn off recurring", type: KsNotificationType.error);
       return;
     }
-    if (_isRecurring && _finalCustomerId == null) {
-      if (mounted) KsSlidingNotification.show(context, message: "A customer is required for recurring jobs", type: KsNotificationType.error);
-      return;
-    }
+    // (No customer guard — _finalCustomerId is resolved at save time via job.customerId)
 
     // Pricing cross-validation
     final quotedPesewas = CurrencyFormatter.parseToPesewas(_quotedAmountController.text.trim());
@@ -390,14 +393,20 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
       return;
     }
 
-    // Status cross-validation: completed/invoiced require a final amount
+    // Status cross-validation: completed/invoiced — warn about ₵0 but don't block
+    bool _skipZeroAmountConfirm = false;
     if ((_status == 'completed' || _status == 'invoiced') && (finalPesewas == null || finalPesewas <= 0)) {
-      if (mounted) KsSlidingNotification.show(context,
-        message: _status == 'completed'
-            ? "Set a final amount before marking as completed"
-            : "Set a final amount before marking as invoiced",
-        type: KsNotificationType.error);
-      return;
+      final proceed = await KsConfirmDialog.show(
+        context,
+        title: _status == 'completed' ? 'COMPLETE WITHOUT PAYMENT?' : 'INVOICE WITHOUT PAYMENT?',
+        message: 'The final amount is GHS 0.00. This is a free service.\n\nContinue?',
+        confirmLabel: 'YES, FREE SERVICE',
+        cancelLabel: 'CANCEL',
+        isDanger: false,
+        onConfirm: () {},
+      );
+      if (proceed != true) return;
+      _skipZeroAmountConfirm = true;
     }
 
     // Lead source reminder (non-blocking)
@@ -517,6 +526,8 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
     if (!mounted) return;
     if (job != null) {
       final repo = ref.read(jobRepositoryProvider);
+      // Signal children are being saved — crash between saves means partial data
+      await repo.setSubEntitiesSaved(job.id, false);
 
       final validServices = _additionalServices.where((s) => s.serviceType != null && s.serviceType!.isNotEmpty).toList();
       if (validServices.isNotEmpty) {
@@ -525,7 +536,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
           jobId: job.id,
           serviceType: e.value.serviceType ?? '',
           quantity: int.tryParse(e.value.qtyController.text.trim()) ?? 1,
-          unitPrice: (ref.read(serviceTypeProvider).valueOrNull ?? []).where((t) => t.name == e.value.serviceType).firstOrNull?.defaultPrice,
+          unitPrice: CurrencyFormatter.parseToPesewas(e.value.priceController.text.trim()),
           sortOrder: e.key,
           createdAt: DateTime.now(),
         )).toList();
@@ -560,6 +571,9 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         )).toList();
         await repo.saveExpenses(job.id, entities);
       }
+
+      // All children saved — job is safe for sync
+      await repo.setSubEntitiesSaved(job.id, true);
 
       ref.read(logJobProvider.notifier).reset();
 
@@ -612,7 +626,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
                   id: '${const Uuid().v4()}-svc-${e.key}',
                   serviceType: s.serviceType ?? '',
                   quantity: int.tryParse(s.qtyController.text.trim()) ?? 1,
-                  unitPrice: (ref.read(serviceTypeProvider).valueOrNull ?? []).where((t) => t.name == s.serviceType).firstOrNull?.defaultPrice,
+                  unitPrice: CurrencyFormatter.parseToPesewas(s.priceController.text.trim()),
                   sortOrder: e.key,
                 );
               }).toList(),
@@ -644,7 +658,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         }
       }
 
-      if (_isRecurring && _finalCustomerId != null) {
+      if (_isRecurring) {
         final addDays = switch (_recurringInterval) {
           'weekly' => 7,
           'monthly' => 30,
@@ -652,9 +666,12 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
           _ => 30,
         };
         await ref.read(recurringScheduleProvider.notifier).add(
-          customerId: _finalCustomerId!,
+          customerId: job.customerId,
           customerName: _customerController.text.trim(),
           serviceType: _serviceType!,
+          serviceTypeId: (ref.read(serviceTypeProvider).valueOrNull ?? [])
+              .where((st) => st.name == _serviceType)
+              .firstOrNull?.id,
           intervalType: _recurringInterval,
           nextDueDate: _jobDate.add(Duration(days: addDays)),
           notes: _notesController.text.trim(),
@@ -966,31 +983,13 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         final matchedName = customer.fullName.toLowerCase();
 
         if (typedName.isNotEmpty && typedName != matchedName) {
-          // Name mismatch — prompt user
-          final useExisting = await KsConfirmDialog.show(
-            context,
-            title: 'CUSTOMER NAME MISMATCH',
-            message: 'Phone belongs to ${customer.fullName.toUpperCase()}.\n\n'
-                'You entered: ${_customerController.text.trim().toUpperCase()}\n\n'
-                'Use the existing customer name?',
-            confirmLabel: 'USE EXISTING',
-            cancelLabel: 'KEEP MY NAME',
-            isDanger: false,
-            onConfirm: () {},
-          );
-
-          if (useExisting == true && mounted) {
+          // Name mismatch — always use the matched customer's name
+          if (mounted) {
             setState(() {
               _customerController.text = customer.fullName;
               _matchedCustomerName = customer.fullName;
               _matchedCustomerId = customer.id;
               _finalCustomerId = customer.id;
-            });
-          } else if (mounted) {
-            setState(() {
-              _matchedCustomerName = null;
-              _matchedCustomerId = null;
-              _finalCustomerId = null;
             });
           }
         } else {

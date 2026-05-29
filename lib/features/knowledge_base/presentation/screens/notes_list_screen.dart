@@ -13,6 +13,7 @@ import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/ks_summary_strip.dart';
 import '../providers/notes_providers.dart';
 import 'add_note_screen.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
@@ -142,9 +143,23 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         ),
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const KsOfflineBanner(),
           const SizedBox(height: 8),
+          // Summary strip — dynamic, filter-aware
+          KsSummaryStrip(
+            value: state.filterCategory != null || state.searchQuery.isNotEmpty
+                ? '${state.displayed.length}'
+                : '${state.notes.length}',
+            label: state.filterCategory != null || state.searchQuery.isNotEmpty
+                ? "FILTERED NOTES"
+                : (state.showArchived ? "ALL NOTES (INCL. ARCHIVED)" : "ALL NOTES"),
+            subtitle: state.displayed.length != state.notes.length
+                ? "${state.displayed.length} shown${state.filterCategory != null ? ' ● filtered' : ''}${state.searchQuery.isNotEmpty ? ' ● search' : ''}"
+                : null,
+            subtitleIcon: LineAwesomeIcons.book_solid,
+          ),
 
           Expanded(
             child: state.isLoading

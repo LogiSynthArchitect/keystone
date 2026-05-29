@@ -15,7 +15,6 @@ import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
-import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../providers/customer_providers.dart';
 import 'add_customer_screen.dart';
@@ -198,7 +197,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       body: Column(
         children: [
           const KsOfflineBanner(),
-          const SizedBox(height: 8),
+          if (state.customers.isNotEmpty)
+            _CustomerSummaryStrip(
+              totalCount: state.totalCount ?? state.customers.length,
+              displayedCount: state.displayed.length,
+              repeatCount: state.repeatCount,
+              pendingFollowUpCount: state.pendingFollowUpCount,
+              pendingSyncCount: state.pendingSyncCount,
+              hasActiveFilters: hasActiveFilter,
+              filterLabel: _filterLabel(state),
+            ).animate().fadeIn().slideY(begin: 0.1, end: 0),
 
           Expanded(
             child: state.isLoading
@@ -218,26 +226,19 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                             }
                             return false;
                           },
-                          child: Consumer(builder: (context, innerRef, _) {
-                            final allJobs = innerRef.watch(jobListProvider);
-                            final pendingCustomerIds = allJobs.activeJobs
-                                .where((j) => !j.followUpSent && (j.status == 'completed' || j.status == 'invoiced'))
-                                .map((j) => j.customerId)
-                                .toSet();
-                            return ListView.separated(
-                              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                              itemCount: state.paged.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final customer = state.paged[index];
-                                return CustomerCard(
-                                  customer: customer,
-                                  hasPendingFollowUp: pendingCustomerIds.contains(customer.id),
-                                  onTap: () => context.push(RouteNames.customerDetail(customer.id)),
-                                );
-                              },
-                            );
-                          }),
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                            itemCount: state.paged.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final customer = state.paged[index];
+                              return CustomerCard(
+                                customer: customer,
+                                hasPendingFollowUp: state.pendingFollowUpCustomerIds.contains(customer.id),
+                                onTap: () => context.push(RouteNames.customerDetail(customer.id)),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -305,6 +306,15 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     );
   }
 
+  String _filterLabel(CustomerListState state) {
+    final parts = <String>[];
+    if (state.filterType == 'recent') parts.add('RECENT (7D)');
+    else if (state.filterType == 'repeat') parts.add('REPEAT');
+    if (state.propertyFilter != null) parts.add(state.propertyFilter!.toUpperCase());
+    if (state.leadSourceFilter != null) parts.add(state.leadSourceFilter!.toUpperCase().replaceAll('_', ' '));
+    return parts.isEmpty ? 'FILTERED' : parts.join(' · ');
+  }
+
   Widget _buildEmptyState(String query) {
     final isSearching = query.isNotEmpty;
     return KsEmptyState(
@@ -313,6 +323,87 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       subtitle: isSearching
         ? 'Search yielded zero results for "$query".'
         : "No customers added yet.\nTap + below to add your first customer.",
+    );
+  }
+}
+
+class _CustomerSummaryStrip extends StatelessWidget {
+  final int totalCount;
+  final int displayedCount;
+  final int repeatCount;
+  final int pendingFollowUpCount;
+  final int pendingSyncCount;
+  final bool hasActiveFilters;
+  final String filterLabel;
+
+  const _CustomerSummaryStrip({
+    required this.totalCount,
+    required this.displayedCount,
+    required this.repeatCount,
+    required this.pendingFollowUpCount,
+    required this.pendingSyncCount,
+    required this.hasActiveFilters,
+    required this.filterLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bigNumber = hasActiveFilters ? displayedCount : totalCount;
+    final label = hasActiveFilters ? filterLabel : "ALL CUSTOMERS";
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      decoration: BoxDecoration(
+        color: context.ksc.primary800,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.ksc.primary700),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Main count
+          Text(
+            "$bigNumber",
+            style: AppTextStyles.h1.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 28),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: context.ksc.neutral500, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+          ),
+          const SizedBox(height: 14),
+          Container(height: 1, color: context.ksc.primary700),
+          const SizedBox(height: 12),
+          // Secondary stats row
+          Row(
+            children: [
+              Icon(LineAwesomeIcons.users_solid, size: 12, color: context.ksc.neutral500),
+              const SizedBox(width: 4),
+              Text("$repeatCount repeat", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 10, fontWeight: FontWeight.w700)),
+              if (pendingFollowUpCount > 0) ...[
+                const SizedBox(width: 14),
+                Icon(LineAwesomeIcons.whatsapp, size: 12, color: context.ksc.accent500),
+                const SizedBox(width: 4),
+                Text(
+                  '$pendingFollowUpCount follow-up',
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10, fontWeight: FontWeight.w700),
+                ),
+              ],
+              if (pendingSyncCount > 0) ...[
+                const SizedBox(width: 14),
+                Icon(LineAwesomeIcons.sync_solid, size: 12, color: context.ksc.accent500),
+                const SizedBox(width: 4),
+                Text(
+                  '$pendingSyncCount uploading',
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontSize: 10, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -10,6 +10,7 @@ import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
+import '../../../../core/widgets/ks_summary_strip.dart';
 import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/icon_helpers.dart';
@@ -184,6 +185,18 @@ class _JobTemplatesScreenState extends ConsumerState<JobTemplatesScreen> {
         child: Column(
           children: [
             const KsOfflineBanner(),
+            // Summary strip
+            itemsAsync.whenOrNull(
+              data: (items) {
+                final withServices = items.where((t) => t.services.isNotEmpty).length;
+                return KsSummaryStrip(
+                  value: '${items.length}',
+                  label: "TEMPLATES",
+                  subtitle: '$withServices with services',
+                  subtitleIcon: LineAwesomeIcons.file_solid,
+                );
+              },
+            ) ?? const SizedBox.shrink(),
             Expanded(
               child: itemsAsync.when(
                 loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),

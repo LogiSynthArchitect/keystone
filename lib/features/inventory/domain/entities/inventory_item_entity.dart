@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_enums.dart';
+
 enum InventoryItemCategory {
   key,
   lock,
@@ -49,8 +51,17 @@ class InventoryItemEntity {
   final bool isAutoCogs;
   final DateTime? snoozeLowStockUntil;
   final String? coverImageUrl;
+  final List<String> appliedTransactionIds;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final SyncStatus syncStatus;
+  final List<String> correctionFields;
+  final String? updatedBy;
+  final String? searchIndex;
+  final bool isDeleted;
+
+  bool get isSynced => syncStatus == SyncStatus.synced;
+  bool get isPending => syncStatus == SyncStatus.pending;
 
   const InventoryItemEntity({
     required this.id,
@@ -73,9 +84,49 @@ class InventoryItemEntity {
     this.isAutoCogs = false,
     this.snoozeLowStockUntil,
     this.coverImageUrl,
+    this.appliedTransactionIds = const [],
     required this.createdAt,
     required this.updatedAt,
+    this.syncStatus = SyncStatus.synced,
+    this.correctionFields = const [],
+    this.updatedBy,
+    this.searchIndex,
+    this.isDeleted = false,
   });
+
+  /// Build a deduplicated lowercase search index from key fields.
+  /// Format: "name brand model location category attr1 attr2 ..."
+  static String? buildSearchIndex({
+    required String name,
+    String? brand,
+    String? model,
+    String? location,
+    String? keySpec,
+    String? material,
+    String? finish,
+    String? dimensions,
+    required InventoryItemCategory category,
+    Map<String, dynamic> attributes = const {},
+  }) {
+    final parts = <String>[
+      name,
+      if (brand != null) brand,
+      if (model != null) model,
+      if (location != null) location,
+      category.displayName,
+      if (keySpec != null) keySpec,
+      if (material != null) material,
+      if (finish != null) finish,
+      if (dimensions != null) dimensions,
+      ...attributes.values.map((v) => v.toString()),
+    ];
+    final words = parts
+        .expand((s) => s.toLowerCase().split(RegExp(r'\s+')))
+        .where((w) => w.isNotEmpty)
+        .toSet()
+        .join(' ');
+    return words.isNotEmpty ? words : null;
+  }
 
   bool get isLowStock => lowStockThreshold != null && quantity <= lowStockThreshold!;
 
@@ -102,8 +153,14 @@ class InventoryItemEntity {
     bool? isAutoCogs,
     DateTime? snoozeLowStockUntil,
     String? coverImageUrl,
+    List<String>? appliedTransactionIds,
     DateTime? createdAt,
     DateTime? updatedAt,
+    SyncStatus? syncStatus,
+    List<String>? correctionFields,
+    String? updatedBy,
+    String? searchIndex,
+    bool? isDeleted,
   }) {
     return InventoryItemEntity(
       id: id ?? this.id,
@@ -126,8 +183,14 @@ class InventoryItemEntity {
       isAutoCogs: isAutoCogs ?? this.isAutoCogs,
       snoozeLowStockUntil: snoozeLowStockUntil ?? this.snoozeLowStockUntil,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      appliedTransactionIds: appliedTransactionIds ?? this.appliedTransactionIds,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      correctionFields: correctionFields ?? this.correctionFields,
+      updatedBy: updatedBy ?? this.updatedBy,
+      searchIndex: searchIndex ?? this.searchIndex,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

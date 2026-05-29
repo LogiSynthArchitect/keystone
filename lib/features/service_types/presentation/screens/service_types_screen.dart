@@ -71,10 +71,10 @@ class ServiceTypesScreen extends ConsumerWidget {
               final type = types[index];
               return _ServiceTypeTile(type: type);
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context, ref),
         backgroundColor: context.ksc.accent500,
         foregroundColor: context.ksc.primary900,

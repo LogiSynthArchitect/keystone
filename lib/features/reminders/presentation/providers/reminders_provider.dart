@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:keystone/core/services/local_notification_service.dart';
 import 'package:keystone/core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:keystone/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
 import '../../domain/models/reminder_model.dart';
 import '../../domain/models/reminder_thresholds.dart';
 
@@ -117,6 +118,39 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
             if (!dismissed.contains(key)) newlyActive.add(reminder);
           }
         }
+      }
+    }
+
+    // Recurring job overdue reminders — check schedules past their due date
+    final schedules = HiveService.recurringSchedules.values
+        .map((e) => RecurringScheduleEntity(
+          id: e['id'] as String? ?? '',
+          userId: e['user_id'] as String? ?? '',
+          customerId: e['customer_id'] as String? ?? '',
+          customerName: e['customer_name'] as String? ?? '',
+          serviceType: e['service_type'] as String? ?? '',
+          intervalType: e['interval_type'] as String? ?? '',
+          nextDueDate: DateTime.tryParse(e['next_due_date'] as String? ?? '') ?? now,
+          isActive: e['is_active'] as bool? ?? true,
+          notes: e['notes'] as String?,
+          createdAt: DateTime.tryParse(e['created_at'] as String? ?? '') ?? now,
+          updatedAt: DateTime.tryParse(e['updated_at'] as String? ?? '') ?? now,
+        ))
+        .where((s) => s.isActive && s.isDue)
+        .toList();
+    for (final schedule in schedules) {
+      final daysOverdue = now.difference(schedule.nextDueDate).inDays;
+      if (daysOverdue >= t.recurringJobOverdueDays) {
+        final key = '${schedule.id}-${ReminderType.recurringJobOverdue.name}';
+        final reminder = Reminder(
+          jobId: schedule.id,
+          jobServiceType: schedule.serviceType,
+          jobDate: schedule.nextDueDate,
+          type: ReminderType.recurringJobOverdue,
+          isDismissed: dismissed.contains(key),
+        );
+        reminders.add(reminder);
+        if (!dismissed.contains(key)) newlyActive.add(reminder);
       }
     }
 

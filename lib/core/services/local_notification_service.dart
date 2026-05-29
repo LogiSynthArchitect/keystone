@@ -40,6 +40,7 @@ class LocalNotificationService {
       ReminderType.stuckInProgress => 'Job Stuck In Progress',
       ReminderType.followUpPending => 'Follow-up Pending',
       ReminderType.followUpNoResponse => 'No Response on Follow-up',
+      ReminderType.recurringJobOverdue => 'Recurring Job Overdue',
     };
 
     final body = switch (reminder.type) {
@@ -47,6 +48,7 @@ class LocalNotificationService {
       ReminderType.stuckInProgress => '${reminder.jobServiceType} started ${_formatDate(reminder.jobDate)}',
       ReminderType.followUpPending => '${reminder.jobServiceType} — follow-up not sent',
       ReminderType.followUpNoResponse => '${reminder.jobServiceType} — client hasn\'t responded',
+      ReminderType.recurringJobOverdue => '${reminder.jobServiceType} schedule is past due',
     };
 
     const androidDetails = AndroidNotificationDetails(

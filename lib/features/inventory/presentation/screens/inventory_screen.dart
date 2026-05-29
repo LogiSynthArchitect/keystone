@@ -16,10 +16,15 @@ import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/widgets/ks_summary_strip.dart';
+import 'package:uuid/uuid.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/inventory_category_fields.dart';
 import '../../domain/entities/inventory_item_entity.dart';
+import '../../data/services/inventory_search_isolate.dart';
 
 enum _ImageUploadState { idle, uploading, uploaded, error }
 
@@ -48,6 +53,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   String _dialogStockLocation = '';
   bool _dialogAutoCogs = false;
   final _searchController = TextEditingController();
+  final _searchIsolate = InventorySearchIsolate();
+  List<int>? _searchMatchedIndices;
+  int _searchSequence = 0;
+  bool _searchIsolateInitialized = false;
 
   @override
   void initState() {
@@ -64,9 +73,33 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     }
   }
 
+  void _ensureSearchIsolate(List<InventoryItemEntity> items) {
+    if (!_searchIsolateInitialized && items.isNotEmpty) {
+      _searchIsolateInitialized = true;
+      _searchIsolate.initialize(items.map((i) => i.searchIndex ?? '').toList());
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    _searchSequence++;
+    final seq = _searchSequence;
+
+    if (query.trim().isEmpty) {
+      setState(() => _searchMatchedIndices = null);
+      return;
+    }
+
+    _searchIsolate.search(query).then((indices) {
+      if (mounted && seq == _searchSequence) {
+        setState(() => _searchMatchedIndices = indices);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _searchIsolate.dispose();
     super.dispose();
   }
 
@@ -171,6 +204,8 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   }
 
   List<InventoryItemEntity> _filtered(List<InventoryItemEntity> items) {
+    _ensureSearchIsolate(items);
+
     var result = items;
     if (_filter.startsWith('cat_')) {
       final cat = InventoryItemCategory.fromDb(_filter.substring(4));
@@ -181,19 +216,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     }
     final query = _searchController.text.trim().toLowerCase();
     if (query.isNotEmpty) {
-      result = result.where((i) {
-        // Check name, brand, model, location, category
-        if (i.name.toLowerCase().contains(query)) return true;
-        if (i.brand?.toLowerCase().contains(query) ?? false) return true;
-        if (i.model?.toLowerCase().contains(query) ?? false) return true;
-        if (i.location?.toLowerCase().contains(query) ?? false) return true;
-        if (i.category.displayName.toLowerCase().contains(query)) return true;
-        // Check all attribute values
-        for (final v in i.attributes.values) {
-          if (v.toString().toLowerCase().contains(query)) return true;
+      if (_searchMatchedIndices != null) {
+        // Use isolate results — fast O(1) index-set lookup per item
+        final indexSet = _searchMatchedIndices!.toSet();
+        final indexById = <String, int>{};
+        for (int i = 0; i < items.length; i++) {
+          indexById[items[i].id] = i;
         }
-        return false;
-      }).toList();
+        result = result.where((i) => indexSet.contains(indexById[i.id])).toList();
+      } else {
+        // Synchronous fallback — uses searchIndex (single string contains)
+        result = result.where((i) => i.searchIndex?.contains(query) ?? false).toList();
+      }
     }
     if (!_showArchived) {
       result = result.where((i) => !i.isArchived).toList();
@@ -368,6 +402,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         final qty = int.tryParse(qtyCtrl.text.trim());
                         final cost = CurrencyFormatter.parseToPesewas(costCtrl.text.trim());
                         if (qty == null || qty <= 0 || cost == null) return;
+                        // P0-3a: Warn if unit cost is zero — would skew Auto-COGS
+                        if (cost <= 0) {
+                          final proceed = await KsConfirmDialog.show(
+                            ctx,
+                            title: 'ZERO COST',
+                            message: 'Zero cost will skew Auto-COGS profit calculations. Proceed?',
+                            confirmLabel: 'PROCEED',
+                            cancelLabel: 'CANCEL',
+                            onConfirm: () {},
+                          );
+                          if (proceed != true) return;
+                        }
                         await ref.read(inventoryProvider.notifier).restockItem(
                           itemId: item.id,
                           quantity: qty,
@@ -527,7 +573,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           child: KsSearchBar(
             hint: "Search items...",
             controller: _searchController,
-            onChanged: (_) => setState(() {}),
+            onChanged: _onSearchChanged,
             onClear: () {
               _searchController.clear();
               setState(() {});
@@ -535,9 +581,25 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           ),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
             const KsOfflineBanner(),
+            // Summary strip
+            itemsAsync.whenOrNull(
+              data: (items) {
+                final filtered = _filtered(items);
+                final hasFilter = _filter != 'all' || _locationFilter != 'all' || _searchController.text.trim().isNotEmpty;
+                final lowStockCount = items.where((i) => i.isLowStock && !i.isLowStockSnoozed).length;
+                final categories = items.map((i) => i.category).toSet().length;
+                return KsSummaryStrip(
+                  value: hasFilter ? '${filtered.length}' : '${items.length}',
+                  label: hasFilter ? "FILTERED ITEMS" : (_showArchived ? "ALL ITEMS (INCL. ARCHIVED)" : "ALL ITEMS"),
+                  subtitle: '$lowStockCount low stock ● $categories categories${hasFilter ? ' ● ${filtered.length} shown' : ''}',
+                  subtitleIcon: LineAwesomeIcons.cubes_solid,
+                );
+              },
+            ) ?? const SizedBox.shrink(),
             Expanded(
               child: itemsAsync.when(
                 loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),
@@ -970,8 +1032,6 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     return result;
   }
 
-  // TODO: DEV-TEMP — Cloudinary upload bypassed for dev. Restore before production.
-  // Replace this method body with the original _pickInventoryImage + await _uploadImage(ss).
   Future<void> _pickInventoryImage(StateSetter ss) async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -979,13 +1039,41 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       maxHeight: 800,
       imageQuality: 85,
     );
-    if (picked != null) {
-      final file = File(picked.path);
-      _coverImagePath = picked.path;
-      _coverImageName = picked.name;
-      _coverImageSize = file.lengthSync();
-      _coverImageUrl = picked.path; // DEV_TEMP: local path only
+    if (picked == null) return;
+
+    final file = File(picked.path);
+    _coverImagePath = picked.path;
+    _coverImageName = picked.name;
+    _coverImageSize = file.lengthSync();
+    _uploadState = _ImageUploadState.uploading;
+    ss(() {});
+
+    // Phase 1: Upload to Cloudinary
+    final cloudService = CloudinaryService();
+    final cloudUrl = await cloudService.uploadMedia(
+      file: file,
+      publicId: 'inventory_${const Uuid().v4()}',
+    );
+    if (cloudUrl != null) {
+      _coverImageUrl = cloudUrl;
       _uploadState = _ImageUploadState.uploaded;
+      ss(() {});
+      return;
+    }
+
+    // Phase 1b: Fallback to Supabase Storage
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      final userId = supabase.auth.currentUser?.id ?? 'unknown';
+      final storagePath = '$userId/${const Uuid().v4()}.jpg';
+      await supabase.storage.from('inventory-photos').upload(storagePath, file);
+      final publicUrl = supabase.storage.from('inventory-photos').getPublicUrl(storagePath);
+      _coverImageUrl = publicUrl;
+      _uploadState = _ImageUploadState.uploaded;
+      ss(() {});
+      return;
+    } catch (_) {
+      _uploadState = _ImageUploadState.error;
       ss(() {});
     }
   }

@@ -40,19 +40,20 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
     try {
       setState(() => _status = 'Syncing customers...');
       final customerRepo = ref.read(customerRepositoryProvider);
-      var offset = 0;
-      const pageSize = 500;
-      while (true) {
-        final page = await customerRepo.getCustomers(limit: pageSize, offset: offset);
-        if (page.length < pageSize) break;
-        offset += pageSize;
-      }
+      await customerRepo.pullRemoteChanges(); // Delta sync — full fetch on first launch
 
       setState(() => _status = 'Syncing jobs...');
       final jobRepo = ref.read(jobRepositoryProvider);
-      offset = 0;
+      final jobLocal = ref.read(jobLocalDatasourceProvider);
+      final jobRemote = ref.read(jobRemoteDatasourceProvider);
+      final userId = supabase.auth.currentUser!.id;
+      var offset = 0;
+      const pageSize = 500;
       while (true) {
-        final page = await jobRepo.getJobs(limit: pageSize, offset: offset);
+        final page = await jobRemote.getJobs(userId: userId, limit: pageSize, offset: offset);
+        for (final job in page) {
+          await jobLocal.saveJob(job);
+        }
         if (page.length < pageSize) break;
         offset += pageSize;
       }

@@ -8,6 +8,7 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/ks_summary_strip.dart';
 import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
@@ -221,6 +222,25 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     return Column(
       children: [
         const KsOfflineBanner(),
+        // Summary strip — dynamic, filter-aware
+        KsSummaryStrip(
+          value: _hasActiveFilter || _searchQuery.isNotEmpty
+              ? '${categoryFiltered.length}'
+              : '${types.length}',
+          label: _hasActiveFilter || _searchQuery.isNotEmpty
+              ? "FILTERED SERVICES"
+              : "SERVICE PRICING",
+          subtitle: () {
+            final withPrices = categoryFiltered.where((t) => t.defaultPrice != null).length;
+            final totalCats = types.map((t) => t.category).toSet().length;
+            final parts = <String>['$withPrices with prices', '$totalCats categories'];
+            if (_hasActiveFilter || _searchQuery.isNotEmpty) {
+              parts.add('${categoryFiltered.length} shown');
+            }
+            return parts.join(' ● ');
+          }(),
+          subtitleIcon: LineAwesomeIcons.tags_solid,
+        ),
         Expanded(
           child: types.isEmpty
               ? const KsEmptyState(

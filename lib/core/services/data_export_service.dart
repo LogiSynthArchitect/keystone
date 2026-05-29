@@ -21,14 +21,15 @@ class DataExportService {
     final jobs = HiveService.jobs.values.toList();
     final rawList = jobs.map((j) => Map<String, dynamic>.from(j)).toList();
     final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged,createdAt,location,notes');
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes');
     for (final m in rawList) {
+      final amount = (m['amount_charged'] as num?)?.toInt();
       buffer.writeln([
         _csv(m['id']),
         _csv(m['service_type']),
         _csv(m['status']),
         _csv(m['payment_status']),
-        _csv(m['amount_charged']),
+        amount != null ? (amount / 100).toStringAsFixed(2) : '',
         _csv(m['created_at']),
         _csv(m['location']),
         _csv(m['notes']),
@@ -105,15 +106,16 @@ class DataExportService {
 
   static Future<void> _exportJobCsv(List<dynamic> jobs, String filename) async {
     final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged,createdAt,location,notes');
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes');
     for (final raw in jobs) {
       final m = Map<String, dynamic>.from(raw);
+      final amount = (m['amount_charged'] as num?)?.toInt();
       buffer.writeln([
         _csv(m['id']),
         _csv(m['service_type']),
         _csv(m['status']),
         _csv(m['payment_status']),
-        _csv(m['amount_charged']),
+        amount != null ? (amount / 100).toStringAsFixed(2) : '',
         _csv(m['created_at']),
         _csv(m['location']),
         _csv(m['notes']),
@@ -158,6 +160,127 @@ class DataExportService {
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
       text: 'Customers export',
+    );
+  }
+
+  static Future<void> exportInventoryAsCsv() async {
+    final items = HiveService.inventoryItems.values.toList();
+    final buffer = StringBuffer();
+    buffer.writeln('name,category,brand,model,quantity,costPrice(GHS),salePrice(GHS),location,lowStock,archived');
+    for (final raw in items) {
+      final m = Map<String, dynamic>.from(raw);
+      final costPrice = (m['default_cost_price'] as num?)?.toInt();
+      final salePrice = (m['default_sale_price'] as num?)?.toInt();
+      buffer.writeln([
+        _csv(m['name']),
+        _csv(m['item_type']),
+        _csv(m['brand']),
+        _csv(m['model']),
+        _csv(m['quantity'] ?? 0),
+        costPrice != null ? (costPrice / 100).toStringAsFixed(2) : '',
+        salePrice != null ? (salePrice / 100).toStringAsFixed(2) : '',
+        _csv(m['location']),
+        _csv(m['is_low_stock'] ?? false),
+        _csv(m['is_archived'] ?? false),
+      ].join(','));
+    }
+    final file = await _writeTempFile('keystone_inventory.csv', buffer.toString());
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: 'text/csv')],
+      text: 'Inventory export',
+    );
+  }
+
+  static Future<void> exportNotesAsCsv() async {
+    final notes = HiveService.notes.values.toList();
+    final buffer = StringBuffer();
+    buffer.writeln('title,description,tags,serviceType,mediaType,createdAt,updatedAt,archived,pinned');
+    for (final raw in notes) {
+      final m = Map<String, dynamic>.from(raw);
+      final tags = (m['tags'] as List<dynamic>?)?.join('; ') ?? '';
+      buffer.writeln([
+        _csv(m['title']),
+        _csv(m['description']),
+        _csv(tags),
+        _csv(m['service_type']),
+        _csv(m['media_type']),
+        _csv(m['created_at']),
+        _csv(m['updated_at']),
+        _csv(m['is_archived'] ?? false),
+        _csv(m['is_pinned'] ?? false),
+      ].join(','));
+    }
+    final file = await _writeTempFile('keystone_notes.csv', buffer.toString());
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: 'text/csv')],
+      text: 'Notes export',
+    );
+  }
+
+  /// Exports all jobs with parts breakdown, expenses, and gross profit.
+  static Future<void> exportDetailedJobsCsv() async {
+    final jobs = HiveService.jobs.values.toList();
+    final buffer = StringBuffer();
+    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),date,location,notes,customerId,partsSummary,partsCost(GHS),expensesSummary,expensesTotal(GHS),grossProfit(GHS)');
+    for (final raw in jobs) {
+      final m = Map<String, dynamic>.from(raw);
+      final jobId = m['id'] as String? ?? '';
+      final amount = (m['amount_charged'] as num?)?.toInt() ?? 0;
+
+      // Look up parts for this job
+      String partsSummary = '';
+      int partsCost = 0;
+      final partMaps = HiveService.jobParts.values
+          .map((p) => Map<String, dynamic>.from(p))
+          .where((p) => p['job_id'] == jobId)
+          .toList();
+      if (partMaps.isNotEmpty) {
+        partsSummary = partMaps.map((p) {
+          final qty = (p['quantity'] as num?)?.toInt() ?? 1;
+          final price = (p['unit_price'] as num?)?.toInt() ?? 0;
+          partsCost += qty * price;
+          return '${p['part_name']}x$qty';
+        }).join('; ');
+      }
+
+      // Look up expenses for this job
+      String expensesSummary = '';
+      int expensesTotal = 0;
+      final expMaps = HiveService.jobExpenses.values
+          .map((e) => Map<String, dynamic>.from(e))
+          .where((e) => e['job_id'] == jobId)
+          .toList();
+      if (expMaps.isNotEmpty) {
+        expensesSummary = expMaps.map((e) {
+          final amt = (e['amount'] as num?)?.toInt() ?? 0;
+          expensesTotal += amt;
+          return '${e['category']}:${(amt / 100).toStringAsFixed(2)}';
+        }).join('; ');
+      }
+
+      final grossProfit = amount - partsCost - expensesTotal;
+
+      buffer.writeln([
+        _csv(jobId),
+        _csv(m['service_type']),
+        _csv(m['status']),
+        _csv(m['payment_status']),
+        (amount / 100).toStringAsFixed(2),
+        _csv(m['created_at']),
+        _csv(m['location']),
+        _csv(m['notes']),
+        _csv(m['customer_id']),
+        _csv(partsSummary),
+        (partsCost / 100).toStringAsFixed(2),
+        _csv(expensesSummary),
+        (expensesTotal / 100).toStringAsFixed(2),
+        (grossProfit / 100).toStringAsFixed(2),
+      ].join(','));
+    }
+    final file = await _writeTempFile('keystone_jobs_detailed.csv', buffer.toString());
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: 'text/csv')],
+      text: 'Detailed jobs export',
     );
   }
 

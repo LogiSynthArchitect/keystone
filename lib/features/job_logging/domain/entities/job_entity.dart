@@ -32,6 +32,7 @@ class JobEntity {
   final String? coverImageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool subEntitiesSaved; // false during multi-step child save; gated in sync pipeline
 
   const JobEntity({
     required this.id,
@@ -65,6 +66,7 @@ class JobEntity {
     this.coverImageUrl,
     required this.createdAt,
     required this.updatedAt,
+    this.subEntitiesSaved = true,
   });
 
   bool get isSynced        => syncStatus == SyncStatus.synced;
@@ -167,6 +169,7 @@ class JobEntity {
     String? coverImageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? subEntitiesSaved,
   }) {
     return JobEntity(
       id: id ?? this.id,
@@ -200,6 +203,7 @@ class JobEntity {
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      subEntitiesSaved: subEntitiesSaved ?? this.subEntitiesSaved,
     );
   }
 

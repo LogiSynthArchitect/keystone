@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../../../../core/constants/app_enums.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/duplicate_customer_exception.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/storage/hive_service.dart';
 import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
 import '../../data/datasources/customer_local_datasource.dart';
@@ -64,6 +68,11 @@ class CustomerListState {
   final String? propertyFilter;
   final String? leadSourceFilter;
   final int displayLimit;
+  final int totalCount;
+  final int repeatCount;
+  final int pendingFollowUpCount;
+  final int pendingSyncCount;
+  final Set<String> pendingFollowUpCustomerIds;
 
   const CustomerListState({
     this.customers = const [],
@@ -76,6 +85,11 @@ class CustomerListState {
     this.propertyFilter,
     this.leadSourceFilter,
     this.displayLimit = _kCustomerPageSize,
+    this.totalCount = 0,
+    this.repeatCount = 0,
+    this.pendingFollowUpCount = 0,
+    this.pendingSyncCount = 0,
+    this.pendingFollowUpCustomerIds = const <String>{},
   });
 
   List<CustomerEntity> get displayed {
@@ -102,6 +116,9 @@ class CustomerListState {
   List<CustomerEntity> get paged => displayed.take(displayLimit).toList();
   bool get hasMore => displayed.length > displayLimit;
 
+  /// Sentinel to distinguish "not passed" from "explicitly null".
+  static const _sentinel = Object();
+
   CustomerListState copyWith({
     List<CustomerEntity>? customers,
     List<CustomerEntity>? searchResults,
@@ -110,9 +127,14 @@ class CustomerListState {
     String? errorMessage,
     String? searchQuery,
     String? filterType,
-    String? propertyFilter,
-    String? leadSourceFilter,
+    Object? propertyFilter = _sentinel,
+    Object? leadSourceFilter = _sentinel,
     int? displayLimit,
+    int? totalCount,
+    int? repeatCount,
+    int? pendingFollowUpCount,
+    int? pendingSyncCount,
+    Set<String>? pendingFollowUpCustomerIds,
     bool clearError = false,
   }) => CustomerListState(
     customers: customers ?? this.customers,
@@ -122,9 +144,18 @@ class CustomerListState {
     errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     searchQuery: searchQuery ?? this.searchQuery,
     filterType: filterType ?? this.filterType,
-    propertyFilter: propertyFilter ?? this.propertyFilter,
-    leadSourceFilter: leadSourceFilter ?? this.leadSourceFilter,
+    propertyFilter: identical(propertyFilter, _sentinel)
+        ? this.propertyFilter
+        : propertyFilter as String?,
+    leadSourceFilter: identical(leadSourceFilter, _sentinel)
+        ? this.leadSourceFilter
+        : leadSourceFilter as String?,
     displayLimit: displayLimit ?? this.displayLimit,
+    totalCount: totalCount ?? this.totalCount,
+    repeatCount: repeatCount ?? this.repeatCount,
+    pendingFollowUpCount: pendingFollowUpCount ?? this.pendingFollowUpCount,
+    pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
+    pendingFollowUpCustomerIds: pendingFollowUpCustomerIds ?? this.pendingFollowUpCustomerIds,
   );
 }
 
@@ -132,6 +163,8 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
   final Ref _ref;
   final CustomerRepository _repository;
   StreamSubscription<bool>? _connectivitySubscription;
+  StreamSubscription<BoxEvent>? _hiveSubscription;
+  Timer? _debounceTimer;
   bool _isRefreshing = false;
 
   CustomerListNotifier(this._ref, this._repository) : super(const CustomerListState()) {
@@ -139,13 +172,54 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
     _connectivitySubscription = _ref.read(connectivityServiceProvider).onConnectivityChanged.listen((isOnline) {
       if (isOnline) refresh();
     });
+    // Reactive Hive listener with 200ms debounce:
+    // Background sync daemon writes to Hive → this fires → reloads list
+    _hiveSubscription = HiveService.customers.watch().listen((_) {
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+        load();
+      });
+    });
   }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final allCustomers = await _repository.getCustomers();
-      state = state.copyWith(customers: allCustomers, isLoading: false);
+      var allCustomers = await _repository.getCustomers();
+      // Recalculate totalJobs from local job cache (avoids denormalization drift)
+      final jobLocal = _ref.read(jobLocalDatasourceProvider);
+      final allJobs = await jobLocal.getJobs();
+      final jobCounts = <String, int>{};
+      final pendingFollowUpCustomerIds = <String>{};
+      for (final job in allJobs) {
+        if (!job.isArchived) {
+          jobCounts[job.customerId] = (jobCounts[job.customerId] ?? 0) + 1;
+        }
+        // Pending follow-up = completed/invoiced job where follow-up not yet sent
+        if (!job.followUpSent && (job.status == 'completed' || job.status == 'invoiced')) {
+          pendingFollowUpCustomerIds.add(job.customerId);
+        }
+      }
+      allCustomers = allCustomers.map((c) => c.copyWith(
+        totalJobs: jobCounts[c.id] ?? 0,
+      )).toList();
+
+      final totalCount = allCustomers.length;
+      final repeatCount = allCustomers.where((c) => c.totalJobs > 1).length;
+      final pendingFollowUpCount = pendingFollowUpCustomerIds.length;
+      final pendingSyncCount = allCustomers.where(
+        (c) => c.syncStatus == SyncStatus.pending,
+      ).length;
+
+      state = state.copyWith(
+        customers: allCustomers,
+        isLoading: false,
+        totalCount: totalCount,
+        repeatCount: repeatCount,
+        pendingFollowUpCount: pendingFollowUpCount,
+        pendingSyncCount: pendingSyncCount,
+        pendingFollowUpCustomerIds: pendingFollowUpCustomerIds,
+      );
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Could not load customers.');
     }
@@ -222,6 +296,8 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
+    _hiveSubscription?.cancel();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 }
@@ -229,10 +305,18 @@ class CustomerListNotifier extends StateNotifier<CustomerListState> {
 final customerListProvider = StateNotifierProvider<CustomerListNotifier, CustomerListState>(
   (ref) => CustomerListNotifier(ref, ref.watch(customerRepositoryProvider)));
 
-final customerDetailProvider = FutureProvider.family<CustomerEntity?, String>((ref, customerId) async {
+/// Watches Hive for changes to a specific customer key.
+/// Invalidates [customerDetailProvider] when background sync updates the record.
+final _hiveCustomerDetailWatcher = StreamProvider.family<BoxEvent?, String>((ref, customerId) {
+  return HiveService.customers.watch(key: customerId);
+});
+
+final customerDetailProvider = FutureProvider.family<CustomerEntity?, String>((ref, customerId) {
+  // Subscribe to Hive changes for this specific key — makes the provider reactive
+  ref.watch(_hiveCustomerDetailWatcher(customerId));
   final repo = ref.watch(customerRepositoryProvider);
   try {
-    return await repo.getCustomerById(customerId);
+    return repo.getCustomerById(customerId);
   } catch (_) {
     return null;
   }

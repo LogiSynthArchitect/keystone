@@ -19,15 +19,15 @@ UPDATE public.inventory_items
 UPDATE public.inventory_items
   SET item_type = 'lock' WHERE item_type = 'hardware';
 
--- 4. Change item_type column type from text to item_category enum
+-- 4. Drop old check constraint (replaced by enum) — must happen BEFORE type change
+ALTER TABLE public.inventory_items
+  DROP CONSTRAINT IF EXISTS inventory_items_item_type_check;
+
+-- 5. Change item_type column type from text to item_category enum
 ALTER TABLE public.inventory_items
   ALTER COLUMN item_type TYPE item_category USING item_type::item_category,
   ALTER COLUMN item_type SET NOT NULL,
-  ALTER COLUMN item_type SET DEFAULT 'consumable';
-
--- 5. Drop old check constraint (replaced by enum)
-ALTER TABLE public.inventory_items
-  DROP CONSTRAINT IF EXISTS inventory_items_item_type_check;
+  ALTER COLUMN item_type SET DEFAULT 'consumable'::item_category;
 
 -- 6. Create GIN index for jsonb queries
 CREATE INDEX IF NOT EXISTS idx_inventory_items_attributes
