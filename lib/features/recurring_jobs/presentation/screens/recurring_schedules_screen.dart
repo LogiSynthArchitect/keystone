@@ -11,6 +11,8 @@ import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_bottom_sheet_scaffold.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
+import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../features/job_logging/presentation/widgets/service_picker_dropdown.dart';
 import '../../../../features/job_logging/presentation/widgets/customer_picker_dropdown.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -33,6 +35,90 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(recurringScheduleProvider.notifier).load();
     });
+  }
+
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _filterInterval = 'all';
+  String _filterStatus = 'all';
+  bool get _hasActiveFilter => _searchQuery.isNotEmpty || _filterInterval != 'all' || _filterStatus != 'all';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<RecurringScheduleEntity> _applyFilters(List<RecurringScheduleEntity> schedules) {
+    var result = schedules;
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      result = result.where((s) =>
+        s.customerName.toLowerCase().contains(q) ||
+        s.serviceType.toLowerCase().contains(q)
+      ).toList();
+    }
+    if (_filterInterval != 'all') {
+      result = result.where((s) => s.intervalType == _filterInterval).toList();
+    }
+    if (_filterStatus != 'all') {
+      result = result.where((s) =>
+        _filterStatus == 'active' ? s.isActive : !s.isActive
+      ).toList();
+    }
+    return result;
+  }
+
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      enableDrag: false,
+      backgroundColor: context.ksc.primary800,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
+      builder: (ctx) {
+        var draftInterval = _filterInterval;
+        var draftStatus = _filterStatus;
+        return StatefulBuilder(
+          builder: (context, setInnerState) => KsFilterSheet(
+            title: "FILTER SCHEDULES",
+            onApply: () => setState(() {
+              _filterInterval = draftInterval;
+              _filterStatus = draftStatus;
+            }),
+            onClear: () {
+              draftInterval = 'all';
+              draftStatus = 'all';
+              setInnerState(() {});
+            },
+            children: [
+              KsFilterChipGroup(
+                label: "INTERVAL",
+                selected: draftInterval,
+                onSelect: (v) => setInnerState(() => draftInterval = v ?? 'all'),
+                options: const [
+                  KsFilterOption(value: 'all', display: 'ALL'),
+                  KsFilterOption(value: 'weekly', display: 'WEEKLY'),
+                  KsFilterOption(value: 'monthly', display: 'MONTHLY'),
+                  KsFilterOption(value: 'quarterly', display: 'QUARTERLY'),
+                  KsFilterOption(value: 'yearly', display: 'YEARLY'),
+                ],
+              ),
+              KsFilterChipGroup(
+                label: "STATUS",
+                selected: draftStatus,
+                onSelect: (v) => setInnerState(() => draftStatus = v ?? 'all'),
+                options: const [
+                  KsFilterOption(value: 'all', display: 'ALL'),
+                  KsFilterOption(value: 'active', display: 'ACTIVE'),
+                  KsFilterOption(value: 'paused', display: 'PAUSED'),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showAddSchedule() {
@@ -247,18 +333,45 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
-      appBar: const KsAppBar(title: "RECURRING JOBS", showBack: true),
+      appBar: KsAppBar(
+        title: "RECURRING JOBS",
+        showBack: true,
+        actions: [
+          IconButton(
+            icon: Icon(LineAwesomeIcons.filter_solid,
+              color: _hasActiveFilter ? context.ksc.accent500 : context.ksc.neutral400,
+              size: 22),
+            onPressed: _showFilterSheet,
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(72),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: KsSearchBar(
+              hint: "Search customer or service...",
+              controller: _searchController,
+              onChanged: (q) => setState(() => _searchQuery = q),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+            ),
+          ),
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const KsOfflineBanner(),
           schedulesAsync.whenOrNull(
             data: (schedules) {
-              final active = schedules.where((s) => s.isActive).length;
-              final due = schedules.where((s) => s.isDue).length;
+              final filtered = _applyFilters(schedules);
+              final active = filtered.where((s) => s.isActive).length;
+              final due = filtered.where((s) => s.isDue).length;
               return KsSummaryStrip(
-                value: '${schedules.length}',
-                label: "RECURRING SCHEDULES",
+                value: _hasActiveFilter ? '${filtered.length}' : '${schedules.length}',
+                label: _hasActiveFilter ? "FILTERED" : "RECURRING SCHEDULES",
                 subtitleSegments: [
                   KsSubtitleSegment('$active active', color: context.ksc.success500),
                   KsSubtitleSegment('$due due now', color: context.ksc.error500),
@@ -304,24 +417,27 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error loading", style: TextStyle(color: context.ksc.error500))),
         data: (schedules) {
+          final filtered = _applyFilters(schedules);
           if (schedules.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LineAwesomeIcons.calendar_solid, color: context.ksc.neutral500, size: 48),
-                  const SizedBox(height: 16),
-                  Text("NO SCHEDULES", style: AppTextStyles.h3.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 8),
-                  Text("Set up recurring jobs for regular clients", style: AppTextStyles.body.copyWith(color: context.ksc.neutral500)),
-                ],
-              ),
+            return KsEmptyState(
+              icon: LineAwesomeIcons.calendar_solid,
+              title: "NO SCHEDULES YET",
+              subtitle: "Set up recurring jobs for regular clients.\nTap + below to add your first schedule.",
+            );
+          }
+          if (filtered.isEmpty) {
+            return KsEmptyState(
+              icon: LineAwesomeIcons.search_minus_solid,
+              title: "NO RESULTS FOUND",
+              subtitle: _searchQuery.isNotEmpty
+                  ? 'Search yielded zero results for "$_searchQuery".'
+                  : "No schedules match the current filters.",
             );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: schedules.length,
-            itemBuilder: (_, i) => _buildCard(schedules[i]),
+            itemCount: filtered.length,
+            itemBuilder: (_, i) => _buildCard(filtered[i]),
           );
         },
           ),
