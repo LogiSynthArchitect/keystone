@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -25,6 +26,7 @@ import '../../../key_codes/data/datasources/key_code_local_datasource.dart';
 import '../../../recurring_jobs/data/datasources/recurring_schedule_local_datasource.dart';
 import '../../../job_templates/data/datasources/job_template_local_datasource.dart';
 import '../../../service_types/data/datasources/service_type_local_datasource.dart';
+import '../../../../core/storage/hive_service.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -228,7 +230,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ]),
                     const SizedBox(height: 8),
                     // ── Monthly target progress ──
-                    _buildMonthlyProgress(context, monthRevenue),
+                    GestureDetector(
+                      onTap: _showTargetEditDialog,
+                      child: _buildMonthlyProgress(context, monthRevenue),
+                    ),
                     const SizedBox(height: 16),
                     // Reminder breakdown chips
                     if (reminders.isNotEmpty)
@@ -384,7 +389,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildMonthlyProgress(BuildContext context, int monthRevenue) {
-    final monthlyTarget = 500000;
+    final monthlyTarget = ref.watch(monthlyTargetProvider);
     final pct = ((monthRevenue / monthlyTarget).clamp(0.0, 1.0) * 100).round();
     return Container(
       padding: const EdgeInsets.all(16),
@@ -423,6 +428,61 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 6),
           Text("of ${CurrencyFormatter.format(monthlyTarget)} target",
               style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  void _showTargetEditDialog() {
+    final current = ref.read(monthlyTargetProvider);
+    final controller = TextEditingController(text: current.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.ksc.primary800,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(LineAwesomeIcons.chart_line_solid, size: 18, color: context.ksc.accent500),
+            const SizedBox(width: 10),
+            Text('SET MONTHLY TARGET',
+                style: AppTextStyles.label.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(
+            hintText: 'Enter target amount',
+            hintStyle: TextStyle(color: context.ksc.neutral600, fontSize: 14),
+            filled: true,
+            fillColor: context.ksc.primary900,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+          ),
+          style: AppTextStyles.body.copyWith(color: context.ksc.white),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CANCEL', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700)),
+          ),
+          TextButton(
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              if (parsed == null || parsed <= 0) {
+                KsSlidingNotification.show(context, message: 'Enter a valid amount', type: KsNotificationType.error);
+                return;
+              }
+              HiveService.settings.put('monthlyTarget', parsed);
+              ref.read(monthlyTargetProvider.notifier).state = parsed;
+              Navigator.pop(ctx);
+              KsSlidingNotification.show(context, message: 'Monthly target updated to ${CurrencyFormatter.format(parsed)}', type: KsNotificationType.success);
+            },
+            child: Text('SAVE', style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
+          ),
         ],
       ),
     );
