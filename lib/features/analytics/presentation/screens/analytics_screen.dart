@@ -14,6 +14,7 @@ import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/storage/hive_service.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../domain/models/analytics_models.dart';
 import '../../data/models/daily_rollup.dart';
 import '../providers/analytics_provider.dart';
@@ -72,7 +73,8 @@ class _FilterIconButton extends ConsumerWidget {
                 top: -6,
                 right: -8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: context.ksc.accent500,
                     borderRadius: BorderRadius.circular(8),
@@ -96,7 +98,8 @@ class _FilterIconButton extends ConsumerWidget {
 
 // ── Filter sheet ────────────────────────────────────────────────────────────────
 
-void _showFilterSheet(BuildContext context, WidgetRef ref, AnalyticsState state) {
+void _showFilterSheet(
+    BuildContext context, WidgetRef ref, AnalyticsState state) {
   final notifier = ref.read(analyticsProvider.notifier);
   final filters = state.filters;
 
@@ -110,30 +113,41 @@ void _showFilterSheet(BuildContext context, WidgetRef ref, AnalyticsState state)
   var draftPaymentMethod = filters.paymentMethods?.firstOrNull;
 
   int draftActive() => [
-    draftServiceType, draftPaymentStatus, draftJobStatus,
-    draftLocation, draftLeadSource, draftPropertyType, draftPaymentMethod,
-  ].where((v) => v != null).length;
+        draftServiceType,
+        draftPaymentStatus,
+        draftJobStatus,
+        draftLocation,
+        draftLeadSource,
+        draftPropertyType,
+        draftPaymentMethod,
+      ].where((v) => v != null).length;
 
   // Build option chips from available data
   final agg = AggData._fromState(state);
-  final serviceTypeOptions = agg.serviceTypes.entries.map((e) => KsFilterOption(
-    value: e.key,
-    display: e.key.toUpperCase(),
-    count: e.value,
-    icon: null,
-  )).toList();
+  final serviceTypeOptions = agg.serviceTypes.entries
+      .map((e) => KsFilterOption(
+            value: e.key,
+            display: e.key.toUpperCase(),
+            count: e.value,
+            icon: null,
+          ))
+      .toList();
 
-  final locationOptions = agg.locations.entries.map((e) => KsFilterOption(
-    value: e.key,
-    display: e.key.toUpperCase(),
-    count: e.value,
-  )).toList();
+  final locationOptions = agg.locations.entries
+      .map((e) => KsFilterOption(
+            value: e.key,
+            display: e.key.toUpperCase(),
+            count: e.value,
+          ))
+      .toList();
 
-  final leadSourceOptions = agg.leadSources.entries.map((e) => KsFilterOption(
-    value: e.key,
-    display: e.key.replaceAll('_', ' ').toUpperCase(),
-    count: e.value,
-  )).toList();
+  final leadSourceOptions = agg.leadSources.entries
+      .map((e) => KsFilterOption(
+            value: e.key,
+            display: e.key.replaceAll('_', ' ').toUpperCase(),
+            count: e.value,
+          ))
+      .toList();
 
   final propertyTypeOptions = [
     const KsFilterOption(value: 'residential', display: 'RESIDENTIAL'),
@@ -164,12 +178,15 @@ void _showFilterSheet(BuildContext context, WidgetRef ref, AnalyticsState state)
         onApply: () {
           notifier.setFilters(AnalyticsFilters(
             serviceTypes: draftServiceType != null ? [draftServiceType!] : null,
-            paymentStatuses: draftPaymentStatus != null ? [draftPaymentStatus!] : null,
+            paymentStatuses:
+                draftPaymentStatus != null ? [draftPaymentStatus!] : null,
             jobStatuses: draftJobStatus != null ? [draftJobStatus!] : null,
             locations: draftLocation != null ? [draftLocation!] : null,
             leadSources: draftLeadSource != null ? [draftLeadSource!] : null,
-            propertyTypes: draftPropertyType != null ? [draftPropertyType!] : null,
-            paymentMethods: draftPaymentMethod != null ? [draftPaymentMethod!] : null,
+            propertyTypes:
+                draftPropertyType != null ? [draftPropertyType!] : null,
+            paymentMethods:
+                draftPaymentMethod != null ? [draftPaymentMethod!] : null,
           ));
         },
         onClear: () {
@@ -208,7 +225,9 @@ void _showFilterSheet(BuildContext context, WidgetRef ref, AnalyticsState state)
                     context: context,
                     firstDate: DateTime(2020),
                     lastDate: DateTime.now(),
-                    initialDateRange: state.period == AnalyticsPeriod.custom ? state.range : null,
+                    initialDateRange: state.period == AnalyticsPeriod.custom
+                        ? state.range
+                        : null,
                     builder: (ctx2, child) => Theme(
                       data: Theme.of(ctx2).copyWith(
                         colorScheme: ColorScheme.dark(
@@ -316,7 +335,8 @@ class _PeriodChipInline extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _PeriodChipInline({required this.label, required this.selected, required this.onTap});
+  const _PeriodChipInline(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -384,7 +404,11 @@ class AggData {
         }
       }
     } catch (_) {}
-    return AggData._(serviceTypes: st, locations: loc, locationJobs: locJobs, leadSources: ls);
+    return AggData._(
+        serviceTypes: st,
+        locations: loc,
+        locationJobs: locJobs,
+        leadSources: ls);
   }
 }
 
@@ -423,7 +447,21 @@ class _RevenueTrendChart extends StatelessWidget {
   /// Convert "05-25" → "May 25", keep "Jan"/"Feb" as-is.
   String _prettyLabel(String label) {
     if (label.length == 5 && label.contains('-')) {
-      const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       final parts = label.split('-');
       final m = int.tryParse(parts[0]) ?? 0;
       if (m >= 1 && m <= 12) return '${months[m]} ${parts[1]}';
@@ -435,8 +473,13 @@ class _RevenueTrendChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (trend.isEmpty) return const SizedBox.shrink();
 
-    final maxRev = trend.map((t) => t.revenue).reduce((a, b) => a > b ? a : b).toDouble();
-    final spots = trend.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.revenue.toDouble())).toList();
+    final maxRev =
+        trend.map((t) => t.revenue).reduce((a, b) => a > b ? a : b).toDouble();
+    final spots = trend
+        .asMap()
+        .entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value.revenue.toDouble()))
+        .toList();
     final accent = context.ksc.accent500;
     final neutral = context.ksc.neutral500;
     final primary700 = context.ksc.primary700;
@@ -454,7 +497,9 @@ class _RevenueTrendChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header ──
-          Text('REVENUE TREND', style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900)),
+          Text('REVENUE TREND',
+              style: AppTextStyles.h2.copyWith(
+                  color: context.ksc.white, fontWeight: FontWeight.w900)),
           const SizedBox(height: AppSpacing.md),
 
           // ── Chart ──
@@ -465,7 +510,9 @@ class _RevenueTrendChart extends StatelessWidget {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: maxRev > 0 ? (maxRev / 4).ceilToDouble().clamp(1, double.infinity) : 1,
+                  horizontalInterval: maxRev > 0
+                      ? (maxRev / 4).ceilToDouble().clamp(1, double.infinity)
+                      : 1,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: primary700.withValues(alpha: 0.5),
                     strokeWidth: 0.5,
@@ -479,11 +526,13 @@ class _RevenueTrendChart extends StatelessWidget {
                       interval: labelInterval.toDouble(),
                       getTitlesWidget: (value, meta) {
                         final i = value.toInt();
-                        if (i < 0 || i >= trend.length) return const SizedBox.shrink();
+                        if (i < 0 || i >= trend.length)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(_prettyLabel(trend[i].label),
-                              style: AppTextStyles.caption.copyWith(color: neutral, fontSize: 9)),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: neutral, fontSize: 9)),
                         );
                       },
                     ),
@@ -496,14 +545,18 @@ class _RevenueTrendChart extends StatelessWidget {
                         if (value == 0) return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(right: 4),
-                          child: Text(CurrencyFormatter.formatShort(value.toInt()),
-                              style: AppTextStyles.caption.copyWith(color: neutral, fontSize: 9)),
+                          child: Text(
+                              CurrencyFormatter.formatShort(value.toInt()),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: neutral, fontSize: 9)),
                         );
                       },
                     ),
                   ),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: false),
                 minY: 0,
@@ -519,7 +572,8 @@ class _RevenueTrendChart extends StatelessWidget {
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                      getDotPainter: (spot, percent, barData, index) =>
+                          FlDotCirclePainter(
                         radius: 3,
                         color: accent,
                         strokeWidth: 1.5,
@@ -563,7 +617,9 @@ class _RevenueTrendChart extends StatelessWidget {
             children: [
               Container(width: 16, height: 2, color: accent),
               const SizedBox(width: 6),
-              Text('Revenue', style: AppTextStyles.caption.copyWith(color: neutral, fontSize: 9)),
+              Text('Revenue',
+                  style: AppTextStyles.caption
+                      .copyWith(color: neutral, fontSize: 9)),
             ],
           ),
         ],
@@ -592,7 +648,8 @@ class _AnalyticsBodyState extends ConsumerState<_AnalyticsBody> {
     final neutral500 = theme.neutral500;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.huge),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.huge),
       children: [
         // ── Unified hero card (revenue + 3 metrics in one container) ──
         _HeroCard(
@@ -605,6 +662,10 @@ class _AnalyticsBodyState extends ConsumerState<_AnalyticsBody> {
           margin: s.profitMargin,
           filterCount: s.filters.activeCount,
         ),
+        const SizedBox(height: AppSpacing.xl),
+
+        // ── Monthly target progress ──
+        _MonthlyTargetCard(revenue: s.totalRevenue),
         const SizedBox(height: AppSpacing.xl),
 
         // ── Revenue trend ──
@@ -626,14 +687,25 @@ class _AnalyticsBodyState extends ConsumerState<_AnalyticsBody> {
           _LeakingRevenueBanner(uninvoiced: s.uninvoicedValue)
         else
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-            decoration: BoxDecoration(color: theme.success500.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(AppSpacing.radiusSm), border: Border.all(color: theme.success500.withValues(alpha: 0.2))),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+                color: theme.success500.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                border:
+                    Border.all(color: theme.success500.withValues(alpha: 0.2))),
             child: Row(children: [
-              const Icon(Icons.check_circle, size: 14, color: Color(0xFF4ADE80)),
+              const Icon(Icons.check_circle,
+                  size: 14, color: Color(0xFF4ADE80)),
               const SizedBox(width: 8),
-              Text('No overdue jobs', style: AppTextStyles.caption.copyWith(color: const Color(0xFF4ADE80), fontWeight: FontWeight.w700)),
+              Text('No overdue jobs',
+                  style: AppTextStyles.caption.copyWith(
+                      color: const Color(0xFF4ADE80),
+                      fontWeight: FontWeight.w700)),
               const Spacer(),
-              Text('All jobs paid', style: AppTextStyles.caption.copyWith(color: neutral500, fontSize: 9)),
+              Text('All jobs paid',
+                  style: AppTextStyles.caption
+                      .copyWith(color: neutral500, fontSize: 9)),
             ]),
           ),
         const SizedBox(height: AppSpacing.xl),
@@ -650,11 +722,16 @@ class _AnalyticsBodyState extends ConsumerState<_AnalyticsBody> {
           onTap: () => setState(() => _showMore = !_showMore),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(border: Border(top: BorderSide(color: theme.primary700))),
+            decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: theme.primary700))),
             child: Row(
               children: [
                 Text(_showMore ? '▲ SHOW LESS' : '▼ SHOW MORE STATS',
-                    style: AppTextStyles.caption.copyWith(color: neutral500, fontWeight: FontWeight.w700, letterSpacing: 1.5, fontSize: 10)),
+                    style: AppTextStyles.caption.copyWith(
+                        color: neutral500,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                        fontSize: 10)),
                 const Spacer(),
               ],
             ),
@@ -726,10 +803,23 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isLight ? c.primary800 : null,
-        gradient: isLight ? null : LinearGradient(colors: [accent.withValues(alpha: 0.12), c.primary800], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: isLight
+            ? null
+            : LinearGradient(
+                colors: [accent.withValues(alpha: 0.12), c.primary800],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-        border: Border.all(color: isLight ? c.neutral200 : accent.withValues(alpha: 0.2)),
-        boxShadow: isLight ? [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 2))] : null,
+        border: Border.all(
+            color: isLight ? c.neutral200 : accent.withValues(alpha: 0.2)),
+        boxShadow: isLight
+            ? [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2))
+              ]
+            : null,
       ),
       child: Column(
         children: [
@@ -742,24 +832,40 @@ class _HeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('TOTAL REVENUE',
-                        style: AppTextStyles.caption.copyWith(color: c.neutral500, letterSpacing: 1.5, fontWeight: FontWeight.w900, fontSize: 10)),
+                        style: AppTextStyles.caption.copyWith(
+                            color: c.neutral500,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 10)),
                     const SizedBox(height: 4),
                     Text(CurrencyFormatter.format(revenue),
-                        style: AppTextStyles.h1.copyWith(color: isLight ? c.white : accent, fontWeight: FontWeight.w900, fontSize: 28, letterSpacing: -0.5)),
+                        style: AppTextStyles.h1.copyWith(
+                            color: isLight ? c.white : accent,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 28,
+                            letterSpacing: -0.5)),
                   ],
                 ),
               ),
               if (revenueChange != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isLight ? c.accent100 : accent.withValues(alpha: 0.08),
+                    color:
+                        isLight ? c.accent100 : accent.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isLight ? c.accent500 : accent.withValues(alpha: 0.25)),
+                    border: Border.all(
+                        color: isLight
+                            ? c.accent500
+                            : accent.withValues(alpha: 0.25)),
                   ),
                   child: Text(
                     '↑ ${revenueChange!.toStringAsFixed(0)}%',
-                    style: AppTextStyles.caption.copyWith(color: isLight ? c.accent600 : accent, fontWeight: FontWeight.w700, fontSize: 11),
+                    style: AppTextStyles.caption.copyWith(
+                        color: isLight ? c.accent600 : accent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11),
                   ),
                 ),
             ],
@@ -768,28 +874,52 @@ class _HeroCard extends StatelessWidget {
           // ── Gradient divider ──
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Container(height: 1, decoration: BoxDecoration(
-              gradient: LinearGradient(colors: isLight
-                ? [c.white.withValues(alpha: 0.3), c.neutral300, c.white.withValues(alpha: 0)]
-                : [accent.withValues(alpha: 0.25), c.primary800, accent.withValues(alpha: 0)]),
-            )),
+            child: Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: isLight
+                          ? [
+                              c.white.withValues(alpha: 0.3),
+                              c.neutral300,
+                              c.white.withValues(alpha: 0)
+                            ]
+                          : [
+                              accent.withValues(alpha: 0.25),
+                              c.primary800,
+                              accent.withValues(alpha: 0)
+                            ]),
+                )),
           ),
 
           // ── Metrics row: Jobs | Profit | Margin ──
           Row(
             children: [
-              _MetricCell(value: '$jobs', label: 'JOBS',
-                trend: jobsChange != null ? TrendData(change: jobsChange!, positive: (jobsChange ?? 0) >= 0) : null,
-                isLight: isLight),
+              _MetricCell(
+                  value: '$jobs',
+                  label: 'JOBS',
+                  trend: jobsChange != null
+                      ? TrendData(
+                          change: jobsChange!, positive: (jobsChange ?? 0) >= 0)
+                      : null,
+                  isLight: isLight),
               _vertDivider(c),
-              _MetricCell(value: CurrencyFormatter.formatShort(profit), label: 'PROFIT',
-                trend: profitChange != null ? TrendData(change: profitChange!, positive: (profitChange ?? 0) >= 0) : null,
-                isLight: isLight),
+              _MetricCell(
+                  value: CurrencyFormatter.formatShort(profit),
+                  label: 'PROFIT',
+                  trend: profitChange != null
+                      ? TrendData(
+                          change: profitChange!,
+                          positive: (profitChange ?? 0) >= 0)
+                      : null,
+                  isLight: isLight),
               _vertDivider(c),
-              _MetricCell(value: '${margin.toStringAsFixed(0)}%', label: 'MARGIN',
-                statusText: _marginStatus(),
-                statusColor: _marginColor(c),
-                isLight: isLight),
+              _MetricCell(
+                  value: '${margin.toStringAsFixed(0)}%',
+                  label: 'MARGIN',
+                  statusText: _marginStatus(),
+                  statusColor: _marginColor(c),
+                  isLight: isLight),
             ],
           ),
 
@@ -800,7 +930,8 @@ class _HeroCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 '◈ $filterCount filter${filterCount == 1 ? '' : 's'} active',
-                style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8),
+                style: AppTextStyles.caption
+                    .copyWith(color: c.neutral500, fontSize: 8),
               ),
             ),
           ),
@@ -836,19 +967,34 @@ class _MetricCell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Column(
           children: [
-            Text(value, style: AppTextStyles.h2.copyWith(
-              color: isLight ? c.neutral900 : c.white,
-              fontWeight: FontWeight.w800, fontSize: 18)),
+            Text(value,
+                style: AppTextStyles.h2.copyWith(
+                    color: isLight ? c.neutral900 : c.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18)),
             const SizedBox(height: 2),
-            Text(label, style: AppTextStyles.caption.copyWith(color: c.neutral500, letterSpacing: 1, fontWeight: FontWeight.w700, fontSize: 7)),
+            Text(label,
+                style: AppTextStyles.caption.copyWith(
+                    color: c.neutral500,
+                    letterSpacing: 1,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 7)),
             const SizedBox(height: 4),
             if (statusText != null && statusColor != null)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 6, height: 6, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
+                  Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                          color: statusColor, shape: BoxShape.circle)),
                   const SizedBox(width: 4),
-                  Text(statusText!, style: AppTextStyles.caption.copyWith(color: statusColor!, fontWeight: FontWeight.w700, fontSize: 9)),
+                  Text(statusText!,
+                      style: AppTextStyles.caption.copyWith(
+                          color: statusColor!,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 9)),
                 ],
               )
             else if (trend != null)
@@ -882,15 +1028,22 @@ class _ServiceTypeBreakdownBars extends StatelessWidget {
   Widget build(BuildContext context) {
     if (breakdown.isEmpty) return const SizedBox.shrink();
     final c = context.ksc;
-    final sorted = List<ServiceTypeBreakdown>.from(breakdown)..sort((a, b) => b.revenue.compareTo(a.revenue));
+    final sorted = List<ServiceTypeBreakdown>.from(breakdown)
+      ..sort((a, b) => b.revenue.compareTo(a.revenue));
     final totalRevenue = sorted.fold<int>(0, (s, e) => s + e.revenue);
     final show = sorted.take(6).toList();
-    final othersRevenue = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.revenue) : 0;
-    final othersJobs = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.jobCount) : 0;
+    final othersRevenue = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.revenue)
+        : 0;
+    final othersJobs = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.jobCount)
+        : 0;
     final maxRev = show.first.revenue.toDouble();
 
     return Container(
-      decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+      decoration: BoxDecoration(
+          color: c.primary800,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -898,10 +1051,18 @@ class _ServiceTypeBreakdownBars extends StatelessWidget {
           // ── Total row ──
           Row(
             children: [
-              Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-              Text(CurrencyFormatter.formatShort(totalRevenue), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
+              Text('Total ',
+                  style: AppTextStyles.caption
+                      .copyWith(color: c.neutral500, fontSize: 9)),
+              Text(CurrencyFormatter.formatShort(totalRevenue),
+                  style: AppTextStyles.caption.copyWith(
+                      color: c.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11)),
               const Spacer(),
-              Text('${sorted.length} type${sorted.length == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+              Text('${sorted.length} type${sorted.length == 1 ? '' : 's'}',
+                  style: AppTextStyles.caption
+                      .copyWith(color: c.neutral500, fontSize: 8)),
             ],
           ),
           const SizedBox(height: 12),
@@ -910,8 +1071,11 @@ class _ServiceTypeBreakdownBars extends StatelessWidget {
             final i = entry.key;
             final b = entry.value;
             final frac = maxRev > 0 ? b.revenue / maxRev : 0.0;
-            final marginPct = b.revenue > 0 ? (b.grossProfit / b.revenue * 100) : 0.0;
-            final barColor = marginPct >= 50 ? c.success500 : (marginPct >= 25 ? c.warning500 : c.error500);
+            final marginPct =
+                b.revenue > 0 ? (b.grossProfit / b.revenue * 100) : 0.0;
+            final barColor = marginPct >= 50
+                ? c.success500
+                : (marginPct >= 25 ? c.warning500 : c.error500);
 
             return Padding(
               padding: EdgeInsets.only(top: i > 0 ? 10 : 0),
@@ -920,8 +1084,11 @@ class _ServiceTypeBreakdownBars extends StatelessWidget {
                   SizedBox(
                     width: 76,
                     child: Text(b.serviceType.toUpperCase(),
-                      style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w700, fontSize: 11),
-                      overflow: TextOverflow.ellipsis),
+                        style: AppTextStyles.caption.copyWith(
+                            color: c.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11),
+                        overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -940,16 +1107,23 @@ class _ServiceTypeBreakdownBars extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(CurrencyFormatter.formatShort(b.revenue),
-                      style: AppTextStyles.caption.copyWith(color: c.accent500, fontWeight: FontWeight.w800, fontSize: 11)),
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.accent500,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11)),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
                       color: barColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text('${marginPct.toStringAsFixed(0)}%',
-                        style: AppTextStyles.caption.copyWith(color: barColor, fontWeight: FontWeight.w800, fontSize: 9)),
+                        style: AppTextStyles.caption.copyWith(
+                            color: barColor,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 9)),
                   ),
                 ],
               ),
@@ -960,12 +1134,24 @@ class _ServiceTypeBreakdownBars extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                SizedBox(width: 76, child: Text('Others (${sorted.length - 6})', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10))),
+                SizedBox(
+                    width: 76,
+                    child: Text('Others (${sorted.length - 6})',
+                        style: AppTextStyles.caption.copyWith(
+                            color: c.neutral500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10))),
                 const SizedBox(width: 8),
                 Expanded(child: Container()),
                 const SizedBox(width: 10),
-                Text(othersRevenue > 0 ? CurrencyFormatter.formatShort(othersRevenue) : '',
-                    style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10)),
+                Text(
+                    othersRevenue > 0
+                        ? CurrencyFormatter.formatShort(othersRevenue)
+                        : '',
+                    style: AppTextStyles.caption.copyWith(
+                        color: c.neutral500,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10)),
               ],
             ),
           ],
@@ -986,8 +1172,12 @@ class _PaymentHealthCompact extends StatelessWidget {
     if (total == 0) {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(color: context.ksc.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
-        child: Text('No jobs in this period', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral600)),
+        decoration: BoxDecoration(
+            color: context.ksc.primary800,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+        child: Text('No jobs in this period',
+            style:
+                AppTextStyles.caption.copyWith(color: context.ksc.neutral600)),
       );
     }
     final c = context.ksc;
@@ -999,7 +1189,9 @@ class _PaymentHealthCompact extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+      decoration: BoxDecoration(
+          color: c.primary800,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1023,51 +1215,83 @@ class _PaymentHealthCompact extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-              Text(CurrencyFormatter.format(total), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 10)),
+              Text('Total ',
+                  style: AppTextStyles.caption
+                      .copyWith(color: c.neutral500, fontSize: 9)),
+              Text(CurrencyFormatter.format(total),
+                  style: AppTextStyles.caption.copyWith(
+                      color: c.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10)),
               const Spacer(),
-              Text('${sections[0].amount > 0 ? (sections[0].amount / total * 100).toStringAsFixed(0) : '0'}% collected',
-                  style: AppTextStyles.caption.copyWith(color: c.success500, fontWeight: FontWeight.w700, fontSize: 8)),
+              Text(
+                  '${sections[0].amount > 0 ? (sections[0].amount / total * 100).toStringAsFixed(0) : '0'}% collected',
+                  style: AppTextStyles.caption.copyWith(
+                      color: c.success500,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 8)),
             ],
           ),
 
           // ── Divider ──
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Container(height: 1, color: c.primary700.withValues(alpha: 0.5)),
+            child: Container(
+                height: 1, color: c.primary700.withValues(alpha: 0.5)),
           ),
 
           // ── Legend rows ──
           ...sections.map((s) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 52,
-                  child: Text(s.label, style: AppTextStyles.caption.copyWith(color: s.color, fontWeight: FontWeight.w800, fontSize: 10)),
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                            color: s.color,
+                            borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 52,
+                      child: Text(s.label,
+                          style: AppTextStyles.caption.copyWith(
+                              color: s.color,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 10)),
+                    ),
+                    Expanded(
+                      child: Text(CurrencyFormatter.formatShort(s.amount),
+                          style: AppTextStyles.caption.copyWith(
+                              color: c.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11)),
+                    ),
+                    SizedBox(
+                      width: 34,
+                      child: Text(
+                          '${total > 0 ? (s.amount / total * 100).toStringAsFixed(0) : '0'}%',
+                          style: AppTextStyles.caption.copyWith(
+                              color: s.color,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10),
+                          textAlign: TextAlign.right),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 28,
+                      child: Text('${s.count}',
+                          style: AppTextStyles.caption
+                              .copyWith(color: c.neutral500, fontSize: 10),
+                          textAlign: TextAlign.right),
+                    ),
+                    const SizedBox(width: 4),
+                    Text('job${s.count == 1 ? '' : 's'}',
+                        style: AppTextStyles.caption
+                            .copyWith(color: c.neutral500, fontSize: 8)),
+                  ],
                 ),
-                Expanded(
-                  child: Text(CurrencyFormatter.formatShort(s.amount),
-                    style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
-                ),
-                SizedBox(
-                  width: 34,
-                  child: Text('${total > 0 ? (s.amount / total * 100).toStringAsFixed(0) : '0'}%',
-                    style: AppTextStyles.caption.copyWith(color: s.color, fontWeight: FontWeight.w700, fontSize: 10),
-                    textAlign: TextAlign.right),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 28,
-                  child: Text('${s.count}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 10), textAlign: TextAlign.right),
-                ),
-                const SizedBox(width: 4),
-                Text('job${s.count == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
@@ -1075,7 +1299,10 @@ class _PaymentHealthCompact extends StatelessWidget {
 }
 
 class _Psd {
-  final String label; final int amount; final int count; final Color color;
+  final String label;
+  final int amount;
+  final int count;
+  final Color color;
   const _Psd(this.label, this.amount, this.count, this.color);
 }
 
@@ -1087,15 +1314,95 @@ class _LeakingRevenueBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      decoration: BoxDecoration(color: context.ksc.error500.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppSpacing.radiusSm), border: Border.all(color: context.ksc.error500.withValues(alpha: 0.25))),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+          color: context.ksc.error500.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          border:
+              Border.all(color: context.ksc.error500.withValues(alpha: 0.25))),
       child: Row(children: [
-        const Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFF56565)),
+        const Icon(Icons.warning_amber_rounded,
+            size: 14, color: Color(0xFFF56565)),
         const SizedBox(width: 8),
-        Text(CurrencyFormatter.format(uninvoiced), style: AppTextStyles.h2.copyWith(color: const Color(0xFFF56565), fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.5)),
+        Text(CurrencyFormatter.format(uninvoiced),
+            style: AppTextStyles.h2.copyWith(
+                color: const Color(0xFFF56565),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                letterSpacing: -0.5)),
         const SizedBox(width: 8),
-        Expanded(child: Text('overdue · stuck in quoted/progress', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 8))),
+        Expanded(
+            child: Text('overdue · stuck in quoted/progress',
+                style: AppTextStyles.caption
+                    .copyWith(color: context.ksc.neutral500, fontSize: 8))),
       ]),
+    );
+  }
+}
+
+// ── Monthly Target Card ─────────────────────────────────────────────────────
+
+class _MonthlyTargetCard extends ConsumerWidget {
+  final int revenue;
+  const _MonthlyTargetCard({required this.revenue});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final target = ref.watch(monthlyTargetProvider);
+    if (target <= 0) return const SizedBox.shrink();
+
+    final pct = revenue > 0 ? (revenue / target).clamp(0.0, 1.0) : 0.0;
+    final pctDisplay = revenue > 0 ? ((revenue / target) * 100).round() : 0;
+    final theme = context.ksc;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [theme.primary800, theme.primary800.withValues(alpha: 0.6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        border: Border.all(color: theme.primary700),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LineAwesomeIcons.chart_line_solid,
+                  size: 16, color: theme.neutral500),
+              const SizedBox(width: 8),
+              Text("TARGET",
+                  style: AppTextStyles.caption.copyWith(
+                      color: theme.neutral500,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5)),
+              const Spacer(),
+              Text("$pctDisplay%",
+                  style: AppTextStyles.label.copyWith(
+                      color: theme.accent500, fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: pct,
+              backgroundColor: theme.primary700,
+              color: theme.accent500,
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+              "${CurrencyFormatter.format(revenue)} of ${CurrencyFormatter.format(target)} target",
+              style: AppTextStyles.caption
+                  .copyWith(color: theme.neutral500, fontSize: 10)),
+        ],
+      ),
     );
   }
 }
@@ -1108,7 +1415,8 @@ class _LocationBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final agg = AggData._fromState(state);
-    final locs = agg.locations.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final locs = agg.locations.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     if (locs.isEmpty) return const SizedBox.shrink();
 
     final c = context.ksc;
@@ -1117,18 +1425,30 @@ class _LocationBreakdown extends StatelessWidget {
 
     // Palette for location bars
     const barColors = [
-      Color(0xFF4ADE80), Color(0xFF60A5FA), Color(0xFFF59E0B),
-      Color(0xFFA78BFA), Color(0xFFF472B6), Color(0xFF34D399),
-      Color(0xFFFB923C), Color(0xFF818CF8),
+      Color(0xFF4ADE80),
+      Color(0xFF60A5FA),
+      Color(0xFFF59E0B),
+      Color(0xFFA78BFA),
+      Color(0xFFF472B6),
+      Color(0xFF34D399),
+      Color(0xFFFB923C),
+      Color(0xFF818CF8),
     ];
 
     // Top 6 + Others rollup
     final show = locs.take(6).toList();
-    final othersRevenue = locs.length > 6 ? locs.skip(6).fold<int>(0, (s, e) => s + e.value) : 0;
-    final othersJobs = locs.length > 6 ? locs.skip(6).fold<int>(0, (s, e) => s + (agg.locationJobs[e.key] ?? 0)) : 0;
+    final othersRevenue =
+        locs.length > 6 ? locs.skip(6).fold<int>(0, (s, e) => s + e.value) : 0;
+    final othersJobs = locs.length > 6
+        ? locs
+            .skip(6)
+            .fold<int>(0, (s, e) => s + (agg.locationJobs[e.key] ?? 0))
+        : 0;
 
     return Container(
-      decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+      decoration: BoxDecoration(
+          color: c.primary800,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1136,10 +1456,18 @@ class _LocationBreakdown extends StatelessWidget {
           // ── Total row ──
           Row(
             children: [
-              Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-              Text(CurrencyFormatter.formatShort(totalRevenue), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
+              Text('Total ',
+                  style: AppTextStyles.caption
+                      .copyWith(color: c.neutral500, fontSize: 9)),
+              Text(CurrencyFormatter.formatShort(totalRevenue),
+                  style: AppTextStyles.caption.copyWith(
+                      color: c.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11)),
               const Spacer(),
-              Text('${locs.length} area${locs.length == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+              Text('${locs.length} area${locs.length == 1 ? '' : 's'}',
+                  style: AppTextStyles.caption
+                      .copyWith(color: c.neutral500, fontSize: 8)),
             ],
           ),
           const SizedBox(height: 10),
@@ -1149,7 +1477,9 @@ class _LocationBreakdown extends StatelessWidget {
             final i = entry.key;
             final e = entry.value;
             final fraction = maxVal > 0 ? e.value / maxVal : 0.0;
-            final pct = totalRevenue > 0 ? (e.value / totalRevenue * 100).toStringAsFixed(0) : '0';
+            final pct = totalRevenue > 0
+                ? (e.value / totalRevenue * 100).toStringAsFixed(0)
+                : '0';
             final jobs = agg.locationJobs[e.key] ?? 0;
             final color = barColors[i % barColors.length];
 
@@ -1161,16 +1491,38 @@ class _LocationBreakdown extends StatelessWidget {
                   // Label row
                   Row(
                     children: [
-                      Container(width: 6, height: 6, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1))),
+                      Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(1))),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(e.key.toUpperCase(),
-                          style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w700, fontSize: 10),
-                          overflow: TextOverflow.ellipsis),
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10),
+                            overflow: TextOverflow.ellipsis),
                       ),
-                      SizedBox(width: 38, child: Text('$pct%', style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w700, fontSize: 9), textAlign: TextAlign.right)),
+                      SizedBox(
+                          width: 38,
+                          child: Text('$pct%',
+                              style: AppTextStyles.caption.copyWith(
+                                  color: color,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 9),
+                              textAlign: TextAlign.right)),
                       const SizedBox(width: 6),
-                      SizedBox(width: 54, child: Text(CurrencyFormatter.formatShort(e.value), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11), textAlign: TextAlign.right)),
+                      SizedBox(
+                          width: 54,
+                          child: Text(CurrencyFormatter.formatShort(e.value),
+                              style: AppTextStyles.caption.copyWith(
+                                  color: c.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11),
+                              textAlign: TextAlign.right)),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -1197,14 +1549,40 @@ class _LocationBreakdown extends StatelessWidget {
             const SizedBox(height: 2),
             Row(
               children: [
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: c.neutral600, borderRadius: BorderRadius.circular(1))),
+                Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                        color: c.neutral600,
+                        borderRadius: BorderRadius.circular(1))),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text('Others (${locs.length - 6})', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 9)),
+                  child: Text('Others (${locs.length - 6})',
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.neutral500,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 9)),
                 ),
-                SizedBox(width: 38, child: Text('', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w700, fontSize: 9), textAlign: TextAlign.right)),
+                SizedBox(
+                    width: 38,
+                    child: Text('',
+                        style: AppTextStyles.caption.copyWith(
+                            color: c.neutral500,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9),
+                        textAlign: TextAlign.right)),
                 const SizedBox(width: 6),
-                SizedBox(width: 54, child: Text(othersRevenue > 0 ? CurrencyFormatter.formatShort(othersRevenue) : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10), textAlign: TextAlign.right)),
+                SizedBox(
+                    width: 54,
+                    child: Text(
+                        othersRevenue > 0
+                            ? CurrencyFormatter.formatShort(othersRevenue)
+                            : '',
+                        style: AppTextStyles.caption.copyWith(
+                            color: c.neutral500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10),
+                        textAlign: TextAlign.right)),
               ],
             ),
           ],
@@ -1239,17 +1617,19 @@ class _LeakingRevenueCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Text('LEAKING REVENUE',
                   style: AppTextStyles.captionMedium.copyWith(
-                      color: context.ksc.error500, fontWeight: FontWeight.w900)),
+                      color: context.ksc.error500,
+                      fontWeight: FontWeight.w900)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(CurrencyFormatter.format(uninvoiced),
-              style: AppTextStyles.h2.copyWith(
-                  color: context.ksc.error500, letterSpacing: -0.5)),
+              style: AppTextStyles.h2
+                  .copyWith(color: context.ksc.error500, letterSpacing: -0.5)),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Jobs stuck in quoted/progress past 7 days',
-            style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400),
+            style:
+                AppTextStyles.caption.copyWith(color: context.ksc.neutral400),
           ),
         ],
       ),
@@ -1332,16 +1712,19 @@ class _SummaryCard extends StatelessWidget {
           Row(
             children: [
               Image.asset('assets/icons/3d/transparent/$icon3d',
-                  width: 20, height: 20,
+                  width: 20,
+                  height: 20,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink()),
               const SizedBox(width: AppSpacing.xs),
               Text(label,
-                  style: AppTextStyles.captionMedium.copyWith(color: context.ksc.neutral500)),
+                  style: AppTextStyles.captionMedium
+                      .copyWith(color: context.ksc.neutral500)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(value,
-              style: AppTextStyles.h2.copyWith(color: valueColor, letterSpacing: -0.5),
+              style: AppTextStyles.h2
+                  .copyWith(color: valueColor, letterSpacing: -0.5),
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ],
@@ -1400,9 +1783,14 @@ class _CustomerRetentionSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('NEW', style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
+                        Text('NEW',
+                            style: AppTextStyles.caption.copyWith(
+                                color: context.ksc.accent500,
+                                fontWeight: FontWeight.w900)),
                         const SizedBox(height: 4),
-                        Text('${state.newCustomerCount}', style: AppTextStyles.h2.copyWith(color: context.ksc.accent500)),
+                        Text('${state.newCustomerCount}',
+                            style: AppTextStyles.h2
+                                .copyWith(color: context.ksc.accent500)),
                       ],
                     ),
                   ),
@@ -1410,9 +1798,14 @@ class _CustomerRetentionSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('REPEAT', style: AppTextStyles.caption.copyWith(color: context.ksc.success500, fontWeight: FontWeight.w900)),
+                        Text('REPEAT',
+                            style: AppTextStyles.caption.copyWith(
+                                color: context.ksc.success500,
+                                fontWeight: FontWeight.w900)),
                         const SizedBox(height: 4),
-                        Text('${state.repeatCustomerCount}', style: AppTextStyles.h2.copyWith(color: context.ksc.success500)),
+                        Text('${state.repeatCustomerCount}',
+                            style: AppTextStyles.h2
+                                .copyWith(color: context.ksc.success500)),
                       ],
                     ),
                   ),
@@ -1430,7 +1823,8 @@ class _CustomerRetentionSection extends StatelessWidget {
                         flex: state.newCustomerCount,
                         child: Container(color: context.ksc.accent500),
                       ),
-                      if (state.repeatCustomerCount > 0 && state.newCustomerCount > 0)
+                      if (state.repeatCustomerCount > 0 &&
+                          state.newCustomerCount > 0)
                         const SizedBox(width: 2),
                       Flexible(
                         flex: state.repeatCustomerCount,
@@ -1443,7 +1837,8 @@ class _CustomerRetentionSection extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 '${total == 0 ? 0 : (state.repeatCustomerCount / total * 100).toStringAsFixed(0)}% repeat rate',
-                style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+                style: AppTextStyles.caption
+                    .copyWith(color: context.ksc.neutral500),
               ),
             ],
           ),
@@ -1470,7 +1865,9 @@ class _DayOfWeekSection extends StatelessWidget {
           const _SectionHeader('JOBS BY DAY'),
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+            decoration: BoxDecoration(
+                color: c.primary800,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
             child: const _EmptyRow(message: 'No jobs in this period'),
           ),
         ],
@@ -1478,14 +1875,21 @@ class _DayOfWeekSection extends StatelessWidget {
     }
 
     // Sorted Mon-Sun (natural order)
-    final days = List<DayOfWeekData>.from(data)..sort((a, b) => a.weekday.compareTo(b.weekday));
-    final maxRev = days.map((d) => d.revenue).reduce((a, b) => a > b ? a : b).toDouble();
+    final days = List<DayOfWeekData>.from(data)
+      ..sort((a, b) => a.weekday.compareTo(b.weekday));
+    final maxRev =
+        days.map((d) => d.revenue).reduce((a, b) => a > b ? a : b).toDouble();
     final totalJobs = days.fold<int>(0, (s, d) => s + d.jobCount);
 
     // Day-of-week bar palette: blue gradient (weekday) → amber (weekend)
     const dayColors = [
-      Color(0xFF60A5FA), Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF6366F1),
-      Color(0xFF8B5CF6), Color(0xFFF59E0B), Color(0xFFF97316),
+      Color(0xFF60A5FA),
+      Color(0xFF3B82F6),
+      Color(0xFF2563EB),
+      Color(0xFF6366F1),
+      Color(0xFF8B5CF6),
+      Color(0xFFF59E0B),
+      Color(0xFFF97316),
     ];
 
     return Column(
@@ -1494,17 +1898,28 @@ class _DayOfWeekSection extends StatelessWidget {
         const _SectionHeader('JOBS BY DAY'),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+          decoration: BoxDecoration(
+              color: c.primary800,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
           child: Column(
             children: [
               // ── Total row ──
               Row(
                 children: [
-                  Text('Week total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-                  Text(CurrencyFormatter.formatShort(days.fold<int>(0, (s, d) => s + d.revenue)),
-                    style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
+                  Text('Week total ',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 9)),
+                  Text(
+                      CurrencyFormatter.formatShort(
+                          days.fold<int>(0, (s, d) => s + d.revenue)),
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11)),
                   const Spacer(),
-                  Text('$totalJobs jobs', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+                  Text('$totalJobs jobs',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 8)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1524,9 +1939,10 @@ class _DayOfWeekSection extends StatelessWidget {
                       SizedBox(
                         width: 36,
                         child: Text(d.label,
-                          style: AppTextStyles.caption.copyWith(
-                            color: isWeekend ? c.warning500 : c.white,
-                            fontWeight: FontWeight.w800, fontSize: 10)),
+                            style: AppTextStyles.caption.copyWith(
+                                color: isWeekend ? c.warning500 : c.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 10)),
                       ),
                       const SizedBox(width: 8),
 
@@ -1551,8 +1967,11 @@ class _DayOfWeekSection extends StatelessWidget {
                       SizedBox(
                         width: 50,
                         child: Text(CurrencyFormatter.formatShort(d.revenue),
-                          style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w700, fontSize: 10),
-                          textAlign: TextAlign.right),
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10),
+                            textAlign: TextAlign.right),
                       ),
                       const SizedBox(width: 8),
 
@@ -1560,8 +1979,9 @@ class _DayOfWeekSection extends StatelessWidget {
                       SizedBox(
                         width: 18,
                         child: Text('${d.jobCount}',
-                          style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 10),
-                          textAlign: TextAlign.right),
+                            style: AppTextStyles.caption
+                                .copyWith(color: c.neutral500, fontSize: 10),
+                            textAlign: TextAlign.right),
                       ),
                     ],
                   ),
@@ -1578,9 +1998,15 @@ class _DayOfWeekSection extends StatelessWidget {
 // ── Expense breakdown ──────────────────────────────────────────────────────────
 
 const _expenseChartColors = [
-  Color(0xFFFF6B6B), Color(0xFFFFA94D), Color(0xFFFFD93D),
-  Color(0xFF6BCB77), Color(0xFF4D96FF), Color(0xFF9B59B6),
-  Color(0xFF1ABC9C), Color(0xFFE74C3C), Color(0xFF3498DB),
+  Color(0xFFFF6B6B),
+  Color(0xFFFFA94D),
+  Color(0xFFFFD93D),
+  Color(0xFF6BCB77),
+  Color(0xFF4D96FF),
+  Color(0xFF9B59B6),
+  Color(0xFF1ABC9C),
+  Color(0xFFE74C3C),
+  Color(0xFF3498DB),
 ];
 
 /// Expense breakdown: horizontal bars sorted descending.
@@ -1598,7 +2024,9 @@ class _ExpenseBreakdownSection extends StatelessWidget {
           const _SectionHeader('EXPENSE BREAKDOWN'),
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+            decoration: BoxDecoration(
+                color: c.primary800,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
             child: const _EmptyRow(message: 'No expenses in this period'),
           ),
         ],
@@ -1606,12 +2034,22 @@ class _ExpenseBreakdownSection extends StatelessWidget {
     }
 
     // Sort descending by amount
-    final sorted = List<ExpenseCategoryBreakdown>.from(expenses)..sort((a, b) => b.amount.compareTo(a.amount));
+    final sorted = List<ExpenseCategoryBreakdown>.from(expenses)
+      ..sort((a, b) => b.amount.compareTo(a.amount));
     final total = sorted.fold<int>(0, (s, e) => s + e.amount);
     final show = sorted.take(6).toList();
     final maxAmt = show.first.amount.toDouble();
-    final othersAmount = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.amount) : 0;
-    const barColors = [Color(0xFFF87171), Color(0xFFFB923C), Color(0xFFFBBF24), Color(0xFFA78BFA), Color(0xFF60A5FA), Color(0xFF34D399)];
+    final othersAmount = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.amount)
+        : 0;
+    const barColors = [
+      Color(0xFFF87171),
+      Color(0xFFFB923C),
+      Color(0xFFFBBF24),
+      Color(0xFFA78BFA),
+      Color(0xFF60A5FA),
+      Color(0xFF34D399)
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1619,16 +2057,27 @@ class _ExpenseBreakdownSection extends StatelessWidget {
         const _SectionHeader('EXPENSE BREAKDOWN'),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+          decoration: BoxDecoration(
+              color: c.primary800,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
           child: Column(
             children: [
               // ── Total row ──
               Row(
                 children: [
-                  Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-                  Text(CurrencyFormatter.formatShort(total), style: AppTextStyles.caption.copyWith(color: c.error500, fontWeight: FontWeight.w800, fontSize: 11)),
+                  Text('Total ',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 9)),
+                  Text(CurrencyFormatter.formatShort(total),
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.error500,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11)),
                   const Spacer(),
-                  Text('${sorted.length} categor${sorted.length == 1 ? 'y' : 'ies'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+                  Text(
+                      '${sorted.length} categor${sorted.length == 1 ? 'y' : 'ies'}',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 8)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1641,26 +2090,55 @@ class _ExpenseBreakdownSection extends StatelessWidget {
                 final pct = total > 0 ? (row.amount / total * 100) : 0.0;
                 final pctLabel = pct.toStringAsFixed(0);
                 final color = barColors[i % barColors.length];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1))),
-                    const SizedBox(width: 6),
-                    SizedBox(width: 66, child: Text(row.category, style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w600, fontSize: 10), overflow: TextOverflow.ellipsis)),
-                    const SizedBox(width: 4),
-                    SizedBox(width: 28, child: Text('$pctLabel%', style: AppTextStyles.caption.copyWith(color: c.neutral400, fontWeight: FontWeight.w600, fontSize: 9), textAlign: TextAlign.right)),
-                    const SizedBox(width: 4),
-                    Expanded(child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: Container(height: 10, color: c.primary700,
-                        child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: fraction, child: Container(color: color))),
-                    )),
-                    const SizedBox(width: 8),
-                    Text(CurrencyFormatter.formatShort(row.amount), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
-                  ],
-                ),
-              );
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(1))),
+                      const SizedBox(width: 6),
+                      SizedBox(
+                          width: 66,
+                          child: Text(row.category,
+                              style: AppTextStyles.caption.copyWith(
+                                  color: c.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 10),
+                              overflow: TextOverflow.ellipsis)),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                          width: 28,
+                          child: Text('$pctLabel%',
+                              style: AppTextStyles.caption.copyWith(
+                                  color: c.neutral400,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 9),
+                              textAlign: TextAlign.right)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                          child: ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: Container(
+                            height: 10,
+                            color: c.primary700,
+                            child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: fraction,
+                                child: Container(color: color))),
+                      )),
+                      const SizedBox(width: 8),
+                      Text(CurrencyFormatter.formatShort(row.amount),
+                          style: AppTextStyles.caption.copyWith(
+                              color: c.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11)),
+                    ],
+                  ),
+                );
               }),
 
               // ── Others rollup ──
@@ -1668,13 +2146,30 @@ class _ExpenseBreakdownSection extends StatelessWidget {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: c.neutral600, borderRadius: BorderRadius.circular(1))),
+                    Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                            color: c.neutral600,
+                            borderRadius: BorderRadius.circular(1))),
                     const SizedBox(width: 6),
-                    Expanded(child: Text('Others (${sorted.length - 6})', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 9))),
+                    Expanded(
+                        child: Text('Others (${sorted.length - 6})',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9))),
                     const SizedBox(width: 42),
                     Expanded(child: Container()),
                     const SizedBox(width: 8),
-                    Text(othersAmount > 0 ? CurrencyFormatter.formatShort(othersAmount) : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10)),
+                    Text(
+                        othersAmount > 0
+                            ? CurrencyFormatter.formatShort(othersAmount)
+                            : '',
+                        style: AppTextStyles.caption.copyWith(
+                            color: c.neutral500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10)),
                   ],
                 ),
               ],
@@ -1711,7 +2206,8 @@ class _ServiceTypeSection extends StatelessWidget {
                     final row = entry.value;
                     return Column(
                       children: [
-                        if (i > 0) Divider(height: 1, color: context.ksc.primary700),
+                        if (i > 0)
+                          Divider(height: 1, color: context.ksc.primary700),
                         _ServiceTypeRow(row: row),
                       ],
                     );
@@ -1738,14 +2234,16 @@ class _ServiceTypeRow extends StatelessWidget {
             flex: 3,
             child: Text(
               row.serviceType.toUpperCase(),
-              style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.white),
+              style:
+                  AppTextStyles.bodyMedium.copyWith(color: context.ksc.white),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
             child: Text(
               '${row.jobCount} job${row.jobCount == 1 ? '' : 's'}',
-              style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
+              style:
+                  AppTextStyles.caption.copyWith(color: context.ksc.neutral500),
               textAlign: TextAlign.center,
             ),
           ),
@@ -1756,7 +2254,8 @@ class _ServiceTypeRow extends StatelessWidget {
               children: [
                 Text(
                   CurrencyFormatter.formatShort(row.revenue),
-                  style: AppTextStyles.bodyMedium.copyWith(color: context.ksc.accent500),
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: context.ksc.accent500),
                 ),
                 Text(
                   'GP: ${CurrencyFormatter.formatShort(row.grossProfit)}',
@@ -1783,7 +2282,8 @@ class _PaymentHealthSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = health.unpaidAmount + health.partialAmount + health.paidAmount;
+    final total =
+        health.unpaidAmount + health.partialAmount + health.paidAmount;
     final primary800 = context.ksc.primary800;
 
     final sections = [
@@ -1821,19 +2321,25 @@ class _PaymentHealthSection extends StatelessWidget {
                               sectionsSpace: 0,
                               centerSpaceRadius: 32,
                               startDegreeOffset: -90,
-                              sections: sections.asMap().entries.map((e) =>
-                                PieChartSectionData(
-                                  value: e.value.amount.toDouble(),
-                                  color: e.value.color,
-                                  radius: 40,
-                                  showTitle: false,
-                                ),
-                              ).toList(),
+                              sections: sections
+                                  .asMap()
+                                  .entries
+                                  .map(
+                                    (e) => PieChartSectionData(
+                                      value: e.value.amount.toDouble(),
+                                      color: e.value.color,
+                                      radius: 40,
+                                      showTitle: false,
+                                    ),
+                                  )
+                                  .toList(),
                             ),
                           ),
                           Text(CurrencyFormatter.formatShort(total),
                               style: AppTextStyles.captionMedium.copyWith(
-                                  color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                                  color: context.ksc.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 11)),
                         ],
                       ),
                     ),
@@ -1844,11 +2350,15 @@ class _PaymentHealthSection extends StatelessWidget {
                         children: sections.asMap().entries.map((e) {
                           final s = e.value;
                           return Padding(
-                            padding: EdgeInsets.only(bottom: e.key < sections.length - 1 ? AppSpacing.sm : 0),
+                            padding: EdgeInsets.only(
+                                bottom: e.key < sections.length - 1
+                                    ? AppSpacing.sm
+                                    : 0),
                             child: Row(
                               children: [
                                 Container(
-                                  width: 8, height: 8,
+                                  width: 8,
+                                  height: 8,
                                   decoration: BoxDecoration(
                                     color: s.color,
                                     borderRadius: BorderRadius.circular(2),
@@ -1857,15 +2367,22 @@ class _PaymentHealthSection extends StatelessWidget {
                                 const SizedBox(width: AppSpacing.sm),
                                 Expanded(
                                   child: Text(s.label,
-                                      style: AppTextStyles.captionMedium.copyWith(
-                                          color: s.color, fontWeight: FontWeight.w900, fontSize: 10)),
+                                      style: AppTextStyles.captionMedium
+                                          .copyWith(
+                                              color: s.color,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 10)),
                                 ),
                                 Text('${s.count} job${s.count == 1 ? '' : 's'}',
-                                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 9)),
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: context.ksc.neutral500,
+                                        fontSize: 9)),
                                 const SizedBox(width: AppSpacing.sm),
                                 Text(CurrencyFormatter.formatShort(s.amount),
                                     style: AppTextStyles.captionMedium.copyWith(
-                                        color: context.ksc.white, fontWeight: FontWeight.w700, fontSize: 10)),
+                                        color: context.ksc.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 10)),
                               ],
                             ),
                           );
@@ -1890,7 +2407,8 @@ class _PaymentSectionData {
   final int count;
   final Color color;
   final Color bgColor;
-  const _PaymentSectionData(this.label, this.amount, this.count, this.color, this.bgColor);
+  const _PaymentSectionData(
+      this.label, this.amount, this.count, this.color, this.bgColor);
 }
 
 class _PaymentBar extends StatelessWidget {
@@ -1920,7 +2438,9 @@ class _PaymentBar extends StatelessWidget {
                 child: Container(color: context.ksc.warning500),
               ),
             Flexible(
-              flex: ((1 - unpaidFrac - partialFrac) * 1000).round().clamp(0, 1000),
+              flex: ((1 - unpaidFrac - partialFrac) * 1000)
+                  .round()
+                  .clamp(0, 1000),
               child: Container(color: context.ksc.success500),
             ),
           ],
@@ -1946,23 +2466,34 @@ class _LeadSourceSection extends StatelessWidget {
           const _SectionHeader('LEAD SOURCE BREAKDOWN'),
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+            decoration: BoxDecoration(
+                color: c.primary800,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
             child: const _EmptyRow(message: 'No lead source data'),
           ),
         ],
       );
     }
 
-    final sorted = List<LeadSourceBreakdown>.from(breakdown)..sort((a, b) => b.revenue.compareTo(a.revenue));
+    final sorted = List<LeadSourceBreakdown>.from(breakdown)
+      ..sort((a, b) => b.revenue.compareTo(a.revenue));
     final totalRev = sorted.fold<int>(0, (s, e) => s + e.revenue);
     final show = sorted.take(6).toList();
     final maxRev = show.first.revenue.toDouble();
-    final othersRevenue = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.revenue) : 0;
-    final othersJobs = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.jobCount) : 0;
+    final othersRevenue = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.revenue)
+        : 0;
+    final othersJobs = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.jobCount)
+        : 0;
 
     const barColors = [
-      Color(0xFF60A5FA), Color(0xFF34D399), Color(0xFFF59E0B),
-      Color(0xFFA78BFA), Color(0xFFF472B6), Color(0xFF4ADE80),
+      Color(0xFF60A5FA),
+      Color(0xFF34D399),
+      Color(0xFFF59E0B),
+      Color(0xFFA78BFA),
+      Color(0xFFF472B6),
+      Color(0xFF4ADE80),
     ];
 
     return Column(
@@ -1971,15 +2502,26 @@ class _LeadSourceSection extends StatelessWidget {
         const _SectionHeader('LEAD SOURCE BREAKDOWN'),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+          decoration: BoxDecoration(
+              color: c.primary800,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
           child: Column(
             children: [
               Row(
                 children: [
-                  Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-                  Text(CurrencyFormatter.formatShort(totalRev), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
+                  Text('Total ',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 9)),
+                  Text(CurrencyFormatter.formatShort(totalRev),
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11)),
                   const Spacer(),
-                  Text('${sorted.length} source${sorted.length == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+                  Text(
+                      '${sorted.length} source${sorted.length == 1 ? '' : 's'}',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 8)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1997,24 +2539,57 @@ class _LeadSourceSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Container(width: 6, height: 6, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1))),
+                          Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                  color: color,
+                                  borderRadius: BorderRadius.circular(1))),
                           const SizedBox(width: 6),
-                          Expanded(child: Text(row.source.toUpperCase(),
-                              style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w700, fontSize: 10),
-                              overflow: TextOverflow.ellipsis)),
-                          SizedBox(width: 34, child: Text('${pct.toStringAsFixed(0)}%', style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w700, fontSize: 9), textAlign: TextAlign.right)),
+                          Expanded(
+                              child: Text(row.source.toUpperCase(),
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: c.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10),
+                                  overflow: TextOverflow.ellipsis)),
+                          SizedBox(
+                              width: 34,
+                              child: Text('${pct.toStringAsFixed(0)}%',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: color,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 9),
+                                  textAlign: TextAlign.right)),
                           const SizedBox(width: 6),
-                          SizedBox(width: 52, child: Text(CurrencyFormatter.formatShort(row.revenue),
-                              style: AppTextStyles.caption.copyWith(color: c.accent500, fontWeight: FontWeight.w800, fontSize: 11), textAlign: TextAlign.right)),
+                          SizedBox(
+                              width: 52,
+                              child: Text(
+                                  CurrencyFormatter.formatShort(row.revenue),
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: c.accent500,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11),
+                                  textAlign: TextAlign.right)),
                           const SizedBox(width: 6),
-                          SizedBox(width: 16, child: Text('${row.jobCount}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9), textAlign: TextAlign.right)),
+                          SizedBox(
+                              width: 16,
+                              child: Text('${row.jobCount}',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: c.neutral500, fontSize: 9),
+                                  textAlign: TextAlign.right)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(3),
-                        child: Container(height: 8, color: c.primary700,
-                          child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: fraction, child: Container(color: color))),
+                        child: Container(
+                            height: 8,
+                            color: c.primary700,
+                            child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: fraction,
+                                child: Container(color: color))),
                       ),
                     ],
                   ),
@@ -2025,14 +2600,39 @@ class _LeadSourceSection extends StatelessWidget {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: c.neutral600, borderRadius: BorderRadius.circular(1))),
+                    Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                            color: c.neutral600,
+                            borderRadius: BorderRadius.circular(1))),
                     const SizedBox(width: 6),
-                    Expanded(child: Text('Others (${sorted.length - 6})', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 9))),
+                    Expanded(
+                        child: Text('Others (${sorted.length - 6})',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9))),
                     const SizedBox(width: 34),
                     const SizedBox(width: 6),
-                    SizedBox(width: 52, child: Text(othersRevenue > 0 ? CurrencyFormatter.formatShort(othersRevenue) : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10), textAlign: TextAlign.right)),
+                    SizedBox(
+                        width: 52,
+                        child: Text(
+                            othersRevenue > 0
+                                ? CurrencyFormatter.formatShort(othersRevenue)
+                                : '',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 10),
+                            textAlign: TextAlign.right)),
                     const SizedBox(width: 6),
-                    SizedBox(width: 16, child: Text(othersJobs > 0 ? '${othersJobs}' : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9), textAlign: TextAlign.right)),
+                    SizedBox(
+                        width: 16,
+                        child: Text(othersJobs > 0 ? '${othersJobs}' : '',
+                            style: AppTextStyles.caption
+                                .copyWith(color: c.neutral500, fontSize: 9),
+                            textAlign: TextAlign.right)),
                   ],
                 ),
               ],
@@ -2060,19 +2660,26 @@ class _TopCustomersSection extends StatelessWidget {
           const _SectionHeader('TOP CUSTOMERS'),
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+            decoration: BoxDecoration(
+                color: c.primary800,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
             child: const _EmptyRow(message: 'No jobs in this period'),
           ),
         ],
       );
     }
 
-    final sorted = List<TopCustomer>.from(customers)..sort((a, b) => b.revenue.compareTo(a.revenue));
+    final sorted = List<TopCustomer>.from(customers)
+      ..sort((a, b) => b.revenue.compareTo(a.revenue));
     final totalRev = sorted.fold<int>(0, (s, e) => s + e.revenue);
     final show = sorted.take(6).toList();
     final maxRev = show.first.revenue.toDouble();
-    final othersRevenue = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.revenue) : 0;
-    final othersJobs = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.jobCount) : 0;
+    final othersRevenue = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.revenue)
+        : 0;
+    final othersJobs = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.jobCount)
+        : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2080,15 +2687,26 @@ class _TopCustomersSection extends StatelessWidget {
         const _SectionHeader('TOP CUSTOMERS'),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+          decoration: BoxDecoration(
+              color: c.primary800,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
           child: Column(
             children: [
               Row(
                 children: [
-                  Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-                  Text(CurrencyFormatter.formatShort(totalRev), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
+                  Text('Total ',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 9)),
+                  Text(CurrencyFormatter.formatShort(totalRev),
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11)),
                   const Spacer(),
-                  Text('${sorted.length} customer${sorted.length == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+                  Text(
+                      '${sorted.length} customer${sorted.length == 1 ? '' : 's'}',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 8)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -2101,7 +2719,8 @@ class _TopCustomersSection extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: InkWell(
-                    onTap: () => context.push(RouteNames.customerDetail(row.customerId)),
+                    onTap: () =>
+                        context.push(RouteNames.customerDetail(row.customerId)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2109,43 +2728,78 @@ class _TopCustomersSection extends StatelessWidget {
                           children: [
                             // Rank number
                             Container(
-                              width: 20, height: 20,
+                              width: 20,
+                              height: 20,
                               decoration: BoxDecoration(
-                                color: i < 3 ? c.accent500.withValues(alpha: 0.15) : c.primary700,
+                                color: i < 3
+                                    ? c.accent500.withValues(alpha: 0.15)
+                                    : c.primary700,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               alignment: Alignment.center,
-                              child: Text('${i + 1}', style: AppTextStyles.caption.copyWith(
-                                  color: i < 3 ? c.accent500 : c.neutral400, fontWeight: FontWeight.w900, fontSize: 9)),
+                              child: Text('${i + 1}',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: i < 3 ? c.accent500 : c.neutral400,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 9)),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(row.customerName.toUpperCase(),
-                                  style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w700, fontSize: 10),
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: c.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10),
                                   overflow: TextOverflow.ellipsis),
                             ),
-                            SizedBox(width: 34, child: Text('${pct.toStringAsFixed(0)}%', style: AppTextStyles.caption.copyWith(color: c.accent500, fontWeight: FontWeight.w700, fontSize: 9), textAlign: TextAlign.right)),
+                            SizedBox(
+                                width: 34,
+                                child: Text('${pct.toStringAsFixed(0)}%',
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: c.accent500,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 9),
+                                    textAlign: TextAlign.right)),
                             const SizedBox(width: 6),
-                            SizedBox(width: 54, child: Text(CurrencyFormatter.formatShort(row.revenue),
-                                style: AppTextStyles.caption.copyWith(color: c.accent500, fontWeight: FontWeight.w800, fontSize: 11), textAlign: TextAlign.right)),
+                            SizedBox(
+                                width: 54,
+                                child: Text(
+                                    CurrencyFormatter.formatShort(row.revenue),
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: c.accent500,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 11),
+                                    textAlign: TextAlign.right)),
                             const SizedBox(width: 6),
-                            SizedBox(width: 16, child: Text('${row.jobCount}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9), textAlign: TextAlign.right)),
+                            SizedBox(
+                                width: 16,
+                                child: Text('${row.jobCount}',
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: c.neutral500, fontSize: 9),
+                                    textAlign: TextAlign.right)),
                             const SizedBox(width: 2),
-                            Text('j', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 7)),
+                            Text('j',
+                                style: AppTextStyles.caption.copyWith(
+                                    color: c.neutral500, fontSize: 7)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(3),
                           child: Container(
-                            height: 8, color: c.primary700,
+                            height: 8,
+                            color: c.primary700,
                             child: FractionallySizedBox(
                               alignment: Alignment.centerLeft,
                               widthFactor: fraction,
                               child: Container(
-                                color: i < 3
-                                    ? (i == 0 ? const Color(0xFFF59E0B) : i == 1 ? const Color(0xFF94A3B8) : const Color(0xFFD4A574))
-                                    : c.accent500.withValues(alpha: 0.5)),
+                                  color: i < 3
+                                      ? (i == 0
+                                          ? const Color(0xFFF59E0B)
+                                          : i == 1
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFFD4A574))
+                                      : c.accent500.withValues(alpha: 0.5)),
                             ),
                           ),
                         ),
@@ -2161,14 +2815,36 @@ class _TopCustomersSection extends StatelessWidget {
                   children: [
                     const SizedBox(width: 20),
                     const SizedBox(width: 8),
-                    Expanded(child: Text('Others (${sorted.length - 6})', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 9))),
+                    Expanded(
+                        child: Text('Others (${sorted.length - 6})',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9))),
                     const SizedBox(width: 34),
                     const SizedBox(width: 6),
-                    SizedBox(width: 54, child: Text(othersRevenue > 0 ? CurrencyFormatter.formatShort(othersRevenue) : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10), textAlign: TextAlign.right)),
+                    SizedBox(
+                        width: 54,
+                        child: Text(
+                            othersRevenue > 0
+                                ? CurrencyFormatter.formatShort(othersRevenue)
+                                : '',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 10),
+                            textAlign: TextAlign.right)),
                     const SizedBox(width: 6),
-                    SizedBox(width: 16, child: Text(othersJobs > 0 ? '${othersJobs}' : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9), textAlign: TextAlign.right)),
+                    SizedBox(
+                        width: 16,
+                        child: Text(othersJobs > 0 ? '${othersJobs}' : '',
+                            style: AppTextStyles.caption
+                                .copyWith(color: c.neutral500, fontSize: 9),
+                            textAlign: TextAlign.right)),
                     const SizedBox(width: 2),
-                    Text('j', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 7)),
+                    Text('j',
+                        style: AppTextStyles.caption
+                            .copyWith(color: c.neutral500, fontSize: 7)),
                   ],
                 ),
               ],
@@ -2196,23 +2872,34 @@ class _PartsUsageSection extends StatelessWidget {
           const _SectionHeader('TOP PARTS USAGE'),
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+            decoration: BoxDecoration(
+                color: c.primary800,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
             child: const _EmptyRow(message: 'No parts used in this period'),
           ),
         ],
       );
     }
 
-    final sorted = List<PartsUsage>.from(parts)..sort((a, b) => b.totalCost.compareTo(a.totalCost));
+    final sorted = List<PartsUsage>.from(parts)
+      ..sort((a, b) => b.totalCost.compareTo(a.totalCost));
     final totalCost = sorted.fold<int>(0, (s, e) => s + e.totalCost);
     final show = sorted.take(6).toList();
     final maxCost = show.first.totalCost.toDouble();
-    final othersCost = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.totalCost) : 0;
-    final othersQty = sorted.length > 6 ? sorted.skip(6).fold<int>(0, (s, e) => s + e.totalQuantity) : 0;
+    final othersCost = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.totalCost)
+        : 0;
+    final othersQty = sorted.length > 6
+        ? sorted.skip(6).fold<int>(0, (s, e) => s + e.totalQuantity)
+        : 0;
 
     const barColors = [
-      Color(0xFF34D399), Color(0xFF60A5FA), Color(0xFFF59E0B),
-      Color(0xFFA78BFA), Color(0xFFF472B6), Color(0xFF4ADE80),
+      Color(0xFF34D399),
+      Color(0xFF60A5FA),
+      Color(0xFFF59E0B),
+      Color(0xFFA78BFA),
+      Color(0xFFF472B6),
+      Color(0xFF4ADE80),
     ];
 
     return Column(
@@ -2221,15 +2908,25 @@ class _PartsUsageSection extends StatelessWidget {
         const _SectionHeader('TOP PARTS USAGE'),
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(color: c.primary800, borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+          decoration: BoxDecoration(
+              color: c.primary800,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
           child: Column(
             children: [
               Row(
                 children: [
-                  Text('Total ', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
-                  Text(CurrencyFormatter.formatShort(totalCost), style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11)),
+                  Text('Total ',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 9)),
+                  Text(CurrencyFormatter.formatShort(totalCost),
+                      style: AppTextStyles.caption.copyWith(
+                          color: c.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11)),
                   const Spacer(),
-                  Text('${sorted.length} part${sorted.length == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 8)),
+                  Text('${sorted.length} part${sorted.length == 1 ? '' : 's'}',
+                      style: AppTextStyles.caption
+                          .copyWith(color: c.neutral500, fontSize: 8)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -2237,7 +2934,8 @@ class _PartsUsageSection extends StatelessWidget {
                 final i = entry.key;
                 final row = entry.value;
                 final fraction = maxCost > 0 ? row.totalCost / maxCost : 0.0;
-                final pct = totalCost > 0 ? (row.totalCost / totalCost * 100) : 0.0;
+                final pct =
+                    totalCost > 0 ? (row.totalCost / totalCost * 100) : 0.0;
                 final color = barColors[i % barColors.length];
 
                 return Padding(
@@ -2247,24 +2945,54 @@ class _PartsUsageSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Container(width: 6, height: 6, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1))),
+                          Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                  color: color,
+                                  borderRadius: BorderRadius.circular(1))),
                           const SizedBox(width: 6),
-                          Expanded(child: Text(row.partName,
-                              style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w700, fontSize: 10),
-                              overflow: TextOverflow.ellipsis)),
-                          SizedBox(width: 34, child: Text('${pct.toStringAsFixed(0)}%', style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w700, fontSize: 9), textAlign: TextAlign.right)),
+                          Expanded(
+                              child: Text(row.partName,
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: c.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10),
+                                  overflow: TextOverflow.ellipsis)),
+                          SizedBox(
+                              width: 34,
+                              child: Text('${pct.toStringAsFixed(0)}%',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: color,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 9),
+                                  textAlign: TextAlign.right)),
                           const SizedBox(width: 6),
-                          SizedBox(width: 52, child: Text(CurrencyFormatter.formatShort(row.totalCost),
-                              style: AppTextStyles.caption.copyWith(color: c.white, fontWeight: FontWeight.w800, fontSize: 11), textAlign: TextAlign.right)),
+                          SizedBox(
+                              width: 52,
+                              child: Text(
+                                  CurrencyFormatter.formatShort(row.totalCost),
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: c.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11),
+                                  textAlign: TextAlign.right)),
                           const SizedBox(width: 4),
-                          Text('×${row.totalQuantity}', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
+                          Text('×${row.totalQuantity}',
+                              style: AppTextStyles.caption
+                                  .copyWith(color: c.neutral500, fontSize: 9)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(3),
-                        child: Container(height: 8, color: c.primary700,
-                          child: FractionallySizedBox(alignment: Alignment.centerLeft, widthFactor: fraction, child: Container(color: color))),
+                        child: Container(
+                            height: 8,
+                            color: c.primary700,
+                            child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: fraction,
+                                child: Container(color: color))),
                       ),
                     ],
                   ),
@@ -2275,14 +3003,36 @@ class _PartsUsageSection extends StatelessWidget {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Container(width: 6, height: 6, decoration: BoxDecoration(color: c.neutral600, borderRadius: BorderRadius.circular(1))),
+                    Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                            color: c.neutral600,
+                            borderRadius: BorderRadius.circular(1))),
                     const SizedBox(width: 6),
-                    Expanded(child: Text('Others (${sorted.length - 6})', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 9))),
+                    Expanded(
+                        child: Text('Others (${sorted.length - 6})',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9))),
                     const SizedBox(width: 34),
                     const SizedBox(width: 6),
-                    SizedBox(width: 52, child: Text(othersCost > 0 ? CurrencyFormatter.formatShort(othersCost) : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontWeight: FontWeight.w600, fontSize: 10), textAlign: TextAlign.right)),
+                    SizedBox(
+                        width: 52,
+                        child: Text(
+                            othersCost > 0
+                                ? CurrencyFormatter.formatShort(othersCost)
+                                : '',
+                            style: AppTextStyles.caption.copyWith(
+                                color: c.neutral500,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 10),
+                            textAlign: TextAlign.right)),
                     const SizedBox(width: 4),
-                    Text(othersQty > 0 ? '×${othersQty}' : '', style: AppTextStyles.caption.copyWith(color: c.neutral500, fontSize: 9)),
+                    Text(othersQty > 0 ? '×${othersQty}' : '',
+                        style: AppTextStyles.caption
+                            .copyWith(color: c.neutral500, fontSize: 9)),
                   ],
                 ),
               ],
@@ -2325,7 +3075,8 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 64, color: context.ksc.error500),
+            Icon(LineAwesomeIcons.exclamation_triangle_solid,
+                size: 64, color: context.ksc.error500),
             const SizedBox(height: 24),
             Text(
               message,
