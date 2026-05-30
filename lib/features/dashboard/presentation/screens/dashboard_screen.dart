@@ -62,8 +62,10 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _tapCount = 0;
   DateTime? _firstTap;
+  bool _isSeeding = false;
 
   void _handleTitleTap() {
+    if (_isSeeding) return; // lock — prevents race during active seed
     final now = DateTime.now();
     if (_firstTap == null || now.difference(_firstTap!) > const Duration(seconds: 3)) {
       _tapCount = 1;
@@ -113,6 +115,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       userId: userId,
     );
 
+    setState(() => _isSeeding = true);
     try {
       final exists = await service.hasDemoData();
       if (exists) {
@@ -143,6 +146,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (mounted) {
         KsSlidingNotification.show(context, message: 'Demo data error: $e', type: KsNotificationType.error);
       }
+    } finally {
+      if (mounted) setState(() => _isSeeding = false);
     }
   }
 
@@ -307,13 +312,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return KsAppBar(
       title: "DASHBOARD",
       titleWidget: GestureDetector(
-        onTap: _handleTitleTap,
+        onTap: _isSeeding ? null : _handleTitleTap,
         behavior: HitTestBehavior.opaque,
-        child: Text("DASHBOARD", style: AppTextStyles.h3.copyWith(
-          color: context.ksc.white,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.2,
-        )),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("DASHBOARD", style: AppTextStyles.h3.copyWith(
+              color: _isSeeding ? context.ksc.neutral500 : context.ksc.white,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+            )),
+            if (_isSeeding) ...[
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 14, height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: context.ksc.accent500,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
       showBack: false,
       actions: [
