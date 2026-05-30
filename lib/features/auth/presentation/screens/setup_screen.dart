@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../technician_profile/presentation/widgets/edit_profile_drawer.dart';
 
 class SetupScreen extends ConsumerStatefulWidget {
   const SetupScreen({super.key});
@@ -69,7 +70,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   body: 'Make sure your profile name and contact are set up so customers can find you.',
                   icon: LineAwesomeIcons.user_circle_solid,
                   actionLabel: 'EDIT PROFILE',
-                  onAction: () => context.push(RouteNames.editProfile),
+                  onAction: () => EditProfileDrawer.show(context),
                   onNext: _next,
                   nextLabel: 'CONTINUE',
                 ),

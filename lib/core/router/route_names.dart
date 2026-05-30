@@ -47,7 +47,6 @@ class RouteNames {
   // Activity timeline
   static const String timeline     = '/activity';
   // Profile sub-routes
-  static const String editProfile = '/profile/edit';
   static const String serviceTypes = '/profile/service-types';
   static const String pricing   = '/profile/pricing';
   static const String inventory   = '/profile/inventory';

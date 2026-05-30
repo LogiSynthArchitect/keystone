@@ -115,6 +115,7 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   Timer? _recordingTimer;
 
   DateTime _jobDate = DateTime.now();
+  bool _templatesLoadTriggered = false;
 
   @override
   void initState() {
@@ -141,12 +142,12 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
         }
       }
 
+      // Load inventory items when user is available
       final userId = ref.read(currentUserProvider).valueOrNull?.id;
+      debugPrint('[KS:TEMPLATES] initState userId:${userId}');
       if (userId != null) {
         final invItems = ref.read(inventoryProvider.notifier);
         invItems.loadItems(userId);
-
-        ref.read(jobTemplateProvider.notifier).loadTemplates(userId);
       }
     });
   }
@@ -795,6 +796,16 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
   Widget _buildStep0(VoidCallback? advance) {
     final templatesAsync = ref.watch(jobTemplateProvider);
     final templates = templatesAsync.valueOrNull ?? [];
+    final userAsync = ref.watch(currentUserProvider);
+    final userId = userAsync.valueOrNull?.id;
+
+    // Reactively load templates when userId becomes available
+    if (userId != null && !_templatesLoadTriggered) {
+      _templatesLoadTriggered = true;
+      ref.read(jobTemplateProvider.notifier).loadTemplates(userId);
+    }
+
+    debugPrint('[KS:TEMPLATES] _buildStep0 — userId:${userId} isLoading:${templatesAsync.isLoading} hasError:${templatesAsync.hasError} count:${templates.length}');
 
     if (templatesAsync.hasError && templates.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -804,6 +815,14 @@ class _LogJobSheetState extends ConsumerState<_LogJobSheet> {
             type: KsNotificationType.error);
         }
       });
+    }
+
+    // Show spinner while actively loading AND user is available
+    if (templatesAsync.isLoading && userId != null && templates.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (templates.isEmpty) {

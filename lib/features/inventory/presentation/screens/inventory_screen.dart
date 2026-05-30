@@ -11,7 +11,6 @@ import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/core/widgets/ks_success_moment.dart';
@@ -583,7 +582,6 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 8),
-            const KsOfflineBanner(),
             // Summary strip
             itemsAsync.whenOrNull(
               data: (items) {

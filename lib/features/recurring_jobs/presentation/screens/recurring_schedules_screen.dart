@@ -6,7 +6,6 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -363,7 +362,6 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const KsOfflineBanner(),
           schedulesAsync.whenOrNull(
             data: (schedules) {
               final filtered = _applyFilters(schedules);

@@ -15,7 +15,6 @@ import 'package:keystone/core/utils/date_formatter.dart';
 import 'package:keystone/core/utils/currency_formatter.dart';
 import 'package:keystone/core/widgets/ks_app_bar.dart';
 import 'package:keystone/core/widgets/ks_icon_well.dart';
-import 'package:keystone/core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_badge.dart';
 import 'package:keystone/core/widgets/ks_confirm_dialog.dart';
 import 'package:keystone/core/widgets/ks_bottom_sheet_scaffold.dart';
@@ -106,7 +105,6 @@ class JobDetailScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          const KsOfflineBanner(),
           Expanded(
             child: jobAsync.when(
               loading: () => Center(child: CircularProgressIndicator(color: context.ksc.accent500)),

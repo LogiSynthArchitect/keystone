@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/usecases/use_case.dart';
 import '../../data/datasources/service_type_local_datasource.dart';
 import '../../data/datasources/service_type_remote_datasource.dart';
@@ -32,37 +35,128 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
     loadServiceTypes();
   }
 
+  /// Default services used when server-side RPC is unavailable.
+  static const _defaultServices = [
+    ('Car Key Replacement',        'Automotive',      'car',        25000),
+    ('Transponder Key Programming','Automotive',      'car',        25000),
+    ('Car Lockout',                'Automotive',      'unlock',      6500),
+    ('Trunk/Boot Unlock',          'Automotive',      'unlock',      5000),
+    ('Key Fob Programming',        'Automotive',      'wifi',       20000),
+    ('Ignition Repair',            'Automotive',      'key',        15000),
+    ('Broken Key Extraction',      'Automotive',      'tools',      12000),
+    ('Motorcycle Keys',            'Automotive',      'motorcycle', 15000),
+    ('House Lockout',              'Residential',     'door-open',   6500),
+    ('Lock Installation',          'Residential',     'lock',       15000),
+    ('Lock Rekeying',              'Residential',     'key',         8000),
+    ('Lock Repair',                'Residential',     'wrench',      8000),
+    ('Key Duplication',            'Residential',     'key',         1500),
+    ('Smart Lock Install',         'Residential',     'mobile-alt', 25000),
+    ('Garage Door Locks',          'Residential',     'lock',       12000),
+    ('Padlock Sales/Installation', 'Residential',     'lock',        8000),
+    ('Mailbox Locks',              'Residential',     'envelope',    6000),
+    ('Window Locks',               'Residential',     'lock',        6000),
+    ('Commercial Lockout',         'Commercial',      'building',    8000),
+    ('Master Key Systems',         'Commercial',      'network-wired', 50000),
+    ('Panic Bar Installation',     'Commercial',      'door-closed',25000),
+    ('Door Closer Install',        'Commercial',      'tools',      15000),
+    ('Electric Strike Installation','Commercial',     'bolt',       18000),
+    ('High-Security Locks',        'Commercial',      'shield-alt', 35000),
+    ('File Cabinet Locks',         'Commercial',      'archive',     8000),
+    ('Storefront Locks',           'Commercial',      'store',      12000),
+    ('CCTV Installation',          'Security Systems','video',      25000),
+    ('Video Doorbell Installation', 'Security Systems','video',      15000),
+    ('Access Control',              'Security Systems','id-card',    30000),
+    ('Burglar Alarms',              'Security Systems','bell',       20000),
+    ('Intercom Systems',            'Security Systems','phone',      25000),
+    ('Electric Gate Motor Repair',  'Security Systems','tools',      20000),
+    ('Electric Fence Installation', 'Security Systems','bolt',       35000),
+    ('Rolling Shutter Repair',      'Security Systems','wrench',     15000),
+    ('Key Cutting',                 'Specialty',       'cut',         1000),
+    ('Safe Opening',                'Specialty',       'unlock',     35000),
+    ('Safe Installation',           'Specialty',       'lock',       25000),
+    ('Gate Automation',             'Specialty',       'tools',      45000),
+    ('Eviction Services',           'Specialty',       'gavel',      30000),
+  ];
+
   Future<void> loadServiceTypes() async {
+    debugPrint('[KS:PRICING] loadServiceTypes — start');
     state = const AsyncValue.loading();
     try {
       final types = await _ref.read(getServiceTypesUsecaseProvider).call(const NoParams());
+      debugPrint('[KS:PRICING] getServiceTypes returned ${types.length} types');
 
       if (types.isEmpty) {
-        final userId = _ref.read(supabaseClientProvider).auth.currentUser?.id;
-        if (userId != null) {
-          // Server-authoritative seed — RPC atomically checks flag, inserts,
-          // and marks seeded. No client-side seed logic needed.
-          final seeded = await _ref.read(supabaseClientProvider)
-              .rpc('seed_default_service_types', params: {'p_user_id': userId});
+        final supabase = _ref.read(supabaseClientProvider);
+        final authId = supabase.auth.currentUser?.id;
+        debugPrint('[KS:PRICING] auth.currentUser?.id = $authId');
+        if (authId != null) {
+          // Try server-side RPC first
+          bool seeded = false;
+          try {
+            seeded = await supabase
+                .rpc('seed_default_service_types', params: {'p_user_id': authId});
+            debugPrint('[KS:PRICING] RPC seed result: $seeded');
+          } catch (e) {
+            debugPrint('[KS:PRICING] RPC failed: $e');
+          }
 
-          // Pull remote types (newly seeded or already existed)
+          if (!seeded) {
+            // Client-side fallback: get internal users.id, batch insert defaults
+            debugPrint('[KS:PRICING] falling back to client-side seed');
+            final currentUserAsync = _ref.read(currentUserProvider);
+            debugPrint('[KS:PRICING] currentUserProvider state: $currentUserAsync');
+            final authUser = currentUserAsync.valueOrNull;
+            debugPrint('[KS:PRICING] currentUser: ${authUser?.id} / authId: ${authUser?.authId}');
+            final userId = authUser?.id;
+            if (userId != null) {
+              final now = DateTime.now().toIso8601String();
+              final rows = _defaultServices.map((d) => {
+                    'user_id': userId,
+                    'name': d.$1,
+                    'is_default': true,
+                    'category': d.$2,
+                    'icon_name': d.$3,
+                    'default_price': d.$4,
+                    'created_at': now,
+                    'updated_at': now,
+                  }).toList();
+              debugPrint('[KS:PRICING] inserting ${rows.length} default services for userId=$userId');
+              try {
+                await supabase.from('service_types').insert(rows);
+                debugPrint('[KS:PRICING] batch insert succeeded');
+              } catch (insertErr) {
+                debugPrint('[KS:PRICING] batch insert FAILED: $insertErr');
+                rethrow;
+              }
+            } else {
+              debugPrint('[KS:PRICING] userId is null — cannot seed client-side');
+            }
+          }
+
+          // Pull seeded types
+          debugPrint('[KS:PRICING] pulling seeded types via sync+get');
           final repo = _ref.read(serviceTypeRepositoryProvider);
           await repo.syncServiceTypes();
           final syncedTypes = await repo.getServiceTypes();
+          debugPrint('[KS:PRICING] syncedTypes count: ${syncedTypes.length}');
           state = AsyncValue.data(syncedTypes);
           return;
+        } else {
+          debugPrint('[KS:PRICING] authId is null — skipping seed entirely');
         }
       }
 
+      debugPrint('[KS:PRICING] setting state with ${types.length} types');
       state = AsyncValue.data(types);
     } catch (e, st) {
-      // Network error: show error state with retry — never fall through to seeding
+      debugPrint('[KS:PRICING] CATASTROPHIC ERROR — $e\n$st');
       state = AsyncValue.error(e, st);
     }
   }
 
   Future<void> createServiceType(String name, String category, String iconName) async {
-    final userId = _ref.read(supabaseClientProvider).auth.currentUser?.id;
+    final authUser = _ref.read(currentUserProvider).valueOrNull;
+    final userId = authUser?.id;
     if (userId == null) return;
 
     try {

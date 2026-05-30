@@ -7,13 +7,13 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
+import '../../../../core/widgets/ks_bottom_sheet_scaffold.dart';
 import '../../../../core/widgets/ks_badge.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
-import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/services/demo_data_seeder.dart';
 import '../../../inventory/data/datasources/inventory_local_datasource.dart';
@@ -33,6 +33,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../job_logging/domain/entities/job_entity.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../job_logging/presentation/screens/log_job_screen.dart';
+import '../../../customer_history/presentation/screens/add_customer_screen.dart';
 import '../../../job_logging/data/datasources/job_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_services_local_datasource.dart';
 import '../../../job_logging/data/datasources/job_hardware_local_datasource.dart';
@@ -129,7 +130,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.invalidate(recurringScheduleProvider);
         ref.invalidate(jobTemplateProvider);
         ref.invalidate(serviceTypeProvider);
-        ref.invalidate(analyticsProvider);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.invalidate(analyticsProvider);
+        });
         KsSlidingNotification.show(
           context,
           message: exists ? 'Demo data removed' : 'Demo data seeded — 8 customers, 12 jobs, inventory, notes, & more',
@@ -148,13 +151,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final remindersState = ref.watch(remindersProvider);
     final reminders = remindersState.active;
     final jobListState = ref.watch(jobListProvider);
-    final connectivityAsync = ref.watch(connectivityStreamProvider);
-
     // ── Loading state ──
     if (jobListState.isLoading) {
       return Scaffold(
         backgroundColor: context.ksc.primary900,
-        appBar: _buildAppBar(context, followUpCount: 0, connectivityAsync: connectivityAsync),
+        appBar: _buildAppBar(context, followUpCount: 0),
         body: const KsLoadingIndicator(fullScreen: true),
         bottomNavigationBar: _buildBottomNav(context),
       );
@@ -164,7 +165,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (jobListState.errorMessage != null) {
       return Scaffold(
         backgroundColor: context.ksc.primary900,
-        appBar: _buildAppBar(context, followUpCount: 0, connectivityAsync: connectivityAsync),
+        appBar: _buildAppBar(context, followUpCount: 0),
         body: Center(
           child: KsEmptyState(
             icon: LineAwesomeIcons.exclamation_triangle_solid,
@@ -202,10 +203,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       r.type == ReminderType.followUpPending || r.type == ReminderType.followUpNoResponse
     ).length;
     final recurringOverdueCount = reminders.where((r) => r.type == ReminderType.recurringJobOverdue).length;
+    final totalActiveReminders = reminders.length;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
-      appBar: _buildAppBar(context, followUpCount: followUpCount, connectivityAsync: connectivityAsync),
+      appBar: _buildAppBar(context, followUpCount: totalActiveReminders),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -231,7 +233,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     const SizedBox(height: 8),
                     // ── Monthly target progress ──
                     GestureDetector(
-                      onTap: _showTargetEditDialog,
+                      onTap: _showTargetEditDrawer,
                       child: _buildMonthlyProgress(context, monthRevenue),
                     ),
                     const SizedBox(height: 16),
@@ -287,7 +289,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       icon: LineAwesomeIcons.user_plus_solid,
                       label: "NEW CUSTOMER",
                       subtitle: "Add a customer record",
-                      onTap: () => context.push(RouteNames.addCustomer),
+                      onTap: () => AddCustomerScreen.show(context),
                     ),
                     const SizedBox(height: 24),
                   ],
@@ -301,7 +303,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  KsAppBar _buildAppBar(BuildContext context, {required int followUpCount, required AsyncValue<bool?> connectivityAsync}) {
+  KsAppBar _buildAppBar(BuildContext context, {required int followUpCount}) {
     return KsAppBar(
       title: "DASHBOARD",
       titleWidget: GestureDetector(
@@ -321,48 +323,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           badgeCount: followUpCount,
           onTap: () => context.push(RouteNames.reminders),
         ),
-        GestureDetector(
+        KsIconWell(
+          icon: LineAwesomeIcons.user_circle_solid,
           onTap: () => context.push(RouteNames.profile),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: connectivityAsync.value == true
-                      ? context.ksc.success500.withValues(alpha: 0.15)
-                      : context.ksc.error500.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(width: 6, height: 6, decoration: BoxDecoration(
-                      color: connectivityAsync.value == true
-                          ? context.ksc.success500
-                          : context.ksc.error500,
-                      shape: BoxShape.circle,
-                    )),
-                    const SizedBox(width: 4),
-                    Text(
-                      connectivityAsync.value == true ? 'ONLINE' : 'OFFLINE',
-                      style: AppTextStyles.caption.copyWith(
-                        color: connectivityAsync.value == true
-                            ? context.ksc.success500
-                            : context.ksc.error500,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              KsIconWell(
-                icon: LineAwesomeIcons.user_circle_solid,
-              ),
-            ],
-          ),
         ),
       ],
     );
@@ -433,59 +396,81 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  void _showTargetEditDialog() {
+  Future<void> _showTargetEditDrawer() async {
     final current = ref.read(monthlyTargetProvider);
-    final controller = TextEditingController(text: current.toString());
+    final ghs = current ~/ 100;
+    final controller = TextEditingController(text: ghs > 0 ? ghs.toString() : '');
+    String? successMessage;
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary800,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            Icon(LineAwesomeIcons.chart_line_solid, size: 18, color: context.ksc.accent500),
-            const SizedBox(width: 10),
-            Text('SET MONTHLY TARGET',
-                style: AppTextStyles.label.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+    await KsBottomSheetScaffold.show<void>(
+      context,
+      title: 'MONTHLY TARGET',
+      subtitle: 'Set your monthly revenue goal in GHS',
+      bottomLabel: 'SAVE',
+      onDone: () {
+        final parsed = CurrencyFormatter.parseToPesewas(controller.text.trim());
+        if (parsed == null || parsed <= 0) {
+          KsSlidingNotification.show(context,
+              message: 'Enter a valid amount', type: KsNotificationType.error);
+          return;
+        }
+        HiveService.settings.put('monthlyTarget', parsed);
+        ref.read(monthlyTargetProvider.notifier).state = parsed;
+        successMessage = 'Monthly target updated to ${CurrencyFormatter.format(parsed)}';
+      },
+      contentBuilder: (ctx, setSheetState) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Enter your monthly revenue target in GHS.',
+              style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [CurrencyInputFormatter()],
+            decoration: InputDecoration(
+              hintText: 'e.g. 1500',
+              hintStyle: AppTextStyles.bodyLarge.copyWith(
+                color: context.ksc.neutral600,
+                fontWeight: FontWeight.bold,
+              ),
+              isDense: true,
+              contentPadding: const EdgeInsets.only(bottom: 4),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.primary700, width: 1),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.accent500, width: 1.5),
+              ),
+              border: UnderlineInputBorder(
+                borderSide: BorderSide(color: context.ksc.primary700),
+              ),
+              prefixText: 'GHS ',
+              prefixStyle: AppTextStyles.body.copyWith(color: context.ksc.neutral500),
+            ),
+            style: AppTextStyles.body.copyWith(color: context.ksc.white),
+            autofocus: true,
+          ),
+          const SizedBox(height: 24),
+          if (current > 0) ...[
+            Row(
+              children: [
+                Icon(LineAwesomeIcons.info_circle_solid, size: 14, color: context.ksc.neutral600),
+                const SizedBox(width: 6),
+                Text('Current: ${CurrencyFormatter.formatShort(current)}',
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500)),
+              ],
+            ),
           ],
-        ),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            hintText: 'Enter target amount',
-            hintStyle: TextStyle(color: context.ksc.neutral600, fontSize: 14),
-            filled: true,
-            fillColor: context.ksc.primary900,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-          ),
-          style: AppTextStyles.body.copyWith(color: context.ksc.white),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('CANCEL', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w700)),
-          ),
-          TextButton(
-            onPressed: () {
-              final parsed = int.tryParse(controller.text.trim());
-              if (parsed == null || parsed <= 0) {
-                KsSlidingNotification.show(context, message: 'Enter a valid amount', type: KsNotificationType.error);
-                return;
-              }
-              HiveService.settings.put('monthlyTarget', parsed);
-              ref.read(monthlyTargetProvider.notifier).state = parsed;
-              Navigator.pop(ctx);
-              KsSlidingNotification.show(context, message: 'Monthly target updated to ${CurrencyFormatter.format(parsed)}', type: KsNotificationType.success);
-            },
-            child: Text('SAVE', style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800)),
-          ),
         ],
       ),
     );
+
+    // Show notification after sheet is fully closed to avoid overlay conflicts
+    if (context.mounted && successMessage != null) {
+      KsSlidingNotification.show(context,
+          message: successMessage!, type: KsNotificationType.success);
+    }
   }
 
   Widget _reminderChip(String label, Color color) {

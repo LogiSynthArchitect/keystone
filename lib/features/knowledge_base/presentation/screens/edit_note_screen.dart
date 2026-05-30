@@ -15,7 +15,6 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
@@ -150,7 +149,6 @@ class _EditNoteScreenState extends ConsumerState<EditNoteScreen> {
         appBar: const KsAppBar(title: "EDIT NOTE", showBack: true),
         body: Column(
           children: [
-            const KsOfflineBanner(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),

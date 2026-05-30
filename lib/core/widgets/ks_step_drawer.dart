@@ -142,17 +142,17 @@ class _KsStepDrawerState extends State<KsStepDrawer>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text("💡", style: const TextStyle(fontSize: 24)),
-                const SizedBox(width: 8),
-                Text("TIP", style: AppTextStyles.caption.copyWith(
-                  color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.0)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.pop(ctx),
-                  child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 16),
-                ),
+              Row(
+                children: [
+                  Text("💡", style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 8),
+                  Text("TIP", style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.accent500, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.0)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral500, size: 16),
+                  ),
               ],
             ),
             const SizedBox(height: 12),
@@ -175,11 +175,13 @@ class _KsStepDrawerState extends State<KsStepDrawer>
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Material(
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Drag handle
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -339,6 +341,7 @@ class _KsStepDrawerState extends State<KsStepDrawer>
           ),
         ],
       ),
+    ),
     );
   }
 }

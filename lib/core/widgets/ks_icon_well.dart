@@ -66,14 +66,14 @@ class KsIconWell extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Text(
-                    badgeCount! > 9 ? '9+' : '$badgeCount',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: theme.white,
+                    child: Text(
+                      badgeCount! > 9 ? '9+' : '$badgeCount',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
                 ),
               ),
             ),

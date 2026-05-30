@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/ks_colors.dart';
+import '../providers/connectivity_provider.dart';
 import 'ks_icon_well.dart';
 
 class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -32,6 +33,7 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.ksc;
+    final connectivityAsync = ref.watch(connectivityStreamProvider);
 
     // ── Search toggle in icon well ──
     final actionWidgets = <Widget>[
@@ -44,6 +46,8 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
             onTap: onSearchToggle,
           ),
         ),
+      // Connectivity indicator — always visible, no layout shift
+      _connectivityPill(context, connectivityAsync),
       ...?actions,
       const SizedBox(width: 8),
     ];
@@ -100,6 +104,51 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
       bottom: bottom != null
           ? PreferredSize(preferredSize: const Size.fromHeight(48), child: bottom!)
           : null,
+    );
+  }
+
+  /// Green/red pill showing connectivity status — appears on every screen.
+  Widget _connectivityPill(BuildContext context, AsyncValue<bool?> connectivityAsync) {
+    return connectivityAsync.when(
+      data: (isConnected) {
+        final online = isConnected == true;
+        return Padding(
+          padding: const EdgeInsets.only(right: 6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: online
+                  ? context.ksc.success500.withValues(alpha: 0.15)
+                  : context.ksc.error500.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: online ? context.ksc.success500 : context.ksc.error500,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  online ? 'ONLINE' : 'OFFLINE',
+                  style: AppTextStyles.caption.copyWith(
+                    color: online ? context.ksc.success500 : context.ksc.error500,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 

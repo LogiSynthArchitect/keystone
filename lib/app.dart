@@ -22,6 +22,8 @@ import 'core/storage/hive_service.dart';
 import 'features/job_logging/presentation/providers/job_providers.dart';
 import 'features/customer_history/presentation/providers/customer_providers.dart';
 import 'features/knowledge_base/presentation/providers/notes_providers.dart';
+import 'core/services/local_notification_service.dart';
+import 'core/router/route_names.dart';
 
 class KeystoneApp extends ConsumerStatefulWidget {
   const KeystoneApp({super.key});
@@ -43,7 +45,19 @@ class _KeystoneAppState extends ConsumerState<KeystoneApp> with WidgetsBindingOb
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initConnectivityListener();
       _initAuthGuard();
+      _initNotificationTap();
     });
+  }
+
+  void _initNotificationTap() {
+    final router = ref.read(routerProvider);
+    LocalNotificationService.onNotificationTap = (jobId) {
+      try {
+        router.push(RouteNames.jobDetail(jobId));
+      } catch (e) {
+        debugPrint('[KS:APP] Notification tap navigation failed: $e');
+      }
+    };
   }
 
   void _initAuthGuard() {

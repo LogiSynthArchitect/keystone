@@ -12,7 +12,6 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../providers/notes_providers.dart';
 import 'add_note_screen.dart';
@@ -113,7 +112,6 @@ class NoteDetailScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          const KsOfflineBanner(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.pagePadding),

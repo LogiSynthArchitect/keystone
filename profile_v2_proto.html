@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Profile v2 — Final Design Reference</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0A1628;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .phone {
+    width: 390px;
+    background: #0A1628;
+    border-radius: 40px;
+    padding: 20px 16px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+  }
+
+  /* ─── App Bar ─── */
+  .app-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .app-bar .back {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8B8FA3;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .app-bar h1 {
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+  .app-bar .edit-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: rgba(212,160,23,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D4A017;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+  }
+
+  /* ─── Profile Identity ─── */
+  .identity {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .avatar-lg {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #0F2144;
+    border: 2.5px solid #D4A017;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .avatar-lg img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+  }
+
+  .identity-text h2 {
+    color: #FFFFFF;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  .badge .b-icon {
+    font-size: 12px;
+    line-height: 1;
+    display: inline-flex;
+  }
+
+  .badge.gold {
+    background: linear-gradient(135deg, rgba(212,160,23,0.18) 0%, rgba(212,160,23,0.08) 100%);
+    color: #F0CF65;
+    border: 1.5px solid rgba(212,160,23,0.55);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .badge.green {
+    background: linear-gradient(135deg, rgba(46,125,50,0.18) 0%, rgba(46,125,50,0.08) 100%);
+    color: #66BB6A;
+    border: 1.5px solid rgba(46,125,50,0.45);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  /* ─── Section Divider Line ─── */
+  .section-divider {
+    height: 1px;
+    background: #163060;
+    opacity: 0.5;
+    margin-bottom: 28px;
+  }
+
+  /* ─── Section Label ─── */
+  .section-title {
+    color: #D4A017;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    padding-left: 2px;
+    margin-bottom: 14px;
+  }
+
+  /* ─── Info Row (transparent on bg) ─── */
+  .info-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(22,48,96,0.5);
+  }
+  .info-row:last-of-type {
+    border-bottom: none;
+  }
+
+  .info-row .icon-3d {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .info-row .icon-3d img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .info-row .info-text {
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
+  .info-row .info-text.highlight {
+    color: #D4A017;
+    font-weight: 700;
+  }
+
+  /* ─── About/Bio ─── */
+  .about-block {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(22,48,96,0.5);
+  }
+  .about-block p {
+    color: #9E9E9E;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 800;
+    line-height: 1.6;
+  }
+
+  /* ─── Spacer between sections ─── */
+  .section-spacer {
+    height: 28px;
+  }
+  .section-spacer-sm {
+    height: 8px;
+  }
+
+  /* ─── Services Grid ─── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .service-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #0F2144;
+    border: 1px solid #163060;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .service-chip:hover {
+    border-color: rgba(212,160,23,0.3);
+  }
+  .service-chip .chip-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .service-chip .chip-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .service-chip .chip-label {
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+  }
+
+  /* ─── Share Row ─── */
+  .share-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(212,160,23,0.04);
+    border: 1px solid rgba(212,160,23,0.15);
+    border-radius: 10px;
+  }
+  .share-row .share-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .share-row .share-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .share-row .share-url {
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0;
+  }
+  .share-row .share-action {
+    color: #D4A017;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .share-row .share-action.view {
+    color: #9E9E9E;
+  }
+
+  /* ─── Edit Button ─── */
+  .edit-btn-full {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid rgba(212,160,23,0.3);
+    border-radius: 6px;
+    color: #D4A017;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .edit-btn-full:hover {
+    background: rgba(212,160,23,0.05);
+  }
+
+  /* ─── Design Annotations ─── */
+  .annotation-box {
+    margin-top: 28px;
+    background: rgba(212,160,23,0.06);
+    border: 1px solid rgba(212,160,23,0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #D4A017;
+  }
+  .annotation-box strong {
+    font-weight: 700;
+  }
+  .annotation-box code {
+    background: rgba(255,255,255,0.06);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .footnote {
+    color: #5D637A;
+    font-size: 11px;
+    text-align: center;
+    padding: 20px 0 8px;
+    border-top: 1px solid #163060;
+    margin-top: 28px;
+  }
+
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- APP BAR                                 -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="app-bar">
+    <div class="back">&#8592;</div>
+    <h1>MY PROFILE</h1>
+    <div class="edit-btn">&#9998;</div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 1. IDENTITY                             -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="identity">
+    <div class="avatar-lg">
+      <img src="assets/icons/3d/transparent/634b4b-crown.png" alt="crown" onerror="this.parentElement.textContent='👤'">
+    </div>
+    <div class="identity-text">
+      <h2>CYB OCRIME</h2>
+      <div class="badge-row">
+        <span class="badge gold"><span class="b-icon">&#9733;</span> PILOT USER</span>
+        <span class="badge green"><span class="b-icon">&#9881;</span> TECHNICIAN</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 2. CONTACT                               -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="section-title">Contact</div>
+
+  <div class="info-row">
+    <div class="icon-3d">
+      <img src="assets/icons/3d/transparent/1b19dc-call-only.png" alt="phone" onerror="this.style.display='none'">
+    </div>
+    <span class="info-text highlight">+233 XX XXX XXXX</span>
+  </div>
+
+  <div class="info-row">
+    <div class="icon-3d">
+      <img src="assets/icons/3d/transparent/0ef25b-calender.png" alt="joined" onerror="this.style.display='none'">
+    </div>
+    <span class="info-text">Joined May 2026</span>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 3. ABOUT                                 -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="section-spacer-sm"></div>
+  <div class="section-title">About</div>
+
+  <div class="about-block">
+    <p>Professional technician with 5+ years of experience in mobile repairs, diagnostics, and hardware servicing. Specializing in premium device care.</p>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 4. SERVICES                              -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="section-spacer-sm"></div>
+  <div class="section-title">Services</div>
+
+  <div class="services-grid">
+    <div class="service-chip">
+      <div class="chip-icon">
+        <img src="assets/icons/3d/transparent/1fded0-mobile.png" alt="screen" onerror="this.style.display='none'">
+      </div>
+      <span class="chip-label">SCREEN REPAIR</span>
+    </div>
+    <div class="service-chip">
+      <div class="chip-icon">
+        <img src="assets/icons/3d/transparent/10c35a-gym.png" alt="battery" onerror="this.style.display='none'">
+      </div>
+      <span class="chip-label">BATTERY SWAP</span>
+    </div>
+    <div class="service-chip">
+      <div class="chip-icon">
+        <img src="assets/icons/3d/transparent/176980-folder.png" alt="data" onerror="this.style.display='none'">
+      </div>
+      <span class="chip-label">DATA RECOVERY</span>
+    </div>
+    <div class="service-chip">
+      <div class="chip-icon">
+        <img src="assets/icons/3d/transparent/11463e-credit-card.png" alt="unlock" onerror="this.style.display='none'">
+      </div>
+      <span class="chip-label">UNLOCKING</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 5. SHARE PROFILE                         -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="section-spacer"></div>
+  <div class="share-row">
+    <div class="share-icon">
+      <img src="assets/icons/3d/transparent/2d9fa2-link.png" alt="link" onerror="this.style.display='none'">
+    </div>
+    <span class="share-url">keystone.app/cybocrime</span>
+    <span class="share-action">&#8599;</span>
+    <span class="share-action view">&#128065;</span>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 6. EDIT BUTTON                           -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="section-spacer"></div>
+  <button class="edit-btn-full">&#9998; &nbsp; EDIT PROFILE</button>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- DESIGN ANNOTATIONS                       -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="annotation-box">
+    <strong>Final Spec — Profile v2</strong><br>
+    &#8226; No card containers &#8212; all sections float transparently on <code>primary900</code><br>
+    &#8226; Name: 22px <strong>w900</strong>, 1px letterSpacing, BarlowSemiCondensed<br>
+    &#8226; Badges: <strong>11px</strong> w900, icon + text, gradient bg, 1.5px border, pill shape, box-shadow<br>
+    &#8226; Phone: formatted <code>+233 XX XXX XXXX</code> in <code>accent500</code><br>
+    &#8226; Service chips: <code>10px</code> radius, <code>primary800</code> bg<br>
+    &#8226; Edit button (app bar): <code>6px</code> radius, subtle gold bg, <strong>no border</strong><br>
+    &#8226; Edit button (full): <code>6px</code> radius, ghost gold border<br>
+    &#8226; Section spacing: 28px base + 8px before About &#38; Services<br>
+    &#8226; 3D icons: phone, calendar, services (4x), link, crown (avatar)<br>
+    &#8226; AppBar edit icon: standard icon, <strong>NOT</strong> 3D<br>
+    &#8226; Font: BarlowSemiCondensed throughout &#8212; no font family changes
+  </div>
+
+  <div class="footnote">
+    &#9889; DFII: 14/15 &#183; Editorial Identity &#183; Transparent Sections &#183; 3D Icon Anchors
+  </div>
+
+</div>
+</body>
+</html>

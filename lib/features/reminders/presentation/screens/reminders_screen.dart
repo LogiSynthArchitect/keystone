@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_reminder_card.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
 import '../providers/reminders_provider.dart';
@@ -50,7 +51,6 @@ class RemindersScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const KsOfflineBanner(),
           if (all.isEmpty)
             const Expanded(
               child: KsEmptyState(
@@ -82,51 +82,13 @@ class RemindersScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 children: [
-                  if (unpaidCount > 0) ...[
-                    _sectionHeader(context, "UNPAID"),
-                    ...undismissed.where((r) => r.type == ReminderType.unpaidJob).map((r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: KsReminderCard(
-                        reminder: r,
-                        onDismiss: () => ref.read(remindersProvider.notifier).dismiss(r.jobId, r.type),
-                      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0),
-                    )),
-                    const SizedBox(height: 16),
-                  ],
-                  if (stuckCount > 0) ...[
-                    _sectionHeader(context, "STUCK"),
-                    ...undismissed.where((r) => r.type == ReminderType.stuckInProgress).map((r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: KsReminderCard(
-                        reminder: r,
-                        onDismiss: () => ref.read(remindersProvider.notifier).dismiss(r.jobId, r.type),
-                      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0),
-                    )),
-                    const SizedBox(height: 16),
-                  ],
-                  if (followUpCount > 0) ...[
-                    _sectionHeader(context, "FOLLOW-UP"),
-                    ...undismissed.where((r) => r.type == ReminderType.followUpPending || r.type == ReminderType.followUpNoResponse).map((r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: KsReminderCard(
-                        reminder: r,
-                        onDismiss: () => ref.read(remindersProvider.notifier).dismiss(r.jobId, r.type),
-                        onResend: r.type == ReminderType.followUpNoResponse ? () {} : null,
-                      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0),
-                    )),
-                    const SizedBox(height: 16),
-                  ],
-                  if (recurringCount > 0) ...[
-                    _sectionHeader(context, "RECURRING OVERDUE"),
-                    ...undismissed.where((r) => r.type == ReminderType.recurringJobOverdue).map((r) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: KsReminderCard(
-                        reminder: r,
-                        onDismiss: () => ref.read(remindersProvider.notifier).dismiss(r.jobId, r.type),
-                      ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0),
-                    )),
-                    const SizedBox(height: 16),
-                  ],
+                  _buildSection(context, ref, "UNPAID", undismissed.where((r) => r.type == ReminderType.unpaidJob).toList()),
+                  _buildSection(context, ref, "STUCK", undismissed.where((r) => r.type == ReminderType.stuckInProgress).toList()),
+                  _buildSection(context, ref, "FOLLOW-UP",
+                    undismissed.where((r) => r.type == ReminderType.followUpPending || r.type == ReminderType.followUpNoResponse).toList(),
+                    showResend: (r) => r.type == ReminderType.followUpNoResponse,
+                  ),
+                  _buildSection(context, ref, "RECURRING OVERDUE", undismissed.where((r) => r.type == ReminderType.recurringJobOverdue).toList()),
                   // Dismissed section
                   if (dismissed.isNotEmpty) ...[
                     _sectionHeader(context, "DISMISSED"),
@@ -144,6 +106,32 @@ class RemindersScreen extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+
+  /// Builds a section with header + KsReminderCard list (animated).
+  Widget _buildSection(
+    BuildContext context,
+    WidgetRef ref,
+    String header,
+    List<Reminder> items, {
+    bool Function(Reminder)? showResend,
+  }) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(context, header),
+        ...items.map((r) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: KsReminderCard(
+            reminder: r,
+            onDismiss: () => ref.read(remindersProvider.notifier).dismiss(r.jobId, r.type),
+            onResend: showResend?.call(r) == true ? () => context.push(RouteNames.jobDetail(r.jobId)) : null,
+          ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1, end: 0),
+        )),
+        const SizedBox(height: 16),
+      ],
     );
   }
 

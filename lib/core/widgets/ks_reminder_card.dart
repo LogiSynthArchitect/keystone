@@ -117,6 +117,7 @@ class KsReminderCard extends StatelessWidget {
                 ),
                 // Trailing actions
                 Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (!isDismissed)
                       IconButton(

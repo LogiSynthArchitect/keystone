@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Edit Profile — Drawer v3 (All Steps)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:#0C0C0E;
+  display:flex;justify-content:center;align-items:flex-end;
+  min-height:100vh;color:#F2F0EB;
+}
+.phone{
+  width:390px;height:844px;
+  background:#0F1117;position:relative;overflow:hidden;
+  border-radius:24px;box-shadow:0 0 60px rgba(0,0,0,0.8);
+}
+.profile-bg{padding:24px 20px;height:100%;opacity:0.3;}
+.section-label{font-size:10px;font-weight:800;letter-spacing:1.8px;color:#D4A017;margin-bottom:10px;}
+
+/* Drawer overlay + sheet */
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:1;}
+.drawer{
+  position:absolute;bottom:0;left:0;right:0;z-index:2;
+  background:#1A1A1E;border-radius:16px 16px 0 0;
+  max-height:85vh;display:flex;flex-direction:column;
+}
+.handle{display:flex;justify-content:center;padding:10px 0 4px;}
+.handle-bar{width:40px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;}
+.drawer-header{display:flex;align-items:center;padding:8px 20px 8px;gap:8px;}
+.drawer-header h3{flex:1;text-align:center;font-size:13px;font-weight:800;letter-spacing:1.5px;color:#fff;}
+.drawer-header .icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,0.4);font-size:18px;}
+.drawer-header .back{color:rgba(255,255,255,0.6);}
+.step-info{font-size:10px;font-weight:700;color:rgba(255,255,255,0.25);text-align:center;margin-bottom:2px;}
+.step-ring-area{display:flex;flex-direction:column;align-items:center;padding:4px 0 10px;}
+.step-ring{width:68px;height:68px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;}
+.step-ring svg{position:absolute;inset:0;transform:rotate(-90deg);}
+.step-ring .in-ring{width:26px;height:26px;background:rgba(255,255,255,0.06);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;z-index:1;}
+.step-label{font-size:11px;font-weight:800;letter-spacing:1px;color:#D4A017;margin-top:6px;}
+.sub-dots{display:flex;gap:6px;margin-top:4px;}
+.sub-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.12);}
+.sub-dot.active{background:#D4A017;}
+
+/* Content scroll */
+.content{padding:0 24px 8px;flex:1;overflow-y:auto;}
+
+/* Input group — bottom border only, large font */
+.input-group{margin-bottom:22px;}
+.input-group .label-bar{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;
+}
+.input-group .label-bar span{font-size:10px;font-weight:800;letter-spacing:1.8px;color:#D4A017;}
+.input-group .label-bar .hint{font-size:10px;font-weight:600;color:rgba(255,255,255,0.25);}
+.input-group input,.input-group textarea{
+  width:100%;background:transparent;border:none;
+  border-bottom:1.5px solid rgba(255,255,255,0.07);
+  padding:14px 0 10px;color:#fff;
+  font-size:17px;font-weight:700;outline:none;
+}
+.input-group input:focus,.input-group textarea:focus{border-bottom-color:#D4A017;}
+.input-group textarea{min-height:96px;resize:none;font-family:inherit;line-height:1.5;}
+
+/* Photo — centered, prominent */
+.photo-area{display:flex;flex-direction:column;align-items:center;padding:8px 0 4px;}
+.photo-circle{
+  width:100px;height:100px;border-radius:50%;
+  background:#121216;border:2px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;font-weight:800;color:rgba(255,255,255,0.15);
+  position:relative;cursor:pointer;
+}
+.photo-circle .badge{
+  position:absolute;bottom:2px;right:2px;
+  width:30px;height:30px;border-radius:50%;
+  background:#D4A017;display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+}
+
+/* Service list items */
+.service-item{
+  padding:15px 0;border-bottom:1.5px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+}
+.service-item .sn{font-size:14px;font-weight:600;color:rgba(255,255,255,0.5);}
+.service-item.selected .sn{font-weight:700;color:#D4A017;}
+.service-item .ck{display:none;font-size:16px;color:#D4A017;}
+.service-item.selected .ck{display:block;}
+
+/* Toggle row */
+.toggle-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 0;border-bottom:1.5px solid rgba(255,255,255,0.06);
+}
+.toggle-row .t{font-size:15px;font-weight:700;color:#fff;}
+.toggle-row .st{font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);margin-top:2px;}
+.tog{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,0.1);position:relative;cursor:pointer;transition:0.2s;flex-shrink:0;}
+.tog.on{background:#D4A017;}
+.tog .knob{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:0.2s;}
+.tog.on .knob{left:22px;}
+
+/* Bottom button */
+.bottom-btn{margin:8px 24px 20px;padding:16px;background:#D4A017;border:none;border-radius:0;font-size:13px;font-weight:900;letter-spacing:1.5px;color:#0C0C0E;cursor:pointer;text-align:center;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <!-- Background profile -->
+  <div class="profile-bg">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+      <div style="width:64px;height:64px;border-radius:50%;border:2.5px solid #D4A017;background:#1A1A1E;display:flex;align-items:center;justify-content:center;font-size:20px;">👑</div>
+      <div><h2>KOFI MENSAH</h2></div>
+    </div>
+    <div class="section-label">CONTACT</div>
+    <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;font-weight:600;color:#fff;">📞 +233 55 123 4567</div>
+    <div style="padding:14px 0;font-size:14px;font-weight:600;color:#fff;">📅 Joined May 2026</div>
+  </div>
+  <div class="drawer-overlay"></div>
+
+  <!-- DRAWER — showing one representative step per tab below -->
+  <!-- TAB 1: Step 4 – SETTINGS / SERVICES (most relevant to feedback) -->
+  <div class="drawer">
+    <div class="handle"><div class="handle-bar"></div></div>
+    <div class="drawer-header">
+      <div class="icon-btn back">←</div>
+      <h3>EDIT PROFILE</h3>
+      <div class="icon-btn">✕</div>
+    </div>
+    <div class="step-info">STEP 4 OF 4 · SERVICES</div>
+    <div class="step-ring-area">
+      <div class="step-ring">
+        <svg width="68" height="68" viewBox="0 0 68 68">
+          <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4"/>
+          <circle cx="34" cy="34" r="28" fill="none" stroke="#D4A017" stroke-width="4" stroke-dasharray="176" stroke-dashoffset="44" stroke-linecap="round"/>
+        </svg>
+        <div class="in-ring">⚙</div>
+      </div>
+      <div class="step-label">SETTINGS</div>
+      <div class="sub-dots"><div class="sub-dot"></div><div class="sub-dot active"></div></div>
+    </div>
+    <div class="content">
+
+      <!-- SERVICES — dynamically loaded from service_types provider, not hardcoded -->
+      <div class="section-label">OFFERED SERVICES</div>
+
+      <div class="service-item" onclick="this.classList.toggle('selected')">
+        <span class="sn">Car Key Replacement</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item selected" onclick="this.classList.toggle('selected')">
+        <span class="sn">Transponder Key Programming</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item selected" onclick="this.classList.toggle('selected')">
+        <span class="sn">Car Lockout</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item" onclick="this.classList.toggle('selected')">
+        <span class="sn">Trunk/Boot Unlock</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item" onclick="this.classList.toggle('selected')">
+        <span class="sn">Key Fob Programming</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item" onclick="this.classList.toggle('selected')">
+        <span class="sn">Ignition Repair</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item" onclick="this.classList.toggle('selected')">
+        <span class="sn">Broken Key Extraction</span>
+        <span class="ck">✓</span>
+      </div>
+      <div class="service-item" onclick="this.classList.toggle('selected')">
+        <span class="sn">House Lockout</span>
+        <span class="ck">✓</span>
+      </div>
+
+      <!-- PUBLIC TOGGLE -->
+      <div class="toggle-row">
+        <div>
+          <div class="t">Public Profile</div>
+          <div class="st">ALLOW CUSTOMERS TO VIEW YOUR PROFILE</div>
+        </div>
+        <div class="tog on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+      </div>
+
+    </div>
+    <div class="bottom-btn">SAVE PROFILE</div>
+  </div>
+</div>
+</body>
+</html>

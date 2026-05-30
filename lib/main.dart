@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:workmanager/workmanager.dart';
 import 'core/constants/supabase_constants.dart';
 import 'core/services/local_notification_service.dart';
 import 'core/storage/hive_service.dart';
@@ -12,6 +13,7 @@ import 'core/recovery/reconcile_pending_edits.dart';
 import 'core/recovery/reconcile_pending_restocks.dart';
 import 'core/recovery/reconcile_pending_schedule_generation.dart';
 import 'core/recovery/reconcile_analytics_invalidations.dart';
+import 'features/reminders/engine/reminder_worker.dart';
 import 'app.dart';
 
 void main() async {
@@ -81,13 +83,17 @@ void main() async {
   // 02e. RECOVER ANALYTICS ROLLUPS (invalidation WAL replay + initial seed)
   await reconcileAnalyticsInvalidations();
 
-  // Init local notifications
-  await LocalNotificationService.initialize(
-    onTap: (jobId) {
-      if (jobId != null) {
-        // Navigate to job detail on notification tap
-      }
-    },
+  // Init local notifications (tap callback wired in KeystoneApp with GoRouter access)
+  await LocalNotificationService.initialize();
+
+  // Init background workmanager for periodic reminder checks
+  await Workmanager().initialize(reminderBackgroundCallback, isInDebugMode: false);
+  await Workmanager().registerPeriodicTask(
+    'keystone-reminder-check',
+    backgroundTaskName,
+    frequency: const Duration(minutes: 15),
+    constraints: Constraints(networkType: NetworkType.not_required),
+    existingWorkPolicy: ExistingWorkPolicy.keep,
   );
 
   // 03. MIN VERSION GATE — block outdated clients

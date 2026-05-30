@@ -11,7 +11,6 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
@@ -186,7 +185,6 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       ),
       body: Column(
         children: [
-          const KsOfflineBanner(),
           if (state.customers.isNotEmpty)
             _CustomerSummaryStrip(
               totalCount: state.totalCount ?? state.customers.length,

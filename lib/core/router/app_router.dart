@@ -35,7 +35,6 @@ import '../../features/knowledge_base/presentation/screens/notes_list_screen.dar
 import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
-import '../../features/technician_profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/permissions_screen.dart';
 import '../../features/service_types/presentation/screens/service_types_screen.dart';
@@ -161,7 +160,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Note editing via AddNoteScreen.show(context, existingNote: note) — no dedicated route
       routeWithTransition(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       // Link screen replaced by bottom sheet — NoteJobLinkScreen.show(context, noteId)
-      routeWithTransition(path: RouteNames.editProfile, builder: (context, state) => const EditProfileScreen()),
       routeWithTransition(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),
       routeWithTransition(path: RouteNames.pricing, builder: (context, state) => const PricingScreen()),
       routeWithTransition(path: RouteNames.inventory, builder: (context, state) => const InventoryScreen()),

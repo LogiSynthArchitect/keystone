@@ -7,6 +7,7 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../domain/models/reminder_thresholds.dart';
+import '../providers/reminders_provider.dart';
 
 class ReminderSettingsScreen extends ConsumerStatefulWidget {
   const ReminderSettingsScreen({super.key});
@@ -99,7 +100,10 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                     followUpNoResponseDays: _noResponseDays,
                     recurringJobOverdueDays: _recurringOverdueDays,
                   ));
-                  if (mounted) KsSlidingNotification.show(context, message: "Reminder thresholds saved", type: KsNotificationType.success);
+                  if (mounted) {
+                    ref.invalidate(remindersProvider);
+                    KsSlidingNotification.show(context, message: "Reminder thresholds saved", type: KsNotificationType.success);
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),

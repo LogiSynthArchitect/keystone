@@ -6,9 +6,20 @@ typedef NotificationTapCallback = void Function(String jobId);
 class LocalNotificationService {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
-  static NotificationTapCallback? onNotificationTap;
+  static NotificationTapCallback? _tapCallback;
+  static String? _pendingJobId;
 
-  static Future<void> initialize({required void Function(String? payload) onTap}) async {
+  /// Set the tap callback (call from within ProviderScope where GoRouter is available).
+  /// If a notification was tapped before the callback was registered, fires immediately.
+  static set onNotificationTap(NotificationTapCallback? cb) {
+    _tapCallback = cb;
+    if (_pendingJobId != null && cb != null) {
+      cb(_pendingJobId!);
+      _pendingJobId = null;
+    }
+  }
+
+  static Future<void> initialize() async {
     if (_initialized) return;
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -22,7 +33,14 @@ class LocalNotificationService {
     await _plugin.initialize(
       settings,
       onDidReceiveNotificationResponse: (response) {
-        onTap(response.payload);
+        final payload = response.payload;
+        if (payload != null && payload.isNotEmpty) {
+          if (_tapCallback != null) {
+            _tapCallback!(payload);
+          } else {
+            _pendingJobId = payload;
+          }
+        }
       },
     );
 

@@ -8,7 +8,6 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
 import '../../../../core/widgets/search_panel_body.dart';
@@ -200,7 +199,6 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
     return Column(
       children: [
-        const KsOfflineBanner(),
         // Summary strip — dynamic, filter-aware
         KsSummaryStrip(
           icon3d: 'b801dc-3d-coin.png',

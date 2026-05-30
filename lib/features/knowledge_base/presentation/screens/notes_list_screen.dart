@@ -10,7 +10,6 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
@@ -131,7 +130,6 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const KsOfflineBanner(),
           const SizedBox(height: 8),
           // Summary strip — dynamic, filter-aware
           KsSummaryStrip(

@@ -9,7 +9,6 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
-import '../../../../core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import 'package:keystone/core/widgets/ks_success_moment.dart';
 import '../providers/customer_providers.dart';
@@ -188,7 +187,6 @@ class _EditCustomerScreenState extends ConsumerState<EditCustomerScreen> {
             )
           : Column(
               children: [
-                const KsOfflineBanner(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
