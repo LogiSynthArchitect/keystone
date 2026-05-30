@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_reminder_card.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
@@ -36,9 +37,9 @@ class RemindersScreen extends ConsumerWidget {
         showBack: true,
         actions: [
           if (active.isNotEmpty)
-            IconButton(
-              icon: Icon(LineAwesomeIcons.check_double_solid, color: context.ksc.neutral400, size: 22),
-              onPressed: () {
+            KsIconWell(
+              icon: LineAwesomeIcons.check_double_solid,
+              onTap: () {
                 for (final r in undismissed) {
                   ref.read(remindersProvider.notifier).dismiss(r.jobId, r.type);
                 }
@@ -61,6 +62,7 @@ class RemindersScreen extends ConsumerWidget {
           else ...[
             // Summary strip
             KsSummaryStrip(
+              icon3d: 'ef4a90-bell.png',
               value: '${active.length}',
               label: "ACTIVE REMINDERS",
               subtitleSegments: [

@@ -10,6 +10,7 @@ import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_card.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_content_drawer.dart';
@@ -77,13 +78,14 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
         title: "CUSTOMER DETAILS",
         showBack: true,
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
-            onPressed: () => context.push(RouteNames.editCustomer(widget.customerId)),
+          KsIconWell(
+            icon: LineAwesomeIcons.edit,
+            iconColor: context.ksc.accent500,
+            onTap: () => context.push(RouteNames.editCustomer(widget.customerId)),
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.compress_solid, color: context.ksc.neutral200, size: 22),
-            onPressed: () {
+          KsIconWell(
+            icon: LineAwesomeIcons.compress_solid,
+            onTap: () {
               final customer = customerAsync.valueOrNull;
               if (customer == null) return;
               KsContentDrawer.show(
@@ -100,9 +102,10 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
               );
             },
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.trash_alt_solid, color: context.ksc.error500, size: 22),
-            onPressed: () => _confirmDelete(context),
+          KsIconWell(
+            icon: LineAwesomeIcons.trash_alt_solid,
+            iconColor: context.ksc.error500,
+            onTap: () => _confirmDelete(context),
           ),
         ],
       ),

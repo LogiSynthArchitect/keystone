@@ -41,6 +41,69 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
 
   void reset() => state = AnalyticsState(range: defaultRangeFor(AnalyticsPeriod.thisMonth));
 
+  // ───── Filters ─────
+
+  /// Apply filters and reload analytics.
+  Future<void> setFilters(AnalyticsFilters filters) async {
+    state = state.copyWith(filters: filters);
+    final r = state.range;
+    await loadAnalytics(r.start, r.end);
+  }
+
+  /// Update a single filter dimension and reload.
+  Future<void> toggleFilter(String dimension, String value) async {
+    final current = state.filters;
+    AnalyticsFilters updated;
+
+    switch (dimension) {
+      case 'serviceType':
+        final list = _toggleInList(current.serviceTypes, value);
+        updated = current.copyWith(serviceTypes: list.isEmpty ? null : list);
+      case 'paymentStatus':
+        final list = _toggleInList(current.paymentStatuses, value);
+        updated = current.copyWith(paymentStatuses: list.isEmpty ? null : list);
+      case 'location':
+        final list = _toggleInList(current.locations, value);
+        updated = current.copyWith(locations: list.isEmpty ? null : list);
+      case 'leadSource':
+        final list = _toggleInList(current.leadSources, value);
+        updated = current.copyWith(leadSources: list.isEmpty ? null : list);
+      case 'propertyType':
+        final list = _toggleInList(current.propertyTypes, value);
+        updated = current.copyWith(propertyTypes: list.isEmpty ? null : list);
+      case 'paymentMethod':
+        final list = _toggleInList(current.paymentMethods, value);
+        updated = current.copyWith(paymentMethods: list.isEmpty ? null : list);
+      case 'jobStatus':
+        final list = _toggleInList(current.jobStatuses, value);
+        updated = current.copyWith(jobStatuses: list.isEmpty ? null : list);
+      case 'hardwareBrand':
+        final list = _toggleInList(current.hardwareBrands, value);
+        updated = current.copyWith(hardwareBrands: list.isEmpty ? null : list);
+      case 'hardwareKeyway':
+        final list = _toggleInList(current.hardwareKeyways, value);
+        updated = current.copyWith(hardwareKeyways: list.isEmpty ? null : list);
+      default:
+        return;
+    }
+    await setFilters(updated);
+  }
+
+  /// Clear all filters and reload.
+  Future<void> clearAllFilters() async {
+    state = state.copyWith(filters: const AnalyticsFilters());
+    final r = state.range;
+    await loadAnalytics(r.start, r.end);
+  }
+
+  List<String> _toggleInList(List<String>? list, String value) {
+    final current = list ?? <String>[];
+    if (current.contains(value)) {
+      return current.where((v) => v != value).toList();
+    }
+    return [...current, value];
+  }
+
   Future<void> setPeriod(AnalyticsPeriod period) async {
     if (period == AnalyticsPeriod.custom) return;
     final range = defaultRangeFor(period);
@@ -252,20 +315,59 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
       });
 
       // Revenue trend from individual daily rollups
+      // Respects filters: extracts revenue from the dimension-specific map
+      // that matches the active filter. If multiple filters are active, uses
+      // the first matching dimension (serviceType > location > paymentMethod > status).
       final periodDays = end.difference(start).inDays;
       final useMonthly = periodDays > 45;
       final revenueTrend = <RevenueTrendPoint>[];
+      final trendFilters = state.filters;
+
+      int revenueFromRollup(DailyRollup r) {
+        if (r.jobCount == 0) return 0;
+        // Single-dimension extraction: pick the matching dimension's map
+        if (trendFilters.serviceTypes != null && trendFilters.serviceTypes!.isNotEmpty) {
+          return trendFilters.serviceTypes!
+              .fold<int>(0, (s, st) => s + (r.stRevenue[st] ?? 0));
+        }
+        if (trendFilters.locations != null && trendFilters.locations!.isNotEmpty) {
+          return trendFilters.locations!
+              .fold<int>(0, (s, loc) => s + (r.locationRevenue[loc] ?? 0));
+        }
+        if (trendFilters.paymentMethods != null && trendFilters.paymentMethods!.isNotEmpty) {
+          return trendFilters.paymentMethods!
+              .fold<int>(0, (s, pm) => s + (r.paymentMethodRevenue[pm] ?? 0));
+        }
+        if (trendFilters.jobStatuses != null && trendFilters.jobStatuses!.isNotEmpty) {
+          return trendFilters.jobStatuses!
+              .fold<int>(0, (s, st) => s + (r.statusRevenue[st] ?? 0));
+        }
+        if (trendFilters.propertyTypes != null && trendFilters.propertyTypes!.isNotEmpty) {
+          return trendFilters.propertyTypes!
+              .fold<int>(0, (s, pt) => s + (r.propertyTypeRevenue[pt] ?? 0));
+        }
+        if (trendFilters.leadSources != null && trendFilters.leadSources!.isNotEmpty) {
+          return trendFilters.leadSources!
+              .fold<int>(0, (s, ls) => s + (r.leadSourceRevenue[ls] ?? 0));
+        }
+        if (trendFilters.paymentStatuses != null && trendFilters.paymentStatuses!.isNotEmpty) {
+          return trendFilters.paymentStatuses!
+              .fold<int>(0, (s, ps) => s + (r.statusRevenue[ps] ?? 0));
+        }
+        return r.revenue; // no filters → total revenue
+      }
 
       if (useMonthly) {
         // Group daily rollups by month
         final monthMap = <String, _TrendAccumulator>{};
         for (final r in dailyRollups) {
-          if (r.jobCount == 0) continue;
+          final rev = revenueFromRollup(r);
+          if (rev == 0) continue;
           final dt = DateTime.tryParse(r.dateKey);
           if (dt == null) continue;
           final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
           final acc = monthMap.putIfAbsent(key, () => _TrendAccumulator());
-          acc.revenue += r.revenue;
+          acc.revenue += rev;
           acc.jobCount += r.jobCount;
         }
         const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -284,13 +386,14 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
         // Group daily rollups by ISO week
         final weekMap = <String, _TrendAccumulator>{};
         for (final r in dailyRollups) {
-          if (r.jobCount == 0) continue;
+          final rev = revenueFromRollup(r);
+          if (rev == 0) continue;
           final dt = DateTime.tryParse(r.dateKey);
           if (dt == null) continue;
           final weekStart = dt.subtract(Duration(days: dt.weekday - 1));
           final key = _dateKey(weekStart);
           final acc = weekMap.putIfAbsent(key, () => _TrendAccumulator());
-          acc.revenue += r.revenue;
+          acc.revenue += rev;
           acc.jobCount += r.jobCount;
         }
         final weekKeys = weekMap.keys.toList()..sort();
@@ -302,6 +405,27 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
             jobCount: acc.jobCount,
           ));
         }
+      }
+
+      // ── Phase 8b: apply in-memory filters to breakdown data ──
+      final filters = state.filters;
+      List<ServiceTypeBreakdown> filteredStBreakdown;
+      List<LeadSourceBreakdown> filteredLeadSource;
+
+      if (filters.serviceTypes != null && filters.serviceTypes!.isNotEmpty) {
+        filteredStBreakdown = stBreakdown
+            .where((s) => filters.serviceTypes!.contains(s.serviceType))
+            .toList();
+      } else {
+        filteredStBreakdown = stBreakdown;
+      }
+
+      if (filters.leadSources != null && filters.leadSources!.isNotEmpty) {
+        filteredLeadSource = leadSourceBreakdown
+            .where((s) => filters.leadSources!.contains(s.source))
+            .toList();
+      } else {
+        filteredLeadSource = leadSourceBreakdown;
       }
 
       // ── Assemble state ──
@@ -325,9 +449,9 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
         previousGrossProfit: prevGp,
         previousNetProfit: prevNp,
         previousAverageJobValue: prevAvg,
-        serviceTypeBreakdown: stBreakdown.take(10).toList(),
+        serviceTypeBreakdown: filteredStBreakdown.take(10).toList(),
         paymentHealth: paymentHealth,
-        leadSourceBreakdown: leadSourceBreakdown,
+        leadSourceBreakdown: filteredLeadSource,
         partsUsage: partsUsage.take(10).toList(),
         expenseCategoryBreakdown: expenseCatBreakdown,
         topCustomers: topCustomers,

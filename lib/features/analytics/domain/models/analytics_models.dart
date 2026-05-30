@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AnalyticsPeriod { thisMonth, lastMonth, last3Months, custom }
+enum AnalyticsPeriod { thisMonth, lastMonth, last3Months, custom, allTime }
 
 extension AnalyticsPeriodLabel on AnalyticsPeriod {
   String get label {
@@ -9,6 +9,7 @@ extension AnalyticsPeriodLabel on AnalyticsPeriod {
       case AnalyticsPeriod.lastMonth:   return 'LAST MONTH';
       case AnalyticsPeriod.last3Months: return 'LAST 3 MONTHS';
       case AnalyticsPeriod.custom:      return 'CUSTOM';
+      case AnalyticsPeriod.allTime:     return 'ALL TIME';
     }
   }
 }
@@ -35,6 +36,11 @@ DateTimeRange defaultRangeFor(AnalyticsPeriod period) {
     case AnalyticsPeriod.custom:
       return DateTimeRange(
         start: DateTime(now.year, now.month, 1),
+        end: now,
+      );
+    case AnalyticsPeriod.allTime:
+      return DateTimeRange(
+        start: DateTime(2020, 1, 1),
         end: now,
       );
   }
@@ -170,6 +176,84 @@ class RevenueTrendPoint {
   });
 }
 
+/// Filter dimensions for analytics.
+///
+/// All dimensions are AND-logic: only jobs matching ALL non-null filters
+/// are included in computed metrics.
+/// - null = "All" (no filter)
+/// - non-null list = only jobs matching any value in the list (OR within dimension)
+class AnalyticsFilters {
+  final List<String>? serviceTypes;
+  final List<String>? paymentStatuses;
+  final List<String>? locations;
+  final List<String>? leadSources;
+  final List<String>? propertyTypes;
+  final List<String>? paymentMethods;
+  final List<String>? jobStatuses;
+  final bool? onlyRecurring; // null=all, true=recurring, false=one-off
+  final List<String>? hardwareBrands;
+  final List<String>? hardwareKeyways;
+
+  const AnalyticsFilters({
+    this.serviceTypes,
+    this.paymentStatuses,
+    this.locations,
+    this.leadSources,
+    this.propertyTypes,
+    this.paymentMethods,
+    this.jobStatuses,
+    this.onlyRecurring,
+    this.hardwareBrands,
+    this.hardwareKeyways,
+  });
+
+  int get activeCount {
+    int count = 0;
+    if (serviceTypes != null && serviceTypes!.isNotEmpty) count++;
+    if (paymentStatuses != null && paymentStatuses!.isNotEmpty) count++;
+    if (locations != null && locations!.isNotEmpty) count++;
+    if (leadSources != null && leadSources!.isNotEmpty) count++;
+    if (propertyTypes != null && propertyTypes!.isNotEmpty) count++;
+    if (paymentMethods != null && paymentMethods!.isNotEmpty) count++;
+    if (jobStatuses != null && jobStatuses!.isNotEmpty) count++;
+    if (onlyRecurring != null) count++;
+    if (hardwareBrands != null && hardwareBrands!.isNotEmpty) count++;
+    if (hardwareKeyways != null && hardwareKeyways!.isNotEmpty) count++;
+    return count;
+  }
+
+  bool get isClear => activeCount == 0;
+
+  AnalyticsFilters clear() => const AnalyticsFilters();
+
+  AnalyticsFilters copyWith({
+    List<String>? serviceTypes,
+    List<String>? paymentStatuses,
+    List<String>? locations,
+    List<String>? leadSources,
+    List<String>? propertyTypes,
+    List<String>? paymentMethods,
+    List<String>? jobStatuses,
+    bool? onlyRecurring,
+    bool clearOnlyRecurring = false,
+    List<String>? hardwareBrands,
+    List<String>? hardwareKeyways,
+  }) {
+    return AnalyticsFilters(
+      serviceTypes: serviceTypes ?? this.serviceTypes,
+      paymentStatuses: paymentStatuses ?? this.paymentStatuses,
+      locations: locations ?? this.locations,
+      leadSources: leadSources ?? this.leadSources,
+      propertyTypes: propertyTypes ?? this.propertyTypes,
+      paymentMethods: paymentMethods ?? this.paymentMethods,
+      jobStatuses: jobStatuses ?? this.jobStatuses,
+      onlyRecurring: clearOnlyRecurring ? null : (onlyRecurring ?? this.onlyRecurring),
+      hardwareBrands: hardwareBrands ?? this.hardwareBrands,
+      hardwareKeyways: hardwareKeyways ?? this.hardwareKeyways,
+    );
+  }
+}
+
 class AnalyticsState {
   final AnalyticsPeriod period;
   final DateTimeRange range;
@@ -216,11 +300,15 @@ class AnalyticsState {
   final List<DayOfWeekData> dayOfWeekBreakdown;
   final List<RevenueTrendPoint> revenueTrend;
 
+  // Filters
+  final AnalyticsFilters filters;
+
   const AnalyticsState({
     this.period = AnalyticsPeriod.thisMonth,
     required this.range,
     this.isLoading = false,
     this.errorMessage,
+    this.filters = const AnalyticsFilters(),
     this.totalRevenue = 0,
     this.totalJobs = 0,
     this.grossProfit = 0,
@@ -292,6 +380,7 @@ class AnalyticsState {
     List<TopCustomer>? topCustomers,
     List<DayOfWeekData>? dayOfWeekBreakdown,
     List<RevenueTrendPoint>? revenueTrend,
+    AnalyticsFilters? filters,
   }) {
     return AnalyticsState(
       period: period ?? this.period,
@@ -324,6 +413,7 @@ class AnalyticsState {
       topCustomers: topCustomers ?? this.topCustomers,
       dayOfWeekBreakdown: dayOfWeekBreakdown ?? this.dayOfWeekBreakdown,
       revenueTrend: revenueTrend ?? this.revenueTrend,
+      filters: filters ?? this.filters,
     );
   }
 }

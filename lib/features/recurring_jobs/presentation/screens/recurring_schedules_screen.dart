@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
@@ -337,11 +338,10 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
         title: "RECURRING JOBS",
         showBack: true,
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.filter_solid,
-              color: _hasActiveFilter ? context.ksc.accent500 : context.ksc.neutral400,
-              size: 22),
-            onPressed: _showFilterSheet,
+          KsIconWell(
+            icon: LineAwesomeIcons.filter_solid,
+            isActive: _hasActiveFilter,
+            onTap: _showFilterSheet,
           ),
         ],
         bottom: PreferredSize(
@@ -370,6 +370,7 @@ class _RecurringSchedulesScreenState extends ConsumerState<RecurringSchedulesScr
               final active = filtered.where((s) => s.isActive).length;
               final due = filtered.where((s) => s.isDue).length;
               return KsSummaryStrip(
+                icon3d: '8ef1fa-clock.png',
                 value: _hasActiveFilter ? '${filtered.length}' : '${schedules.length}',
                 label: _hasActiveFilter ? "FILTERED" : "RECURRING SCHEDULES",
                 subtitleSegments: [

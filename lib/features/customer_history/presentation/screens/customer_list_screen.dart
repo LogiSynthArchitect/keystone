@@ -10,6 +10,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
@@ -137,9 +138,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
       appBar: KsAppBar(
         title: "CUSTOMERS",
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.address_book_solid, color: context.ksc.neutral400, size: 22),
-            onPressed: () {
+          KsIconWell(
+            icon: LineAwesomeIcons.address_book_solid,
+            onTap: () {
               final existing = ref.read(customerListProvider).displayed;
               showModalBottomSheet(
                 context: context,
@@ -150,27 +151,16 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
               );
             },
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.filter_solid, color: hasActiveFilter ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-            onPressed: () => _showFilterSheet(context),
+          KsIconWell(
+            icon: LineAwesomeIcons.filter_solid,
+            isActive: hasActiveFilter,
+            onTap: () => _showFilterSheet(context),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(LineAwesomeIcons.bell_solid, color: remindersCount > 0 ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-                onPressed: () => context.push(RouteNames.reminders),
-              ),
-              if (remindersCount > 0)
-                Positioned(
-                  top: 8, right: 8,
-                  child: Container(
-                    width: 14, height: 14,
-                    decoration: BoxDecoration(color: context.ksc.error500, shape: BoxShape.circle),
-                    child: Center(child: Text('$remindersCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.white))),
-                  ),
-                ),
-            ],
+          KsIconWell(
+            icon: LineAwesomeIcons.bell_solid,
+            isActive: remindersCount > 0,
+            badgeCount: remindersCount,
+            onTap: () => context.push(RouteNames.reminders),
           ),
         ],
         bottom: PreferredSize(
@@ -362,6 +352,11 @@ class _CustomerSummaryStrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 3D hero icon
+          Image.asset('assets/icons/3d/transparent/634b4b-crown.png',
+            width: 36, height: 36,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+          const SizedBox(height: 12),
           // Main count
           Text(
             "$bigNumber",

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/ks_colors.dart';
-import '../providers/sync_status_provider.dart';
+import 'ks_icon_well.dart';
 
 class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -15,7 +15,6 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool searchable;
   final bool isSearchOpen;
   final VoidCallback? onSearchToggle;
-  final bool goldStyle; // gold background + dot pattern
 
   const KsAppBar({
     super.key,
@@ -28,65 +27,79 @@ class KsAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.searchable = false,
     this.isSearchOpen = false,
     this.onSearchToggle,
-    this.goldStyle = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendingCount = ref.watch(syncStatusProvider);
-
-    final actionWidgets = <Widget>[
-      if (searchable)
-        IconButton(
-          icon: Icon(
-            isSearchOpen ? LineAwesomeIcons.times_solid : LineAwesomeIcons.search_solid,
-            color: isSearchOpen ? context.ksc.accent500 : context.ksc.neutral500,
-            size: 20,
-          ),
-          onPressed: onSearchToggle,
-        ),
-      ...?actions,
-    ];
-
     final theme = context.ksc;
 
-    // goldStyle: dark bg, light text, gold border trim (top + bottom)
-    final bgColor = goldStyle ? theme.primary900 : theme.primary900;
-    final fgColor = goldStyle ? theme.white : theme.white;
+    // ── Search toggle in icon well ──
+    final actionWidgets = <Widget>[
+      if (searchable)
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: KsIconWell(
+            icon: isSearchOpen ? LineAwesomeIcons.times_solid : LineAwesomeIcons.search_solid,
+            isActive: isSearchOpen,
+            onTap: onSearchToggle,
+          ),
+        ),
+      ...?actions,
+      const SizedBox(width: 8),
+    ];
 
-    return AppBar(
-      backgroundColor: bgColor,
-      foregroundColor: fgColor,
-      elevation: 0,
-      scrolledUnderElevation: 0.5,
-      centerTitle: false,
-      flexibleSpace: goldStyle
-          ? Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: theme.accent500, width: 3),
-                  bottom: BorderSide(color: theme.accent500.withValues(alpha: 0.3), width: 1),
+    // ── Gold accent line + title ──
+    final titleContent = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 3,
+          height: 22,
+          decoration: BoxDecoration(
+            color: theme.accent500,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: titleWidget ??
+              Text(
+                title,
+                style: AppTextStyles.h3.copyWith(
+                  color: theme.white,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
                 ),
               ),
-            )
-          : null,
-      title: titleWidget ?? Text(
-        title,
-        style: AppTextStyles.h3.copyWith(
-          color: fgColor,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.2,
         ),
-      ),
-      leading: showBack
-          ? IconButton(
-              icon: Icon(LineAwesomeIcons.angle_left_solid, size: 22, color: fgColor),
-              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-            )
-          : null,
+      ],
+    );
+
+    // ── Back button as icon well ──
+    final leading = showBack
+        ? Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: KsIconWell(
+              icon: LineAwesomeIcons.angle_left_solid,
+              iconSize: 22,
+              onTap: onBack ?? () => Navigator.of(context).maybePop(),
+            ),
+          )
+        : null;
+
+    return AppBar(
+      backgroundColor: theme.primary900,
+      foregroundColor: theme.white,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      title: titleContent,
+      leading: leading,
       automaticallyImplyLeading: showBack,
       actions: actionWidgets,
-      bottom: bottom != null ? PreferredSize(preferredSize: const Size.fromHeight(48), child: bottom!) : null,
+      bottom: bottom != null
+          ? PreferredSize(preferredSize: const Size.fromHeight(48), child: bottom!)
+          : null,
     );
   }
 

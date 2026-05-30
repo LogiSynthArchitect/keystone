@@ -887,7 +887,7 @@ class JobRepositoryImpl implements JobRepository {
   Map<String, dynamic> _jobEntityToJson(JobEntity job) => {
     'id': job.id, 'user_id': job.userId, 'customer_id': job.customerId,
     'service_type': job.serviceType, 
-    'job_date': job.jobDate.toIso8601String().split('T').first,
+    'job_date': job.jobDate.toIso8601String(),
     'location': job.location, 'latitude': job.latitude, 'longitude': job.longitude,
     'notes': job.notes, 'amount_charged': job.amountCharged != null ? job.amountCharged! / 100.0 : null,
     'follow_up_sent': job.followUpSent, 'follow_up_sent_at': job.followUpSentAt?.toIso8601String(),

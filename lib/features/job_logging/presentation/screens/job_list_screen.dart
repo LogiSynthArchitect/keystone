@@ -12,6 +12,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
@@ -234,51 +235,38 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(LineAwesomeIcons.times_solid, color: context.ksc.neutral400, size: 22),
-                  onPressed: () => setState(() { _selectionMode = false; _selectedIds.clear(); }),
+                KsIconWell(
+                  icon: LineAwesomeIcons.times_solid,
+                  onTap: () => setState(() { _selectionMode = false; _selectedIds.clear(); }),
                 ),
               ]
             : [
                 if (state.activeJobs.isNotEmpty)
-                  IconButton(
-                    icon: Icon(LineAwesomeIcons.check_square_solid, color: context.ksc.neutral400, size: 22),
-                    onPressed: () => setState(() => _selectionMode = true),
+                  KsIconWell(
+                    icon: LineAwesomeIcons.check_square_solid,
+                    onTap: () => setState(() => _selectionMode = true),
                   ),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(LineAwesomeIcons.bell_solid, color: remindersCount > 0 ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-                      onPressed: () => context.push(RouteNames.reminders),
-                    ),
-                    if (remindersCount > 0)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(color: context.ksc.error500, shape: BoxShape.circle),
-                          child: Center(child: Text('$remindersCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.white))),
-                        ),
-                      ),
-                  ],
+                KsIconWell(
+                  icon: LineAwesomeIcons.bell_solid,
+                  isActive: remindersCount > 0,
+                  badgeCount: remindersCount,
+                  onTap: () => context.push(RouteNames.reminders),
                 ),
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    IconButton(
-                      icon: Icon(LineAwesomeIcons.filter_solid, color: state.filters.hasActive ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-                      onPressed: () => _showFilterSheet(context),
+                    KsIconWell(
+                      icon: LineAwesomeIcons.filter_solid,
+                      isActive: state.filters.hasActive,
+                      onTap: () => _showFilterSheet(context),
                     ),
                     if (state.filters.activeCount > 0)
                       Positioned(
-                        top: 8,
-                        right: 8,
+                        top: -4,
+                        right: -4,
                         child: Container(
-                          width: 14,
-                          height: 14,
+                          width: 16,
+                          height: 16,
                           decoration: BoxDecoration(color: context.ksc.accent500, shape: BoxShape.circle),
                           child: Center(child: Text('${state.filters.activeCount}', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.primary900))),
                         ),
@@ -595,6 +583,11 @@ class _SummaryStrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 3D hero icon
+          Image.asset('assets/icons/3d/transparent/ff5be0-tools.png',
+            width: 36, height: 36,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+          const SizedBox(height: 12),
           // Main earnings number
           Text(
             CurrencyFormatter.formatShort(displayEarnings),

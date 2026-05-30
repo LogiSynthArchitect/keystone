@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -30,9 +31,10 @@ class ProfileScreen extends ConsumerWidget {
         title: "MY PROFILE",
         showBack: true,
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
-            onPressed: () => context.push(RouteNames.editProfile),
+          KsIconWell(
+            icon: LineAwesomeIcons.edit,
+            iconColor: context.ksc.accent500,
+            onTap: () => context.push(RouteNames.editProfile),
           ),
         ],
       ),

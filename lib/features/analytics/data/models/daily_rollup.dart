@@ -52,12 +52,34 @@ class DailyRollup {
   final Map<String, int> leadSourceRevenue; // {source: revenue}
   final Map<String, int> leadSourceJobs; // {source: jobCount}
 
+  // ── Location (Tier 2) ──
+  final Map<String, int> locationRevenue; // {location: revenue}
+  final Map<String, int> locationJobs; // {location: jobCount}
+
+  // ── Property type (Tier 2) ──
+  final Map<String, int> propertyTypeRevenue; // {type: revenue}
+  final Map<String, int> propertyTypeJobs; // {type: jobCount}
+
+  // ── Payment method (Tier 2) ──
+  final Map<String, int> paymentMethodRevenue; // {method: revenue}
+  final Map<String, int> paymentMethodJobs; // {method: jobCount}
+
+  // ── Job status (Tier 2) ──
+  final Map<String, int> statusRevenue; // {status: revenue}
+  final Map<String, int> statusJobs; // {status: jobCount}
+
+  // ── Job origin (Tier 2) ──
+  final int recurringRevenue; // from generatedFromScheduleId != null
+  final int recurringJobs;
+  final int oneOffRevenue; // from generatedFromScheduleId == null
+  final int oneOffJobs;
+
   // ── Source job IDs (for invalidation tracing) ──
   final List<String> sourceJobIds;
 
   const DailyRollup({
     required this.dateKey,
-    this.schemaVersion = 1,
+    this.schemaVersion = 2,
     this.dirty = false,
     this.revenue = 0,
     this.partsCost = 0,
@@ -80,6 +102,18 @@ class DailyRollup {
     this.expenseCategories = const {},
     this.leadSourceRevenue = const {},
     this.leadSourceJobs = const {},
+    this.locationRevenue = const {},
+    this.locationJobs = const {},
+    this.propertyTypeRevenue = const {},
+    this.propertyTypeJobs = const {},
+    this.paymentMethodRevenue = const {},
+    this.paymentMethodJobs = const {},
+    this.statusRevenue = const {},
+    this.statusJobs = const {},
+    this.recurringRevenue = 0,
+    this.recurringJobs = 0,
+    this.oneOffRevenue = 0,
+    this.oneOffJobs = 0,
     this.sourceJobIds = const [],
   });
 
@@ -108,6 +142,18 @@ class DailyRollup {
     Map<String, int>? expenseCategories,
     Map<String, int>? leadSourceRevenue,
     Map<String, int>? leadSourceJobs,
+    Map<String, int>? locationRevenue,
+    Map<String, int>? locationJobs,
+    Map<String, int>? propertyTypeRevenue,
+    Map<String, int>? propertyTypeJobs,
+    Map<String, int>? paymentMethodRevenue,
+    Map<String, int>? paymentMethodJobs,
+    Map<String, int>? statusRevenue,
+    Map<String, int>? statusJobs,
+    int? recurringRevenue,
+    int? recurringJobs,
+    int? oneOffRevenue,
+    int? oneOffJobs,
     List<String>? sourceJobIds,
   }) {
     return DailyRollup(
@@ -135,6 +181,18 @@ class DailyRollup {
       expenseCategories: expenseCategories ?? this.expenseCategories,
       leadSourceRevenue: leadSourceRevenue ?? this.leadSourceRevenue,
       leadSourceJobs: leadSourceJobs ?? this.leadSourceJobs,
+      locationRevenue: locationRevenue ?? this.locationRevenue,
+      locationJobs: locationJobs ?? this.locationJobs,
+      propertyTypeRevenue: propertyTypeRevenue ?? this.propertyTypeRevenue,
+      propertyTypeJobs: propertyTypeJobs ?? this.propertyTypeJobs,
+      paymentMethodRevenue: paymentMethodRevenue ?? this.paymentMethodRevenue,
+      paymentMethodJobs: paymentMethodJobs ?? this.paymentMethodJobs,
+      statusRevenue: statusRevenue ?? this.statusRevenue,
+      statusJobs: statusJobs ?? this.statusJobs,
+      recurringRevenue: recurringRevenue ?? this.recurringRevenue,
+      recurringJobs: recurringJobs ?? this.recurringJobs,
+      oneOffRevenue: oneOffRevenue ?? this.oneOffRevenue,
+      oneOffJobs: oneOffJobs ?? this.oneOffJobs,
       sourceJobIds: sourceJobIds ?? this.sourceJobIds,
     );
   }
@@ -166,6 +224,18 @@ class DailyRollup {
     'expense_categories': expenseCategories,
     'lead_source_revenue': leadSourceRevenue,
     'lead_source_jobs': leadSourceJobs,
+    'location_revenue': locationRevenue,
+    'location_jobs': locationJobs,
+    'property_type_revenue': propertyTypeRevenue,
+    'property_type_jobs': propertyTypeJobs,
+    'payment_method_revenue': paymentMethodRevenue,
+    'payment_method_jobs': paymentMethodJobs,
+    'status_revenue': statusRevenue,
+    'status_jobs': statusJobs,
+    'recurring_revenue': recurringRevenue,
+    'recurring_jobs': recurringJobs,
+    'one_off_revenue': oneOffRevenue,
+    'one_off_jobs': oneOffJobs,
     'source_job_ids': sourceJobIds,
   };
 
@@ -177,6 +247,14 @@ class DailyRollup {
     final expCatRaw = json['expense_categories'];
     final lsRevRaw = json['lead_source_revenue'];
     final lsJobsRaw = json['lead_source_jobs'];
+    final locRevRaw = json['location_revenue'];
+    final locJobsRaw = json['location_jobs'];
+    final ptRevRaw = json['property_type_revenue'];
+    final ptJobsRaw = json['property_type_jobs'];
+    final pmRevRaw = json['payment_method_revenue'];
+    final pmJobsRaw = json['payment_method_jobs'];
+    final stRevRaw2 = json['status_revenue'];
+    final stJobsRaw2 = json['status_jobs'];
     final custRevRaw = json['customer_revenue'];
     final srcIdsRaw = json['source_job_ids'];
 
@@ -205,6 +283,18 @@ class DailyRollup {
       expenseCategories: expCatRaw is Map ? Map<String, int>.from(expCatRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
       leadSourceRevenue: lsRevRaw is Map ? Map<String, int>.from(lsRevRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
       leadSourceJobs: lsJobsRaw is Map ? Map<String, int>.from(lsJobsRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      locationRevenue: locRevRaw is Map ? Map<String, int>.from(locRevRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      locationJobs: locJobsRaw is Map ? Map<String, int>.from(locJobsRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      propertyTypeRevenue: ptRevRaw is Map ? Map<String, int>.from(ptRevRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      propertyTypeJobs: ptJobsRaw is Map ? Map<String, int>.from(ptJobsRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      paymentMethodRevenue: pmRevRaw is Map ? Map<String, int>.from(pmRevRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      paymentMethodJobs: pmJobsRaw is Map ? Map<String, int>.from(pmJobsRaw.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      statusRevenue: stRevRaw2 is Map ? Map<String, int>.from(stRevRaw2.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      statusJobs: stJobsRaw2 is Map ? Map<String, int>.from(stJobsRaw2.map((k, v) => MapEntry(k.toString(), _toInt(v)))) : const {},
+      recurringRevenue: json['recurring_revenue'] as int? ?? 0,
+      recurringJobs: json['recurring_jobs'] as int? ?? 0,
+      oneOffRevenue: json['one_off_revenue'] as int? ?? 0,
+      oneOffJobs: json['one_off_jobs'] as int? ?? 0,
       sourceJobIds: srcIdsRaw is List ? List<String>.from(srcIdsRaw.map((e) => e.toString())) : const [],
     );
   }

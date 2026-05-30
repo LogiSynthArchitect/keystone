@@ -7,6 +7,7 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
@@ -154,11 +155,10 @@ class _JobTemplatesScreenState extends ConsumerState<JobTemplatesScreen> {
         isSearchOpen: _searchOpen,
         onSearchToggle: () => setState(() => _searchOpen = !_searchOpen),
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.filter_solid,
-              color: _hasFilter ? context.ksc.accent500 : context.ksc.neutral400,
-              size: 22),
-            onPressed: () {
+          KsIconWell(
+            icon: LineAwesomeIcons.filter_solid,
+            isActive: _hasFilter,
+            onTap: () {
               final templates = ref.read(jobTemplateProvider).maybeWhen(
                 data: (d) => d,
                 orElse: () => <JobTemplateEntity>[],
@@ -190,6 +190,7 @@ class _JobTemplatesScreenState extends ConsumerState<JobTemplatesScreen> {
               data: (items) {
                 final withServices = items.where((t) => t.services.isNotEmpty).length;
                 return KsSummaryStrip(
+                  icon3d: 'd3d0c8-copy.png',
                   value: '${items.length}',
                   label: "TEMPLATES",
                   subtitleSegments: [

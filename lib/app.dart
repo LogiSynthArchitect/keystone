@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -115,7 +118,9 @@ class _KeystoneAppState extends ConsumerState<KeystoneApp> with WidgetsBindingOb
       themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) => PrivacyOverlay(
-        child: _ErrorBoundary(child: child ?? const SizedBox.shrink()),
+        child: _ErrorBoundary(
+          child: _BackPressExitHandler(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }
@@ -138,6 +143,53 @@ class _ErrorBoundary extends StatefulWidget {
 
   @override
   State<_ErrorBoundary> createState() => _ErrorBoundaryState();
+}
+
+/// Wraps app content with [PopScope] to implement double-back-to-exit.
+///
+/// When the user presses the system back button on a root route and no
+/// route is popped, a SnackBar appears: "Tap back again to exit". A second
+/// press within 2 seconds closes the app. This prevents accidental exits.
+class _BackPressExitHandler extends StatefulWidget {
+  final Widget child;
+  const _BackPressExitHandler({required this.child});
+
+  @override
+  State<_BackPressExitHandler> createState() => _BackPressExitHandlerState();
+}
+
+class _BackPressExitHandlerState extends State<_BackPressExitHandler> {
+  DateTime _lastBackPress = DateTime.now();
+  static const _exitDelay = Duration(seconds: 2);
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _snackBarController;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (now.difference(_lastBackPress) < _exitDelay) {
+          _snackBarController?.close();
+          SystemNavigator.pop();
+        } else {
+          _lastBackPress = now;
+          _snackBarController?.close();
+          _snackBarController = ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Tap back again to exit'),
+              duration: _exitDelay,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 80, left: 24, right: 24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      },
+      child: widget.child,
+    );
+  }
 }
 
 class _ErrorBoundaryState extends State<_ErrorBoundary> {

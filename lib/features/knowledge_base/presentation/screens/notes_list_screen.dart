@@ -9,6 +9,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
@@ -94,36 +95,21 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
         title: "KNOWLEDGE BASE",
         showBack: true,
         actions: [
-          IconButton(
-            icon: Icon(
-              state.showArchived ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.archive_solid,
-              color: state.showArchived ? context.ksc.accent500 : context.ksc.neutral500,
-              size: 22,
-            ),
-            onPressed: () => ref.read(notesListProvider.notifier).toggleArchived(),
-            tooltip: state.showArchived ? "Show Active" : "Show Archived",
+          KsIconWell(
+            icon: state.showArchived ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.archive_solid,
+            isActive: state.showArchived,
+            onTap: () => ref.read(notesListProvider.notifier).toggleArchived(),
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.filter_solid, color: hasActiveFilter ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-            onPressed: () => _showFilterSheet(context),
+          KsIconWell(
+            icon: LineAwesomeIcons.filter_solid,
+            isActive: hasActiveFilter,
+            onTap: () => _showFilterSheet(context),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(LineAwesomeIcons.bell_solid, color: remindersCount > 0 ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-                onPressed: () => context.push(RouteNames.reminders),
-              ),
-              if (remindersCount > 0)
-                Positioned(
-                  top: 8, right: 8,
-                  child: Container(
-                    width: 14, height: 14,
-                    decoration: BoxDecoration(color: context.ksc.error500, shape: BoxShape.circle),
-                    child: Center(child: Text('$remindersCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.white))),
-                  ),
-                ),
-            ],
+          KsIconWell(
+            icon: LineAwesomeIcons.bell_solid,
+            isActive: remindersCount > 0,
+            badgeCount: remindersCount,
+            onTap: () => context.push(RouteNames.reminders),
           ),
         ],
         bottom: PreferredSize(
@@ -149,6 +135,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
           const SizedBox(height: 8),
           // Summary strip — dynamic, filter-aware
           KsSummaryStrip(
+            icon3d: '628100-notebook.png',
             value: state.filterCategory != null || state.searchQuery.isNotEmpty
                 ? '${state.displayed.length}'
                 : '${state.notes.length}',

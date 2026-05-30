@@ -198,8 +198,7 @@ class DemoDataSeeder {
       ));
     }
     debugPrint('[KS:DEMO] Created 8 customers');
-    // Yield to let UI process touch events between sections
-    await Future.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 1));
 
     // ── Jobs ───────────────────────────────────────────────
     final statuses = [
@@ -231,6 +230,8 @@ class DemoDataSeeder {
     ];
 
     for (int i = 0; i < _demoJobIds.length; i++) {
+      // Always yield at the top of the loop to let Flutter render frames
+      await Future<void>.delayed(const Duration(milliseconds: 1));
       final jobId = _demoJobIds[i];
       final custIdx = i % customerData.length;
       final c = customerData[custIdx];
@@ -328,6 +329,7 @@ class DemoDataSeeder {
           sortOrder: s,
           createdAt: jobDate.toIso8601String(),
         ));
+        await Future<void>.delayed(const Duration(milliseconds: 1));
       }
 
       // ── Hardware (0-2 per job) ──────────────────────────
@@ -351,6 +353,7 @@ class DemoDataSeeder {
             sortOrder: h,
             createdAt: jobDate.toIso8601String(),
           ));
+          await Future<void>.delayed(const Duration(milliseconds: 1));
         }
       }
 
@@ -374,6 +377,7 @@ class DemoDataSeeder {
           inventoryItemId: _demoInventoryIds[invIdx],
           createdAt: jobDate.toIso8601String(),
         ));
+        await Future<void>.delayed(const Duration(milliseconds: 1));
       }
 
       // ── Expenses (0-2 per job) ──────────────────────────
@@ -397,6 +401,7 @@ class DemoDataSeeder {
           amount: (rng.nextInt(50) + 10) * 100,
           createdAt: jobDate.toIso8601String(),
         ));
+        await Future<void>.delayed(const Duration(milliseconds: 1));
       }
 
       // ── Photos (0-1 per job) ────────────────────────────
@@ -409,6 +414,7 @@ class DemoDataSeeder {
           mediaType: 'image',
           createdAt: jobDate.toIso8601String(),
         ));
+        await Future<void>.delayed(const Duration(milliseconds: 1));
       }
 
       // ── Audit entries (1-2 per job) ─────────────────────
@@ -420,6 +426,7 @@ class DemoDataSeeder {
         newValues: {'status': status, 'service_type': services[i]},
         createdAt: jobDate.toIso8601String(),
       ));
+      await Future<void>.delayed(const Duration(milliseconds: 1));
       if (status == 'completed' || status == 'invoiced') {
         await _auditLocal.saveEntry(JobAuditEntryModel(
           id: uuid.v4(),
@@ -430,9 +437,10 @@ class DemoDataSeeder {
           newValues: {'status': 'completed'},
           createdAt: jobDate.add(const Duration(hours: 3)).toIso8601String(),
         ));
+        await Future<void>.delayed(const Duration(milliseconds: 1));
       }
       // Yield after each job so the UI stays responsive during bulk seed
-      await Future.delayed(Duration.zero);
+      await Future<void>.delayed(const Duration(milliseconds: 1));
     }
     debugPrint('[KS:DEMO] Created 12 demo jobs with children');
 
@@ -491,8 +499,7 @@ class DemoDataSeeder {
       }
     }
     debugPrint('[KS:DEMO] Created 12 inventory items');
-    // Yield before the remaining smaller sections
-    await Future.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 1));
 
     // ── Inventory Restocks (4) ────────────────────────────
     final restockData = [
@@ -876,14 +883,14 @@ class DemoDataSeeder {
       await HiveService.followUps.delete(jobId);
 
       await _jobLocal.deleteJob(jobId);
-      await Future.delayed(Duration.zero); // yield after each job during remove
+      await Future<void>.delayed(const Duration(milliseconds: 1)); // yield after each job during remove
     }
 
     // Remove customers
     for (final custId in _demoCustomerIds) {
       await _customerLocal.deleteCustomer(custId);
     }
-    await Future.delayed(Duration.zero); // yield after customer removal
+    await Future<void>.delayed(const Duration(milliseconds: 1)); // yield after customer removal
 
     // Remove inventory items + children
     for (final invId in _createdInventoryIds) {
@@ -891,7 +898,7 @@ class DemoDataSeeder {
       await _stockAdjustmentsLocal.deleteForItem(invId);
       await _inventoryLocal.deleteItem(invId);
     }
-    await Future.delayed(Duration.zero); // yield after inventory removal
+    await Future<void>.delayed(const Duration(milliseconds: 1)); // yield after inventory removal
 
     // Remove knowledge notes
     for (final noteId in _createdNoteIds) {

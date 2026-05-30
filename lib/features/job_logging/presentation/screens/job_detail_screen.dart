@@ -14,6 +14,7 @@ import 'package:keystone/core/theme/ks_colors.dart';
 import 'package:keystone/core/utils/date_formatter.dart';
 import 'package:keystone/core/utils/currency_formatter.dart';
 import 'package:keystone/core/widgets/ks_app_bar.dart';
+import 'package:keystone/core/widgets/ks_icon_well.dart';
 import 'package:keystone/core/widgets/ks_offline_banner.dart';
 import 'package:keystone/core/widgets/ks_badge.dart';
 import 'package:keystone/core/widgets/ks_confirm_dialog.dart';
@@ -62,17 +63,18 @@ class JobDetailScreen extends ConsumerWidget {
           jobAsync.when(
             data: (job) => job == null
                 ? const SizedBox.shrink()
-                : IconButton(
-                    icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
-                    onPressed: () => EditJobScreen.show(context, jobId),
+                : KsIconWell(
+                    icon: LineAwesomeIcons.edit,
+                    iconColor: context.ksc.accent500,
+                    onTap: () => EditJobScreen.show(context, jobId),
                   ),
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
           ),
           if (permissions.canDeleteJobs || isAdmin)
-            IconButton(
-              icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
-              onPressed: () async {
+            KsIconWell(
+              icon: LineAwesomeIcons.archive_solid,
+              onTap: () async {
                 final confirmed = await KsConfirmDialog.show(
                   context,
                   title: 'ARCHIVE RECORD',

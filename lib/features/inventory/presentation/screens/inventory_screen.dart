@@ -6,6 +6,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
@@ -545,21 +546,19 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       appBar: KsAppBar(
         title: "MY INVENTORY",
         showBack: true,
-        goldStyle: true,
         searchable: true,
         isSearchOpen: _searchOpen,
         onSearchToggle: () => setState(() => _searchOpen = !_searchOpen),
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.filter_solid,
-              color: _filter != 'all' || _locationFilter != 'all' ? context.ksc.accent500 : context.ksc.neutral400,
-              size: 22),
-            onPressed: () => _showFilterSheet(context),
+          KsIconWell(
+            icon: LineAwesomeIcons.filter_solid,
+            isActive: _filter != 'all' || _locationFilter != 'all',
+            onTap: () => _showFilterSheet(context),
           ),
-          IconButton(
-            icon: Icon(_showArchived ? LineAwesomeIcons.inbox_solid : LineAwesomeIcons.archive_solid, color: _showArchived ? context.ksc.accent500 : context.ksc.neutral400, size: 20),
-            tooltip: "Toggle archived",
-            onPressed: () {
+          KsIconWell(
+            icon: _showArchived ? LineAwesomeIcons.inbox_solid : LineAwesomeIcons.archive_solid,
+            isActive: _showArchived,
+            onTap: () {
               setState(() => _showArchived = !_showArchived);
               WidgetsBinding.instance.addPostFrameCallback((_) => _loadItems());
             },
@@ -593,6 +592,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 final lowStockCount = items.where((i) => i.isLowStock && !i.isLowStockSnoozed).length;
                 final categories = items.map((i) => i.category).toSet().length;
                 return KsSummaryStrip(
+                  icon3d: '176980-folder.png',
                   value: hasFilter ? '${filtered.length}' : '${items.length}',
                   label: hasFilter ? "FILTERED ITEMS" : (_showArchived ? "ALL ITEMS (INCL. ARCHIVED)" : "ALL ITEMS"),
                   subtitleSegments: [

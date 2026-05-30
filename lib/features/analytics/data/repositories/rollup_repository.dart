@@ -105,6 +105,16 @@ class RollupRepository {
     final expenseCategories = <String, int>{};
     final leadSourceRevenue = <String, int>{};
     final leadSourceJobs = <String, int>{};
+    final locationRevenue = <String, int>{};
+    final locationJobs = <String, int>{};
+    final propertyTypeRevenue = <String, int>{};
+    final propertyTypeJobs = <String, int>{};
+    final paymentMethodRevenue = <String, int>{};
+    final paymentMethodJobs = <String, int>{};
+    final statusRevenue = <String, int>{};
+    final statusJobs = <String, int>{};
+    var recurringRevenue = 0, recurringJobs = 0;
+    var oneOffRevenue = 0, oneOffJobs = 0;
     final sourceJobIds = <String>{};
 
     for (final key in _rollupsBox.keys) {
@@ -141,6 +151,18 @@ class RollupRepository {
       _mergeMap(expenseCategories, r.expenseCategories);
       _mergeMap(leadSourceRevenue, r.leadSourceRevenue);
       _mergeMap(leadSourceJobs, r.leadSourceJobs);
+      _mergeMap(locationRevenue, r.locationRevenue);
+      _mergeMap(locationJobs, r.locationJobs);
+      _mergeMap(propertyTypeRevenue, r.propertyTypeRevenue);
+      _mergeMap(propertyTypeJobs, r.propertyTypeJobs);
+      _mergeMap(paymentMethodRevenue, r.paymentMethodRevenue);
+      _mergeMap(paymentMethodJobs, r.paymentMethodJobs);
+      _mergeMap(statusRevenue, r.statusRevenue);
+      _mergeMap(statusJobs, r.statusJobs);
+      recurringRevenue += r.recurringRevenue;
+      recurringJobs += r.recurringJobs;
+      oneOffRevenue += r.oneOffRevenue;
+      oneOffJobs += r.oneOffJobs;
 
       for (final jid in r.sourceJobIds) {
         sourceJobIds.add(jid);
@@ -170,6 +192,18 @@ class RollupRepository {
       expenseCategories: expenseCategories,
       leadSourceRevenue: leadSourceRevenue,
       leadSourceJobs: leadSourceJobs,
+      locationRevenue: locationRevenue,
+      locationJobs: locationJobs,
+      propertyTypeRevenue: propertyTypeRevenue,
+      propertyTypeJobs: propertyTypeJobs,
+      paymentMethodRevenue: paymentMethodRevenue,
+      paymentMethodJobs: paymentMethodJobs,
+      statusRevenue: statusRevenue,
+      statusJobs: statusJobs,
+      recurringRevenue: recurringRevenue,
+      recurringJobs: recurringJobs,
+      oneOffRevenue: oneOffRevenue,
+      oneOffJobs: oneOffJobs,
       sourceJobIds: sourceJobIds.toList(),
     );
   }
@@ -432,6 +466,16 @@ class RollupRepository {
     final lsRevMap = <String, int>{};
     final lsJobMap = <String, int>{};
     final custRevMap = <String, int>{};
+    final locRevMap = <String, int>{};
+    final locJobMap = <String, int>{};
+    final ptRevMap = <String, int>{};
+    final ptJobMap = <String, int>{};
+    final pmRevMap = <String, int>{};
+    final pmJobMap = <String, int>{};
+    final stRevMap2 = <String, int>{};
+    final stJobMap2 = <String, int>{};
+    var recurringRev = 0, recurringJobs = 0;
+    var oneOffRev = 0, oneOffJobs = 0;
     final sourceIds = <String>[];
 
     for (final j in activeJobs) {
@@ -440,12 +484,44 @@ class RollupRepository {
       final ls = (j['lead_source'] as String?) ?? 'other';
       final cid = j['customer_id']?.toString() ?? 'unknown';
       final status = j['status'] as String? ?? 'in_progress';
+      final loc = j['location'] as String? ?? 'unknown';
 
       stRevMap[st] = (stRevMap[st] ?? 0) + amt;
       stJobMap[st] = (stJobMap[st] ?? 0) + 1;
       custRevMap[cid] = (custRevMap[cid] ?? 0) + amt;
       lsRevMap[ls] = (lsRevMap[ls] ?? 0) + amt;
       lsJobMap[ls] = (lsJobMap[ls] ?? 0) + 1;
+
+      // Location breakdown
+      locRevMap[loc] = (locRevMap[loc] ?? 0) + amt;
+      locJobMap[loc] = (locJobMap[loc] ?? 0) + 1;
+
+      // Property type (from customer map)
+      final custData = custMap[cid];
+      final pt = custData?['property_type'] as String? ?? 'unknown';
+      ptRevMap[pt] = (ptRevMap[pt] ?? 0) + amt;
+      ptJobMap[pt] = (ptJobMap[pt] ?? 0) + 1;
+
+      // Payment method
+      final pm = j['payment_method'] as String?;
+      if (pm != null && pm.isNotEmpty) {
+        pmRevMap[pm] = (pmRevMap[pm] ?? 0) + amt;
+        pmJobMap[pm] = (pmJobMap[pm] ?? 0) + 1;
+      }
+
+      // Job status breakdown
+      stRevMap2[status] = (stRevMap2[status] ?? 0) + amt;
+      stJobMap2[status] = (stJobMap2[status] ?? 0) + 1;
+
+      // Job origin
+      final genFrom = j['generated_from_schedule_id'] as String?;
+      if (genFrom != null && genFrom.isNotEmpty) {
+        recurringRev += amt;
+        recurringJobs++;
+      } else {
+        oneOffRev += amt;
+        oneOffJobs++;
+      }
 
       if (custFirstJobDate[cid] == dateKey) newCustCount++;
 
@@ -466,7 +542,7 @@ class RollupRepository {
 
     return DailyRollup(
       dateKey: dateKey,
-      schemaVersion: 1,
+      schemaVersion: 2,
       dirty: false,
       revenue: revenue,
       partsCost: partsCost,
@@ -489,6 +565,18 @@ class RollupRepository {
       expenseCategories: expenseCatMap,
       leadSourceRevenue: lsRevMap,
       leadSourceJobs: lsJobMap,
+      locationRevenue: locRevMap,
+      locationJobs: locJobMap,
+      propertyTypeRevenue: ptRevMap,
+      propertyTypeJobs: ptJobMap,
+      paymentMethodRevenue: pmRevMap,
+      paymentMethodJobs: pmJobMap,
+      statusRevenue: stRevMap2,
+      statusJobs: stJobMap2,
+      recurringRevenue: recurringRev,
+      recurringJobs: recurringJobs,
+      oneOffRevenue: oneOffRev,
+      oneOffJobs: oneOffJobs,
       sourceJobIds: sourceIds,
     );
   }
@@ -497,7 +585,9 @@ class RollupRepository {
     int sum = 0;
     for (final item in items) {
       final v = item[field];
+      // Hive stores some int model fields as double at runtime
       if (v is int) sum += v;
+      else if (v is double) sum += v.toInt();
     }
     return sum;
   }

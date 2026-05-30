@@ -153,7 +153,7 @@ class JobModel {
     'user_id': userId,
     'customer_id': customerId,
     'service_type': serviceType,
-    'job_date': jobDate.toIso8601String().split('T').first,
+    'job_date': jobDate.toIso8601String(),
     'location': location,
     'latitude': latitude,
     'longitude': longitude,

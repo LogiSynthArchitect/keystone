@@ -7,6 +7,7 @@ import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
@@ -35,27 +36,16 @@ class HubScreen extends ConsumerWidget {
         title: "MORE",
         showBack: false,
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(LineAwesomeIcons.bell_solid, color: remindersCount > 0 ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-                onPressed: () => context.push(RouteNames.reminders),
-              ),
-              if (remindersCount > 0)
-                Positioned(
-                  top: 8, right: 8,
-                  child: Container(
-                    width: 14, height: 14,
-                    decoration: BoxDecoration(color: context.ksc.error500, shape: BoxShape.circle),
-                    child: Center(child: Text('$remindersCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.white))),
-                  ),
-                ),
-            ],
+          KsIconWell(
+            icon: LineAwesomeIcons.bell_solid,
+            isActive: remindersCount > 0,
+            badgeCount: remindersCount,
+            onTap: () => context.push(RouteNames.reminders),
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.sign_out_alt_solid, color: context.ksc.error500, size: 22),
-            onPressed: () => KsConfirmDialog.show(
+          KsIconWell(
+            icon: LineAwesomeIcons.sign_out_alt_solid,
+            iconColor: context.ksc.error500,
+            onTap: () => KsConfirmDialog.show(
               context,
               title: 'SIGN OUT',
               message: 'Are you sure you want to sign out? All local data will be cleared.',

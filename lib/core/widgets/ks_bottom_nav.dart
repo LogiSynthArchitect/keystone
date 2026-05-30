@@ -15,73 +15,91 @@ class KsBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tabs = [
+      ('DASHBOARD', LineAwesomeIcons.chart_bar_solid),
+      ('JOBS', LineAwesomeIcons.briefcase_solid),
+      ('CUSTOMERS', LineAwesomeIcons.users_solid),
+      ('HUB', LineAwesomeIcons.th_large_solid),
+    ];
+
     return Container(
       decoration: BoxDecoration(
         color: context.ksc.primary900,
-        border: Border(top: BorderSide(color: context.ksc.primary700)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            offset: const Offset(0, -2),
-            blurRadius: 8,
-          ),
-        ],
+        border: Border(top: BorderSide(color: context.ksc.primary700, width: 0.5)),
       ),
       child: SafeArea(
         child: SizedBox(
-          height: 64,
+          height: 56,
           child: Row(
             children: [
-              _buildNavItem(context, 0, 'DASHBOARD', LineAwesomeIcons.th_large_solid),
-              _buildNavItem(context, 1, 'JOBS', LineAwesomeIcons.briefcase_solid),
-              _buildNavItem(context, 2, 'CUSTOMERS', LineAwesomeIcons.users_solid),
-              _buildNavItem(context, 3, 'MORE', LineAwesomeIcons.ellipsis_h_solid),
+              for (var i = 0; i < tabs.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    label: tabs[i].$1,
+                    icon: tabs[i].$2,
+                    isActive: currentIndex == i,
+                    onTap: () => onTabTapped(i),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildNavItem(BuildContext context, int index, String label, IconData icon) {
-    final isActive = currentIndex == index;
-    final color = isActive ? context.ksc.accent500 : context.ksc.neutral400;
+class _NavItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback onTap;
 
-    return Expanded(
-      child: Semantics(
-        button: true,
-        label: label,
-        hint: isActive ? 'Currently selected' : 'Tap to open $label',
-        selected: isActive,
-        child: GestureDetector(
-          onTap: () => onTabTapped(index),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: isActive ? context.ksc.accent500 : Colors.transparent,
-                  width: 2,
-                ),
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.ksc;
+    final activeColor = theme.accent500;
+    final inactiveColor = theme.neutral400;
+
+    return Semantics(
+      button: true,
+      label: label,
+      selected: isActive,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            // Gold active indicator bar
+            Container(
+              height: 2.5,
+              color: isActive ? activeColor : Colors.transparent,
+            ),
+            const Spacer(),
+            Icon(
+              icon,
+              size: 20,
+              color: isActive ? activeColor : inactiveColor,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: isActive ? activeColor : inactiveColor,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                fontSize: 9,
+                letterSpacing: 0.5,
               ),
-              color: isActive ? context.ksc.primary800.withValues(alpha: 0.3) : Colors.transparent,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: AppTextStyles.caption.copyWith(
-                    color: color,
-                    fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
+            const Spacer(),
+          ],
         ),
       ),
     );

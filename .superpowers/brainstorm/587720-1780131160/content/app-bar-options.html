@@ -1,0 +1,74 @@
+<h2>App Bar Design Directions</h2>
+<p class="subtitle">Three visual directions for the Keystone top bar</p>
+
+<div class="section">
+  <h3 style="color: var(--accent); font-size: 14px;">Preference: Before we dive deep, which core direction resonates?</h3>
+</div>
+
+<div class="cards" style="grid-template-columns: 1fr;">
+
+  <div class="card" data-choice="minimal" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A — Editorial Minimal</h3>
+      <div style="background: #0F1117; border-radius: 8px; padding: 16px; margin: 8px 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 2px; height: 18px; background: #D4A853;"></div>
+            <span style="color: #F2F0EB; font-weight: 700; font-size: 13px; letter-spacing: 2.5px;">DASHBOARD</span>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <div style="width: 20px; height: 20px; border-radius: 4px; background: #1A1D28;"></div>
+            <div style="width: 20px; height: 20px; border-radius: 4px; background: #1A1D28;"></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #888;">Thin gold accent line as title anchor. All-caps tight tracking. Flat icon wells on hover. Very clean, breathing space.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="bold" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B — Bold Industrial</h3>
+      <div style="background: #0F1117; border-radius: 8px; padding: 16px; margin: 8px 0;">
+        <div style="display: flex; align-items: center;">
+          <div style="width: 4px; height: 28px; background: linear-gradient(180deg, #D4A853, #8B6914); border-radius: 2px;"></div>
+          <div style="margin-left: 10px; flex: 1;">
+            <span style="color: #F2F0EB; font-weight: 900; font-size: 16px; letter-spacing: 1px;">DASHBOARD</span>
+            <div style="display: flex; gap: 6px; margin-top: 2px;">
+              <span style="color: #666; font-size: 10px; font-weight: 600;">3 JOBS · 2 FOLLOW-UPS</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #D4A853; display: flex; align-items: center; justify-content: center;">
+              <span style="color: #0F1117; font-size: 12px; font-weight: 800;">3</span>
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #1A1D28;"></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #888;">Bolder, denser, with subtitle context. Gold gradient accent bar. Badge-style notification chip. Feels more like a tool.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>C — Hybrid Shell</h3>
+      <div style="background: #0F1117; border-radius: 8px; padding: 16px; margin: 8px 0;">
+        <div style="display: flex; align-items: center;">
+          <div style="width: 24px; height: 24px; border: 1px solid #D4A853; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+            <span style="color: #D4A853; font-size: 10px;">K</span>
+          </div>
+          <span style="color: #F2F0EB; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; flex: 1;">DASHBOARD</span>
+          <div style="display: flex; gap: 4px;">
+            <div style="padding: 4px 8px; border-radius: 4px; background: #1A1D28; font-size: 10px; color: #D4A853;">🔍</div>
+            <div style="padding: 4px 8px; border-radius: 4px; background: #1A1D28; font-size: 10px; color: #888;">👤</div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #888;">Modular — title area stays consistent, action area adapts per screen. Small brand K-logo anchor. Action pills with subtle hover.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top: 16px;">Tap/click a direction to select it, then tell me what you think in the terminal.</p>

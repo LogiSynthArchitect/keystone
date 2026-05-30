@@ -38,7 +38,7 @@ Future<void> markAnalyticsDirtyBatch(Iterable<String> dateKeys, {String reason =
 ///
 /// Bump when the [DailyRollup] model changes field types or semantics so
 /// stale rollups from a previous build are automatically re-seeded.
-const int analyticsRollupVersion = 1;
+const int analyticsRollupVersion = 2;
 
 /// Startup recovery hook for analytics rollup invalidation.
 ///

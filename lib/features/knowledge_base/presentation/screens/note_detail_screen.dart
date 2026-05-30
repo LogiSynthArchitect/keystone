@@ -9,6 +9,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../../core/widgets/ks_offline_banner.dart';
@@ -77,22 +78,19 @@ class NoteDetailScreen extends ConsumerWidget {
         title: "NOTE DETAIL",
         showBack: true,
         actions: [
-          IconButton(
-            icon: Icon(
-              note.isPinned ? LineAwesomeIcons.thumbtack_solid : LineAwesomeIcons.map_pin_solid,
-              color: note.isPinned ? context.ksc.accent500 : context.ksc.neutral400,
-              size: 22,
-            ),
-            tooltip: note.isPinned ? 'Unpin note' : 'Pin note',
-            onPressed: () => ref.read(notesListProvider.notifier).togglePin(note.id),
+          KsIconWell(
+            icon: note.isPinned ? LineAwesomeIcons.thumbtack_solid : LineAwesomeIcons.map_pin_solid,
+            isActive: note.isPinned,
+            onTap: () => ref.read(notesListProvider.notifier).togglePin(note.id),
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.edit, color: context.ksc.accent500, size: 22),
-            onPressed: () => AddNoteScreen.show(context, existingNote: note),
+          KsIconWell(
+            icon: LineAwesomeIcons.edit,
+            iconColor: context.ksc.accent500,
+            onTap: () => AddNoteScreen.show(context, existingNote: note),
           ),
-          IconButton(
-            icon: Icon(LineAwesomeIcons.archive_solid, color: context.ksc.neutral400, size: 22),
-            onPressed: () async {
+          KsIconWell(
+            icon: LineAwesomeIcons.archive_solid,
+            onTap: () async {
               final confirm = await KsConfirmDialog.show(
                 context,
                 title: 'ARCHIVE NOTE',

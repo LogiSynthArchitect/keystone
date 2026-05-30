@@ -201,14 +201,16 @@ class _KsFilterSheetState extends State<KsFilterSheet> {
 
     final maxHeight = MediaQuery.of(context).size.height * widget.heightFraction;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxHeight),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-          children: [
+    return Container(
+      color: theme.primary800,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+            children: [
             // ── Drag handle ──
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -350,6 +352,7 @@ class _KsFilterSheetState extends State<KsFilterSheet> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

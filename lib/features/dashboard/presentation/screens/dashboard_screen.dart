@@ -8,7 +8,9 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_bottom_nav.dart';
 import '../../../../core/widgets/ks_badge.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
+import '../../../../core/widgets/ks_loading_indicator.dart';
+
 import 'package:keystone/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -44,7 +46,6 @@ import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../../../recurring_jobs/presentation/providers/recurring_schedule_provider.dart';
 import '../../../job_templates/presentation/providers/job_template_provider.dart';
 import '../../../service_types/presentation/providers/service_type_provider.dart';
-import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../../../reminders/domain/models/reminder_model.dart';
 import '../../../analytics/presentation/providers/analytics_provider.dart';
 
@@ -72,6 +73,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _firstTap = null;
       _toggleDemoData();
     }
+  }
+
+  Future<void> _onRefresh() async {
+    ref.invalidate(jobListProvider);
+    ref.invalidate(remindersProvider);
+    ref.invalidate(customerListProvider);
   }
 
   Future<void> _toggleDemoData() async {
@@ -139,20 +146,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final remindersState = ref.watch(remindersProvider);
     final reminders = remindersState.active;
     final jobListState = ref.watch(jobListProvider);
-    final profileState = ref.watch(profileProvider);
-    final profile = profileState.profile;
     final connectivityAsync = ref.watch(connectivityStreamProvider);
+
+    // ── Loading state ──
+    if (jobListState.isLoading) {
+      return Scaffold(
+        backgroundColor: context.ksc.primary900,
+        appBar: _buildAppBar(context, followUpCount: 0, connectivityAsync: connectivityAsync),
+        body: const KsLoadingIndicator(fullScreen: true),
+        bottomNavigationBar: _buildBottomNav(context),
+      );
+    }
+
+    // ── Error state ──
+    if (jobListState.errorMessage != null) {
+      return Scaffold(
+        backgroundColor: context.ksc.primary900,
+        appBar: _buildAppBar(context, followUpCount: 0, connectivityAsync: connectivityAsync),
+        body: Center(
+          child: KsEmptyState(
+            icon: LineAwesomeIcons.exclamation_triangle_solid,
+            title: 'LOAD FAILED',
+            subtitle: jobListState.errorMessage!,
+            actionLabel: 'RETRY',
+            onAction: _onRefresh,
+          ),
+        ),
+        bottomNavigationBar: _buildBottomNav(context),
+      );
+    }
 
     final allJobs = jobListState.activeJobs;
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
     final todayJobs = allJobs
-        .where((j) => j.jobDate.isAfter(todayStart))
+        .where((j) =>
+            j.jobDate.year == todayStart.year &&
+            j.jobDate.month == todayStart.month &&
+            j.jobDate.day == todayStart.day)
         .toList()
       ..sort((a, b) => a.jobDate.compareTo(b.jobDate));
     final monthStart = DateTime(now.year, now.month, 1);
-    final monthJobs = allJobs.where((j) => j.jobDate.isAfter(monthStart)).toList();
+    final monthJobs = allJobs.where((j) =>
+      j.jobDate.year == monthStart.year &&
+      j.jobDate.month == monthStart.month
+    ).toList();
     final todayRevenue = todayJobs.fold<int>(0, (s, j) => s + (j.amountCharged ?? 0));
     final monthRevenue = monthJobs.fold<int>(0, (s, j) => s + (j.amountCharged ?? 0));
     final unpaidCount = reminders.where((r) => r.type == ReminderType.unpaidJob).length;
@@ -164,176 +203,195 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
-      appBar: KsAppBar(
-        title: "DASHBOARD",
-        titleWidget: GestureDetector(
-          onTap: _handleTitleTap,
-          behavior: HitTestBehavior.opaque,
-          child: Text("DASHBOARD", style: AppTextStyles.h3.copyWith(
-            color: context.ksc.white,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.2,
-          )),
-        ),
-        showBack: false,
-        actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(LineAwesomeIcons.bell_solid, color: followUpCount > 0 ? context.ksc.accent500 : context.ksc.neutral400, size: 22),
-                onPressed: () => context.push(RouteNames.reminders),
-              ),
-              if (followUpCount > 0)
-                Positioned(
-                  top: 8, right: 8,
-                  child: Container(
-                    width: 14, height: 14,
-                    decoration: BoxDecoration(color: context.ksc.error500, shape: BoxShape.circle),
-                    child: Center(child: Text('$followUpCount', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: context.ksc.white))),
-                  ),
-                ),
-            ],
-          ),
-          GestureDetector(
-            onTap: () => context.push(RouteNames.profile),
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: connectivityAsync.value == true
-                          ? context.ksc.success500.withValues(alpha: 0.15)
-                          : context.ksc.error500.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(width: 6, height: 6, decoration: BoxDecoration(
-                          color: connectivityAsync.value == true
-                              ? context.ksc.success500
-                              : context.ksc.error500,
-                          shape: BoxShape.circle,
-                        )),
-                        const SizedBox(width: 4),
-                        Text(
-                          connectivityAsync.value == true ? 'ONLINE' : 'OFFLINE',
-                          style: AppTextStyles.caption.copyWith(
-                            color: connectivityAsync.value == true
-                                ? context.ksc.success500
-                                : context.ksc.error500,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(LineAwesomeIcons.user_circle_solid, color: context.ksc.neutral400, size: 22),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(context, followUpCount: followUpCount, connectivityAsync: connectivityAsync),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeroRevenue(context, todayRevenue, todayJobs.length, monthRevenue, monthJobs.length),
-                  const SizedBox(height: 16),
-                  // Reminder breakdown chips
-                  if (reminders.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Row(
-                        children: [
-                          if (unpaidCount > 0)
-                            _reminderChip("$unpaidCount unpaid", context.ksc.error500),
-                          if (stuckCount > 0)
-                            _reminderChip("$stuckCount stuck", context.ksc.warning500),
-                          if (followUpCount > 0)
-                            _reminderChip("$followUpCount follow-up", context.ksc.primary400),
-                          if (recurringOverdueCount > 0)
-                            _reminderChip("$recurringOverdueCount recurring", context.ksc.accent500),
-                        ],
+            child: RefreshIndicator(
+              onRefresh: _onRefresh,
+              color: context.ksc.accent500,
+              backgroundColor: context.ksc.primary800,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Metric cards (TODAY / MONTH) ──
+                    Row(children: [
+                      _buildMetricCard('TODAY', CurrencyFormatter.format(todayRevenue),
+                          '${todayJobs.length} job${todayJobs.length != 1 ? 's' : ''} today', 'f32794-calendar.png'),
+                      const SizedBox(width: 8),
+                      _buildMetricCard('MONTH', CurrencyFormatter.formatShort(monthRevenue),
+                          '${monthJobs.length} jobs this month', '36f0c6-money-bag.png'),
+                    ]),
+                    const SizedBox(height: 8),
+                    // ── Monthly target progress ──
+                    _buildMonthlyProgress(context, monthRevenue),
+                    const SizedBox(height: 16),
+                    // Reminder breakdown chips
+                    if (reminders.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          children: [
+                            if (unpaidCount > 0)
+                              _reminderChip("$unpaidCount unpaid", context.ksc.error500),
+                            if (stuckCount > 0)
+                              _reminderChip("$stuckCount stuck", context.ksc.warning500),
+                            if (followUpCount > 0)
+                              _reminderChip("$followUpCount follow-up", context.ksc.primary400),
+                            if (recurringOverdueCount > 0)
+                              _reminderChip("$recurringOverdueCount recurring", context.ksc.accent500),
+                          ],
+                        ),
                       ),
-                    ),
-                  const SizedBox(height: 24),
-                  if (todayJobs.isNotEmpty) ...[
-                    _sectionHeader(context, "TODAY'S JOBS"),
+                    const SizedBox(height: 24),
+                    if (todayJobs.isNotEmpty) ...[
+                      _sectionHeader(context, "TODAY'S JOBS"),
+                      const SizedBox(height: 12),
+                      ...todayJobs.map((job) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _buildTodayJobCard(context, job),
+                      )),
+                      const SizedBox(height: 24),
+                    ] else ...[
+                      _buildEmptyDayCard(context),
+                      const SizedBox(height: 24),
+                    ],
+                    if (reminders.isNotEmpty) ...[
+                      _buildFollowUpSection(context, unpaidCount, stuckCount, followUpCount),
+                      const SizedBox(height: 24),
+                    ],
+                    _sectionHeader(context, "TOOLS"),
                     const SizedBox(height: 12),
-                    ...todayJobs.map((job) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _buildTodayJobCard(context, job),
-                    )),
+                    _buildQuickTools(context),
                     const SizedBox(height: 24),
-                  ] else ...[
-                    _buildEmptyDayCard(context),
+                    // ── New Job / New Customer — clean cards ──
+                    _sectionHeader(context, "QUICK ACTIONS"),
+                    const SizedBox(height: 12),
+                    _buildActionCard(
+                      icon: LineAwesomeIcons.plus_circle_solid,
+                      label: "NEW JOB",
+                      subtitle: "Log a new service job",
+                      onTap: () => LogJobScreen.show(context),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildActionCard(
+                      icon: LineAwesomeIcons.user_plus_solid,
+                      label: "NEW CUSTOMER",
+                      subtitle: "Add a customer record",
+                      onTap: () => context.push(RouteNames.addCustomer),
+                    ),
                     const SizedBox(height: 24),
                   ],
-                  if (reminders.isNotEmpty) ...[
-                    _buildFollowUpSection(context, unpaidCount, stuckCount, followUpCount),
-                    const SizedBox(height: 24),
-                  ],
-                  _sectionHeader(context, "TOOLS"),
-                  const SizedBox(height: 12),
-                  _buildQuickTools(context),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildBottomActions(context),
-          KsBottomNav(
-            currentIndex: 0,
-            onTabTapped: (i) {
-              switch (i) {
-                case 0: context.go(RouteNames.dashboard);
-                case 1: context.go(RouteNames.jobs);
-                case 2: context.go(RouteNames.customers);
-                case 3: context.go(RouteNames.hub);
-              }
-            },
-          ),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNav(context),
     );
   }
 
-  Widget _buildHeroRevenue(BuildContext context, int todayRevenue, int todayCount, int monthRevenue, int monthJobsCount) {
-    final monthlyTarget = 500000; // GHS 5,000 in pesewas
-    final progress = monthRevenue / monthlyTarget;
-    final clampedProgress = progress.clamp(0.0, 1.0);
-    final pct = (clampedProgress * 100).round();
+  KsAppBar _buildAppBar(BuildContext context, {required int followUpCount, required AsyncValue<bool?> connectivityAsync}) {
+    return KsAppBar(
+      title: "DASHBOARD",
+      titleWidget: GestureDetector(
+        onTap: _handleTitleTap,
+        behavior: HitTestBehavior.opaque,
+        child: Text("DASHBOARD", style: AppTextStyles.h3.copyWith(
+          color: context.ksc.white,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.2,
+        )),
+      ),
+      showBack: false,
+      actions: [
+        KsIconWell(
+          icon: LineAwesomeIcons.bell_solid,
+          isActive: followUpCount > 0,
+          badgeCount: followUpCount,
+          onTap: () => context.push(RouteNames.reminders),
+        ),
+        GestureDetector(
+          onTap: () => context.push(RouteNames.profile),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: connectivityAsync.value == true
+                      ? context.ksc.success500.withValues(alpha: 0.15)
+                      : context.ksc.error500.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 6, height: 6, decoration: BoxDecoration(
+                      color: connectivityAsync.value == true
+                          ? context.ksc.success500
+                          : context.ksc.error500,
+                      shape: BoxShape.circle,
+                    )),
+                    const SizedBox(width: 4),
+                    Text(
+                      connectivityAsync.value == true ? 'ONLINE' : 'OFFLINE',
+                      style: AppTextStyles.caption.copyWith(
+                        color: connectivityAsync.value == true
+                            ? context.ksc.success500
+                            : context.ksc.error500,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              KsIconWell(
+                icon: LineAwesomeIcons.user_circle_solid,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildBottomNav(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        KsBottomNav(
+          currentIndex: 0,
+          onTabTapped: (i) {
+            switch (i) {
+              case 0: context.go(RouteNames.dashboard);
+              case 1: context.go(RouteNames.jobs);
+              case 2: context.go(RouteNames.customers);
+              case 3: context.go(RouteNames.hub);
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMonthlyProgress(BuildContext context, int monthRevenue) {
+    final monthlyTarget = 500000;
+    final pct = ((monthRevenue / monthlyTarget).clamp(0.0, 1.0) * 100).round();
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            context.ksc.primary800,
-            context.ksc.primary800.withValues(alpha: 0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: [context.ksc.primary800, context.ksc.primary800.withValues(alpha: 0.6)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: context.ksc.primary700),
@@ -342,59 +400,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("TODAY", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                    const SizedBox(height: 4),
-                    Text(CurrencyFormatter.format(todayRevenue), style: AppTextStyles.display.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, fontSize: 40, height: 1.0)),
-                    const SizedBox(height: 8),
-                    Text("$todayCount job${todayCount != 1 ? 's' : ''} today", style: AppTextStyles.body.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: context.ksc.success500.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: context.ksc.success500.withValues(alpha: 0.2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text("MONTH", style: AppTextStyles.caption.copyWith(color: context.ksc.success500, fontWeight: FontWeight.w800, letterSpacing: 1.5, fontSize: 9)),
-                    const SizedBox(height: 4),
-                    Text(CurrencyFormatter.formatShort(monthRevenue), style: AppTextStyles.h2.copyWith(color: context.ksc.success500, fontWeight: FontWeight.w900)),
-                    Text("$monthJobsCount jobs", style: AppTextStyles.caption.copyWith(color: context.ksc.success500, fontWeight: FontWeight.w600, fontSize: 9)),
-                  ],
-                ),
-              ),
+              Icon(LineAwesomeIcons.chart_line_solid, size: 20, color: context.ksc.neutral500),
+              const SizedBox(width: 8),
+              Text("MONTHLY TARGET",
+                  style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+              const Spacer(),
+              Text("$pct%",
+                  style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
             ],
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: clampedProgress,
-                    backgroundColor: context.ksc.primary700,
-                    color: context.ksc.accent500,
-                    minHeight: 6,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text("$pct%", style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
-            ],
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: (monthRevenue / monthlyTarget).clamp(0.0, 1.0),
+              backgroundColor: context.ksc.primary700,
+              color: context.ksc.accent500,
+              minHeight: 6,
+            ),
           ),
           const SizedBox(height: 6),
-          Text("of monthly target ${CurrencyFormatter.format(monthlyTarget)}", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+          Text("of ${CurrencyFormatter.format(monthlyTarget)} target",
+              style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
         ],
       ),
     );
@@ -420,35 +448,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildTodayJobCard(BuildContext context, JobEntity job) {
     final timeStr = DateFormatter.shortTime(job.jobDate);
 
-    Color statusColor;
-    switch (job.status) {
-      case 'completed': statusColor = context.ksc.success500;
-      case 'in_progress': statusColor = context.ksc.primary500;
-      case 'invoiced': statusColor = context.ksc.warning500;
-      default: statusColor = context.ksc.neutral500;
-    }
-
     return GestureDetector(
       onTap: () => context.push(RouteNames.jobDetail(job.id)),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: context.ksc.primary700),
         ),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40, height: 40,
               decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
+                color: context.ksc.primary700.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: Center(
-                child: Text(timeStr, style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w900, fontSize: 10)),
-              ),
+              child: Icon(LineAwesomeIcons.wrench_solid, size: 20, color: context.ksc.neutral400),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -484,6 +501,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(width: 12),
                       ],
+                      Text(timeStr, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, fontSize: 10)),
+                      const SizedBox(width: 12),
                       if (job.amountCharged != null)
                         Text(CurrencyFormatter.formatShort(job.amountCharged!), style: AppTextStyles.label.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w900)),
                     ],
@@ -523,46 +542,72 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(LineAwesomeIcons.bell_solid, size: 16, color: context.ksc.neutral400),
-                const SizedBox(width: 8),
-                Text("FOLLOW-UPS", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                Icon(LineAwesomeIcons.clock_solid, size: 18, color: context.ksc.neutral500),
+                const SizedBox(width: 10),
+                Text("FOLLOW-UPS",
+                    style: AppTextStyles.caption.copyWith(
+                        color: context.ksc.neutral400,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5)),
                 const Spacer(),
-                Text("VIEW ALL", style: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800, fontSize: 9)),
+                Icon(LineAwesomeIcons.angle_right_solid,
+                    size: 14, color: context.ksc.neutral500),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             if (unpaidCount > 0)
-              _buildFollowUpRow(context, LineAwesomeIcons.wallet_solid, "$unpaidCount unpaid invoice${unpaidCount != 1 ? 's' : ''}", context.ksc.error500),
+              _buildFollowUpRow(LineAwesomeIcons.file_invoice_dollar_solid,
+                  "$unpaidCount unpaid invoice${unpaidCount != 1 ? 's' : ''}",
+                  context.ksc.error500),
             if (stuckCount > 0)
-              _buildFollowUpRow(context, LineAwesomeIcons.clock_solid, "$stuckCount job${stuckCount != 1 ? 's' : ''} still in progress", context.ksc.warning500),
+              _buildFollowUpRow(LineAwesomeIcons.bolt_solid,
+                  "$stuckCount job${stuckCount != 1 ? 's' : ''} still in progress",
+                  context.ksc.warning500),
             if (followUpCount > 0)
-              _buildFollowUpRow(context, LineAwesomeIcons.whatsapp, "$followUpCount customer${followUpCount != 1 ? 's' : ''} awaiting follow-up", context.ksc.primary500),
+              _buildFollowUpRow(LineAwesomeIcons.comment_solid,
+                  "$followUpCount customer${followUpCount != 1 ? 's' : ''} awaiting follow-up",
+                  context.ksc.primary500),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFollowUpRow(BuildContext context, IconData icon, String text, Color color) {
+  Widget _buildFollowUpRow(IconData icon, String text, Color dotColor) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         children: [
           Container(
-            width: 28, height: 28,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-            child: Icon(icon, size: 14, color: color),
+            width: 32, height: 32,
+            decoration: BoxDecoration(
+              color: context.ksc.primary700.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 16, color: context.ksc.neutral400),
           ),
           const SizedBox(width: 12),
-          Text(text, style: AppTextStyles.body.copyWith(color: context.ksc.neutral300, fontWeight: FontWeight.w600, fontSize: 13)),
+          Expanded(
+            child: Text(text,
+                style: AppTextStyles.body.copyWith(
+                    color: context.ksc.neutral400,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13)),
+          ),
+          Container(
+            width: 8, height: 8,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
+            ),
+          ),
         ],
       ),
     );
@@ -570,83 +615,153 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildQuickTools(BuildContext context) {
     final tools = [
-      (LineAwesomeIcons.chart_line_solid, "ANALYTICS", context.ksc.accent500, () => context.push(RouteNames.analytics)),
-      (LineAwesomeIcons.boxes_solid, "INVENTORY", context.ksc.primary500, () => context.push(RouteNames.inventory)),
-      (LineAwesomeIcons.lightbulb_solid, "KNOWLEDGE", context.ksc.warning500, () => context.push(RouteNames.notes)),
-      (LineAwesomeIcons.clock_solid, "ACTIVITY", context.ksc.neutral400, () => context.push(RouteNames.timeline)),
-      (LineAwesomeIcons.coins_solid, "PRICING", context.ksc.success500, () => context.push(RouteNames.pricing)),
-      (LineAwesomeIcons.copy_solid, "TEMPLATES", context.ksc.neutral400, () => context.push(RouteNames.templates)),
+      ('4a4275-chart.png', "ANALYTICS", () => context.push(RouteNames.analytics)),
+      ('176980-folder.png', "INVENTORY", () => context.push(RouteNames.inventory)),
+      ('628100-notebook.png', "KNOWLEDGE", () => context.push(RouteNames.notes)),
+      ('637858-flash.png', "ACTIVITY", () => context.push(RouteNames.timeline)),
+      ('49b6f4-target.png', "PRICING", () => context.push(RouteNames.pricing)),
+      ('d3d0c8-copy.png', "TEMPLATES", () => context.push(RouteNames.templates)),
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: tools.map((t) {
-          final (icon, label, color, onTap) = t;
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: onTap,
-              child: Container(
-                width: 88,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: context.ksc.primary800,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.25),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
+    // 3-column grid — 3D icons kept here as the single premium zone
+    return Column(
+      children: [
+        for (var row = 0; row < 2; row++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                for (var col = 0; col < 3; col++) ...[
+                  if (row * 3 + col < tools.length)
+                    Expanded(
+                      child: _buildToolCard(tools[row * 3 + col]),
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Icon(icon, size: 24, color: color),
-                    const SizedBox(height: 8),
-                    Text(label, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w700, fontSize: 9)),
-                  ],
-                ),
-              ),
+                  if (col < 2) const SizedBox(width: 8),
+                ],
+              ],
             ),
-          );
-        }).toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildToolCard((String, String, VoidCallback) tool) {
+    final (icon3d, label, onTap) = tool;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          children: [
+            _3dIcon(icon3d, size: 32),
+            const SizedBox(height: 10),
+            Text(label,
+                style: AppTextStyles.caption.copyWith(
+                    color: context.ksc.neutral400,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    letterSpacing: 0.5)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBottomActions(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        border: Border(top: BorderSide(color: context.ksc.primary700)),
+  Widget _buildActionCard({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: context.ksc.primary800,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: context.ksc.primary700.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 18, color: context.ksc.neutral400),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: AppTextStyles.body.copyWith(
+                          color: context.ksc.white, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: AppTextStyles.caption.copyWith(
+                          color: context.ksc.neutral500, fontSize: 11)),
+                ],
+              ),
+            ),
+            Icon(LineAwesomeIcons.angle_right_solid,
+                size: 16, color: context.ksc.neutral500),
+          ],
+        ),
       ),
-      child: Row(
+    );
+  }
+
+  /// 3D icon — tools grid only (premium zone).
+  Widget _3dIcon(String asset, {double size = 36}) => Image.asset(
+    'assets/icons/3d/transparent/$asset',
+    width: size, height: size,
+    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+  );
+
+  Widget _buildMetricCard(String label, String value, String sub, String icon3d) {
+    final c = context;
+    return Expanded(
+      child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [c.ksc.primary800, c.ksc.primary800.withValues(alpha: 0.6)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: c.ksc.primary700),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: KsButton(
-              label: "NEW JOB",
-              variant: KsButtonVariant.primary,
-              size: KsButtonSize.small,
-              leadingIcon: LineAwesomeIcons.plus_solid,
-              onPressed: () => LogJobScreen.show(context),
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: c.ksc.primary700.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(6),
             ),
+            child: Image.asset('assets/icons/3d/transparent/$icon3d', width: 24, height: 24,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink()),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: KsButton(
-              label: "NEW CUSTOMER",
-              variant: KsButtonVariant.secondary,
-              size: KsButtonSize.small,
-              leadingIcon: LineAwesomeIcons.user_plus_solid,
-              onPressed: () => context.push(RouteNames.addCustomer),
-            ),
-          ),
+          const SizedBox(height: 8),
+          Text(label,
+              style: AppTextStyles.caption.copyWith(color: c.ksc.neutral500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+          const SizedBox(height: 4),
+          Text(value,
+              style: AppTextStyles.display.copyWith(color: c.ksc.white, fontWeight: FontWeight.w900, fontSize: 32, height: 1)),
+          const SizedBox(height: 2),
+          Text(sub,
+              style: AppTextStyles.body.copyWith(color: c.ksc.neutral400, fontWeight: FontWeight.w600, fontSize: 12)),
         ],
       ),
+    ),
     );
   }
 

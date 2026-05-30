@@ -4,9 +4,10 @@ import '../theme/ks_colors.dart';
 
 /// A reusable summary strip card for list screens.
 ///
-/// Shows a primary metric (big number + label), optional progress bar,
-/// and a secondary stats row. Designed to be the first thing a user sees
-/// when entering any list screen — gives them "the shape of the data."
+/// Shows a primary metric (big number + label), optional 3D hero icon,
+/// optional progress bar, and a secondary stats row. Designed to be the
+/// first thing a user sees when entering any list screen — gives them
+/// "the shape of the data."
 ///
 /// Usage (plain text):
 /// ```dart
@@ -17,9 +18,10 @@ import '../theme/ks_colors.dart';
 /// )
 /// ```
 ///
-/// Usage (colored segments):
+/// Usage (colored segments + 3D icon):
 /// ```dart
 /// KsSummaryStrip(
+///   icon3d: '49654f-trophy.png',
 ///   value: active.length.toString(),
 ///   label: "ACTIVE REMINDERS",
 ///   subtitleSegments: [
@@ -41,6 +43,10 @@ class KsSummaryStrip extends StatelessWidget {
 
   /// Label under the value (e.g. "ALL CUSTOMERS")
   final String label;
+
+  /// Optional 3D icon asset filename (e.g. '49654f-trophy.png').
+  /// Displayed prominently in an icon container at the top of the card.
+  final String? icon3d;
 
   /// Optional secondary info shown below the divider (plain text).
   /// Ignored when [subtitleSegments] is provided.
@@ -67,6 +73,7 @@ class KsSummaryStrip extends StatelessWidget {
     super.key,
     required this.value,
     required this.label,
+    this.icon3d,
     this.subtitle,
     this.subtitleSegments,
     this.progress,
@@ -88,6 +95,11 @@ class KsSummaryStrip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 3D hero icon
+          if (icon3d != null) ...[
+            _buildIcon3d(icon3d!),
+            const SizedBox(height: 12),
+          ],
           // Primary metric
           Text(
             value,
@@ -152,6 +164,12 @@ class KsSummaryStrip extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildIcon3d(String asset) => Image.asset(
+    'assets/icons/3d/transparent/$asset',
+    width: 36, height: 36,
+    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+  );
 
   Widget _buildSubtitle(BuildContext context) {
     final iconColor = context.ksc.neutral500;

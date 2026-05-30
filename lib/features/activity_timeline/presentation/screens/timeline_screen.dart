@@ -9,6 +9,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
+import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 import '../providers/timeline_provider.dart';
 
@@ -25,9 +26,9 @@ class TimelineScreen extends ConsumerWidget {
         title: 'ACTIVITY',
         showBack: true,
         actions: [
-          IconButton(
-            icon: Icon(LineAwesomeIcons.sync_solid, size: 18, color: context.ksc.neutral500),
-            onPressed: () => ref.read(timelineProvider.notifier).load(),
+          KsIconWell(
+            icon: LineAwesomeIcons.sync_solid,
+            onTap: () => ref.read(timelineProvider.notifier).load(),
           ),
         ],
       ),
