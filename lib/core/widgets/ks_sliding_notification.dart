@@ -192,8 +192,13 @@ class _KsNotificationWidgetState extends State<_KsNotificationWidget>
 
   void _slideOut() {
     _progressTimer?.cancel();
-    _controller.reverse().then((_) {
+    _pauseTimer?.cancel();
+    if (!mounted) {
       widget.onDone?.call();
+      return;
+    }
+    _controller.reverse().then((_) {
+      if (mounted) widget.onDone?.call();
     });
   }
 
