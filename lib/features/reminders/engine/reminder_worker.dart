@@ -1,3 +1,24 @@
+// ════════════════════════════════════════════════════════════════════════════
+// REMINDER WORKER — HEADLESS ISOLATE CONTRACT
+// ════════════════════════════════════════════════════════════════════════════
+// This file runs inside a workmanager headless Dart isolate (separate VM).
+// It has NO access to Riverpod, ProviderScope, or BuildContext.
+//
+// HIVE FILE OWNERSHIP (prevents concurrent-write corruption):
+//   - The main app isolate has exclusive write access to the `reminders` box.
+//   - This background worker has exclusive write access to the `background_notified` box.
+//   - This worker READS from these boxes (read-only, safe for concurrent access):
+//       jobs, follow_ups, recurring_schedules, reminders, settings
+//   - This worker WRITES only to `background_notified` (never opened by main app).
+//
+// DESERIALIZATION WARNING:
+//   All boxes read by this worker store data as plain Map<String, dynamic>
+//   (untyped Hive boxes, no TypeAdapters registered). If a TypeAdapter is
+//   added to JobEntity or any other entity, the hand-rolled _jobFromMap()
+//   parser below will break because Hive's binary format changes.
+//   Before adding any @HiveType() annotation, update this file's parsers.
+// ════════════════════════════════════════════════════════════════════════════
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:workmanager/workmanager.dart';
@@ -10,7 +31,11 @@ import '../domain/models/reminder_thresholds.dart';
 import 'reminder_engine.dart';
 
 const String backgroundTaskName = 'keystone_reminder_check';
-const String _notifiedHiveKey = 'background_notified_keys';
+
+/// Dedicated Hive box for background worker writes.
+/// The main app isolate NEVER opens this box — no file handle collision.
+const String _backgroundNotifiedBox = 'background_notified';
+const String _notifiedHiveKey = 'notified_keys';
 
 /// Top-level callback registered with Workmanager.
 /// Runs in a headless Dart isolate — no ProviderScope, no BuildContext.
@@ -31,14 +56,18 @@ void reminderBackgroundCallback() {
 }
 
 Future<void> _openReminderBoxes() async {
-  final boxes = [
+  // READ-ONLY boxes (also opened by main app — safe for concurrent reads)
+  final readBoxes = [
     HiveService.jobsBox,
     HiveService.followUpsBox,
     HiveService.recurringSchedulesBox,
     HiveService.remindersBox,
     HiveService.settingsBox,
   ];
-  for (final name in boxes) {
+  // WRITE-ONLY box (never opened by main app — no file collision)
+  final writeBoxes = [_backgroundNotifiedBox];
+
+  for (final name in [...readBoxes, ...writeBoxes]) {
     try {
       await Hive.openBox(name);
     } catch (e) {
@@ -56,8 +85,10 @@ Future<void> _openReminderBoxes() async {
 Future<void> _runReminderCheck() async {
   final now = DateTime.now();
   final thresholds = ReminderThresholds.load();
-  final dismissedBox = Hive.box(HiveService.remindersBox);
-  final storedDismissed = dismissedBox.get('dismissed_reminder_keys');
+
+  // Read dismissed keys from main app's reminders box (read-only)
+  final remindersBox = Hive.box(HiveService.remindersBox);
+  final storedDismissed = remindersBox.get('dismissed_reminder_keys');
   final dismissedKeys = storedDismissed is List ? Set<String>.from(storedDismissed) : <String>{};
 
   // Read jobs from Hive
@@ -82,10 +113,12 @@ Future<void> _runReminderCheck() async {
   // Fire local notifications for newly active reminders
   await _fireNotifications(result.newlyActive);
 
-  // Persist notified keys
+  // Persist notified keys to DEDICATED worker-only box
+  // (Main app never opens this box — no concurrent write risk)
   final notifiedKeys = result.newlyActive.map((r) => '${r.jobId}-${r.type.name}').toList();
-  dismissedBox.put(_notifiedHiveKey, notifiedKeys);
-  await dismissedBox.flush();
+  final workerBox = Hive.box(_backgroundNotifiedBox);
+  workerBox.put(_notifiedHiveKey, notifiedKeys);
+  await workerBox.flush();
 }
 
 Future<void> _fireNotifications(List<Reminder> reminders) async {
@@ -124,6 +157,17 @@ Future<void> _fireNotifications(List<Reminder> reminders) async {
     );
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// HIVE READERS
+// ════════════════════════════════════════════════════════════════════════════
+// These read from boxes owned by the main app isolate.
+// Concurrent reads from two isolates to the same Hive file are safe.
+//
+// WARNING: These parsers assume untyped Map<dynamic, dynamic> storage.
+// If TypeAdapters are added to any entity class, these will break silently.
+// See top-of-file contract header for details.
+// ════════════════════════════════════════════════════════════════════════════
 
 List<JobEntity> _readJobsFromHive(DateTime now) {
   try {
