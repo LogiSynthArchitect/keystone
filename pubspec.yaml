@@ -64,9 +64,6 @@ dependencies:
   just_audio: ^0.9.40
   open_filex: ^4.5.0
 
-  # Notifications / snackbars
-  another_flushbar: ^2.2.4
-
   # Charts
   fl_chart: ^1.2.0
 
