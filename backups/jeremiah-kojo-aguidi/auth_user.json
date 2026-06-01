@@ -1,0 +1,41 @@
+{
+  "id": "68c2027e-dc87-4dad-b817-8b039091e41f",
+  "aud": "authenticated",
+  "role": "authenticated",
+  "email": "",
+  "phone": "233535891956",
+  "phone_confirmed_at": "2026-04-02T16:27:29.046479Z",
+  "confirmation_sent_at": "2026-04-02T16:27:22.758803Z",
+  "confirmed_at": "2026-04-02T16:27:29.046479Z",
+  "last_sign_in_at": "2026-04-02T16:27:29.055071Z",
+  "app_metadata": {
+    "provider": "phone",
+    "providers": [
+      "phone"
+    ]
+  },
+  "user_metadata": {
+    "email_verified": false,
+    "phone_verified": false,
+    "sub": "68c2027e-dc87-4dad-b817-8b039091e41f"
+  },
+  "identities": [
+    {
+      "identity_id": "f72b1ebf-b4cf-4124-aa90-440c7a90afe4",
+      "id": "68c2027e-dc87-4dad-b817-8b039091e41f",
+      "user_id": "68c2027e-dc87-4dad-b817-8b039091e41f",
+      "identity_data": {
+        "email_verified": false,
+        "phone_verified": false,
+        "sub": "68c2027e-dc87-4dad-b817-8b039091e41f"
+      },
+      "provider": "phone",
+      "last_sign_in_at": "2026-03-21T07:41:23.850496Z",
+      "created_at": "2026-03-21T07:41:23.850551Z",
+      "updated_at": "2026-03-21T07:41:23.850551Z"
+    }
+  ],
+  "created_at": "2026-03-21T07:41:23.805901Z",
+  "updated_at": "2026-05-31T07:33:39.682487Z",
+  "is_anonymous": false
+}

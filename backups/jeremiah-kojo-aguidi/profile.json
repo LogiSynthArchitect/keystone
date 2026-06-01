@@ -1,0 +1,21 @@
+[
+  {
+    "id": "38c80bb5-86d9-4bcf-8868-dc9b0d19520d",
+    "user_id": "68c2027e-dc87-4dad-b817-8b039091e41f",
+    "display_name": "Jeremiah Kojo Aguidi",
+    "bio": "key programin \nalarm installation \ntrucking installation \nsmart lock \ud83d\udd10 installation \npush to start system installation \n.......etc",
+    "photo_url": "https://ifzpdizxitlvjbmzozew.supabase.co/storage/v1/object/public/profile-photos/68c2027e-dc87-4dad-b817-8b039091e41f/profile.jpg?t=1774216669811",
+    "services": [
+      "car_lock_programming",
+      "door_lock_installation",
+      "door_lock_repair",
+      "smart_lock_installation"
+    ],
+    "whatsapp_number": "0535891956",
+    "is_public": true,
+    "profile_url": "jeremiah-kojo-aguidi",
+    "created_at": "2026-03-21T10:54:09.645672+00:00",
+    "updated_at": "2026-03-22T21:58:08.983318+00:00",
+    "password_created": false
+  }
+]
