@@ -77,6 +77,10 @@ class HubScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                         _buildToolsBento(context, ref),
                         const SizedBox(height: 28),
+                        _sectionHeader(context, "ACCOUNT"),
+                        const SizedBox(height: 16),
+                        _buildAccountGrid(context, ref),
+                        const SizedBox(height: 28),
                         _sectionHeader(context, "SETTINGS"),
                         const SizedBox(height: 16),
                         _buildSettingsGrid(context, ref, isDark),
@@ -485,6 +489,24 @@ class HubScreen extends ConsumerWidget {
   // ═══════════════════════════════════════════════
   //  SETTINGS + DATA – COMPACT GRID
   // ═══════════════════════════════════════════════
+
+  Widget _buildAccountGrid(BuildContext context, WidgetRef ref) {
+    return _compactGrid(context, [
+      _compactTile(context, icon: LineAwesomeIcons.shield_alt_solid,
+          label: "Security & Account",
+          onTap: () => context.push('/profile/security')),
+      _compactTile(context, icon: LineAwesomeIcons.sign_out_alt_solid,
+          label: "Sign Out", onTap: () => KsConfirmDialog.show(
+            context,
+            title: 'SIGN OUT',
+            message: 'Are you sure you want to sign out? All local data will be cleared.',
+            confirmLabel: 'SIGN OUT',
+            cancelLabel: 'CANCEL',
+            isDanger: true,
+            onConfirm: () => ref.read(authStateProvider.notifier).signOut(),
+          )),
+    ]);
+  }
 
   Widget _buildSettingsGrid(BuildContext context, WidgetRef ref, bool isDark) {
     return _compactGrid(context, [
