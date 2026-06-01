@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
@@ -115,37 +116,57 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     }
   }
 
-  Future<bool> bypassOtp(String phone) async {
-    state = state.copyWith(isLoading: true, phoneNumber: phone, clearError: true);
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    debugPrint('[KS:AUTH] changePassword');
+    state = state.copyWith(isLoading: true);
     try {
       final supabase = _ref.read(supabaseClientProvider);
-      final response = await supabase.functions.invoke(
-        'dev-bypass',
-        body: {
-          'phone': phone,
-          'bypass_secret': 'dev-bypass-2026',
-        },
+      // Re-auth with current password first
+      await supabase.auth.signInWithPassword(
+        password: currentPassword,
+        phone: state.phoneNumber,
       );
-
-      if (response.data == null || response.data['access_token'] == null) {
-        throw Exception('No session returned');
-      }
-
-      await supabase.auth.setSession(
-        response.data['refresh_token'] as String,
-      );
-
-      final passwordExists = response.data['password_exists'] as bool? ?? false;
-      if (passwordExists) {
-        Hive.box('auth').put('password_exists', true);
-      }
-
-      await _ref.read(authStateProvider.notifier).refresh();
+      // Then update to new password
+      await supabase.auth.updateUser(supa.UserAttributes(password: newPassword));
+      debugPrint('[KS:AUTH] changePassword SUCCESS');
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      debugPrint('[KS:AUTH] bypassOtp error: $e');
-      state = state.copyWith(isLoading: false, errorMessage: 'Dev bypass failed: $e');
+      debugPrint('[KS:AUTH] changePassword error: $e');
+      state = state.copyWith(isLoading: false, errorMessage: '$e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccount() async {
+    debugPrint('[KS:AUTH] deleteAccount');
+    state = state.copyWith(isLoading: true);
+    try {
+      final supabase = _ref.read(supabaseClientProvider);
+      await supabase.functions.invoke('delete-account', body: {
+        'user_id': supabase.auth.currentUser?.id,
+      });
+      await logout();
+      debugPrint('[KS:AUTH] deleteAccount SUCCESS');
+      return true;
+    } catch (e) {
+      debugPrint('[KS:AUTH] deleteAccount error: $e');
+      state = state.copyWith(isLoading: false, errorMessage: '$e');
+      return false;
+    }
+  }
+
+  Future<bool> changePhone(String newPhone) async {
+    debugPrint('[KS:AUTH] changePhone: $newPhone');
+    state = state.copyWith(isLoading: true);
+    try {
+      final supabase = _ref.read(supabaseClientProvider);
+      await supabase.auth.updateUser(supa.UserAttributes(phone: newPhone));
+      debugPrint('[KS:AUTH] changePhone SUCCESS');
+      return true;
+    } catch (e) {
+      debugPrint('[KS:AUTH] changePhone error: $e');
+      state = state.copyWith(isLoading: false, errorMessage: '$e');
       return false;
     }
   }
