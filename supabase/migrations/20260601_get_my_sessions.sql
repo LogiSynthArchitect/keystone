@@ -6,7 +6,7 @@ SECURITY DEFINER
 LANGUAGE sql AS $$
   SELECT
     id,
-    user_agent as device,
+    COALESCE(user_agent, 'Unknown device') as device,
     updated_at as last_active,
     id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb ->> 'session_id')::uuid AS is_current
   FROM auth.sessions
