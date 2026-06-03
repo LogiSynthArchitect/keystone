@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'change_password_sheet.dart';
+import 'delete_account_screen.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -57,7 +59,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => const ChangePasswordSheet(),
+      builder: (_) => ChangePasswordSheet(),
     );
   }
 
@@ -117,7 +119,7 @@ class _SecurityTab extends StatelessWidget {
             iconColor: theme.colorScheme.error,
             titleColor: theme.colorScheme.error,
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DeleteAccountScreen()),
+              MaterialPageRoute(builder: (_) => DeleteAccountScreen()),
             ),
           ),
         ),

@@ -16,6 +16,12 @@ class AuthRepositoryImpl implements AuthRepository {
       _remote.requestOtp(phoneNumber);
 
   @override
+  Future<({bool exists, bool hasPassword})> checkAuthState(String phoneNumber) async {
+    final result = await _remote.checkAuthState(phoneNumber);
+    return (exists: result['exists'] as bool, hasPassword: result['has_password'] as bool);
+  }
+
+  @override
   Future<supa.Session> verifyOtp({
     required String phoneNumber,
     required String token,

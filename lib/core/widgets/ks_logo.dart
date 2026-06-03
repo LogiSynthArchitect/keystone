@@ -33,7 +33,7 @@ class KsLogo extends StatelessWidget {
           children: [
             SvgPicture.asset('assets/logo/left_arm.svg', width: size, height: size, colorFilter: navyFilter),
             SvgPicture.asset('assets/logo/right_arm.svg', width: size, height: size, colorFilter: navyFilter),
-            SvgPicture.asset('assets/logo/keystone_block.svg', width: size, height: size, colorFilter: goldFilter),
+            SvgPicture.asset('assets/logo/arclock_block.svg', width: size, height: size, colorFilter: goldFilter),
             SvgPicture.asset('assets/logo/keyhole.svg', width: size, height: size, colorFilter: navyFilter),
           ],
         ),

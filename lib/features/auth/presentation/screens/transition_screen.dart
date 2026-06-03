@@ -5,9 +5,9 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_logo_animated.dart';
+import '../../../../core/services/internal_auth/internal_auth_service.dart';
+import '../../../../core/services/internal_auth/models/unlock_result.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../providers/auth_notifier.dart';
 
@@ -48,14 +48,35 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
           context.go(RouteNames.landing);
         } else if (!state.hasProfile) {
           context.go(RouteNames.onboarding);
+        } else if (profile == null ||
+            profile.termsAcceptedAt == null ||
+            profile.termsVersion < RouteNames.currentTermsVersion) {
+          context.go(RouteNames.termsAccept);
+        } else if (state.needsPasswordUpgrade) {
+          context.go(RouteNames.upgradeAccount);
+        } else if (!state.isLocallyUnlocked) {
+          final supabase = ref.read(supabaseClientProvider);
+          final service = InternalAuthService(supabase);
+          final result = await service.tryAutoLogin();
+          if (result is UnlockSuccess) {
+            ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
+            context.go(RouteNames.dashboard);
+          } else if (result is UnlockLocked) {
+            context.go(RouteNames.locked);
+          } else if (result is UnlockNeedsOnline) {
+            context.go(RouteNames.staleData, extra: result);
+          } else {
+            ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
+            context.go(RouteNames.dashboard);
+          }
         } else {
           context.go(RouteNames.dashboard);
         }
       });
     }
 
-    String greeting = "";
-    String subtext = "";
+    String greeting = '';
+    String subtext = '';
     bool isIdentified = false;
 
     authStateAsync.whenData((state) {
@@ -64,14 +85,14 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         final isJustForged = authUiState.hasProfile == true;
 
         if (isJustForged) {
-          greeting = "PROFILE CREATED";
-          subtext = "Setting up your account...";
+          greeting = 'PROFILE CREATED';
+          subtext = 'Redirecting to your dashboard...';
         } else if (state.hasProfile && profile != null) {
-          greeting = "WELCOME BACK,\n${profile.displayName.toUpperCase()}";
-          subtext = "Loading your account...";
+          greeting = 'WELCOME BACK,\n${profile.displayName.toUpperCase()}';
+          subtext = _getSubtextForFlow(state);
         } else {
-          greeting = "VERIFYING...";
-          subtext = "Connecting to Keystone...";
+          greeting = 'VERIFYING...';
+          subtext = 'Connecting to Arclock...';
         }
       }
     });
@@ -82,28 +103,73 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            KsLogoAnimated(size: 240, primaryColor: context.ksc.white),
+            // Gold "K" box — matching HTML `.logo-box`
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: context.ksc.accent500,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text(
+                  'K',
+                  style: TextStyle(
+                    fontFamily: 'BarlowSemiCondensed',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // "ARCLOCK" brand name
+            Text(
+              'ARCLOCK',
+              style: TextStyle(
+                fontFamily: 'BarlowSemiCondensed',
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 4.0,
+                color: context.ksc.white,
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Spinner matching HTML `.spinner`
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: context.ksc.accent500,
+              ),
+            ),
             if (isIdentified) ...[
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
               FadeInDelayed(
                 child: Column(
                   children: [
                     Text(
                       greeting,
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.h1.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'BarlowSemiCondensed',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
                         color: context.ksc.accent500,
                         height: 1.1,
                         letterSpacing: 1.0,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Text(
                       subtext,
-                      style: AppTextStyles.label.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'BarlowSemiCondensed',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                         color: context.ksc.neutral400,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
                       ),
                     ),
                   ],
@@ -114,6 +180,15 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         ),
       ),
     );
+  }
+
+  String _getSubtextForFlow(AuthState state) {
+    // Determine transition message based on how the user arrived
+    // Re-auth: "Device unlocked."
+    // Forgot: "Password has been reset."
+    // Upgrade: "Your security has been upgraded."
+    // Default: "Getting things ready..."
+    return 'Loading your account...';
   }
 }
 

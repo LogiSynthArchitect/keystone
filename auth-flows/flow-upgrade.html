@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow 03 — Upgrade User | Keystone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="keystone-tokens.css">
+</head>
+<body>
+
+<div class="container">
+
+<a class="back-link" href="keyflow-index.html">&larr; All Flows</a>
+
+<div class="flow-header">
+  <div class="num">Flow 03</div>
+  <h1>UPGRADE USER</h1>
+  <div class="desc">Legacy user without password is forced to create one, then sets up PIN + optional biometric</div>
+  <div class="path">
+    <span>LANDING</span><span class="arr">&rarr;</span><span>PHONE</span><span class="arr">&rarr;</span><span>PW ENTRY</span><span class="arr">&rarr;</span><span class="dash">UPGRADE</span><span class="arr">&rarr;</span><span class="dash">PIN SETUP</span><span class="arr">&rarr;</span><span>BIOMETRIC</span><span class="arr">&rarr;</span><span>TRANSITION</span><span class="arr">&rarr;</span><span class="dash">DASHBOARD</span>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 1-2: LANDING + PHONE (same as new-user/returning) -->
+<!-- ============================================ -->
+<div class="section-header"><h2>LANDING &rarr; PHONE ENTRY</h2><div class="sub">Unified splash + phone entry — identical across all flows</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: / &rarr; /auth/phone</div>
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag base">Phone Input</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4" stroke-dasharray="37.7 150.8" stroke-dashoffset="0"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 0 OF 4</div>
+          <div class="step-title">Phone</div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">ENTER YOUR PHONE</div>
+          <div class="h-secondary">We'll check your account and sign you in.</div>
+          <div class="input-group">
+            <div class="input-label">Phone Number</div>
+            <div class="phone-input-row">
+              <div class="country-code">
+                <span class="flag">&#127468;&#127469;</span>
+                <span class="code">+233</span>
+                <span class="arrow-down">&#9660;</span>
+              </div>
+              <input class="input-field" type="tel" placeholder="024 123 4567" value="024 123 4567">
+            </div>
+            <div class="input-underline"></div>
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn-cta">CONTINUE <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">checkAuthState → has password → password entry</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 3: PASSWORD ENTRY -->
+<!-- ============================================ -->
+<div class="section-header"><h2>PASSWORD ENTRY</h2><div class="sub">Step 2 of 4 — returning user signs in with their existing password</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/password</div>
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag base">Sign In</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="30" cy="10" r="4" fill="#D4A017"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4" stroke-dasharray="37.7 150.8" stroke-dashoffset="-75.4"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 2 OF 4</div>
+          <div class="step-title">Password</div>
+          <div class="sub-dots">
+            <div class="dot active"></div>
+            <div class="dot inactive"></div>
+          </div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">ENTER PASSWORD</div>
+          <div class="h-secondary">Welcome back! Enter your password for +233 24 123 4567.</div>
+          <div class="input-group">
+            <div class="input-label">Password</div>
+            <input class="input-field" type="password" placeholder="Enter password" value="">
+            <div class="input-underline"></div>
+          </div>
+          <button class="btn-link" style="text-align:left">Forgot access?</button>
+          <div style="flex:1"></div>
+          <button class="btn-cta">SIGN IN <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">verifyPassword → needs password upgrade → redirect to upgrade</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 4: UPGRADE ACCOUNT -->
+<!-- ============================================ -->
+<div class="section-header"><h2>UPGRADE ACCOUNT</h2><div class="sub">Forced password creation — required — no skip, no 3-attempt counter</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/upgrade</div>
+  <div class="screen-row">
+    <!-- Base -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Required</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div class="h-required">Required</div>
+          <div class="h-primary">IMPROVE SECURITY</div>
+          <div class="banner warning">&#9888; Set a password to secure your account.</div>
+          <div class="h-secondary">Password must be at least 8 characters with a letter and number.</div>
+          <div class="input-group">
+            <div class="input-label">New Password</div>
+            <input class="input-field" type="password" placeholder="Enter password" value="">
+            <div class="input-underline"></div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Confirm</div>
+            <input class="input-field" type="password" placeholder="Re-enter password" value="">
+            <div class="input-underline"></div>
+          </div>
+          <div class="hint-list">
+            <div class="hint-item"><span class="icon">&#9679;</span> Minimum 8 characters</div>
+            <div class="hint-item"><span class="icon">&#9679;</span> At least 1 letter</div>
+            <div class="hint-item"><span class="icon">&#9679;</span> At least 1 number</div>
+            <div class="hint-item"><span class="icon">&#9679;</span> Passwords match</div>
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn-cta" disabled>PASSWORD REQUIRED <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+    <!-- Valid -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Valid</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div class="h-required">Required</div>
+          <div class="h-primary">IMPROVE SECURITY</div>
+          <div class="banner warning">&#9888; Set a password to secure your account.</div>
+          <div class="h-secondary">Password must be at least 8 characters with a letter and number.</div>
+          <div class="input-group">
+            <div class="input-label">New Password</div>
+            <input class="input-field" type="password" placeholder="Enter password" value="locksmith1">
+            <div class="input-underline"></div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Confirm</div>
+            <input class="input-field" type="password" placeholder="Re-enter password" value="locksmith1">
+            <div class="input-underline"></div>
+          </div>
+          <div class="hint-list">
+            <div class="hint-item met"><span class="icon">&#10003;</span> Minimum 8 characters</div>
+            <div class="hint-item met"><span class="icon">&#10003;</span> At least 1 letter</div>
+            <div class="hint-item met"><span class="icon">&#10003;</span> At least 1 number</div>
+            <div class="hint-item met"><span class="icon">&#10003;</span> Passwords match</div>
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn-cta">PASSWORD REQUIRED <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+    <!-- Error -->
+    <div class="phone-wrap">
+      <div class="state-tag error">Failed</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div class="h-required">Required</div>
+          <div class="h-primary">IMPROVE SECURITY</div>
+          <div class="banner warning">&#9888; Set a password to secure your account.</div>
+          <div class="banner alert"><div class="banner-header">System Alert</div>&#9888; Password update failed. Try a different password.</div>
+          <div class="input-group">
+            <div class="input-label">New Password</div>
+            <input class="input-field error" type="password" placeholder="Enter password" value="weak">
+            <div class="input-underline"></div>
+          </div>
+          <div class="input-error">Minimum 8 characters, must include a letter and number</div>
+          <div class="input-group">
+            <div class="input-label">Confirm</div>
+            <input class="input-field error" type="password" placeholder="Re-enter password" value="weak1">
+            <div class="input-underline"></div>
+          </div>
+          <div class="input-error">Passwords must match</div>
+          <div style="flex:1"></div>
+          <button class="btn-cta">PASSWORD REQUIRED <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">upgradeAccount → success → PIN setup (mandatory)</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 5: PIN SETUP — MANDATORY -->
+<!-- ============================================ -->
+<div class="section-header"><h2>PIN SETUP</h2><div class="sub">Step 3 of 4 — mandatory — PIN required for offline unlock, no toggle</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/pin-setup</div>
+  <div class="screen-row">
+    <!-- Create -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Create</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="50" cy="30" r="4" fill="#D4A017"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4" stroke-dasharray="37.7 150.8" stroke-dashoffset="-113.1"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 3 OF 4</div>
+          <div class="step-title">Create PIN</div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">CREATE A PIN</div>
+          <div class="h-secondary">Choose a 6-digit PIN to unlock the app.</div>
+          <div class="pin-dots">
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+          </div>
+          <div class="numpad">
+            <div class="numpad-row">
+              <div class="numpad-key">1</div>
+              <div class="numpad-key">2</div>
+              <div class="numpad-key">3</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">4</div>
+              <div class="numpad-key">5</div>
+              <div class="numpad-key">6</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">7</div>
+              <div class="numpad-key">8</div>
+              <div class="numpad-key">9</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key empty"></div>
+              <div class="numpad-key">0</div>
+              <div class="numpad-key"><span class="backspace">&#9003;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Confirm -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Confirm</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="50" cy="30" r="4" fill="#D4A017"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4" stroke-dasharray="37.7 150.8" stroke-dashoffset="-113.1"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 3 OF 4</div>
+          <div class="step-title">Create PIN</div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">CONFIRM PIN</div>
+          <div class="h-secondary">Re-enter your 6-digit PIN.</div>
+          <div class="pin-dots">
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot empty"></div>
+          </div>
+          <div class="numpad">
+            <div class="numpad-row">
+              <div class="numpad-key">1</div>
+              <div class="numpad-key">2</div>
+              <div class="numpad-key">3</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">4</div>
+              <div class="numpad-key">5</div>
+              <div class="numpad-key">6</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">7</div>
+              <div class="numpad-key">8</div>
+              <div class="numpad-key">9</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key empty"></div>
+              <div class="numpad-key">0</div>
+              <div class="numpad-key"><span class="backspace">&#9003;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Mismatch -->
+    <div class="phone-wrap">
+      <div class="state-tag error">Mismatch</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="50" cy="30" r="4" fill="#D4A017"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4" stroke-dasharray="37.7 150.8" stroke-dashoffset="-113.1"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 3 OF 4</div>
+          <div class="step-title">Create PIN</div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">CREATE A PIN</div>
+          <div class="h-secondary">Choose a 6-digit PIN to unlock the app.</div>
+          <div class="banner alert"><div class="banner-header">System Alert</div>&#9888; PINs do not match. Try again.</div>
+          <div class="pin-dots">
+            <div class="pin-dot error"></div>
+            <div class="pin-dot error"></div>
+            <div class="pin-dot error"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+          </div>
+          <div class="numpad">
+            <div class="numpad-row">
+              <div class="numpad-key">1</div>
+              <div class="numpad-key">2</div>
+              <div class="numpad-key">3</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">4</div>
+              <div class="numpad-key">5</div>
+              <div class="numpad-key">6</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">7</div>
+              <div class="numpad-key">8</div>
+              <div class="numpad-key">9</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key empty"></div>
+              <div class="numpad-key">0</div>
+              <div class="numpad-key"><span class="backspace">&#9003;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">PIN set → biometric enroll (only biometric toggle)</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 6: BIOMETRIC ENROLL -->
+<!-- ============================================ -->
+<div class="section-header"><h2>BIOMETRIC ENROLL</h2><div class="sub">Step 4 of 4 — PIN already set (locked), only biometric toggle shown</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/biometric-enroll (extra: RouteNames.transition)</div>
+  <div class="screen-row">
+    <!-- Bio On -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Bio On</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 4 OF 4</div>
+          <div class="step-title">Fast Unlock</div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">FAST UNLOCK</div>
+          <div class="h-secondary">Add biometric for quicker access. PIN is already set.</div>
+          <!-- PIN: locked/forced on -->
+          <div class="toggle-card" style="opacity:.6;">
+            <div class="left">
+              <div class="icon">&#128273;</div>
+              <div class="info">
+                <div class="title">App PIN</div>
+                <div class="desc">Already set — required for offline unlock</div>
+              </div>
+            </div>
+            <div class="toggle on" style="cursor:default;"><div class="knob"></div></div>
+          </div>
+          <!-- Biometric: toggleable -->
+          <div class="toggle-card">
+            <div class="left">
+              <div class="icon">&#128100;</div>
+              <div class="info">
+                <div class="title">Biometric</div>
+                <div class="desc">Fingerprint / Face unlock</div>
+              </div>
+            </div>
+            <div class="toggle on"><div class="knob"></div></div>
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn-cta">CONTINUE <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+    <!-- Bio Skipped -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Bio Skipped</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="auth-step-indicator">
+          <div class="ring-container">
+            <svg viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#163060" stroke-width="4"/>
+              <circle cx="30" cy="30" r="24" fill="none" stroke="#D4A017" stroke-width="4"/>
+            </svg>
+          </div>
+          <div class="step-label">STEP 4 OF 4</div>
+          <div class="step-title">Fast Unlock</div>
+        </div>
+        <div class="screen-content">
+          <div class="h-primary">FAST UNLOCK</div>
+          <div class="h-secondary">Add biometric for quicker access, or skip. PIN is already set.</div>
+          <!-- PIN: locked/forced on -->
+          <div class="toggle-card" style="opacity:.6;">
+            <div class="left">
+              <div class="icon">&#128273;</div>
+              <div class="info">
+                <div class="title">App PIN</div>
+                <div class="desc">Already set — required for offline unlock</div>
+              </div>
+            </div>
+            <div class="toggle on" style="cursor:default;"><div class="knob"></div></div>
+          </div>
+          <!-- Biometric: toggled off -->
+          <div class="toggle-card">
+            <div class="left">
+              <div class="icon">&#128100;</div>
+              <div class="info">
+                <div class="title">Biometric</div>
+                <div class="desc">Fingerprint / Face unlock</div>
+              </div>
+            </div>
+            <div class="toggle"><div class="knob"></div></div>
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn-cta">CONTINUE <span class="arrow">&rarr;</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">On continue → go to transition (skips onboarding)</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 6: TRANSITION -->
+<!-- ============================================ -->
+<div class="section-header"><h2>TRANSITION</h2><div class="sub">Greets returning upgrade user, then gates to dashboard</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/transition</div>
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag loading">Welcome Back</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="transition-center">
+          <div class="logo-box">K</div>
+          <div class="logo-name">ARCLOCK</div>
+          <div class="spinner"></div>
+          <div class="greeting-text">WELCOME BACK, JOHN</div>
+          <div class="h-secondary" style="text-align:center;">Your security has been upgraded.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">All gates passed → dashboard</span></div>
+
+<!-- ============================================ -->
+<!-- DASHBOARD -->
+<!-- ============================================ -->
+<div class="section-header"><h2 style="color:var(--accent)">DASHBOARD</h2><div class="sub">Destination — full app access with upgraded security</div></div>
+<div class="flow-step">
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag success">Success</div>
+      <div class="phone" style="min-height:200px;align-items:center;justify-content:center;">
+        <div class="notch"></div>
+        <div class="transition-center" style="gap:0;">
+          <div style="font-size:48px;margin-bottom:8px;">&#127758;</div>
+          <div class="h-primary" style="font-size:22px;color:var(--accent);">DASHBOARD</div>
+          <div class="h-secondary" style="text-align:center;">Upgrade complete — full app access restored</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;font-weight:600;border-top:1px solid var(--border);margin-top:16px;">
+  End of Upgrade User Flow &mdash; <a href="keyflow-index.html" style="color:var(--accent);">Back to all flows</a>
+</div>
+
+</div>
+</body>
+</html>

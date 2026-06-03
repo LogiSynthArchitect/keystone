@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow 05 — Re-auth (Locked) | Keystone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="keystone-tokens.css">
+</head>
+<body>
+
+<div class="container">
+
+<a class="back-link" href="keyflow-index.html">&larr; All Flows</a>
+
+<div class="flow-header">
+  <div class="num">Flow 05</div>
+  <h1>RE-AUTH (LOCKED)</h1>
+  <div class="desc">Device locked — user unlocks via PIN, biometric, or password, or recovers from stale data</div>
+  <div class="path">
+    <span class="dash">LOCKED</span><span class="arr">&rarr;</span><span>PIN ENTRY</span><span class="arr">&rarr;</span><span>TRANSITION</span><span class="arr">&rarr;</span><span class="dash">DASHBOARD</span>
+    <span style="margin:0 8px;color:var(--text4)">|</span>
+    <span>STALE DATA</span><span class="arr">&rarr;</span><span class="dash">DASHBOARD</span>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 1: LOCKED -->
+<!-- ============================================ -->
+<div class="section-header"><h2>LOCKED SCREEN</h2><div class="sub">3 unlock methods — auto-routed from transition after failed biometric auto-login</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/locked</div>
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag base">Choose Method</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div style="text-align:center;padding:24px 0 16px;">
+            <div style="font-size:42px;margin-bottom:8px;">&#128274;</div>
+            <div class="h-primary">KEYSECURE LOCKED</div>
+            <div class="h-secondary">Verify your identity to access your account.</div>
+          </div>
+          <div style="flex:2"></div>
+          <div class="unlock-row">
+            <div class="unlock-circle">
+              <div class="ring">&#128100;</div>
+              <div class="label">BIOMETRIC</div>
+            </div>
+            <div class="unlock-circle">
+              <div class="ring">&#128274;</div>
+              <div class="label">PIN</div>
+            </div>
+            <div class="unlock-circle">
+              <div class="ring">&#128272;</div>
+              <div class="label">PASSWORD</div>
+            </div>
+          </div>
+          <div style="flex:2"></div>
+          <button class="btn-link" style="width:100%;">NOT YOU? SIGN IN AS DIFFERENT USER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">User taps PIN → PIN Entry | User taps Password → Password Entry</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 2: PIN ENTRY -->
+<!-- ============================================ -->
+<div class="section-header"><h2>PIN ENTRY</h2><div class="sub">6-digit PIN — tracks remaining attempts — redirects if wiped</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/pin</div>
+  <div class="screen-row">
+    <!-- Base -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Enter PIN</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div class="h-primary">ENTER PIN</div>
+          <div class="h-secondary">Enter your 6-digit PIN to unlock.</div>
+          <div class="pin-dots">
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+          </div>
+          <div class="numpad">
+            <div class="numpad-row">
+              <div class="numpad-key">1</div>
+              <div class="numpad-key">2</div>
+              <div class="numpad-key">3</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">4</div>
+              <div class="numpad-key">5</div>
+              <div class="numpad-key">6</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">7</div>
+              <div class="numpad-key">8</div>
+              <div class="numpad-key">9</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key empty"></div>
+              <div class="numpad-key">0</div>
+              <div class="numpad-key"><span class="backspace">&#9003;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Low Attempts -->
+    <div class="phone-wrap">
+      <div class="state-tag warning">2 Left</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div class="h-primary">ENTER PIN</div>
+          <div class="h-secondary" style="color:var(--amber);font-weight:700;">2 attempts remaining</div>
+          <div class="pin-dots">
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot error"></div>
+            <div class="pin-dot error"></div>
+            <div class="pin-dot error"></div>
+          </div>
+          <div class="numpad">
+            <div class="numpad-row">
+              <div class="numpad-key">1</div>
+              <div class="numpad-key">2</div>
+              <div class="numpad-key">3</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">4</div>
+              <div class="numpad-key">5</div>
+              <div class="numpad-key">6</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">7</div>
+              <div class="numpad-key">8</div>
+              <div class="numpad-key">9</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key empty"></div>
+              <div class="numpad-key">0</div>
+              <div class="numpad-key"><span class="backspace">&#9003;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Wiped -->
+    <div class="phone-wrap">
+      <div class="state-tag error">PIN Wiped</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div class="h-primary">ENTER PIN</div>
+          <div class="banner alert"><div class="banner-header">System Alert</div>&#9888; PIN has been wiped. Enter your password instead.</div>
+          <div class="pin-dots">
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+            <div class="pin-dot empty"></div>
+          </div>
+          <div class="numpad" style="opacity:.3">
+            <div class="numpad-row">
+              <div class="numpad-key">1</div>
+              <div class="numpad-key">2</div>
+              <div class="numpad-key">3</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">4</div>
+              <div class="numpad-key">5</div>
+              <div class="numpad-key">6</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key">7</div>
+              <div class="numpad-key">8</div>
+              <div class="numpad-key">9</div>
+            </div>
+            <div class="numpad-row">
+              <div class="numpad-key empty"></div>
+              <div class="numpad-key">0</div>
+              <div class="numpad-key"><span class="backspace">&#9003;</span></div>
+            </div>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-top:auto;">ENTER PASSWORD</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">UnlockSuccess → transition | UnlockLocked → locked screen</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN 3: TRANSITION -->
+<!-- ============================================ -->
+<div class="section-header"><h2>TRANSITION</h2><div class="sub">Unlock verified — routing to dashboard</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/transition</div>
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag loading">Unlocked</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="transition-center">
+          <div class="logo-box">K</div>
+          <div class="logo-name">ARCLOCK</div>
+          <div class="spinner"></div>
+          <div class="greeting-text">WELCOME BACK, JOHN</div>
+          <div class="h-secondary" style="text-align:center;">Device unlocked.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">Direct route to dashboard</span></div>
+
+<!-- ============================================ -->
+<!-- DASHBOARD -->
+<!-- ============================================ -->
+<div class="section-header"><h2 style="color:var(--accent)">DASHBOARD</h2><div class="sub">Destination — full access restored after unlock</div></div>
+<div class="flow-step">
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag success">Success</div>
+      <div class="phone" style="min-height:200px;align-items:center;justify-content:center;">
+        <div class="notch"></div>
+        <div class="transition-center" style="gap:0;">
+          <div style="font-size:48px;margin-bottom:8px;">&#127758;</div>
+          <div class="h-primary" style="font-size:22px;color:var(--accent);">DASHBOARD</div>
+          <div class="h-secondary" style="text-align:center;">Full app access restored</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DIVIDER — STALE DATA FLOW -->
+<!-- ============================================ -->
+<div style="border-top:2px dashed var(--border);margin:40px 0;padding-top:24px;">
+  <div style="text-align:center;font-size:13px;font-weight:800;color:var(--text3);letter-spacing:2px;text-transform:uppercase;">Alternative Path — Stale Data Screen</div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">When auto-login returns UnlockNeedsOnline (stale session)</span></div>
+
+<!-- ============================================ -->
+<!-- SCREEN: STALE DATA -->
+<!-- ============================================ -->
+<div class="section-header"><h2>STALE DATA</h2><div class="sub">Session expired while offline — verify or proceed with cached data</div></div>
+<div class="flow-step">
+  <div class="step-label">Route: /auth/stale</div>
+  <div class="screen-row">
+    <!-- Online -->
+    <div class="phone-wrap">
+      <div class="state-tag base">Online Verify</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div style="text-align:center;padding:32px 0 16px;">
+            <div style="font-size:48px;margin-bottom:12px;">&#128737;</div>
+            <div class="h-primary">SESSION EXPIRED</div>
+            <div class="h-secondary">Your session has expired. Verify to continue with fresh data.</div>
+          </div>
+          <button class="btn-primary" style="width:100%">VERIFY &amp; CONTINUE</button>
+          <button class="btn-link" style="width:100%">Proceed with cached data</button>
+        </div>
+      </div>
+    </div>
+    <!-- Offline -->
+    <div class="phone-wrap">
+      <div class="state-tag warning">Offline</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+        <div class="screen-content">
+          <div style="text-align:center;padding:32px 0 16px;">
+            <div style="font-size:48px;margin-bottom:12px;">&#9888;&#65039;</div>
+            <div class="h-primary">OFFLINE</div>
+            <div class="h-secondary">Your session expired while offline. Connect to verify, or continue with cached data.</div>
+          </div>
+          <button class="btn-primary" style="width:100%" disabled>VERIFY &amp; CONTINUE</button>
+          <button class="btn-link" style="width:100%">Proceed with cached data</button>
+          <button class="btn-link" style="width:100%">Retry Connection</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-connector"><span>&darr;</span><span class="clabel">Verify success or proceed cached → dashboard</span></div>
+
+<!-- ============================================ -->
+<!-- DASHBOARD 2 -->
+<!-- ============================================ -->
+<div class="section-header"><h2 style="color:var(--accent)">DASHBOARD</h2><div class="sub">Destination — continue with cached or fresh data</div></div>
+<div class="flow-step">
+  <div class="screen-row">
+    <div class="phone-wrap">
+      <div class="state-tag success">Success</div>
+      <div class="phone" style="min-height:200px;align-items:center;justify-content:center;">
+        <div class="notch"></div>
+        <div class="transition-center" style="gap:0;">
+          <div style="font-size:48px;margin-bottom:8px;">&#127758;</div>
+          <div class="h-primary" style="font-size:22px;color:var(--accent);">DASHBOARD</div>
+          <div class="h-secondary" style="text-align:center;">Data restored — continue working</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;font-weight:600;border-top:1px solid var(--border);margin-top:16px;">
+  End of Re-auth Flow &mdash; <a href="keyflow-index.html" style="color:var(--accent);">Back to all flows</a>
+</div>
+
+</div>
+</body>
+</html>

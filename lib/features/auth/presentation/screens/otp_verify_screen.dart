@@ -7,9 +7,12 @@ import '../../../../core/router/route_names.dart';
 import 'package:pinput/pinput.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/widgets/auth_step_header.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_banner.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import '../../../../core/widgets/ks_banner.dart';
 import '../providers/auth_notifier.dart';
 
 class OtpVerifyScreen extends ConsumerStatefulWidget {
@@ -22,43 +25,80 @@ class OtpVerifyScreen extends ConsumerStatefulWidget {
 class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   final _pinController = TextEditingController();
   final _focusNode = FocusNode();
-  int _resendCooldown = 30;
+  static const int _codeExpirySeconds = 90;
+  int _codeCountdown = _codeExpirySeconds;
   Timer? _timer;
   bool _canVerify = false;
+  bool _codeExpired = false;
 
   @override
   void initState() {
     super.initState();
-    _startCooldown();
+    _startCodeCountdown();
+    _pinController.addListener(_onPinChanged);
   }
 
   @override
   void dispose() {
+    _pinController.removeListener(_onPinChanged);
     _pinController.dispose();
     _focusNode.dispose();
     _timer?.cancel();
     super.dispose();
   }
 
-  void _startCooldown() {
+  void _onPinChanged() {
+    final canVerify = _pinController.text.trim().length == 6;
+    if (canVerify != _canVerify) {
+      setState(() => _canVerify = canVerify);
+    }
+  }
+
+  void _startCodeCountdown() {
     _timer?.cancel();
-    if (mounted) setState(() => _resendCooldown = 30);
+    setState(() {
+      _codeCountdown = _codeExpirySeconds;
+      _codeExpired = false;
+    });
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_resendCooldown <= 0) {
+      if (!mounted) { t.cancel(); return; }
+      if (_codeCountdown <= 0) {
         t.cancel();
-      } else if (mounted) {
-        setState(() => _resendCooldown--);
+        setState(() => _codeExpired = true);
+      } else {
+        setState(() => _codeCountdown--);
       }
     });
   }
 
+  String get _formattedCountdown {
+    final min = (_codeCountdown ~/ 60).toString().padLeft(2, '0');
+    final sec = (_codeCountdown % 60).toString().padLeft(2, '0');
+    return '$min:$sec';
+  }
+
   Future<void> _onVerify() async {
-    if (_pinController.text.length != 6) return;
-    final success = await ref.read(authNotifierProvider.notifier).verifyOtp(_pinController.text.trim());
+    if (_pinController.text.length != 6 || _codeExpired) return;
+    _focusNode.unfocus();
+    final success = await ref
+        .read(authNotifierProvider.notifier)
+        .verifyOtp(_pinController.text.trim());
     if (success && mounted) {
       HapticFeedback.heavyImpact();
-      context.go(RouteNames.transition);
+      await KsSuccessMoment.show(context, title: 'VERIFIED');
+      if (mounted) context.go(RouteNames.createPassword);
     }
+  }
+
+  void _onResend() {
+    final phone = ref.read(authNotifierProvider).phoneNumber ?? '';
+    ref.read(authNotifierProvider.notifier).requestOtp(phone);
+    _pinController.clear();
+    setState(() {
+      _canVerify = false;
+      _codeExpired = false;
+    });
+    _startCodeCountdown();
   }
 
   @override
@@ -67,6 +107,8 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     final phone = authState.phoneNumber ?? '';
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     final errorMessage = authState.errorMessage;
+    final isExpiredState = _codeExpired;
+    final hasError = errorMessage != null && errorMessage.isNotEmpty;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -83,52 +125,74 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                     _buildBackButton(context),
                     const SizedBox(height: 48),
 
-                    // INDUSTRIAL EYEBROW
-                    Text(
-                      'AUTHORIZATION REQUIRED',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.accent500,
-                        letterSpacing: 2.0,
-                        fontWeight: FontWeight.w700,
+                    // Step ring header
+                    const Center(
+                      child: AuthStepHeader(
+                        totalSteps: 4,
+                        currentStep: 1,
+                        icon: LineAwesomeIcons.shield_alt_solid,
+                        stepLabel: 'VERIFY',
+                        subStep: 0,
+                        subSteps: 1,
                       ),
-                    ).animate().fadeIn().slideX(begin: -0.1, end: 0),
+                    ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 40),
 
+                    // heading
                     Text(
-                      'VERIFY ACCESS CODE',
+                      'ENTER VERIFICATION CODE',
+                      textAlign: TextAlign.center,
                       style: AppTextStyles.h1.copyWith(
                         color: context.ksc.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                      ),
-                    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
-
-                    const SizedBox(height: 24),
-
-                    Text(
-                      'A 6-digit security code has been transmitted to $phone.',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: context.ksc.neutral400,
-                        fontWeight: FontWeight.w600,
                       ),
                     ).animate().fadeIn(delay: 200.ms),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 6),
 
-                    if (errorMessage != null && errorMessage.isNotEmpty) ...[
-                      KsBanner(message: errorMessage),
-                      const SizedBox(height: 24),
+                    // phone subtitle — "Sent to +233 24 123 4567"
+                    Text(
+                      'Sent to $phone',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'BarlowSemiCondensed',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: context.ksc.neutral400,
+                      ),
+                    ).animate().fadeIn(delay: 200.ms),
+
+                    const SizedBox(height: 28),
+
+                    // Banner (error states)
+                    if (hasError) ...[
+                      KsBanner(
+                        message: errorMessage,
+                        type: KsBannerType.alert,
+                      ),
+                      const SizedBox(height: 16),
                     ],
 
-                    _buildOtpInput(context, authState.isLoading),
-                    const SizedBox(height: 32),
-                    _buildResendRow(context, phone),
+                    // OTP input
+                    _buildOtpInput(context, authState.isLoading, isExpiredState, hasError),
+                    const SizedBox(height: 20),
+
+                    // Resend / countdown area
+                    Center(child: _buildCountdownOrResend(context)),
                   ],
                 ),
               ),
             ),
-            if (!keyboardVisible) _buildBottomBar(context, authState.isLoading),
+            if (!keyboardVisible)
+              KsButton(
+                label: 'VERIFY',
+                variant: KsButtonVariant.cta,
+                onPressed: _canVerify && !authState.isLoading && !isExpiredState
+                    ? _onVerify
+                    : null,
+                isLoading: authState.isLoading,
+                edgeToEdge: true,
+              ).animate().fadeIn(delay: 600.ms),
           ],
         ),
       ),
@@ -138,120 +202,138 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   Widget _buildBackButton(BuildContext context) => GestureDetector(
         onTap: () => context.pop(),
         child: Container(
-          width: 44,
-          height: 44,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: context.ksc.primary800,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: context.ksc.primary700),
+            color: context.ksc.primary800.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+            border:
+                Border.all(color: context.ksc.primary700.withValues(alpha: 0.3)),
           ),
-          child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: context.ksc.white),
+          child: Icon(LineAwesomeIcons.angle_left_solid,
+              size: 18, color: context.ksc.white),
         ),
       );
 
-  Widget _buildOtpInput(BuildContext context, bool isLoading) {
-    final defaultTheme = PinTheme(
-      width: 48,
-      height: 64,
-      textStyle: AppTextStyles.h2.copyWith(
-        color: context.ksc.white,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0,
-      ),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.ksc.primary700),
+  Widget _buildOtpInput(
+      BuildContext context, bool isLoading, bool isExpired, bool hasError) {
+    final borderColor = context.ksc.primary600;
+    final errorColor = context.ksc.error500;
+    final accentColor = context.ksc.accent500;
+
+    final effectiveOpacity = isExpired ? 0.3 : 1.0;
+
+    final baseDecoration = BoxDecoration(
+      border: Border(
+        bottom: BorderSide(
+          color: hasError ? errorColor : borderColor.withValues(alpha: 0.6),
+          width: 2,
+        ),
       ),
     );
 
-    return Pinput(
-      controller: _pinController,
-      focusNode: _focusNode,
-      length: 6,
-      readOnly: isLoading,
-      defaultPinTheme: defaultTheme,
-      focusedPinTheme: defaultTheme.copyWith(
-        decoration: defaultTheme.decoration!.copyWith(
-          border: Border.all(color: context.ksc.accent500, width: 2),
+    final defaultTheme = PinTheme(
+      width: 44,
+      height: 52,
+      textStyle: TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: context.ksc.white.withValues(alpha: effectiveOpacity),
+      ),
+      decoration: baseDecoration,
+    );
+
+    final focusedTheme = defaultTheme.copyWith(
+      decoration: baseDecoration.copyWith(
+        border: Border(
+          bottom: BorderSide(color: accentColor, width: 2),
         ),
       ),
-      separatorBuilder: (index) => const SizedBox(width: 8),
-      onChanged: (v) {
-        ref.read(authNotifierProvider.notifier).clearError();
-        setState(() => _canVerify = v.length == 6);
-      },
-      onCompleted: (_) => _onVerify(),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
+    );
+
+    final errorTheme = defaultTheme.copyWith(
+      decoration: baseDecoration.copyWith(
+        border: Border(
+          bottom: BorderSide(color: errorColor, width: 2),
+        ),
+      ),
+    );
+
+    return Center(
+      child: Opacity(
+        opacity: effectiveOpacity,
+        child: Pinput(
+          controller: _pinController,
+          focusNode: _focusNode,
+          length: 6,
+          readOnly: isLoading || isExpired,
+          defaultPinTheme: defaultTheme,
+          focusedPinTheme: focusedTheme,
+          submittedPinTheme: hasError ? errorTheme : focusedTheme,
+          separatorBuilder: (_) => const SizedBox(width: 10),
+          onChanged: (_) {},
+          onCompleted: isExpired ? null : (_) => _onVerify(),
+        ),
+      ),
+    ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildResendRow(BuildContext context, String phone) => Row(
+  Widget _buildCountdownOrResend(BuildContext context) {
+    if (_codeCountdown > 0 && !_codeExpired) {
+      // "Code expires in 0:42"
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Didn't receive the code?  ",
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: context.ksc.neutral400,
+            'Code expires in ',
+            style: TextStyle(
+              fontFamily: 'BarlowSemiCondensed',
+              fontSize: 12,
               fontWeight: FontWeight.w600,
+              color: context.ksc.neutral500,
             ),
           ),
-          _resendCooldown > 0
-              ? Text(
-                  'Wait 0:${_resendCooldown.toString().padLeft(2, '0')}',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: context.ksc.neutral500,
-                    fontWeight: FontWeight.w700,
-                  ),
-                )
-              : GestureDetector(
-                  onTap: () {
-                    ref.read(authNotifierProvider.notifier).requestOtp(phone);
-                    _startCooldown();
-                  },
-                  child: Text(
-                    'RESEND',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: context.ksc.accent500,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
+          Text(
+            _formattedCountdown,
+            style: TextStyle(
+              fontFamily: 'BarlowSemiCondensed',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: context.ksc.accent500,
+            ),
+          ),
         ],
       ).animate().fadeIn(delay: 500.ms);
+    }
 
-  Widget _buildBottomBar(BuildContext context, bool isLoading) => Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          border: Border(top: BorderSide(color: context.ksc.primary700)),
+    // "Code expired? RESEND CODE" — link is accent
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Code expired? ',
+          style: TextStyle(
+            fontFamily: 'BarlowSemiCondensed',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: context.ksc.neutral500,
+          ),
         ),
-        padding: const EdgeInsets.all(24.0),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _canVerify && !isLoading ? _onVerify : null,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'VERIFY ACCESS',
-                  style: AppTextStyles.h2.copyWith(
-                    color: _canVerify ? context.ksc.white : context.ksc.neutral600,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2.0,
-                  ),
-                ),
-                if (isLoading)
-                  SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: context.ksc.accent500))
-                else
-                  Icon(
-                    LineAwesomeIcons.angle_right_solid,
-                    color: _canVerify ? context.ksc.accent500 : context.ksc.neutral700,
-                    size: 20,
-                  ),
-              ],
+        GestureDetector(
+          onTap: _onResend,
+          child: Text(
+            'RESEND CODE',
+            style: TextStyle(
+              fontFamily: 'BarlowSemiCondensed',
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+              color: context.ksc.accent500,
             ),
           ),
         ),
-      ).animate().fadeIn(delay: 600.ms);
+      ],
+    ).animate().fadeIn(delay: 500.ms);
+  }
 }

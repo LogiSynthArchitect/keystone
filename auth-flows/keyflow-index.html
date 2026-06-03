@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keystone — Auth Flow Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A1628;
+    --surface: #0F2144;
+    --border: #163060;
+    --accent: #D4A017;
+    --accent-hover: #E8B84B;
+    --text: #FFFFFF;
+    --text2: #9E9E9E;
+    --text3: #737373;
+    --red: #C62828;
+    --green: #2E7D32;
+    --amber: #E65100;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+  .container { max-width: 820px; margin:0 auto; padding: 48px 24px; }
+  h1 {
+    font-size: 48px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  h1 span { color: var(--accent); }
+  .sub {
+    font-size: 16px; font-weight: 400; color: var(--text2);
+    margin-bottom: 48px; letter-spacing: 0px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px 24px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color .2s, transform .2s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .card .num {
+    font-size: 12px; font-weight: 800; letter-spacing: 1px;
+    color: var(--accent); text-transform: uppercase;
+  }
+  .card h2 {
+    font-size: 22px; font-weight: 900; letter-spacing: -0.2px;
+    margin:0;
+  }
+  .card p {
+    font-size: 14px; font-weight: 500; color: var(--text2);
+    line-height: 1.4;
+  }
+  .card .steps {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;
+  }
+  .card .steps span {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
+    padding: 3px 10px; border-radius: 4px;
+    background: var(--bg); color: var(--text2);
+  }
+  .card .steps span.arr { background: none; color: var(--text3); padding: 3px 2px; }
+  .badge-new { background: #1E3F7A; color: var(--accent); padding: 2px 10px; border-radius: 4px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+  @media (max-width:600px) { .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>KEY<span>STONE</span></h1>
+  <div class="sub">Auth Flow Map — 7 complete user journeys from entry to dashboard</div>
+  <div class="grid">
+
+    <a class="card" href="flow-new-user.html">
+      <div class="num">Flow 01</div>
+      <h2>New User</h2>
+      <p>First-time user signs up. Full onboarding: phone, OTP, create password, mandatory PIN, biometric, name, services, terms.</p>
+      <div class="steps">
+        <span>LANDING</span><span class="arr">→</span><span>PHONE</span><span class="arr">→</span><span>OTP</span><span class="arr">→</span><span>CREATE PW</span><span class="arr">→</span><span>PIN SETUP</span><span class="arr">→</span><span>BIOMETRIC</span><span class="arr">→</span><span>ONBOARDING</span><span class="arr">→</span><span>DASH</span>
+      </div>
+    </a>
+
+    <a class="card" href="flow-returning.html">
+      <div class="num">Flow 02</div>
+      <h2>Returning User</h2>
+      <p>Existing user signs in with password. Quick unlock path.</p>
+      <div class="steps">
+        <span>LANDING</span><span class="arr">→</span><span>PHONE</span><span class="arr">→</span><span>PW ENTRY</span><span class="arr">→</span><span>TRANSITION</span><span class="arr">→</span><span>DASH</span>
+      </div>
+    </a>
+
+    <a class="card" href="flow-upgrade.html">
+      <div class="num">Flow 03</div>
+      <h2>Upgrade User</h2>
+      <p>Legacy user forced to create password, then mandatory PIN + optional biometric unlock.</p>
+      <div class="steps">
+        <span>LANDING</span><span class="arr">→</span><span>PHONE</span><span class="arr">→</span><span>PW ENTRY</span><span class="arr">→</span><span>UPGRADE</span><span class="arr">→</span><span>PIN SETUP</span><span class="arr">→</span><span>BIOMETRIC</span><span class="arr">→</span><span>DASH</span>
+      </div>
+    </a>
+
+    <a class="card" href="flow-forgot.html">
+      <div class="num">Flow 04</div>
+      <h2>Forgot Access</h2>
+      <p>User forgot password. Recovery flow: request code, reset password.</p>
+      <div class="steps">
+        <span>PHONE</span><span class="arr">→</span><span>FORGOT</span><span class="arr">→</span><span>RESET PW</span><span class="arr">→</span><span>TRANSITION</span><span class="arr">→</span><span>DASH</span>
+      </div>
+    </a>
+
+    <a class="card" href="flow-reauth.html">
+      <div class="num">Flow 05</div>
+      <h2>Re-auth (Locked)</h2>
+      <p>Device locked due to inactivity / failed PIN attempts. Unlock methods.</p>
+      <div class="steps">
+        <span>LOCKED</span><span class="arr">→</span><span>PIN / PW</span><span class="arr">→</span><span>TRANSITION</span><span class="arr">→</span><span>DASH</span>
+        <span class="badge-new">+STALE DATA</span>
+      </div>
+    </a>
+
+    <a class="card" href="flow-gates.html">
+      <div class="num">Flow 06</div>
+      <h2>Other Gates</h2>
+      <p>Post-auth checkpoints: terms re-accept, initial sync, version block.</p>
+      <div class="steps">
+        <span>TERMS</span><span class="arr">→</span><span>SYNC</span><span class="arr">→</span><span>VERSION</span><span class="arr">→</span><span>DASH</span>
+      </div>
+    </a>
+
+  </div>
+  <div style="margin-top:40px; font-size:14px; color:var(--text3); text-align:center; letter-spacing:0;">
+    Built from actual Flutter code — tokens: #0A1628 / #0F2144 / #D4A017 &middot; Barlow Condensed &middot; 52px CTA
+  </div>
+</div>
+</body>
+</html>

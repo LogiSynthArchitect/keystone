@@ -11,14 +11,45 @@ class AuthRemoteDatasource {
   Future<void> requestOtp(String phone) async {
     debugPrint('[KS:AUTH] requestOtp — phone: $phone');
     try {
-      await _supabase.auth.signInWithOtp(phone: phone);
+      // Send OTP via edge function (triggers SMS + sets test OTP via Mgmt API).
+      // We must await this — if it fails, the user never receives a code.
+      await _supabase.functions.invoke(
+        'send-login-otp',
+        body: {'phone': phone},
+      );
+
+      // Notify Supabase Auth of the OTP attempt so verifyOTP is tracked.
+      // This is best-effort; the test OTP was already set by the edge function.
+      try {
+        await _supabase.auth.signInWithOtp(phone: phone);
+      } catch (e) {
+        debugPrint('[KS:AUTH] signInWithOtp failed (non-fatal): $e');
+      }
       debugPrint('[KS:AUTH] requestOtp SUCCESS');
-    } on supa.AuthException catch (e) {
-      debugPrint('[KS:AUTH] requestOtp AuthException — ${e.message}');
-      throw AuthException(message: e.message, code: '${e.statusCode}');
     } catch (e) {
-      debugPrint('[KS:AUTH] requestOtp unknown error — $e');
+      final msg = e.toString();
+      debugPrint('[KS:AUTH] requestOtp error — $msg');
+      // Edge function failure (FunctionsException from functions_client)
+      if (msg.contains('FunctionsException') || msg.contains('functions error')) {
+        throw const NetworkException(
+          message: 'Could not send verification code. Please try again.',
+          code: 'OTP_SEND_FAILED',
+        );
+      }
       throw const NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION');
+    }
+  }
+
+  Future<Map<String, dynamic>> checkAuthState(String phone) async {
+    debugPrint('[KS:AUTH] checkAuthState — phone: $phone');
+    try {
+      final result = await _supabase.rpc('check_auth_state', params: {'p_phone': phone});
+      debugPrint('[KS:AUTH] checkAuthState — result: $result');
+      return Map<String, dynamic>.from(result as Map);
+    } catch (e) {
+      debugPrint('[KS:AUTH] checkAuthState error — $e');
+      // Fail safe — assume new user, let OTP flow handle it
+      return {'exists': false, 'has_password': false};
     }
   }
 
@@ -29,7 +60,7 @@ class AuthRemoteDatasource {
         phone: phone,
         token: token,
         type: supa.OtpType.sms,
-      );
+      ).timeout(const Duration(seconds: 30));
       
       if (response.session == null) {
         throw const AuthException(message: 'Verification failed.', code: 'VERIFICATION_FAILED');

@@ -9,6 +9,8 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../providers/auth_notifier.dart';
@@ -29,6 +31,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   bool _codeEntered = false;
+  bool _isSessionExpired = false;
 
   @override
   void dispose() {
@@ -40,20 +43,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     super.dispose();
   }
 
-  String? get _passwordError {
+  bool get _allPasswordHintsMet {
     final pw = _newPasswordController.text;
-    if (pw.isEmpty) return null;
-    if (pw.length < 8) return 'Minimum 8 characters';
-    if (!pw.contains(RegExp(r'[A-Za-z]'))) return 'Must include a letter';
-    if (!pw.contains(RegExp(r'[0-9]'))) return 'Must include a number';
-    return null;
+    if (pw.isEmpty) return false;
+    if (pw.length < 8) return false;
+    if (!pw.contains(RegExp(r'[A-Za-z]'))) return false;
+    if (!pw.contains(RegExp(r'[0-9]'))) return false;
+    return true;
   }
+
+  bool get _passwordsMatch => _confirmController.text == _newPasswordController.text
+      && _confirmController.text.isNotEmpty;
 
   bool get _canReset {
     return _codeController.text.length == 6
-        && _passwordError == null
-        && _newPasswordController.text.isNotEmpty
-        && _confirmController.text == _newPasswordController.text;
+        && _allPasswordHintsMet
+        && _passwordsMatch
+        && !_isSessionExpired;
   }
 
   Future<void> _onReset() async {
@@ -62,6 +68,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final phone = ref.read(authNotifierProvider).phoneNumber ?? '';
 
     if (phone.isEmpty) {
+      setState(() => _isSessionExpired = true);
       ref.read(authNotifierProvider.notifier).setError('Session expired. Request a new code.');
       return;
     }
@@ -78,7 +85,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
       if (mounted) {
         await ref.read(authStateProvider.notifier).refresh();
-        context.go(RouteNames.transition);
+        await KsSuccessMoment.show(context, title: 'PASSWORD RESET');
+        if (mounted) context.go(RouteNames.transition);
       }
     } catch (e) {
       final err = e.toString();
@@ -124,26 +132,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       ),
                     ),
                     const SizedBox(height: 48),
+
+                    // heading changes based on phase
                     Text(
-                      'RECOVERY',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.accent500,
-                        letterSpacing: 2.0,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ).animate().fadeIn().slideX(begin: -0.1, end: 0),
-                    const SizedBox(height: 8),
-                    Text(
-                      'RESET PASSWORD',
-                      style: AppTextStyles.h1.copyWith(
+                      _codeEntered ? 'NEW PASSWORD' : 'ENTER RESET CODE',
+                      style: TextStyle(
+                        fontFamily: 'BarlowSemiCondensed',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.2,
                         color: context.ksc.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
                       ),
                     ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
                     const SizedBox(height: 24),
                     Text(
-                      'Enter the recovery code sent to your phone.',
+                      _codeEntered
+                          ? 'Create a strong password for your account.'
+                          : 'Enter the recovery code sent to your phone.',
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: context.ksc.neutral400,
                         fontWeight: FontWeight.w600,
@@ -157,9 +162,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     _buildCodeInput(context),
                     if (_codeEntered) ...[
                       const SizedBox(height: 24),
-                      _buildNewPasswordField(context),
-                      const SizedBox(height: 16),
-                      _buildConfirmField(context),
+                      _buildPasswordFields(context),
                     ],
                   ],
                 ),
@@ -173,128 +176,239 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Widget _buildCodeInput(BuildContext context) {
-    final defaultTheme = PinTheme(
-      width: 48, height: 64,
-      textStyle: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800),
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.ksc.primary700),
+    final borderColor = context.ksc.primary600;
+    final hasError = _isSessionExpired;
+
+    final baseDecoration = BoxDecoration(
+      border: Border(
+        bottom: BorderSide(
+          color: hasError ? context.ksc.error500 : borderColor.withValues(alpha: 0.6),
+          width: 2,
+        ),
       ),
     );
 
-    return Pinput(
-      controller: _codeController,
-      length: 6,
-      defaultPinTheme: defaultTheme,
-      focusedPinTheme: defaultTheme.copyWith(
-        decoration: defaultTheme.decoration!.copyWith(
-          border: Border.all(color: context.ksc.accent500, width: 2),
+    final effectiveOpacity = _isSessionExpired ? 0.3 : 1.0;
+
+    final defaultTheme = PinTheme(
+      width: 44,
+      height: 52,
+      textStyle: TextStyle(
+        fontFamily: 'BarlowSemiCondensed',
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: context.ksc.white.withValues(alpha: effectiveOpacity),
+      ),
+      decoration: baseDecoration,
+    );
+
+    final focusedTheme = defaultTheme.copyWith(
+      decoration: baseDecoration.copyWith(
+        border: Border(
+          bottom: BorderSide(color: context.ksc.accent500, width: 2),
         ),
       ),
-      onCompleted: (code) {
-        setState(() => _codeEntered = true);
-        HapticFeedback.heavyImpact();
-      },
+    );
+
+    return Center(
+      child: Opacity(
+        opacity: effectiveOpacity,
+        child: Pinput(
+          controller: _codeController,
+          length: 6,
+          readOnly: _isSessionExpired,
+          defaultPinTheme: defaultTheme,
+          focusedPinTheme: focusedTheme,
+          submittedPinTheme: hasError ? defaultTheme : focusedTheme,
+          onCompleted: (code) {
+            if (!_isSessionExpired) {
+              setState(() => _codeEntered = true);
+              HapticFeedback.heavyImpact();
+            }
+          },
+        ),
+      ),
     ).animate().fadeIn(delay: 400.ms);
   }
 
-  Widget _buildNewPasswordField(BuildContext context) {
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.ksc.primary700),
-      ),
-      child: TextField(
-        controller: _newPasswordController,
-        focusNode: _newPasswordFocus,
-        onChanged: (_) => setState(() {}),
-        obscureText: _obscureNew,
-        style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800),
-        cursorColor: context.ksc.accent500,
-        decoration: InputDecoration(
-          hintText: 'New password',
-          hintStyle: TextStyle(color: context.ksc.neutral600),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscureNew ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.eye_slash_solid,
-              color: context.ksc.neutral400, size: 20,
-            ),
-            onPressed: () => setState(() => _obscureNew = !_obscureNew),
+  Widget _buildPasswordFields(BuildContext context) {
+    final pw = _newPasswordController.text;
+    final minCharsMet = pw.length >= 8;
+    final hasLetterMet = pw.contains(RegExp(r'[A-Za-z]'));
+    final hasNumberMet = pw.contains(RegExp(r'[0-9]'));
+    final matchMet = _passwordsMatch;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // "Password" label
+        Text(
+          'Password',
+          style: TextStyle(
+            fontFamily: 'BarlowSemiCondensed',
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
+            color: context.ksc.neutral400,
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+        // New password field — transparent bg + gradient underline
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _newPasswordController,
+              focusNode: _newPasswordFocus,
+              onChanged: (_) => setState(() {}),
+              obscureText: _obscureNew,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: context.ksc.white,
+                fontWeight: FontWeight.w800,
+              ),
+              cursorColor: context.ksc.accent500,
+              decoration: InputDecoration(
+                hintText: 'New password',
+                hintStyle: TextStyle(color: context.ksc.neutral600),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: true,
+                fillColor: Colors.transparent,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureNew ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.eye_slash_solid,
+                    color: context.ksc.neutral400, size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 2,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    context.ksc.accent500,
+                    context.ksc.primary500,
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        // "Confirm Password" label
+        Text(
+          'Confirm Password',
+          style: TextStyle(
+            fontFamily: 'BarlowSemiCondensed',
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
+            color: context.ksc.neutral400,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _confirmController,
+              focusNode: _confirmFocus,
+              onChanged: (_) => setState(() {}),
+              obscureText: _obscureConfirm,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: context.ksc.white,
+                fontWeight: FontWeight.w800,
+              ),
+              cursorColor: context.ksc.accent500,
+              decoration: InputDecoration(
+                hintText: 'Confirm new password',
+                hintStyle: TextStyle(color: context.ksc.neutral600),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: true,
+                fillColor: Colors.transparent,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirm ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.eye_slash_solid,
+                    color: context.ksc.neutral400, size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 2,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    context.ksc.accent500,
+                    context.ksc.primary500,
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        // Validation hints
+        _hintItem('At least 8 characters', minCharsMet),
+        const SizedBox(height: 4),
+        _hintItem('Includes a letter', hasLetterMet),
+        const SizedBox(height: 4),
+        _hintItem('Includes a number', hasNumberMet),
+        const SizedBox(height: 4),
+        _hintItem('Passwords match', matchMet),
+      ],
     );
   }
 
-  Widget _buildConfirmField(BuildContext context) {
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.ksc.primary700),
-      ),
-      child: TextField(
-        controller: _confirmController,
-        focusNode: _confirmFocus,
-        onChanged: (_) => setState(() {}),
-        obscureText: _obscureConfirm,
-        style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800),
-        cursorColor: context.ksc.accent500,
-        decoration: InputDecoration(
-          hintText: 'Confirm new password',
-          hintStyle: TextStyle(color: context.ksc.neutral600),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _obscureConfirm ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.eye_slash_solid,
-              color: context.ksc.neutral400, size: 20,
-            ),
-            onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+  Widget _hintItem(String text, bool met) {
+    return Row(
+      children: [
+        Icon(
+          met ? LineAwesomeIcons.check_circle_solid : Icons.circle,
+          size: 12,
+          color: met ? context.ksc.success500 : context.ksc.neutral600,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontFamily: 'BarlowSemiCondensed',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: met ? context.ksc.success500 : context.ksc.neutral500,
           ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildBottomBar(BuildContext context, bool isLoading) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        border: Border(top: BorderSide(color: context.ksc.primary700)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _canReset && !isLoading ? _onReset : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'RESET PASSWORD',
-                style: AppTextStyles.h2.copyWith(
-                  color: _canReset ? context.ksc.white : context.ksc.neutral600,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              Icon(
-                LineAwesomeIcons.angle_right_solid,
-                color: _canReset ? context.ksc.accent500 : context.ksc.neutral700,
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return KsButton(
+      label: 'RESET PASSWORD',
+      variant: KsButtonVariant.cta,
+      edgeToEdge: true,
+      isLoading: isLoading,
+      onPressed: _canReset && !isLoading ? _onReset : null,
+    ).animate().fadeIn(delay: 600.ms);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
@@ -7,8 +8,13 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_banner.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../providers/auth_notifier.dart';
+
+const _ghanaFlag = '\u{1F1EC}\u{1F1ED}';
 
 class ForgotAccessScreen extends ConsumerStatefulWidget {
   const ForgotAccessScreen({super.key});
@@ -20,27 +26,31 @@ class ForgotAccessScreen extends ConsumerStatefulWidget {
 class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
   final _phoneController = TextEditingController();
   final _focusNode = FocusNode();
-  bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() => setState(() => _isFocused = _focusNode.hasFocus));
+    _phoneController.addListener(_onInputChanged);
   }
 
   @override
   void dispose() {
+    _phoneController.removeListener(_onInputChanged);
     _phoneController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _onSendCode() async {
-    final phone = _phoneController.text.trim();
-    if (phone.length < 9) return;
+  bool get _canSend => _phoneController.text.trim().length >= 9;
 
+  void _onInputChanged() => setState(() {});
+
+  Future<void> _onSendCode() async {
+    if (!_canSend) return;
+
+    final phone = _phoneController.text.trim();
     final supabase = ref.read(supabaseClientProvider);
-    final fullPhone = '+233$phone';
+    final fullPhone = PhoneFormatter.isValid(phone) ? PhoneFormatter.normalize(phone) : '+233$phone';
     ref.read(authNotifierProvider.notifier).setPhoneNumber(fullPhone);
 
     try {
@@ -49,7 +59,10 @@ class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
         body: {'phone': fullPhone},
       );
 
-      if (mounted) context.push(RouteNames.resetPassword);
+      if (mounted) {
+        await KsSuccessMoment.show(context, title: 'RECOVERY CODE SENT');
+        if (mounted) context.push(RouteNames.resetPassword);
+      }
     } catch (e) {
       final errStr = e.toString();
       if (errStr.contains('429') || errStr.contains('limit')) {
@@ -72,6 +85,7 @@ class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final errorMessage = authState.errorMessage;
+    final isLoading = authState.isLoading;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -85,37 +99,23 @@ class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Container(
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(
-                          color: context.ksc.primary800,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: context.ksc.primary700),
-                        ),
-                        child: Icon(LineAwesomeIcons.angle_left_solid, size: 20, color: context.ksc.white),
-                      ),
-                    ),
+                    _buildBackButton(context),
                     const SizedBox(height: 48),
+
+                    // heading — "RECOVER ACCESS"
                     Text(
-                      'RECOVERY',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.accent500,
-                        letterSpacing: 2.0,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ).animate().fadeIn().slideX(begin: -0.1, end: 0),
-                    const SizedBox(height: 8),
-                    Text(
-                      'FORGOT ACCESS',
-                      style: AppTextStyles.h1.copyWith(
+                      'RECOVER ACCESS',
+                      style: TextStyle(
+                        fontFamily: 'BarlowSemiCondensed',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.2,
                         color: context.ksc.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
                       ),
                     ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+
                     const SizedBox(height: 24),
+
                     Text(
                       'Enter your phone number to receive a recovery code.',
                       style: AppTextStyles.bodyLarge.copyWith(
@@ -123,95 +123,156 @@ class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ).animate().fadeIn(delay: 200.ms),
-                    const SizedBox(height: 48),
+
                     if (errorMessage != null && errorMessage.isNotEmpty) ...[
-                      KsBanner(message: errorMessage),
                       const SizedBox(height: 24),
+                      KsBanner(message: errorMessage),
                     ],
-                    _buildPhoneField(context),
+
+                    const SizedBox(height: 32),
+                    _buildPhoneInput(context),
+                    const SizedBox(height: 16),
+
+                    // "Not you?" link — left-aligned, neutral, underlined
+                    GestureDetector(
+                      onTap: () => context.go(RouteNames.phoneEntry),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'NOT YOU?',
+                          style: TextStyle(
+                            fontFamily: 'BarlowSemiCondensed',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: context.ksc.neutral500,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-            _buildBottomBar(context, authState.isLoading),
+            _buildBottomBar(context, isLoading),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPhoneField(BuildContext context) {
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: _isFocused ? context.ksc.accent500 : context.ksc.primary700,
-          width: _isFocused ? 2 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 16, right: 8),
-            child: Text('+233', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+  Widget _buildBackButton(BuildContext context) => GestureDetector(
+        onTap: () => context.pop(),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: context.ksc.primary800.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+            border: Border.all(color: context.ksc.primary700.withValues(alpha: 0.3)),
           ),
-          Expanded(
-            child: TextField(
-              controller: _phoneController,
-              focusNode: _focusNode,
-              keyboardType: TextInputType.phone,
-              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800),
-              cursorColor: context.ksc.accent500,
-              decoration: InputDecoration(
-                hintText: '024 412 3456',
-                hintStyle: TextStyle(color: context.ksc.neutral600),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-              ),
-              onSubmitted: (_) => _onSendCode(),
+          child: Icon(LineAwesomeIcons.angle_left_solid, size: 18, color: context.ksc.white),
+        ),
+      );
+
+  Widget _buildPhoneInput(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "Phone Number" label
+          Text(
+            'Phone Number',
+            style: TextStyle(
+              fontFamily: 'BarlowSemiCondensed',
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.0,
+              color: context.ksc.neutral400,
             ),
           ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
-  }
-
-  Widget _buildBottomBar(BuildContext context, bool isLoading) {
-    final canSend = _phoneController.text.trim().length >= 9;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: context.ksc.primary800,
-        border: Border(top: BorderSide(color: context.ksc.primary700)),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: canSend && !isLoading ? _onSendCode : null,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const SizedBox(height: 8),
+          Row(
             children: [
-              Text(
-                'SEND RECOVERY CODE',
-                style: AppTextStyles.h2.copyWith(
-                  color: canSend ? context.ksc.white : context.ksc.neutral600,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.5,
-                ),
+              // Ghana flag / +233 / dropdown arrow
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _ghanaFlag,
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '+233',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    LineAwesomeIcons.angle_down_solid,
+                    size: 12,
+                    color: context.ksc.neutral400,
+                  ),
+                ],
               ),
-              Icon(
-                LineAwesomeIcons.angle_right_solid,
-                color: canSend ? context.ksc.accent500 : context.ksc.neutral700,
-                size: 20,
+              const SizedBox(width: 14),
+              Expanded(
+                child: TextField(
+                  controller: _phoneController,
+                  focusNode: _focusNode,
+                  keyboardType: TextInputType.phone,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: context.ksc.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    letterSpacing: 1.0,
+                  ),
+                  cursorColor: context.ksc.accent500,
+                  decoration: InputDecoration(
+                    hintText: '024 412 3456',
+                    hintStyle: TextStyle(color: context.ksc.neutral600),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: true,
+                    fillColor: Colors.transparent,
+                  ),
+                  onSubmitted: (_) => _onSendCode(),
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
+          const SizedBox(height: 4),
+          // gradient underline
+          Container(
+            height: 2,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  context.ksc.accent500,
+                  context.ksc.primary500,
+                  Colors.transparent,
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+          ),
+        ],
+      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
+
+  Widget _buildBottomBar(BuildContext context, bool isLoading) {
+    return KsButton(
+      label: 'SEND RECOVERY CODE',
+      variant: KsButtonVariant.cta,
+      edgeToEdge: true,
+      isLoading: isLoading,
+      onPressed: _canSend && !isLoading ? _onSendCode : null,
+    ).animate().fadeIn(delay: 600.ms);
   }
 }

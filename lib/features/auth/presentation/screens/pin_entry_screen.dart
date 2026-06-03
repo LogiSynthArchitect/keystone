@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/widgets/ks_banner.dart';
+import '../../../../core/widgets/ks_button.dart';
+import '../../../../core/widgets/ks_numpad.dart';
+import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/services/internal_auth/internal_auth_service.dart';
+import '../../../../core/services/internal_auth/models/unlock_result.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 
+/// PIN unlock screen — uses the custom [KsNumpad] widget for app-internal
+/// PIN entry. Shows remaining attempts before wipe.
 class PinEntryScreen extends ConsumerStatefulWidget {
   const PinEntryScreen({super.key});
 
@@ -18,57 +23,50 @@ class PinEntryScreen extends ConsumerStatefulWidget {
   ConsumerState<PinEntryScreen> createState() => _PinEntryScreenState();
 }
 
-class _PinEntryScreenState extends ConsumerState<PinEntryScreen> with SingleTickerProviderStateMixin {
-  final _pin = <String>[];
-  int _failedAttempts = 0;
-  late AnimationController _shakeController;
-  late Animation<double> _shakeAnimation;
+class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
+  KsNumpadControls? _controls;
+  int _remainingAttempts = 5;
+  bool _isWiped = false;
 
   @override
   void initState() {
     super.initState();
-    _shakeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _shakeAnimation = Tween<double>(begin: 0, end: 8).chain(CurveTween(curve: Curves.easeInOut)).animate(_shakeController);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAttempts());
   }
 
-  @override
-  void dispose() {
-    _shakeController.dispose();
-    super.dispose();
-  }
-
-  void _onDigit(String digit) {
-    if (_pin.length >= 6) return;
-    setState(() => _pin.add(digit));
-    HapticFeedback.lightImpact();
-    if (_pin.length == 6) _verifyPin();
-  }
-
-  void _onDelete() {
-    if (_pin.isEmpty) return;
-    setState(() => _pin.removeLast());
-  }
-
-  Future<void> _verifyPin() async {
+  Future<void> _loadAttempts() async {
     final supabase = ref.read(supabaseClientProvider);
     final service = InternalAuthService(supabase);
-    final valid = await service.unlockWithPin(_pin.join());
+    final remaining = await service.pin.getRemainingAttempts();
+    final wiped = await service.pin.isWiped();
+    if (mounted) {
+      setState(() {
+        _remainingAttempts = remaining;
+        _isWiped = wiped;
+      });
+    }
+  }
 
-    if (valid && mounted) {
+  Future<void> _onPinEntered(String code) async {
+    final supabase = ref.read(supabaseClientProvider);
+    final service = InternalAuthService(supabase);
+    final result = await service.unlockWithPin(code);
+
+    if (!mounted) return;
+
+    if (result is UnlockSuccess) {
       HapticFeedback.heavyImpact();
+      ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
       await ref.read(authStateProvider.notifier).refresh();
-      context.go(RouteNames.transition);
+      if (!mounted) return;
+      await KsSuccessMoment.show(context, title: 'UNLOCKED');
+      if (mounted) context.go(RouteNames.transition);
+    } else if (result is UnlockLocked) {
+      setState(() => _remainingAttempts--);
+      _controls?.shakeAndClear();
     } else {
-      _failedAttempts++;
-      HapticFeedback.heavyImpact();
-      _shakeController.forward(from: 0);
-      setState(() => _pin.clear());
-      if (_failedAttempts >= 3 && mounted) {
-        context.go(RouteNames.passwordEntry);
-      }
+      // Wiped or needs online — redirect to password
+      if (mounted) context.go(RouteNames.passwordEntry);
     }
   }
 
@@ -80,146 +78,68 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> with SingleTick
         child: Column(
           children: [
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'ENTER PIN',
-                    style: AppTextStyles.h1.copyWith(
-                      color: context.ksc.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                    ),
-                  ).animate().fadeIn().slideY(begin: -0.1, end: 0),
-                  const SizedBox(height: 48),
-                  _buildPinDots(context),
-                  if (_failedAttempts > 0) ...[
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  children: [
                     const SizedBox(height: 16),
-                    Text(
-                      '${3 - _failedAttempts} attempts remaining',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.error500,
-                        fontWeight: FontWeight.w700,
+                    _buildBackButton(context),
+                    const SizedBox(height: 48),
+
+                    // PIN Wiped banner
+                    if (_isWiped) ...[
+                      KsBanner(
+                        message: 'PIN has been wiped. Enter your password instead.',
+                        type: KsBannerType.alert,
                       ),
-                    ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    KsNumpad(
+                      onReady: (c) => _controls = c,
+                      title: 'ENTER PIN',
+                      subtitle: _isWiped
+                          ? 'PIN has been wiped. Enter your password instead.'
+                          : _remainingAttempts <= 3 && _remainingAttempts > 0
+                              ? '$_remainingAttempts attempt(s) remaining'
+                              : null,
+                      onCompleted: _isWiped ? (_) {} : _onPinEntered,
+                      hasError: _isWiped,
+                    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0),
+
+                    // ENTER PASSWORD button for wiped state
+                    if (_isWiped) ...[
+                      const SizedBox(height: 24),
+                      KsButton(
+                        label: 'ENTER PASSWORD',
+                        onPressed: () => context.go(RouteNames.passwordEntry),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
                   ],
-                  const SizedBox(height: 32),
-                  GestureDetector(
-                    onTap: () => context.go(RouteNames.passwordEntry),
-                    child: Text(
-                      'USE PASSWORD INSTEAD',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.accent500,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () => context.go(RouteNames.phoneEntry),
-                    child: Text(
-                      'NOT YOU? SIGN IN AS DIFFERENT USER',
-                      style: AppTextStyles.caption.copyWith(
-                        color: context.ksc.neutral500,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-            _buildNumpad(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPinDots(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _shakeAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(_shakeAnimation.value, 0),
-          child: child ?? const SizedBox(),
-        );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(6, (i) {
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            width: 16,
-            height: 16,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: i < _pin.length ? context.ksc.accent500 : context.ksc.neutral700,
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildNumpad(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          _buildRow(context, ['1', '2', '3']),
-          _buildRow(context, ['4', '5', '6']),
-          _buildRow(context, ['7', '8', '9']),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const SizedBox(width: 72),
-              _buildKey(context, '0'),
-              GestureDetector(
-                onTap: _onDelete,
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  alignment: Alignment.center,
-                  child: Icon(LineAwesomeIcons.backspace_solid, color: context.ksc.neutral400, size: 24),
-                ),
-              ),
-            ],
+  Widget _buildBackButton(BuildContext context) => GestureDetector(
+        onTap: () => context.pop(),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: context.ksc.primary800.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+            border: Border.all(
+                color: context.ksc.primary700.withValues(alpha: 0.3)),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRow(BuildContext context, List<String> digits) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: digits.map((d) => _buildKey(context, d)).toList(),
-    );
-  }
-
-  Widget _buildKey(BuildContext context, String digit) {
-    return GestureDetector(
-      onTap: () => _onDigit(digit),
-      child: Container(
-        width: 72,
-        height: 72,
-        margin: const EdgeInsets.all(4),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
+          child: Icon(Icons.arrow_back_ios_new,
+              size: 18, color: context.ksc.white),
         ),
-        child: Text(
-          digit,
-          style: AppTextStyles.h1.copyWith(
-            color: context.ksc.white,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
-  }
+      );
 }

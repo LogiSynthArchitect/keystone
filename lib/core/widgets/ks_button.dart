@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/ks_colors.dart';
@@ -15,6 +16,7 @@ class KsButton extends StatelessWidget {
   final IconData? trailingIcon;
   final bool isLoading;
   final bool fullWidth;
+  final bool edgeToEdge;
 
   const KsButton({
     super.key,
@@ -26,19 +28,99 @@ class KsButton extends StatelessWidget {
     this.trailingIcon,
     this.isLoading = false,
     this.fullWidth = true,
+    this.edgeToEdge = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (edgeToEdge) return _buildEdgeToEdge(context);
+
     final isDisabled = onPressed == null && !isLoading;
-    final height = size == KsButtonSize.large
+    final btnHeight = size == KsButtonSize.large
         ? AppSpacing.buttonHeight
         : AppSpacing.buttonSmallHeight;
 
     return SizedBox(
       width: fullWidth ? double.infinity : null,
-      height: height,
+      height: btnHeight,
       child: _buildButton(context, isDisabled),
+    );
+  }
+
+  Color _edgeBgColor(BuildContext context) {
+    final isDisabled = onPressed == null && !isLoading;
+    if (isDisabled) return context.ksc.primary600;
+    switch (variant) {
+      case KsButtonVariant.cta:
+      case KsButtonVariant.secondary:
+        return context.ksc.accent500;
+      case KsButtonVariant.danger:
+        return context.ksc.error500;
+      case KsButtonVariant.ghost:
+        return context.ksc.primary800.withValues(alpha: 0.6);
+      case KsButtonVariant.primary:
+        return context.ksc.primary700;
+    }
+  }
+
+  Color _edgeFgColor(BuildContext context) {
+    final isDisabled = onPressed == null && !isLoading;
+    if (isDisabled) return context.ksc.neutral500;
+    switch (variant) {
+      case KsButtonVariant.cta:
+      case KsButtonVariant.secondary:
+        return context.ksc.primary900;
+      case KsButtonVariant.danger:
+        return context.ksc.white;
+      case KsButtonVariant.ghost:
+        return context.ksc.neutral400;
+      case KsButtonVariant.primary:
+        return context.ksc.white;
+    }
+  }
+
+  Widget _buildEdgeToEdge(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: _edgeBgColor(context),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.body.copyWith(
+                    color: _edgeFgColor(context),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                if (isLoading)
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: _edgeFgColor(context),
+                    ),
+                  )
+                else
+                  Icon(
+                    trailingIcon ?? LineAwesomeIcons.arrow_right_solid,
+                    color: _edgeFgColor(context),
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
