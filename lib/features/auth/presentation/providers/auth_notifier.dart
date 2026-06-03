@@ -189,6 +189,8 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       }
       try {
         await _ref.read(authStateProvider.notifier).refresh();
+        // Wait for the async rebuild to settle before reading the new value
+        await Future<void>.delayed(const Duration(milliseconds: 50));
         final refreshedAuth = _ref.read(authStateProvider).valueOrNull;
         if (refreshedAuth?.hasProfile == true) {
           _ref.invalidate(profileProvider);

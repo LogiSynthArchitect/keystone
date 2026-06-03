@@ -44,6 +44,7 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final state = authStateAsync.valueOrNull ?? const AuthState();
+        ref.read(authNotifierProvider.notifier).reset();
         if (!state.isAuthenticated) {
           context.go(RouteNames.landing);
         } else if (!state.hasProfile) {
@@ -60,13 +61,17 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
           final result = await service.tryAutoLogin();
           if (result is UnlockSuccess) {
             ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
+            ref.read(authNotifierProvider.notifier).reset();
             context.go(RouteNames.dashboard);
           } else if (result is UnlockLocked) {
+            ref.read(authNotifierProvider.notifier).reset();
             context.go(RouteNames.locked);
           } else if (result is UnlockNeedsOnline) {
+            ref.read(authNotifierProvider.notifier).reset();
             context.go(RouteNames.staleData, extra: result);
           } else {
             ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
+            ref.read(authNotifierProvider.notifier).reset();
             context.go(RouteNames.dashboard);
           }
         } else {
