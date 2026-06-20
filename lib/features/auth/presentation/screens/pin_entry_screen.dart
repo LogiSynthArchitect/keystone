@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/widgets/ks_logo.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_numpad.dart';
@@ -57,7 +58,6 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
     if (result is UnlockSuccess) {
       HapticFeedback.heavyImpact();
       ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
-      await ref.read(authStateProvider.notifier).refresh();
       if (!mounted) return;
       await KsSuccessMoment.show(context, title: 'UNLOCKED');
       if (mounted) context.go(RouteNames.transition);
@@ -65,8 +65,8 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
       setState(() => _remainingAttempts--);
       _controls?.shakeAndClear();
     } else {
-      // Wiped or needs online — redirect to password
-      if (mounted) context.go(RouteNames.passwordEntry);
+      // Wiped or needs online — redirect to password unlock
+      if (mounted) context.go(RouteNames.passwordUnlock);
     }
   }
 
@@ -84,7 +84,11 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
                   children: [
                     const SizedBox(height: 16),
                     _buildBackButton(context),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 20),
+
+                    // Brand logo
+                    const Center(child: KsLogo(size: 32)),
+                    const SizedBox(height: 20),
 
                     // PIN Wiped banner
                     if (_isWiped) ...[
@@ -112,7 +116,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
                       const SizedBox(height: 24),
                       KsButton(
                         label: 'ENTER PASSWORD',
-                        onPressed: () => context.go(RouteNames.passwordEntry),
+                        onPressed: () => context.go(RouteNames.passwordUnlock),
                       ),
                     ],
 

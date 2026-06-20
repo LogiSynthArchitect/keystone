@@ -42,8 +42,8 @@ class KnowledgeNoteModel {
       KnowledgeNoteModel(
         id: json['id'] as String,
         userId: json['user_id'] as String,
-        title: json['title'] as String,
-        description: json['description'] as String,
+        title: (json['title'] as String?) ?? '',
+        description: (json['description'] as String?) ?? '',
         tags: List<String>.from(json['tags'] as List? ?? []),
         photoUrl: json['photo_url'] as String?,
         coverImageUrl: json['cover_image_url'] as String?,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 
@@ -45,6 +46,13 @@ class MinVersionGateScreen extends StatelessWidget {
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
+                    onTap: () async {
+                      const storeUrl = 'https://play.google.com/store/apps/details?id=com.keystone.app';
+                      final uri = Uri.parse(storeUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16),

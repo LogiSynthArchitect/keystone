@@ -14,6 +14,7 @@ import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../providers/auth_notifier.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -24,27 +25,19 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _codeController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmController = TextEditingController();
-  final _newPasswordFocus = FocusNode();
-  final _confirmFocus = FocusNode();
-  bool _obscureNew = true;
-  bool _obscureConfirm = true;
   bool _codeEntered = false;
   bool _isSessionExpired = false;
+  String _newPassword = '';
+  String _confirmPassword = '';
 
   @override
   void dispose() {
     _codeController.dispose();
-    _newPasswordController.dispose();
-    _confirmController.dispose();
-    _newPasswordFocus.dispose();
-    _confirmFocus.dispose();
     super.dispose();
   }
 
   bool get _allPasswordHintsMet {
-    final pw = _newPasswordController.text;
+    final pw = _newPassword;
     if (pw.isEmpty) return false;
     if (pw.length < 8) return false;
     if (!pw.contains(RegExp(r'[A-Za-z]'))) return false;
@@ -52,8 +45,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return true;
   }
 
-  bool get _passwordsMatch => _confirmController.text == _newPasswordController.text
-      && _confirmController.text.isNotEmpty;
+  bool get _passwordsMatch => _confirmPassword == _newPassword
+      && _confirmPassword.isNotEmpty;
 
   bool get _canReset {
     return _codeController.text.length == 6
@@ -79,7 +72,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         body: {
           'phone': phone,
           'code': _codeController.text.trim(),
-          'newPassword': _newPasswordController.text,
+          'newPassword': _newPassword,
         },
       );
 
@@ -232,7 +225,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Widget _buildPasswordFields(BuildContext context) {
-    final pw = _newPasswordController.text;
+    final pw = _newPassword;
     final minCharsMet = pw.length >= 8;
     final hasLetterMet = pw.contains(RegExp(r'[A-Za-z]'));
     final hasNumberMet = pw.contains(RegExp(r'[0-9]'));
@@ -241,134 +234,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // "Password" label
-        Text(
-          'Password',
-          style: TextStyle(
-            fontFamily: 'BarlowSemiCondensed',
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.0,
-            color: context.ksc.neutral400,
-          ),
-        ),
-        const SizedBox(height: 8),
-        // New password field — transparent bg + gradient underline
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _newPasswordController,
-              focusNode: _newPasswordFocus,
-              onChanged: (_) => setState(() {}),
-              obscureText: _obscureNew,
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: context.ksc.white,
-                fontWeight: FontWeight.w800,
-              ),
-              cursorColor: context.ksc.accent500,
-              decoration: InputDecoration(
-                hintText: 'New password',
-                hintStyle: TextStyle(color: context.ksc.neutral600),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: true,
-                fillColor: Colors.transparent,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureNew ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.eye_slash_solid,
-                    color: context.ksc.neutral400, size: 20,
-                  ),
-                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              height: 2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    context.ksc.accent500,
-                    context.ksc.primary500,
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-              ),
-            ),
-          ],
+        FocusSafeTextField(
+          label: 'Password',
+          hint: 'New password',
+          obscureText: true,
+          onChanged: (v) => setState(() => _newPassword = v),
         ),
         const SizedBox(height: 24),
-        // "Confirm Password" label
-        Text(
-          'Confirm Password',
-          style: TextStyle(
-            fontFamily: 'BarlowSemiCondensed',
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.0,
-            color: context.ksc.neutral400,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _confirmController,
-              focusNode: _confirmFocus,
-              onChanged: (_) => setState(() {}),
-              obscureText: _obscureConfirm,
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: context.ksc.white,
-                fontWeight: FontWeight.w800,
-              ),
-              cursorColor: context.ksc.accent500,
-              decoration: InputDecoration(
-                hintText: 'Confirm new password',
-                hintStyle: TextStyle(color: context.ksc.neutral600),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: true,
-                fillColor: Colors.transparent,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirm ? LineAwesomeIcons.eye_solid : LineAwesomeIcons.eye_slash_solid,
-                    color: context.ksc.neutral400, size: 20,
-                  ),
-                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              height: 2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    context.ksc.accent500,
-                    context.ksc.primary500,
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-              ),
-            ),
-          ],
+        FocusSafeTextField(
+          label: 'Confirm Password',
+          hint: 'Confirm new password',
+          obscureText: true,
+          onChanged: (v) => setState(() => _confirmPassword = v),
+          onSubmitted: (_) => _onReset(),
         ),
         const SizedBox(height: 24),
-        // Validation hints
         _hintItem('At least 8 characters', minCharsMet),
         const SizedBox(height: 4),
         _hintItem('Includes a letter', hasLetterMet),

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth Phone — 60px Step Ring + KsButton</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0A1628; font-family: 'Barlow Semi Condensed', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; flex-direction: column; gap: 30px; }
+  .phone-frame { width: 380px; background: #0A1628; border-radius: 40px; border: 1px solid #1A2D4A; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .screen { padding: 0 24px; min-height: 700px; display: flex; flex-direction: column; }
+  .back-row { display: flex; align-items: center; padding: 16px 0; gap: 12px; }
+  .back-circle { width: 40px; height: 40px; border-radius: 50%; background: rgba(15,35,60,0.5); border: 1px solid rgba(26,45,74,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; cursor: pointer; }
+
+  /* Ring section */
+  .ring-section { display: flex; flex-direction: column; align-items: center; padding: 8px 0 28px; }
+  .ring-60 { width: 60px; height: 60px; position: relative; }
+  .ring-60 svg { width: 100%; height: 100%; }
+  .ring-60 .center-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; color: #F9A825; }
+  .step-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #F9A825; margin-top: 6px; }
+  .step-title { font-size: 13px; font-weight: 700; color: #fff; margin-top: 2px; }
+  .step-dots { display: flex; gap: 4px; align-items: center; margin-top: 6px; }
+  .step-dots .dot { width: 14px; height: 4px; background: #F9A825; border-radius: 2px; }
+  .step-dots .dot.inactive { width: 6px; background: #1A2D4A; }
+  .step-dots .sub-dots { display: flex; gap: 3px; margin: 0 2px; }
+  .step-dots .sub-dots .sub-dot { width: 4px; height: 4px; border-radius: 50%; background: #F9A825; }
+  .step-dots .sub-dots .sub-dot.inactive { background: #1A2D4A; }
+
+  /* Input */
+  .heading { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; text-align: center; }
+  .subtitle { font-size: 14px; font-weight: 500; color: #7B8A9B; text-align: center; line-height: 1.5; margin-bottom: 40px; }
+  .input-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
+  .input-row .flag { width: 26px; flex-shrink: 0; }
+  .input-row .prefix { font-size: 16px; font-weight: 600; color: #fff; flex-shrink: 0; }
+  .input-row .digits { font-size: 24px; font-weight: 600; letter-spacing: 2px; color: #fff; border: none; background: transparent; outline: none; font-family: 'Barlow Semi Condensed', sans-serif; width: 100%; }
+  .input-row .digits::placeholder { color: #4A5A6A; font-size: 17px; font-weight: 500; letter-spacing: 0; }
+  .gradient-underline { height: 2px; background: linear-gradient(90deg, #F9A825, #0F233C, transparent); margin-bottom: 14px; }
+  .helper-text { font-size: 11px; font-weight: 500; color: #7B8A9B; }
+  .spacer { flex: 1; }
+  .bottom-area { padding: 20px 0; }
+
+  .ks-button-cta { width: 100%; height: 52px; background: #F9A825; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; cursor: pointer; border: none; font-family: 'Barlow Semi Condensed', sans-serif; transition: opacity 0.2s; }
+  .ks-button-cta:active { opacity: 0.85; }
+  .ks-button-cta .label { font-size: 14px; font-weight: 800; letter-spacing: 1px; color: #0A1628; }
+  .ks-button-cta .arrow { width: 28px; height: 28px; background: rgba(10,22,40,0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0A1628; font-size: 15px; }
+  .otp-input { display: flex; gap: 8px; justify-content: center; margin-bottom: 32px; }
+  .otp-input .cell { width: 44px; height: 52px; background: #0F233C; border-radius: 8px; border: 1.5px solid #1A2D4A; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 700; }
+  .otp-input .cell.active { border-color: #F9A825; }
+  .otp-input .cell.filled { border-color: #F9A825; }
+
+  .ring-60.sm { width: 48px; height: 48px; }
+  .ring-60.sm .center-icon { font-size: 18px; }
+
+  .pill { display: inline-block; background: rgba(249,168,37,0.15); color: #F9A825; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 2px; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<div style="color:#F9A825; font-size:20px; font-weight:800;">AUTH FLOW — WITH 60px STEP RING HEADER</div>
+<div style="color:#7B8A9B; font-size:13px;">AuthStepHeader + KsButton(cta) + KsTextField(phone) — same philosophy as KsStepDrawer</div>
+
+<div style="display:flex; gap:40px; flex-wrap:wrap; justify-content:center;">
+
+  <!-- 1. PHONE ENTRY — Step 1/4 -->
+  <div class="phone-frame">
+    <div class="screen">
+      <div class="back-row"><div class="back-circle">&#x276E;</div></div>
+
+      <div class="ring-section">
+        <div class="ring-60">
+          <svg viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#1A2D4A" stroke-width="4"/>
+            <path d="M30 6 A24 24 0 0 1 47.5 16.5" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M47.5 16.5 A24 24 0 0 1 54 30" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+            <path d="M30 54 A24 24 0 0 1 6 30" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+            <path d="M6 30 A24 24 0 0 1 30 6" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="center-icon">&#9990;</div>
+        </div>
+        <div class="step-label">STEP 1/4</div>
+        <div class="step-title">PHONE</div>
+        <div class="step-dots">
+          <div class="dot"></div>
+          <div class="dot inactive"></div>
+          <div class="dot inactive"></div>
+          <div class="dot inactive"></div>
+        </div>
+      </div>
+
+      <div class="subtitle">Enter your number</div>
+
+      <div class="input-row">
+        <svg class="flag" viewBox="0 0 32 32" width="26">
+          <rect width="32" height="21.3" fill="#CE1126"/>
+          <rect y="0" width="32" height="7.1" fill="#006B3F"/>
+          <rect y="14.2" width="32" height="7.1" fill="#006B3F"/>
+          <polygon points="16,0 6,10.65 16,21.3" fill="#FCD116"/>
+        </svg>
+        <span class="prefix">+233</span>
+        <input class="digits" placeholder="024 412 3456" maxlength="9">
+      </div>
+      <div class="gradient-underline"></div>
+      <div class="helper-text">We'll send a one-time SMS to this number.</div>
+
+      <div class="spacer"></div>
+      <div class="bottom-area">
+        <button class="ks-button-cta">
+          <span class="label">CONTINUE</span>
+          <div class="arrow">&#x2192;</div>
+        </button>
+      </div>
+    </div>
+    <div style="padding:6px 12px; background:rgba(249,168,37,0.08); border-top:1px solid rgba(249,168,37,0.15); text-align:center;">
+      <span class="pill">KsTextField(phone)</span>
+      <span class="pill">KsButton(cta)</span>
+      <span class="pill">AuthStepHeader</span>
+    </div>
+  </div>
+
+  <!-- 2. OTP VERIFY — Step 2/4 -->
+  <div class="phone-frame">
+    <div class="screen">
+      <div class="back-row"><div class="back-circle">&#x276E;</div></div>
+
+      <div class="ring-section">
+        <div class="ring-60">
+          <svg viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#1A2D4A" stroke-width="4"/>
+            <path d="M30 6 A24 24 0 0 1 47.5 16.5" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M47.5 16.5 A24 24 0 0 1 54 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M30 54 A24 24 0 0 1 6 30" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+            <path d="M6 30 A24 24 0 0 1 30 6" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="center-icon">&#128234;</div>
+        </div>
+        <div class="step-label">STEP 2/4</div>
+        <div class="step-title">VERIFY CODE</div>
+        <div class="step-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot inactive"></div>
+          <div class="dot inactive"></div>
+        </div>
+      </div>
+
+      <div class="subtitle" style="margin-bottom:32px;">Enter the 6-digit code sent to +233 XX XXX XXXX</div>
+
+      <div class="otp-input">
+        <div class="cell filled active">5</div>
+        <div class="cell filled">1</div>
+        <div class="cell filled">4</div>
+        <div class="cell">&#x2022;</div>
+        <div class="cell">&#x2022;</div>
+        <div class="cell">&#x2022;</div>
+      </div>
+
+      <div style="text-align:center; font-size:12px; color:#7B8A9B;">
+        Resend code in <span style="color:#F9A825; font-weight:600;">0:30</span>
+      </div>
+      <div style="text-align:center; margin-top:8px;">
+        <span style="font-size:11px; color:#F9A825; font-weight:600; cursor:pointer;">Use password instead</span>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="bottom-area">
+        <button class="ks-button-cta">
+          <span class="label">VERIFY</span>
+          <div class="arrow">&#x2192;</div>
+        </button>
+      </div>
+    </div>
+    <div style="padding:6px 12px; background:rgba(249,168,37,0.08); border-top:1px solid rgba(249,168,37,0.15); text-align:center;">
+      <span class="pill">OTP input (pinput)</span>
+      <span class="pill">KsButton(cta)</span>
+    </div>
+  </div>
+
+  <!-- 3. PASSWORD ENTRY — Step 3/4 -->
+  <div class="phone-frame">
+    <div class="screen">
+      <div class="back-row"><div class="back-circle">&#x276E;</div></div>
+
+      <div class="ring-section">
+        <div class="ring-60">
+          <svg viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#1A2D4A" stroke-width="4"/>
+            <path d="M30 6 A24 24 0 0 1 47.5 16.5" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M47.5 16.5 A24 24 0 0 1 54 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M30 54 A24 24 0 0 1 6 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M6 30 A24 24 0 0 1 30 6" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="center-icon">&#128274;</div>
+        </div>
+        <div class="step-label">STEP 3/4</div>
+        <div class="step-title">PASSWORD</div>
+        <div class="step-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot inactive"></div>
+        </div>
+      </div>
+
+      <div class="subtitle" style="margin-bottom:32px;">Enter your password</div>
+
+      <div class="input-row" style="border-bottom:none;">
+        <input class="digits" placeholder="Enter password" type="password" style="letter-spacing:0;font-size:20px;">
+      </div>
+      <div class="gradient-underline"></div>
+
+      <div style="margin-top:16px; text-align:center;">
+        <span style="font-size:11px; color:#F9A825; font-weight:600; cursor:pointer;">Forgot password? Log in with OTP</span>
+      </div>
+      <div style="margin-top:4px; text-align:center;">
+        <span style="font-size:11px; color:#7B8A9B; font-weight:500; cursor:pointer;">Not you? Sign in as different user</span>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="bottom-area">
+        <button class="ks-button-cta">
+          <span class="label">SIGN IN</span>
+          <div class="arrow">&#x2192;</div>
+        </button>
+      </div>
+    </div>
+    <div style="padding:6px 12px; background:rgba(249,168,37,0.08); border-top:1px solid rgba(249,168,37,0.15); text-align:center;">
+      <span class="pill">KsTextField(text)</span>
+      <span class="pill">KsButton(cta)</span>
+    </div>
+  </div>
+
+  <!-- 4. CREATE PASSWORD — Step 3/4 sub-step -->
+  <div class="phone-frame">
+    <div class="screen">
+      <div class="back-row"><div class="back-circle">&#x276E;</div></div>
+
+      <div class="ring-section">
+        <div class="ring-60">
+          <svg viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#1A2D4A" stroke-width="4"/>
+            <path d="M30 6 A24 24 0 0 1 47.5 16.5" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M47.5 16.5 A24 24 0 0 1 54 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M30 54 A24 24 0 0 1 6 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M6 30 A24 24 0 0 1 30 6" fill="none" stroke="#1A2D4A" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="center-icon">&#128273;</div>
+        </div>
+        <div class="step-label">STEP 3/4</div>
+        <div class="step-title">CREATE PASSWORD</div>
+        <div class="step-dots">
+          <div class="sub-dots">
+            <div class="sub-dot"></div>
+            <div class="sub-dot"></div>
+          </div>
+          <div class="sub-dots" style="margin-left:6px;">
+            <div class="sub-dot inactive"></div>
+            <div class="sub-dot inactive"></div>
+          </div>
+          <div style="margin-left:6px;"><div class="dot inactive"></div></div>
+        </div>
+      </div>
+
+      <div class="subtitle" style="margin-bottom:24px;">Create a password for your account.</div>
+
+      <div class="input-row" style="border-bottom:none;">
+        <input class="digits" placeholder="Enter password" type="password" style="letter-spacing:0;font-size:20px;">
+      </div>
+      <div class="gradient-underline"></div>
+      <div style="height:16px;"></div>
+      <div class="input-row" style="border-bottom:none;">
+        <input class="digits" placeholder="Confirm password" type="password" style="letter-spacing:0;font-size:20px;">
+      </div>
+      <div class="gradient-underline"></div>
+
+      <div style="margin-top:16px; display:flex; flex-wrap:wrap; gap:6px;">
+        <span style="font-size:10px; color:#66BB6A;">&#x2713; 8+ characters</span>
+        <span style="font-size:10px; color:#7B8A9B;">&#x2717; Uppercase</span>
+        <span style="font-size:10px; color:#7B8A9B;">&#x2717; Number</span>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="bottom-area">
+        <button class="ks-button-cta">
+          <span class="label">CONTINUE</span>
+          <div class="arrow">&#x2192;</div>
+        </button>
+      </div>
+    </div>
+    <div style="padding:6px 12px; background:rgba(249,168,37,0.08); border-top:1px solid rgba(249,168,37,0.15); text-align:center;">
+      <span class="pill">2× KsTextField(text)</span>
+      <span class="pill">KsButton(cta)</span>
+      <span class="pill">sub-step dots</span>
+    </div>
+  </div>
+
+  <!-- 5. PIN ENTRY — Step 4/4 -->
+  <div class="phone-frame">
+    <div class="screen">
+      <div class="back-row"><div class="back-circle">&#x276E;</div></div>
+
+      <div class="ring-section">
+        <div class="ring-60">
+          <svg viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="#1A2D4A" stroke-width="4"/>
+            <path d="M30 6 A24 24 0 0 1 47.5 16.5" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M47.5 16.5 A24 24 0 0 1 54 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M30 54 A24 24 0 0 1 6 30" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+            <path d="M6 30 A24 24 0 0 1 30 6" fill="none" stroke="#F9A825" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="center-icon">&#128140;</div>
+        </div>
+        <div class="step-label">STEP 4/4</div>
+        <div class="step-title">SECURITY PIN</div>
+        <div class="step-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+
+      <div class="subtitle" style="margin-bottom:32px;">Create a 6-digit PIN for quick access.</div>
+
+      <!-- Pin dots -->
+      <div style="display:flex; gap:12px; justify-content:center; margin-bottom:40px;">
+        <div style="width:16px;height:16px;border-radius:50%;background:#F9A825;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#F9A825;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#F9A825;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#1A2D4A;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#1A2D4A;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#1A2D4A;"></div>
+      </div>
+
+      <!-- Numpad -->
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:240px; margin:0 auto;">
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">1</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">2</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">3</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">4</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">5</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">6</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">7</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">8</div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">9</div>
+        <div style="height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center;"></div>
+        <div style="height:52px; border-radius:12px; background:#0F233C; display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:700; cursor:pointer;">0</div>
+        <div style="height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#7B8A9B; font-size:20px; cursor:pointer;">&#x232B;</div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="bottom-area">
+        <button class="ks-button-cta">
+          <span class="label">DONE</span>
+          <div class="arrow">&#x2192;</div>
+        </button>
+      </div>
+    </div>
+    <div style="padding:6px 12px; background:rgba(249,168,37,0.08); border-top:1px solid rgba(249,168,37,0.15); text-align:center;">
+      <span class="pill">Custom numpad</span>
+      <span class="pill">KsButton(cta)</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- AuthStepHeader API card -->
+<div style="width:100%; max-width:860px; margin:30px auto 0; padding:24px; background:rgba(15,35,60,0.6); border-radius:12px; border:1px solid #1A2D4A;">
+  <div style="color:#F9A825; font-weight:800; font-size:15px; letter-spacing:0.5px; margin-bottom:12px;">NEW WIDGET: AuthStepHeader</div>
+  <code style="color:#C8A84E; font-size:12px; line-height:1.8;">
+AuthStepHeader(
+  totalSteps: 4,
+  currentStep: 0,
+  subStep: 0,
+  icon: LineAwesomeIcons.mobile_alt,
+  stepLabel: 'PHONE',
+)
+  </code>
+  <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+    <span style="background:rgba(249,168,37,0.12); color:#F9A825; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; border:1px solid rgba(249,168,37,0.2);">Reuses _RingPainter from KsStepDrawer</span>
+    <span style="background:rgba(76,175,80,0.12); color:#66BB6A; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; border:1px solid rgba(76,175,80,0.2);">60px compact — inline in Scaffold</span>
+    <span style="background:rgba(249,168,37,0.12); color:#F9A825; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; border:1px solid rgba(249,168,37,0.2);">Sub-step dots for multi-step screens</span>
+    <span style="background:rgba(33,150,243,0.12); color:#64B5F6; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; border:1px solid rgba(33,150,243,0.2);">Only 4 screens need it: phone_entry, otp_verify, password_entry/create, pin_entry</span>
+  </div>
+</div>
+
+</body>
+</html>

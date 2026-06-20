@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -103,15 +104,28 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
   }
 
   /// Advance [schedule.nextDueDate] by its interval.
+  /// Advance [schedule.nextDueDate] to the next occurrence.
+  /// All dates use local-midnight semantics (no time component, no UTC offset).
+  /// The device's local timezone is the authority — Ghana is GMT+0 year-round.
   DateTime _advanceNextDueDate(RecurringScheduleEntity schedule) {
     final next = schedule.nextDueDate;
     switch (schedule.intervalType) {
       case 'weekly':   return next.add(const Duration(days: 7));
-      case 'monthly':  return DateTime(next.year, next.month + 1, next.day);
-      case 'quarterly': return DateTime(next.year, next.month + 3, next.day);
-      case 'yearly':   return DateTime(next.year + 1, next.month, next.day);
+      case 'monthly':  return _addMonths(next, 1);
+      case 'quarterly': return _addMonths(next, 3);
+      case 'yearly':   return _addMonths(next, 12);
       default:         return next.add(const Duration(days: 30));
     }
+  }
+
+  /// Add [months] to [date], clamping day to the last valid day of the target month.
+  /// Prevents crashes when advancing from e.g. Jan 31 → Feb 28 (not Feb 31).
+  static DateTime _addMonths(DateTime date, int months) {
+    final targetMonth = (date.month - 1 + months) % 12 + 1;
+    final targetYear = date.year + ((date.month - 1 + months) ~/ 12);
+    final lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
+    final day = date.day > lastDay ? lastDay : date.day;
+    return DateTime(targetYear, targetMonth, day);
   }
 
   /// Generate jobs for all due schedules, advance their nextDueDate.
@@ -143,45 +157,47 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
       final jobsBox = HiveService.jobs;
       final localDs = _ref.read(recurringScheduleLocalDatasourceProvider);
 
-      // Phase 1: Write jobs (payload first)
-      final jobsToWrite = <String, Map<String, dynamic>>{};
-      for (final schedule in due) {
-        final jobId = const Uuid().v4();
-        final createdAt = DateTime.now();
-        final jobModel = JobModel(
-          id: jobId,
-          userId: userId,
-          customerId: schedule.customerId,
-          serviceType: schedule.serviceType,
-          jobDate: schedule.nextDueDate,
-          location: null,
-          notes: schedule.notes,
-          amountCharged: null,
-          followUpSent: false,
-          syncStatus: 'pending',
-          isArchived: false,
-          status: 'quoted',
-          paymentStatus: 'unpaid',
-          createdAt: createdAt.toIso8601String(),
-          updatedAt: createdAt.toIso8601String(),
-          isDeleted: false,
-          subEntitiesSaved: false,
-          generatedFromScheduleId: schedule.id,
-          generationBatchId: batchId,
-        );
-        jobsToWrite[jobId] = jobModel.toJson().cast<String, dynamic>();
+      // Phase 1: Offload JobModel construction + JSON serialization to
+      // background isolate so the main UI thread stays responsive.
+      // Pack schedule data as raw maps (sendable across isolates).
+      final dueMaps = due.map((s) => {
+        'id': s.id,
+        'customerId': s.customerId,
+        'serviceType': s.serviceType,
+        'nextDueDate': s.nextDueDate.toIso8601String(),
+        'notes': s.notes,
+        'dayOfWeek': s.dayOfWeek,
+        'dayOfMonth': s.dayOfMonth,
+      }).toList();
+      final jobsToWrite = await Isolate.run(() => _buildJobPayloads(
+        scheduleData: dueMaps,
+        userId: userId,
+        batchId: batchId,
+      ));
+      debugPrint('[KS:RECURRING] Isolate built ${jobsToWrite.length} job payloads');
+
+      // Phase 2: Write jobs to Hive in batches with yields
+      const chunkSize = 20;
+      final entries = jobsToWrite.entries.toList();
+      for (int i = 0; i < entries.length; i += chunkSize) {
+        final chunk = entries.sublist(i, (i + chunkSize).clamp(0, entries.length));
+        for (final entry in chunk) {
+          await jobsBox.put(entry.key, entry.value);
+        }
+        await jobsBox.flush();
+        // Yield to event loop so the UI can process frames
+        await Future.delayed(Duration.zero);
       }
 
-      for (final entry in jobsToWrite.entries) {
-        await jobsBox.put(entry.key, entry.value);
-      }
-      await jobsBox.flush();
-
-      // Phase 2: Advance schedules (trigger second)
-      for (final schedule in due) {
-        final advanced = _advanceNextDueDate(schedule);
-        final updated = schedule.copyWith(nextDueDate: advanced, updatedAt: DateTime.now());
-        await localDs.save(updated);
+      // Phase 3: Advance schedules (trigger second) in batches with yields
+      for (int i = 0; i < due.length; i += chunkSize) {
+        final chunk = due.sublist(i, (i + chunkSize).clamp(0, due.length));
+        for (final schedule in chunk) {
+          final advanced = _advanceNextDueDate(schedule);
+          final updated = schedule.copyWith(nextDueDate: advanced, updatedAt: DateTime.now());
+          await localDs.save(updated);
+        }
+        await Future.delayed(Duration.zero);
       }
 
       count = due.length;
@@ -193,7 +209,7 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
       return 0;
     }
 
-    // Phase 3: Mark WAL completed and clear
+    // Phase 4: Mark WAL completed and clear
     await meta.put('pending_schedule_gen:$batchId', {
       'batch_id': batchId,
       'target_schedule_ids': due.map((s) => s.id).toList(),
@@ -205,6 +221,43 @@ class RecurringScheduleNotifier extends StateNotifier<AsyncValue<List<RecurringS
 
     await load();
     return count;
+  }
+
+  /// Background-isolate entrypoint for Phase 1 job payload construction.
+  /// Extracted as a static method so [Isolate.run] can invoke it.
+  static Map<String, Map<String, dynamic>> _buildJobPayloads({
+    required List<Map<String, dynamic>> scheduleData,
+    required String userId,
+    required String batchId,
+  }) {
+    final jobsToWrite = <String, Map<String, dynamic>>{};
+    for (final data in scheduleData) {
+      final jobId = const Uuid().v4();
+      final createdAt = DateTime.now();
+      final jobModel = JobModel(
+        id: jobId,
+        userId: userId,
+        customerId: data['customerId'] as String,
+        serviceType: data['serviceType'] as String? ?? '',
+        jobDate: DateTime.tryParse(data['nextDueDate'] as String? ?? '') ?? DateTime.now(),
+        location: null,
+        notes: data['notes'] as String?,
+        amountCharged: null,
+        followUpSent: false,
+        syncStatus: 'pending',
+        isArchived: false,
+        status: 'quoted',
+        paymentStatus: 'unpaid',
+        createdAt: createdAt.toIso8601String(),
+        updatedAt: createdAt.toIso8601String(),
+        isDeleted: false,
+        subEntitiesSaved: false,
+        generatedFromScheduleId: data['id'] as String?,
+        generationBatchId: batchId,
+      );
+      jobsToWrite[jobId] = jobModel.toJson().cast<String, dynamic>();
+    }
+    return jobsToWrite;
   }
 }
 

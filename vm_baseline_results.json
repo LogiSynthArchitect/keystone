@@ -1,0 +1,20 @@
+[
+  {
+    "step": 1,
+    "name": "Phone entry",
+    "status": "PASS",
+    "detail": "Entered 0240000000"
+  },
+  {
+    "step": 2,
+    "name": "Dev bypass auth",
+    "status": "FAIL",
+    "detail": "Not redirected to dashboard after bypass"
+  },
+  {
+    "step": 3,
+    "name": "Tab navigation",
+    "status": "FAIL",
+    "detail": "Only 0/4 tabs responded"
+  }
+]

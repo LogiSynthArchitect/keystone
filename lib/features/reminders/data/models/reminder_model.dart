@@ -15,9 +15,9 @@ class ReminderModel extends ReminderEntity {
   factory ReminderModel.fromJson(Map<String, dynamic> json) => ReminderModel(
     id: json['id'] as String,
     userId: json['user_id'] as String,
-    jobId: json['job_id'] as String,
-    type: json['type'] as String,
-    status: json['status'] as String,
+    jobId: (json['job_id'] as String?) ?? '',
+    type: (json['type'] as String?) ?? '',
+    status: (json['status'] as String?) ?? '',
     createdAt: DateTime.parse(json['created_at'] as String),
     snoozedUntil: json['snoozed_until'] != null ? DateTime.parse(json['snoozed_until'] as String) : null,
     dismissedAt: json['dismissed_at'] != null ? DateTime.parse(json['dismissed_at'] as String) : null,

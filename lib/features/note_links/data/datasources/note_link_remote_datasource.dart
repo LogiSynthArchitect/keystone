@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:keystone/core/constants/supabase_constants.dart';
-import 'package:keystone/core/errors/network_exception.dart';
+import 'package:arclock/core/constants/supabase_constants.dart';
+import 'package:arclock/core/errors/network_exception.dart';
 import '../models/note_job_link_model.dart';
 
 class NoteLinkRemoteDatasource {

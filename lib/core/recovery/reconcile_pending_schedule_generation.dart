@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:keystone/core/storage/hive_service.dart';
+import 'package:arclock/core/storage/hive_service.dart';
 
 /// Cross-box Write-Ahead Log entry for recurring schedule job generation.
 ///

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Adaptive color palette for Keystone.
+/// Adaptive color palette for Arclock.
 /// Dark  = the existing navy-gold industrial palette.
 /// Light = white-card, navy-text inversion of the same palette.
 ///

@@ -27,11 +27,11 @@ class FollowUpModel {
 
   factory FollowUpModel.fromJson(Map<String, dynamic> json) => FollowUpModel(
         id: json['id'] as String,
-        jobId: json['job_id'] as String,
+        jobId: (json['job_id'] as String?) ?? '',
         userId: json['user_id'] as String,
-        customerId: json['customer_id'] as String,
-        messageText: json['message_text'] as String,
-        sentAt: json['sent_at'] as String,
+        customerId: (json['customer_id'] as String?) ?? '',
+        messageText: (json['message_text'] as String?) ?? '',
+        sentAt: (json['sent_at'] as String?) ?? '',
         deliveryConfirmed: json['delivery_confirmed'] as bool,
         responseStatus: json['response_status'] as String? ?? 'sent',
         responseUpdatedAt: json['response_updated_at'] as String?,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../../../core/widgets/ks_logo.dart';
 import '../../../../core/widgets/auth_step_header.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
@@ -16,6 +17,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 import '../providers/auth_notifier.dart';
 
 class PasswordEntryScreen extends ConsumerStatefulWidget {
@@ -27,46 +29,21 @@ class PasswordEntryScreen extends ConsumerStatefulWidget {
 }
 
 class _PasswordEntryScreenState extends ConsumerState<PasswordEntryScreen> {
-  final _passwordController = TextEditingController();
-  final _focusNode = FocusNode();
-  bool _obscure = true;
-  bool _isFocused = false;
+  String _password = '';
 
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(
-        () => setState(() => _isFocused = _focusNode.hasFocus));
-  }
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  bool get _canSubmit => _passwordController.text.length >= 8;
+  bool get _canSubmit => _password.length >= 8;
 
   Future<void> _onSubmit() async {
     if (!_canSubmit) return;
-    _focusNode.unfocus();
     final authNotifier = ref.read(authNotifierProvider.notifier);
     final supabase = ref.read(supabaseClientProvider);
     final service = InternalAuthService(supabase);
     final phone = ref.read(authNotifierProvider).phoneNumber ?? '';
 
     final session =
-        await service.verifyPassword(phone, _passwordController.text);
+        await service.verifyPassword(phone, _password);
     if (session != null && mounted) {
       await ref.read(authStateProvider.notifier).refresh();
-      if (!mounted) return;
-      final method = await service.getEnrolledMethod();
-      if (method == AuthMethod.none) {
-        await _promptFastUnlock(service);
-        if (!mounted) return;
-        await ref.read(authStateProvider.notifier).refresh();
-      }
       if (!mounted) return;
       ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
       await KsSuccessMoment.show(context, title: 'WELCOME BACK');
@@ -77,49 +54,8 @@ class _PasswordEntryScreenState extends ConsumerState<PasswordEntryScreen> {
   }
 
   Future<void> _promptFastUnlock(InternalAuthService service) async {
-    final shouldEnroll = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.ksc.primary900,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: context.ksc.primary700),
-        ),
-        title: Text('FAST UNLOCK',
-            style:
-                AppTextStyles.h2.copyWith(color: context.ksc.white)),
-        content: Text(
-          'Set up fingerprint or PIN for faster logins on this device?',
-          style: AppTextStyles.bodyMedium.copyWith(
-              color: context.ksc.neutral400, fontWeight: FontWeight.w600),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('SKIP',
-                style: TextStyle(
-                    color: context.ksc.neutral500,
-                    fontWeight: FontWeight.w700)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: context.ksc.accent500),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('SET UP',
-                style: TextStyle(
-                    color: context.ksc.primary900,
-                    fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
-    );
-    if (shouldEnroll != true || !mounted) return;
-
     try {
-      final enrolled = await service.enrollBiometric();
-      if (enrolled || !mounted) return;
-      if (mounted) context.push(RouteNames.pinSetup);
+      await service.enrollBiometric();
     } on BiometricAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -130,8 +66,9 @@ class _PasswordEntryScreenState extends ConsumerState<PasswordEntryScreen> {
           ),
         );
       }
-      if (mounted) context.push(RouteNames.pinSetup);
     }
+    // PIN is mandatory — biometric is optional
+    if (mounted) context.push(RouteNames.pinSetup);
   }
 
   @override
@@ -153,7 +90,11 @@ class _PasswordEntryScreenState extends ConsumerState<PasswordEntryScreen> {
                   children: [
                     const SizedBox(height: 16),
                     _buildBackButton(context),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 20),
+
+                    // Brand logo
+                    const Center(child: KsLogo(size: 32)),
+                    const SizedBox(height: 20),
 
                     // Step ring header
                     const Center(
@@ -241,85 +182,12 @@ class _PasswordEntryScreenState extends ConsumerState<PasswordEntryScreen> {
       );
 
   Widget _buildPasswordField(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'PASSWORD',
-          style: TextStyle(
-            fontFamily: 'BarlowSemiCondensed',
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.0,
-            color: context.ksc.neutral400,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _passwordController,
-                focusNode: _focusNode,
-                onChanged: (_) => setState(() {}),
-                obscureText: _obscure,
-                style: TextStyle(
-                  fontFamily: 'BarlowSemiCondensed',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: context.ksc.white,
-                ),
-                cursorColor: context.ksc.accent500,
-                decoration: InputDecoration(
-                  hintText: 'Enter your password',
-                  hintStyle: TextStyle(
-                    fontFamily: 'BarlowSemiCondensed',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: context.ksc.neutral500,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                ),
-                onSubmitted: (_) => _onSubmit(),
-              ),
-            ),
-            GestureDetector(
-              onTap: () => setState(() => _obscure = !_obscure),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  _obscure
-                      ? LineAwesomeIcons.eye_solid
-                      : LineAwesomeIcons.eye_slash_solid,
-                  size: 18,
-                  color: context.ksc.neutral400.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-          ],
-        ),
-        AnimatedOpacity(
-          opacity: _isFocused ? 1.0 : 0.4,
-          duration: const Duration(milliseconds: 200),
-          child: Container(
-            height: 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  context.ksc.accent500,
-                  context.ksc.primary500,
-                  Colors.transparent,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return FocusSafeTextField(
+      label: 'PASSWORD',
+      hint: 'Enter your password',
+      obscureText: true,
+      onChanged: (v) => setState(() => _password = v),
+      onSubmitted: (_) => _onSubmit(),
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
   }
 

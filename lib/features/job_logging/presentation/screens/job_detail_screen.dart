@@ -3,40 +3,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart' show Share;
 import 'package:printing/printing.dart';
-import 'package:keystone/core/services/invoice_pdf_generator.dart';
-import 'package:keystone/core/services/receipt_pdf_generator.dart';
+import 'package:arclock/core/services/invoice_pdf_generator.dart';
+import 'package:arclock/core/services/receipt_pdf_generator.dart';
 import 'package:video_player/video_player.dart';
-import 'package:record/record.dart';
-import 'package:keystone/core/theme/app_text_styles.dart';
-import 'package:keystone/core/theme/ks_colors.dart';
-import 'package:keystone/core/utils/date_formatter.dart';
-import 'package:keystone/core/utils/currency_formatter.dart';
-import 'package:keystone/core/widgets/ks_app_bar.dart';
-import 'package:keystone/core/widgets/ks_icon_well.dart';
-import 'package:keystone/core/widgets/ks_badge.dart';
-import 'package:keystone/core/widgets/ks_confirm_dialog.dart';
-import 'package:keystone/core/widgets/ks_bottom_sheet_scaffold.dart';
-import 'package:keystone/core/widgets/sync_status_indicator.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
-import 'package:keystone/core/router/route_names.dart';
-import 'package:keystone/core/providers/auth_provider.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_photo_entity.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_part_entity.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_hardware_entity.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_expense_entity.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_audit_entry_entity.dart';
-import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
-import 'package:keystone/features/job_logging/presentation/screens/edit_job_screen.dart';
-import 'package:keystone/features/customer_history/presentation/providers/customer_providers.dart';
-import 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart';
-import 'package:keystone/features/note_links/presentation/providers/note_link_provider.dart';
-import 'package:keystone/features/whatsapp_followup/presentation/widgets/follow_up_button.dart';
-import 'package:keystone/features/whatsapp_followup/presentation/widgets/follow_up_message_preview.dart';
-import 'package:keystone/core/providers/permissions_provider.dart';
-import 'package:keystone/core/utils/whatsapp_launcher.dart';
+import 'package:arclock/core/theme/app_text_styles.dart';
+import 'package:arclock/core/theme/ks_colors.dart';
+import 'package:arclock/core/utils/date_formatter.dart';
+import 'package:arclock/core/utils/currency_formatter.dart';
+import 'package:arclock/core/widgets/ks_app_bar.dart';
+import 'package:arclock/core/widgets/ks_icon_well.dart';
+import 'package:arclock/core/widgets/ks_badge.dart';
+import 'package:arclock/core/widgets/ks_confirm_dialog.dart';
+import 'package:arclock/core/widgets/ks_bottom_sheet_scaffold.dart';
+import 'package:arclock/core/widgets/sync_status_indicator.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/router/route_names.dart';
+import 'package:arclock/core/providers/auth_provider.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_photo_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_part_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_hardware_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_expense_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_audit_entry_entity.dart';
+import 'package:arclock/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:arclock/features/job_logging/presentation/screens/edit_job_screen.dart';
+import 'package:arclock/features/customer_history/presentation/providers/customer_providers.dart';
+import 'package:arclock/features/knowledge_base/presentation/providers/notes_providers.dart';
+import 'package:arclock/features/note_links/presentation/providers/note_link_provider.dart';
+import 'package:arclock/features/whatsapp_followup/presentation/widgets/follow_up_button.dart';
+import 'package:arclock/features/whatsapp_followup/presentation/widgets/follow_up_message_preview.dart';
+import 'package:arclock/core/providers/permissions_provider.dart';
+import 'package:arclock/core/utils/whatsapp_launcher.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Tracks customer IDs that have been warned about WhatsApp registration.
@@ -559,7 +557,7 @@ class JobDetailScreen extends ConsumerWidget {
         final file = await InvoicePdfGenerator.generate(data);
         await Printing.sharePdf(
           bytes: await file.readAsBytes(),
-          filename: 'keystone_invoice_${job.id.substring(0, 8)}.pdf',
+          filename: 'arclock_invoice_${job.id.substring(0, 8)}.pdf',
         );
       },
       child: Container(
@@ -605,7 +603,7 @@ class JobDetailScreen extends ConsumerWidget {
         final file = await ReceiptPdfGenerator.generate(data);
         await Printing.sharePdf(
           bytes: await file.readAsBytes(),
-          filename: 'keystone_receipt_${job.id.substring(0, 8)}.pdf',
+          filename: 'arclock_receipt_${job.id.substring(0, 8)}.pdf',
         );
       },
       child: Container(
@@ -675,7 +673,7 @@ class JobDetailScreen extends ConsumerWidget {
                         children: [
                           Text(customer.fullName.toUpperCase(), style: AppTextStyles.body.copyWith(color: context.ksc.white, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                           const SizedBox(height: 2),
-                          Text(customer.phoneNumber ?? "NO CONTACT", style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
+                          Text(customer.phoneNumber.isEmpty ? "NO CONTACT" : customer.phoneNumber, style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -691,7 +689,7 @@ class JobDetailScreen extends ConsumerWidget {
                 Expanded(
                   child: _quickActionBtn(context, LineAwesomeIcons.phone_solid, "CALL", context.ksc.success500, () async {
                     final phone = customer.phoneNumber;
-                    if (phone != null && phone.isNotEmpty) {
+                    if (phone.isNotEmpty) {
                       final cleaned = phone.replaceAll(RegExp(r'[^0-9+]'), '');
                       final uri = Uri.parse('tel:$cleaned');
                       if (await canLaunchUrl(uri)) {
@@ -704,7 +702,7 @@ class JobDetailScreen extends ConsumerWidget {
                 Expanded(
                   child: _quickActionBtn(context, LineAwesomeIcons.whatsapp, "WHATSAPP", const Color(0xFF25D366), () async {
                     final phone = customer.phoneNumber;
-                    if (phone != null && phone.isNotEmpty) {
+                    if (phone.isNotEmpty) {
                       // Show one-time info toast before redirecting to WhatsApp
                       if (!_warnedWhatsAppCustomers.contains(customer.id)) {
                         _warnedWhatsAppCustomers.add(customer.id);
@@ -719,7 +717,7 @@ class JobDetailScreen extends ConsumerWidget {
                       try {
                         await WhatsAppLauncher.openChat(
                           phoneNumber: phone,
-                          message: 'Hello from Keystone Services.',
+                          message: 'Hello from Arclock Services.',
                         );
                       } catch (_) {
                         // WhatsApp not installed — handled by WhatsAppLauncher
@@ -1118,10 +1116,6 @@ class JobDetailScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  bool _isValidNetworkUrl(String url) {
-    return url.startsWith('http://') || url.startsWith('https://');
   }
 
   Widget _buildAuditLogSection(BuildContext context, WidgetRef ref, JobEntity job) {
@@ -1561,7 +1555,7 @@ class JobDetailScreen extends ConsumerWidget {
         title: 'UPDATE PAYMENT?',
         message: 'Mark as ${newStatus.toUpperCase()} '
             'via ${method?.toUpperCase() ?? 'NONE'}?\n\n'
-            'Current: ${job.paymentStatus?.toUpperCase() ?? 'UNPAID'}',
+            'Current: ${job.paymentStatus.toUpperCase()}',
         confirmLabel: 'UPDATE',
         isDanger: newStatus == 'paid',
         onConfirm: () {},
@@ -1840,7 +1834,7 @@ class _FullScreenMediaViewerState extends State<_FullScreenMediaViewer> {
 
   Future<void> _initVideoForIndex(int index) async {
     final photo = widget.photos[index];
-    if (photo.mediaType != 'video') return;
+    if (photo.mediaType == 'image') return;
 
     final controller = VideoPlayerController.networkUrl(Uri.parse(photo.storagePath));
     try {
@@ -1851,7 +1845,7 @@ class _FullScreenMediaViewerState extends State<_FullScreenMediaViewer> {
       return;
     }
     if (!mounted) { controller.dispose(); return; }
-    controller.play();
+    if (photo.mediaType == 'video') controller.play();
     controller.addListener(_onVideoUpdate);
     if (mounted) {
       setState(() { _videoController = controller; });
@@ -1966,23 +1960,28 @@ class _FullScreenMediaViewerState extends State<_FullScreenMediaViewer> {
         return const Center(child: CircularProgressIndicator(color: Colors.white));
 
       case 'audio':
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(LineAwesomeIcons.microphone_solid, color: Colors.white54, size: 64),
-              const SizedBox(height: 16),
-              Text(
-                photo.label?.toUpperCase() ?? "AUDIO RECORDING",
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+        if (_videoController != null && _videoController!.value.isInitialized) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(LineAwesomeIcons.microphone_solid, color: Colors.white54, size: 64),
+                const SizedBox(height: 24),
+                _AudioPlayerWidget(controller: _videoController!),
+                const SizedBox(height: 12),
+                Text(
+                  photo.label?.toUpperCase() ?? "AUDIO RECORDING",
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
+              ],
+            ),
+          );
+        }
+        return const Center(child: CircularProgressIndicator(color: Colors.white));
 
       default: // image
         return InteractiveViewer(

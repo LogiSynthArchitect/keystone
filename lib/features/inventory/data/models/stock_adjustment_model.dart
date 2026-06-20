@@ -27,11 +27,11 @@ class StockAdjustmentModel {
 
   factory StockAdjustmentModel.fromJson(Map<String, dynamic> json) => StockAdjustmentModel(
     id: json['id'] as String,
-    itemId: json['item_id'] as String,
+    itemId: (json['item_id'] as String?) ?? '',
     userId: json['user_id'] as String,
-    adjustmentType: json['adjustment_type'] as String,
-    quantityChange: json['quantity_change'] as int,
-    quantityAfter: json['quantity_after'] as int,
+    adjustmentType: (json['adjustment_type'] as String?) ?? '',
+    quantityChange: (json['quantity_change'] as int?) ?? 0,
+    quantityAfter: (json['quantity_after'] as int?) ?? 0,
     reason: json['reason'] as String?,
     referenceType: json['reference_type'] as String?,
     referenceId: json['reference_id'] as String?,

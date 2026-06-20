@@ -20,9 +20,9 @@ class JobExpenseModel {
   factory JobExpenseModel.fromJson(Map<String, dynamic> json) => JobExpenseModel(
     id: json['id'] as String,
     jobId: json['job_id'] as String,
-    category: json['category'] as String,
-    description: json['description'] as String,
-    amount: json['amount'] as int,
+    category: (json['category'] as String?) ?? '',
+    description: (json['description'] as String?) ?? '',
+    amount: (json['amount'] as int?) ?? 0,
     createdAt: json['created_at'] as String,
   );
 

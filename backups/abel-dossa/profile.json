@@ -1,0 +1,21 @@
+[
+  {
+    "id": "7a1fcd30-10fe-44bf-bc6d-c28945b4f0b7",
+    "user_id": "273649c3-15bc-4026-b9fb-a7f44aa0ec16",
+    "display_name": "Abel Dossa",
+    "bio": "",
+    "photo_url": "https://ifzpdizxitlvjbmzozew.supabase.co/storage/v1/object/public/profile-photos/273649c3-15bc-4026-b9fb-a7f44aa0ec16/profile.png?t=1774049926378",
+    "services": [
+      "car_lock_programming",
+      "door_lock_installation",
+      "door_lock_repair",
+      "smart_lock_installation"
+    ],
+    "whatsapp_number": "0530823904",
+    "is_public": true,
+    "profile_url": "abel-dossa",
+    "created_at": "2026-03-20T23:19:44.818114+00:00",
+    "updated_at": "2026-03-20T23:38:52.778667+00:00",
+    "password_created": false
+  }
+]

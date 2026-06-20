@@ -1,5 +1,7 @@
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
+import 'package:arclock/features/inventory/domain/entities/inventory_item_entity.dart';
+import 'package:arclock/features/customer_history/domain/entities/customer_entity.dart';
 import '../domain/models/reminder_model.dart';
 import '../domain/models/reminder_thresholds.dart';
 
@@ -21,6 +23,8 @@ class ReminderEngine {
     required List<JobEntity> jobs,
     required Map<String, Map<String, dynamic>> followUps,
     required List<RecurringScheduleEntity> recurringSchedules,
+    required List<InventoryItemEntity> inventoryItems,
+    required List<CustomerEntity> customers,
     required ReminderThresholds thresholds,
     required Set<String> dismissedKeys,
     required DateTime now,
@@ -72,6 +76,45 @@ class ReminderEngine {
           jobServiceType: schedule.serviceType,
           jobDate: schedule.nextDueDate,
           type: ReminderType.recurringJobOverdue,
+          isDismissed: dismissedKeys.contains(key),
+        );
+        reminders.add(reminder);
+        if (!dismissedKeys.contains(key)) {
+          newlyActive.add(reminder);
+        }
+      }
+    }
+
+    // ── Low stock reminders ──
+    for (final item in inventoryItems) {
+      if (item.isDeleted || item.isArchived) continue;
+      if (item.isLowStock && !item.isLowStockSnoozed) {
+        final key = '${item.id}-${ReminderType.lowStock.name}';
+        final reminder = Reminder(
+          jobId: item.id,
+          jobServiceType: item.name,
+          jobDate: now,
+          type: ReminderType.lowStock,
+          isDismissed: dismissedKeys.contains(key),
+        );
+        reminders.add(reminder);
+        if (!dismissedKeys.contains(key)) {
+          newlyActive.add(reminder);
+        }
+      }
+    }
+
+    // ── Dormant customer reminders ──
+    for (final customer in customers) {
+      if (customer.lastJobAt == null) continue;
+      final daysSince = now.difference(customer.lastJobAt!).inDays;
+      if (daysSince >= thresholds.dormantCustomerDays) {
+        final key = '${customer.id}-${ReminderType.dormantCustomer.name}';
+        final reminder = Reminder(
+          jobId: customer.id,
+          jobServiceType: customer.fullName,
+          jobDate: customer.lastJobAt!,
+          type: ReminderType.dormantCustomer,
           isDismissed: dismissedKeys.contains(key),
         );
         reminders.add(reminder);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
 
 class EditableFollowUpState {
   final TextEditingController controller;

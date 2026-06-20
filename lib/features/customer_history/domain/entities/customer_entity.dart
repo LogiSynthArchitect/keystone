@@ -16,6 +16,7 @@ class CustomerEntity {
   final String? coverImageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int syncVersion;
 
   const CustomerEntity({
     required this.id,
@@ -33,6 +34,7 @@ class CustomerEntity {
     this.coverImageUrl,
     required this.createdAt,
     required this.updatedAt,
+    this.syncVersion = 1,
   });
 
   bool get isRepeatCustomer => totalJobs > 1;
@@ -56,6 +58,7 @@ class CustomerEntity {
     String? coverImageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? syncVersion,
   }) {
     return CustomerEntity(
       id: id ?? this.id,
@@ -73,6 +76,7 @@ class CustomerEntity {
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      syncVersion: syncVersion ?? this.syncVersion,
     );
   }
 }

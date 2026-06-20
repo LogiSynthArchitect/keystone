@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-import 'package:keystone/core/network/connectivity_service.dart';
-import 'package:keystone/features/knowledge_base/domain/entities/note_job_link_entity.dart';
+import 'package:arclock/core/network/connectivity_service.dart';
+import 'package:arclock/features/knowledge_base/domain/entities/note_job_link_entity.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../datasources/note_link_local_datasource.dart';
 import '../datasources/note_link_remote_datasource.dart';

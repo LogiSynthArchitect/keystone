@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
+import '../providers/auth_notifier.dart';
 
 class ChangePhoneScreen extends ConsumerStatefulWidget {
   const ChangePhoneScreen({super.key});
@@ -9,15 +12,13 @@ class ChangePhoneScreen extends ConsumerStatefulWidget {
 }
 
 class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
-  final _phoneCtrl = TextEditingController();
-  final _otpCtrl = TextEditingController();
+  String _phoneNumber = '';
+  String _otpCode = '';
   bool _otpSent = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
-    _otpCtrl.dispose();
     super.dispose();
   }
 
@@ -31,18 +32,15 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Current: +233 20 147 0790',
+              'Current: ${ref.read(supabaseClientProvider).auth.currentUser?.phone ?? 'unknown'}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 24),
-            TextFormField(
-              controller: _phoneCtrl,
+            FocusSafeTextField(
+              onChanged: (v) => _phoneNumber = v,
               keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'New phone number',
-                hintText: '020 000 0000',
-                enabled: !_otpSent,
-              ),
+              hint: '020 000 0000',
+              label: 'New phone number',
             ),
             const SizedBox(height: 20),
             if (!_otpSent)
@@ -64,15 +62,12 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
 
   List<Widget> _buildOtpSection() {
     return [
-      TextFormField(
-        controller: _otpCtrl,
+      FocusSafeTextField(
+        onChanged: (v) => _otpCode = v,
         keyboardType: TextInputType.number,
+        hint: '000000',
+        label: 'Verification code',
         maxLength: 6,
-        decoration: const InputDecoration(
-          labelText: 'Verification code',
-          hintText: '000000',
-          counterText: '',
-        ),
       ),
       const SizedBox(height: 20),
       SizedBox(
@@ -88,19 +83,32 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
   }
 
   Future<void> _sendOtp() async {
+    final phone = _phoneNumber.trim();
+    if (phone.isEmpty) return;
     setState(() => _isLoading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await ref.read(supabaseClientProvider).auth.signInWithOtp(
+        phone: phone,
+      );
       setState(() => _otpSent = true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send code: $e')),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
   Future<void> _verifyOtp() async {
+    final phone = _phoneNumber.trim();
+    final otp = _otpCode.trim();
+    if (otp.length != 6) return;
     setState(() => _isLoading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await ref.read(authNotifierProvider.notifier).verifyOtpAndChangePhone(phone, otp);
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(

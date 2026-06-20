@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:keystone/core/services/local_notification_service.dart';
-import 'package:keystone/core/storage/hive_service.dart';
-import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
-import 'package:keystone/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
+import 'package:arclock/core/services/local_notification_service.dart';
+import 'package:arclock/core/storage/hive_service.dart';
+import 'package:arclock/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:arclock/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
+import 'package:arclock/features/inventory/domain/entities/inventory_item_entity.dart';
+import 'package:arclock/features/customer_history/domain/entities/customer_entity.dart';
 import '../../engine/reminder_engine.dart';
 import '../../domain/models/reminder_model.dart';
 import '../../domain/models/reminder_thresholds.dart';
@@ -87,10 +89,58 @@ class RemindersNotifier extends StateNotifier<RemindersState> {
       }
     } catch (_) {}
 
+    // Build inventory items from Hive
+    final inventoryItems = <InventoryItemEntity>[];
+    try {
+      for (final e in HiveService.inventoryItems.values) {
+        final m = e as Map;
+        inventoryItems.add(InventoryItemEntity(
+          id: m['id'] as String? ?? '',
+          userId: m['user_id'] as String? ?? '',
+          category: InventoryItemCategory.values.firstWhere(
+            (c) => c.dbValue == (m['category'] as String? ?? ''),
+            orElse: () => InventoryItemCategory.consumable,
+          ),
+          name: m['name'] as String? ?? '',
+          quantity: m['quantity'] as int? ?? 0,
+          lowStockThreshold: m['low_stock_threshold'] as int?,
+          isArchived: m['is_archived'] as bool? ?? false,
+          snoozeLowStockUntil: m['snooze_low_stock_until'] != null
+              ? DateTime.tryParse(m['snooze_low_stock_until'] as String)
+              : null,
+          createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? now,
+          updatedAt: DateTime.tryParse(m['updated_at'] as String? ?? '') ?? now,
+          isDeleted: m['is_deleted'] as bool? ?? false,
+        ));
+      }
+    } catch (_) {}
+
+    // Build customers from Hive
+    final customers = <CustomerEntity>[];
+    try {
+      for (final e in HiveService.customers.values) {
+        final m = e as Map;
+        customers.add(CustomerEntity(
+          id: m['id'] as String? ?? '',
+          userId: m['user_id'] as String? ?? '',
+          fullName: m['full_name'] as String? ?? '',
+          phoneNumber: m['phone_number'] as String? ?? '',
+          totalJobs: m['total_jobs'] as int? ?? 0,
+          lastJobAt: m['last_job_at'] != null
+              ? DateTime.tryParse(m['last_job_at'] as String)
+              : null,
+          createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? now,
+          updatedAt: DateTime.tryParse(m['updated_at'] as String? ?? '') ?? now,
+        ));
+      }
+    } catch (_) {}
+
     final result = ReminderEngine.compute(
       jobs: jobs,
       followUps: followUps,
       recurringSchedules: schedules,
+      inventoryItems: inventoryItems,
+      customers: customers,
       thresholds: t,
       dismissedKeys: dismissed,
       now: now,

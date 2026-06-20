@@ -1,3 +1,4 @@
+import '../../../../core/utils/phone_formatter.dart';
 import '../../domain/entities/user_entity.dart';
 
 class UserModel {
@@ -13,11 +14,11 @@ class UserModel {
   final String createdAt;
   final String updatedAt;
 
-  const UserModel({
+  UserModel({
     required this.id,
     this.authId,
     required this.fullName,
-    required this.phoneNumber,
+    required String phoneNumber,
     this.email,
     required this.role,
     required this.status,
@@ -25,7 +26,7 @@ class UserModel {
     this.lastSeenAt,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : phoneNumber = PhoneFormatter.normalize(phoneNumber);
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
         id: json['id'] as String,

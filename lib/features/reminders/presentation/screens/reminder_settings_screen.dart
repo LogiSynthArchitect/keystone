@@ -5,7 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../../domain/models/reminder_thresholds.dart';
 import '../providers/reminders_provider.dart';
 
@@ -21,6 +21,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
   late int _followUpDays;
   late int _noResponseDays;
   late int _recurringOverdueDays;
+  late int _dormantCustomerDays;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
     _followUpDays = t.followUpPendingDays;
     _noResponseDays = t.followUpNoResponseDays;
     _recurringOverdueDays = t.recurringJobOverdueDays;
+    _dormantCustomerDays = t.dormantCustomerDays;
   }
 
   @override
@@ -47,7 +49,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
               children: [
                 // Summary strip — zero margin since ListView already provides 24px padding
                 KsSummaryStrip(
-                  value: "5 thresholds",
+                  value: "6 thresholds",
                   label: "REMINDER CONFIGURATION",
                   subtitleSegments: [
                     KsSubtitleSegment('unpaid:${_unpaidDays}d', color: context.ksc.accent500),
@@ -55,6 +57,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                     KsSubtitleSegment('follow-up:${_followUpDays}d', color: context.ksc.warning500),
                     KsSubtitleSegment('no-response:${_noResponseDays}d', color: context.ksc.error500),
                     KsSubtitleSegment('recurring:${_recurringOverdueDays}d', color: context.ksc.success500),
+                    KsSubtitleSegment('dormant:${_dormantCustomerDays}d', color: context.ksc.neutral400),
                   ],
                   subtitleIcon: LineAwesomeIcons.bell_solid,
                   margin: EdgeInsets.zero,
@@ -81,6 +84,11 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                 _sectionHeader("SCHEDULES"),
                 const SizedBox(height: 16),
                 _buildSlider("RECURRING JOB OVERDUE", "Remind about due recurring schedules after", _recurringOverdueDays, (v) => setState(() => _recurringOverdueDays = v)),
+                const SizedBox(height: 32),
+                // CUSTOMERS section
+                _sectionHeader("CUSTOMERS"),
+                const SizedBox(height: 16),
+                _buildSlider("DORMANT CUSTOMERS", "Remind about customers with no recent jobs after", _dormantCustomerDays, (v) => setState(() => _dormantCustomerDays = v)),
                 const SizedBox(height: 24),
               ],
             ),
@@ -99,6 +107,7 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                     followUpPendingDays: _followUpDays,
                     followUpNoResponseDays: _noResponseDays,
                     recurringJobOverdueDays: _recurringOverdueDays,
+                    dormantCustomerDays: _dormantCustomerDays,
                   ));
                   if (mounted) {
                     ref.invalidate(remindersProvider);

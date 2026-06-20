@@ -7,8 +7,11 @@ import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/services/internal_auth/internal_auth_service.dart';
+import '../../../../core/services/internal_auth/secure_vault_service.dart';
+import '../../../../core/services/internal_auth/models/auth_method.dart';
 import '../../../../core/services/internal_auth/models/unlock_result.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
+import '../../../../core/widgets/ks_logo_animated.dart';
 import '../providers/auth_notifier.dart';
 
 class TransitionScreen extends ConsumerStatefulWidget {
@@ -20,10 +23,18 @@ class TransitionScreen extends ConsumerStatefulWidget {
 
 class _TransitionScreenState extends ConsumerState<TransitionScreen> {
   bool _canNavigate = false;
+  bool _profileTimedOut = false;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
+
+    // Self-heal corrupted vault states on every app launch
+    Future.microtask(() async {
+      final vault = SecureVaultService();
+      await vault.healVaultState();
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
@@ -32,15 +43,25 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) setState(() => _canNavigate = true);
     });
+
+    // Fallback: if profile takes >10s, proceed without it
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted && !_profileTimedOut) {
+        setState(() => _profileTimedOut = true);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final authStateAsync = ref.watch(authStateProvider);
-    final profile = ref.watch(profileProvider).profile;
+    final profileState = ref.watch(profileProvider);
+    final profile = profileState.profile;
+    final profileLoading = profileState.isLoading;
     final authUiState = ref.watch(authNotifierProvider);
 
-    if (_canNavigate && !authStateAsync.isLoading) {
+    if (_canNavigate && !_hasNavigated && !authStateAsync.isLoading && (!profileLoading || _profileTimedOut)) {
+      _hasNavigated = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final state = authStateAsync.valueOrNull ?? const AuthState();
@@ -59,23 +80,32 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
           final supabase = ref.read(supabaseClientProvider);
           final service = InternalAuthService(supabase);
           final result = await service.tryAutoLogin();
+          if (!mounted) return;
           if (result is UnlockSuccess) {
             ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
             ref.read(authNotifierProvider.notifier).reset();
-            context.go(RouteNames.dashboard);
+            if (mounted) context.go(RouteNames.dashboard);
           } else if (result is UnlockLocked) {
             ref.read(authNotifierProvider.notifier).reset();
-            context.go(RouteNames.locked);
+            if (mounted) context.go(RouteNames.locked);
           } else if (result is UnlockNeedsOnline) {
             ref.read(authNotifierProvider.notifier).reset();
-            context.go(RouteNames.staleData, extra: result);
+            if (mounted) context.go(RouteNames.staleData, extra: result);
           } else {
             ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
             ref.read(authNotifierProvider.notifier).reset();
-            context.go(RouteNames.dashboard);
+            if (mounted) context.go(RouteNames.dashboard);
           }
         } else {
-          context.go(RouteNames.dashboard);
+          // Going to dashboard — check if quick unlock needs setup
+          final vault = SecureVaultService();
+          final method = await vault.getEnrolledMethod();
+          if (method == AuthMethod.none && mounted) {
+            // No local credentials — enforce mandatory PIN setup
+            if (mounted) context.go(RouteNames.pinSetup);
+            return; // HARD STOP — no dashboard until PIN is enrolled
+          }
+          if (mounted) context.go(RouteNames.dashboard);
         }
       });
     }
@@ -108,48 +138,7 @@ class _TransitionScreenState extends ConsumerState<TransitionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Gold "K" box — matching HTML `.logo-box`
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: context.ksc.accent500,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Text(
-                  'K',
-                  style: TextStyle(
-                    fontFamily: 'BarlowSemiCondensed',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // "ARCLOCK" brand name
-            Text(
-              'ARCLOCK',
-              style: TextStyle(
-                fontFamily: 'BarlowSemiCondensed',
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 4.0,
-                color: context.ksc.white,
-              ),
-            ),
-            const SizedBox(height: 32),
-            // Spinner matching HTML `.spinner`
-            SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: context.ksc.accent500,
-              ),
-            ),
+            const KsLogoAnimated(size: 140),
             if (isIdentified) ...[
               const SizedBox(height: 40),
               FadeInDelayed(

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keystone — Security & Reinstall Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  background: #08081a;
+  padding: 30px;
+  display: flex; flex-direction: column; align-items: center; gap: 30px;
+}
+h1 { color: #d4a847; font-weight: 900; font-size: 26px; letter-spacing: 3px; }
+h2 { color: #ffffff; font-weight: 800; font-size: 16px; letter-spacing: 1px; margin-bottom: 14px; }
+
+.flow-row {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; align-items: flex-start;
+}
+.phone-group { display: flex; flex-direction: column; align-items: center; width: 300px; }
+.phone {
+  width: 100%; background: #0d0d24; border-radius: 28px;
+  padding: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+.notch { width: 80px; height: 4px; background: #1a1a3e; border-radius: 3px; margin: 0 auto 10px; }
+.screen { background: #0d0d24; min-height: 560px; display: flex; flex-direction: column; padding: 14px 12px; }
+.spacer { flex: 1; }
+.tag {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+  padding: 4px 12px; border-radius: 3px; margin-top: 8px; text-align: center; width: 100%;
+}
+
+/* ============ TRANSITION FLOW ============ */
+.trans-logo {
+  width: 100px; height: 100px; margin: 20px auto; position: relative;
+}
+.trans-block {
+  position: absolute; left: 15px; top: 20px; width: 70px; height: 55px;
+  background: #d4a847; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+}
+.trans-block span { color: #0d0d24; font-weight: 900; font-size: 20px; letter-spacing: 3px; }
+.trans-arm {
+  position: absolute; width: 35px; height: 50px; top: 22px;
+}
+.trans-arm svg { width: 100%; height: 100%; fill: #1a1a4e; }
+.trans-h1 {
+  text-align: center; font-weight: 900; font-size: 18px;
+  letter-spacing: 1px; color: #d4a847; margin: 4px auto 6px; line-height: 1.15;
+}
+.trans-sub {
+  text-align: center; font-weight: 600; font-size: 11px; color: #555599; margin-bottom: 8px;
+}
+
+/* ============ SECURITY SCREEN ============ */
+.appbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid #1a1a3e; margin-bottom: 10px;
+}
+.appbar h3 { font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
+.appbar div { font-size: 10px; color: #555599; }
+.tabs {
+  display: flex; gap: 0; margin-bottom: 10px; border-bottom: 1px solid #1a1a3e;
+}
+.tab {
+  flex: 1; text-align: center; padding: 8px 0; font-size: 10px;
+  font-weight: 700; color: #555599; letter-spacing: 0.5px; cursor: pointer;
+}
+.tab.active { color: #d4a847; border-bottom: 2px solid #d4a847; }
+
+.sec-header {
+  font-size: 9px; font-weight: 800; color: #d4a847;
+  letter-spacing: 1.5px; margin-bottom: 6px; margin-top: 14px;
+}
+.sec-tile {
+  display: flex; align-items: center; padding: 10px 12px;
+  background: #111130; border-radius: 8px; margin-bottom: 6px;
+}
+.sec-tile-icon { width: 18px; height: 18px; border-radius: 50%; margin-right: 10px; }
+.sec-tile-icon svg { width: 16px; height: 16px; }
+.sec-tile-body { flex: 1; }
+.sec-tile-title { font-size: 12px; font-weight: 700; color: #ffffff; }
+.sec-tile-sub { font-size: 9px; color: #555599; font-weight: 600; }
+.sec-switch {
+  width: 36px; height: 20px; border-radius: 10px; position: relative; cursor: pointer;
+}
+.sec-switch.on { background: #d4a847; }
+.sec-switch.off { background: #2a2a5e; }
+.sec-switch::after {
+  content: ''; width: 16px; height: 16px; border-radius: 50%;
+  background: #ffffff; position: absolute; top: 2px; transition: 0.2s;
+}
+.sec-switch.on::after { right: 2px; }
+.sec-switch.off::after { left: 2px; }
+.sec-chevron { color: #444477; font-size: 14px; margin-left: 6px; }
+.danger-box {
+  border: 1px solid rgba(255,50,50,0.3); border-radius: 8px;
+  background: rgba(255,50,50,0.05); overflow: hidden;
+}
+.danger-tile { color: #ff4444; }
+.danger-tile .sec-tile-title { color: #ff4444; }
+.danger-tile .sec-tile-sub { color: #ff4444; }
+
+/* ============ DIALOG ============ */
+.dialog-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+  z-index: 10; border-radius: 16px;
+}
+.dialog-box {
+  background: #0d0d24; border-radius: 8px; border: 1px solid #1a1a3e;
+  padding: 20px; width: 85%; max-width: 260px;
+}
+.dialog-title { font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 8px; }
+.dialog-text { font-size: 11px; color: #555599; font-weight: 600; margin-bottom: 20px; line-height: 1.5; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.dialog-btn { font-size: 11px; font-weight: 700; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+.dialog-btn.skip { color: #555599; background: transparent; }
+.dialog-btn.setup { color: #0d0d24; background: #d4a847; }
+
+/* ============ SESSIONS TAB ============ */
+.session-box {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px; background: rgba(0,200,0,0.06);
+  border-radius: 8px; border: 1px solid rgba(0,200,0,0.2);
+}
+.session-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #00aa00; display: flex; align-items: center; justify-content: center;
+}
+.session-dot span { color: white; font-size: 14px; font-weight: 900; }
+.session-info { flex: 1; }
+.session-title { font-size: 12px; font-weight: 700; color: #ffffff; }
+.session-sub { font-size: 10px; color: #555599; }
+.sign-out-btn {
+  width: 100%; padding: 10px; border-radius: 4px; cursor: pointer;
+  border: 1px solid #1a1a3e; background: transparent; margin-top: 14px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.sign-out-btn span { color: #555599; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+
+/* ============ DECISION FLOW ============ */
+.flowchart {
+  background: #0d0d24; border-radius: 12px; padding: 24px; max-width: 700px; width: 100%;
+  border: 1px solid #1a1a3e;
+}
+.fc-row { display: flex; align-items: center; margin-bottom: 8px; }
+.fc-box {
+  padding: 10px 16px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.fc-box.start { background: #1a2a1a; color: #66cc88; border: 1px solid #228833; }
+.fc-box.check { background: #1a1a3e; color: #8888cc; border: 1px solid #3333aa; }
+.fc-box.ok { background: #1a2a1a; color: #66cc88; border: 1px solid #228833; }
+.fc-box.fail { background: #2a1a1a; color: #cc6666; border: 1px solid #882222; }
+.fc-box.action { background: #2a2a1a; color: #ccaa44; border: 1px solid #886622; }
+.fc-arrow { color: #444477; font-size: 14px; margin: 0 8px; }
+.fc-indent { padding-left: 40px; }
+.fc-sub { font-size: 10px; color: #555599; margin-left: 8px; }
+
+/* ============ ACCOUNT TAB ============ */
+.phone-sub { font-size: 11px; color: #555599; font-weight: 600; white-space: nowrap; }
+
+.landmark {
+  display: flex; align-items: center; gap: 6px; margin-top: 14px;
+  padding: 8px 12px; border-radius: 4px; background: rgba(212,168,71,0.08);
+  border: 1px solid rgba(212,168,71,0.15);
+}
+.landmark span { font-size: 10px; color: #d4a847; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>KEYSTONE — SECURITY & REINSTALL FLOW</h1>
+<p style="color:#555599;font-size:13px;font-weight:600;max-width:700px;text-align:center;margin-top:-10px;">
+All placeholders wired. Biometric toggle, PIN setup, Export, Sign Out Others — no dead buttons.
+</p>
+
+<!-- ROW 1: Transition + Dialog + Dashboard -->
+<div class="flow-row">
+
+<!-- SCREEN: Transition (KsLogoAnimated) -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:480px;">
+    <div class="spacer"></div>
+    <div class="trans-logo">
+      <div class="trans-arm" style="left:0;"><svg viewBox="0 0 30 50"><rect x="2" y="8" width="6" height="34" rx="3"/></svg></div>
+      <div class="trans-block"><span>K</span></div>
+      <div class="trans-arm" style="right:0;"><svg viewBox="0 0 30 50"><rect x="22" y="8" width="6" height="34" rx="3"/></svg></div>
+    </div>
+    <div class="trans-h1">WELCOME BACK,<br>JEREMIAH</div>
+    <div class="trans-sub">Loading your account...</div>
+    <div class="spacer"></div>
+  </div>
+</div>
+<div class="tag" style="background:#334466;color:#8899cc;">1️⃣ TRANSITION — waits for auth + profile</div>
+</div>
+
+<!-- SCREEN: Quick Unlock Dialog -->
+<div class="phone-group">
+<div class="phone" style="position:relative;">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:480px;position:relative;">
+    <!-- blurred background (represents dashboard behind) -->
+    <div style="opacity:0.2;filter:blur(2px);">
+      <div class="appbar"><h3>DASHBOARD</h3><div>Today</div></div>
+      <div style="height:60px;background:#111130;border-radius:8px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;height:80px;background:#111130;border-radius:8px;"></div>
+        <div style="flex:1;height:80px;background:#111130;border-radius:8px;"></div>
+      </div>
+    </div>
+    <!-- Dialog -->
+    <div class="dialog-overlay">
+      <div class="dialog-box">
+        <div class="dialog-title">QUICK UNLOCK</div>
+        <div class="dialog-text">Set up fingerprint or PIN for faster access to the app?</div>
+        <div class="dialog-actions">
+          <div class="dialog-btn skip">SKIP</div>
+          <div class="dialog-btn setup">SET UP</div>
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+<div class="tag" style="background:#554433;color:#ccaa66;">2️⃣ DIALOG — fresh install after OTP</div>
+</div>
+
+<!-- SCREEN: Quick Unlock SET UP → biometric prompt -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:480px;">
+    <div class="spacer"></div>
+    <div style="text-align:center;margin:40px 0;">
+      <div style="width:70px;height:70px;border-radius:50%;background:rgba(212,168,71,0.1);border:2px solid #d4a847;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#d4a847"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.2 13.87 2.5 12 2.5s-3.66.7-5.58 1.91c-.07.04-.15.06-.23.06-.32 0-.58-.26-.58-.58 0-.16.07-.31.19-.41C7.8 1.68 9.86.88 12 .88s4.2.8 6.19 2.11c.12.1.19.25.19.41 0 .32-.26.58-.58.58z"/><path d="M12 22c-4.97 0-9-4.03-9-9s4.03-9 9-9 9 4.03 9 9-4.03 9-9 9z"/></svg>
+      </div>
+      <div style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;">FINGERPRINT UNLOCK</div>
+      <div style="font-size:11px;color:#555599;margin-top:8px;">Touch the fingerprint sensor<br>to set up quick unlock.</div>
+      <div style="font-size:11px;color:#444477;font-weight:700;margin-top:24px;">CANCEL</div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+<div class="tag" style="background:#445533;color:#88bb66;">3️⃣ BIOMETRIC — enroll if available</div>
+</div>
+
+</div>
+
+<!-- ROW 2: PIN Fallback + Dashboard -->
+<div class="flow-row">
+
+<!-- PIN Setup Fallback -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:400px;">
+    <div class="spacer"></div>
+    <div style="text-align:center;font-size:16px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-bottom:24px;">SET UP PIN</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:#d4a847;"></div>
+      <div style="width:10px;height:10px;border-radius:50%;border:1px solid #555599;"></div>
+      <div style="width:10px;height:10px;border-radius:50%;border:1px solid #555599;"></div>
+      <div style="width:10px;height:10px;border-radius:50%;border:1px solid #555599;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:200px;margin:0 auto;">
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">1</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">2</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">3</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">4</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">5</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">6</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">7</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">8</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">9</div>
+      <div style="visibility:hidden;"></div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">0</div>
+      <div style="height:44px;border-radius:50%;border:1px solid #2a2a5e;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">⌫</div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+</div>
+<div class="tag" style="background:#663344;color:#cc7788;">4️⃣ PIN SETUP — fallback if biometric fails</div>
+</div>
+
+<!-- Dashboard (SKIP or already set up) -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:400px;">
+    <div class="appbar"><h3>DASHBOARD</h3><div>Today</div></div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <div style="width:44px;height:44px;border-radius:50%;border:2px solid #d4a847;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:18px;color:#d4a847;font-weight:900;">K</span>
+      </div>
+      <div style="flex:1;"><div style="font-size:12px;font-weight:800;color:#fff;">JEREMIAH</div><div style="font-size:10px;color:#555599;">You're all caught up</div></div>
+    </div>
+    <div style="height:4px;background:#1a1a3e;border-radius:2px;margin-bottom:14px;position:relative;">
+      <div style="width:65%;height:100%;background:#d4a847;border-radius:2px;"></div>
+    </div>
+    <!-- summary cards -->
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;padding:10px;background:#111130;border-radius:8px;text-align:center;">
+        <div style="font-size:18px;font-weight:900;color:#d4a847;">30</div>
+        <div style="font-size:8px;color:#555599;font-weight:700;letter-spacing:0.5px;">JOBS</div>
+      </div>
+      <div style="flex:1;padding:10px;background:#111130;border-radius:8px;text-align:center;">
+        <div style="font-size:18px;font-weight:900;color:#d4a847;">23</div>
+        <div style="font-size:8px;color:#555599;font-weight:700;letter-spacing:0.5px;">CUSTOMERS</div>
+      </div>
+    </div>
+    <div class="landmark"><span>✅ Quick unlock not needed — vault already set</span></div>
+    <div class="spacer"></div>
+  </div>
+</div>
+<div class="tag" style="background:#336644;color:#77cc88;">5️⃣ DASHBOARD — SKIP or existing vault</div>
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- SEPARATOR -->
+<!-- ============================================================ -->
+
+<div style="color:#2a2a5e;font-size:13px;font-weight:700;letter-spacing:2px;margin-top:20px;">↓ SECURITY & ACCOUNT SCREEN (fully wired) ↓</div>
+
+<!-- ROW 3: Security + Account + Sessions -->
+<div class="flow-row">
+
+<!-- SECURITY TAB -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:540px;">
+    <div class="appbar"><h3>Account & Security</h3><div></div></div>
+    <div class="tabs">
+      <div class="tab active">Security</div>
+      <div class="tab">Account</div>
+      <div class="tab">Sessions</div>
+    </div>
+
+    <div class="sec-header">PASSWORD</div>
+    <div class="sec-tile">
+      <div class="sec-tile-icon" style="background:#111130;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg></div>
+      <div class="sec-tile-body">
+        <div class="sec-tile-title">Change Password</div>
+        <div class="sec-tile-sub">Update your account password</div>
+      </div>
+      <div class="sec-chevron">›</div>
+    </div>
+
+    <div class="sec-header">QUICK UNLOCK</div>
+    <div class="sec-tile">
+      <div class="sec-tile-icon" style="background:#111130;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.2 13.87 2.5 12 2.5s-3.66.7-5.58 1.91c-.07.04-.15.06-.23.06-.32 0-.58-.26-.58-.58 0-.16.07-.31.19-.41C7.8 1.68 9.86.88 12 .88s4.2.8 6.19 2.11c.12.1.19.25.19.41 0 .32-.26.58-.58.58z"/><path d="M12 22c-4.97 0-9-4.03-9-9s4.03-9 9-9 9 4.03 9 9-4.03 9-9 9z"/></svg></div>
+      <div class="sec-tile-body">
+        <div class="sec-tile-title">Biometric Unlock</div>
+        <div class="sec-tile-sub" style="color:#66cc88;">Fingerprint enabled</div>
+      </div>
+      <div class="sec-switch on"></div>
+    </div>
+    <div class="sec-tile">
+      <div class="sec-tile-icon" style="background:#111130;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div>
+      <div class="sec-tile-body">
+        <div class="sec-tile-title">PIN Unlock</div>
+        <div class="sec-tile-sub" style="color:#66cc88;">PIN is set up</div>
+      </div>
+      <div class="sec-chevron">›</div>
+    </div>
+
+    <div class="sec-header">DANGER ZONE</div>
+    <div class="danger-box">
+      <div class="sec-tile danger-tile">
+        <div class="sec-tile-icon" style="background:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#ff4444"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div>
+        <div class="sec-tile-body">
+          <div class="sec-tile-title">Delete Account</div>
+          <div class="sec-tile-sub">Permanently delete all data</div>
+        </div>
+        <div class="sec-chevron">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tag" style="background:#445566;color:#8899bb;">🔐 SECURITY TAB — all wired</div>
+</div>
+
+<!-- ACCOUNT TAB -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:540px;">
+    <div class="appbar"><h3>Account & Security</h3><div></div></div>
+    <div class="tabs">
+      <div class="tab">Security</div>
+      <div class="tab active">Account</div>
+      <div class="tab">Sessions</div>
+    </div>
+
+    <div class="sec-header">ACCOUNT INFO</div>
+    <div class="sec-tile">
+      <div class="sec-tile-icon" style="background:#111130;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div>
+      <div class="sec-tile-body">
+        <div class="sec-tile-title">Phone Number</div>
+        <div class="phone-sub">+233 53 082 3904</div>
+      </div>
+      <div class="sec-chevron">›</div>
+    </div>
+    <div class="sec-tile">
+      <div class="sec-tile-icon" style="background:#111130;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg></div>
+      <div class="sec-tile-body">
+        <div class="sec-tile-title">Account Created</div>
+        <div class="sec-tile-sub">March 21, 2026</div>
+      </div>
+    </div>
+
+    <div class="sec-header">DATA</div>
+    <div class="sec-tile">
+      <div class="sec-tile-icon" style="background:#111130;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></div>
+      <div class="sec-tile-body">
+        <div class="sec-tile-title">Export My Data</div>
+        <div class="sec-tile-sub">Download all your data as JSON</div>
+      </div>
+      <div class="sec-chevron">›</div>
+    </div>
+    <div class="landmark"><span>✅ Export now calls DataExportService.exportAsJson()</span></div>
+  </div>
+</div>
+<div class="tag" style="background:#445566;color:#8899bb;">📱 ACCOUNT TAB — Export wired</div>
+</div>
+
+<!-- SESSIONS TAB -->
+<div class="phone-group">
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" style="min-height:540px;">
+    <div class="appbar"><h3>Account & Security</h3><div></div></div>
+    <div class="tabs">
+      <div class="tab">Security</div>
+      <div class="tab">Account</div>
+      <div class="tab active">Sessions</div>
+    </div>
+
+    <div class="sec-header">ACTIVE SESSIONS</div>
+    <div class="session-box">
+      <div class="session-dot"><span>✓</span></div>
+      <div class="session-info">
+        <div class="session-title">This Device</div>
+        <div class="session-sub">Current session</div>
+      </div>
+    </div>
+
+    <div class="sign-out-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#555599"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      <span>Sign out of all other devices</span>
+    </div>
+    <div class="landmark"><span>✅ Calls supabase.auth.signOut(scope: SignOutScope.others)</span></div>
+  </div>
+</div>
+<div class="tag" style="background:#445566;color:#8899bb;">🖥️ SESSIONS TAB — Sign out others wired</div>
+</div>
+
+</div>
+
+<!-- DECISION FLOW -->
+<div style="margin-top:20px;max-width:800px;width:100%;">
+<div class="flowchart">
+  <h2 style="margin-bottom:16px;">📋 TRANSITION SCREEN — Decision Flow</h2>
+
+  <div class="fc-row">
+    <div class="fc-box start">← OTP VERIFIED</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box check">TRANSITION</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box check">Profile loaded?</div>
+  </div>
+
+  <div class="fc-row fc-indent">
+    <div class="fc-box fail">⨯ No profile</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">ONBOARDING</div>
+  </div>
+
+  <div class="fc-row fc-indent">
+    <div class="fc-box fail">⨯ terms null</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">TERMS</div>
+    <div class="fc-sub">→ ref.invalidate(profileProvider)</div>
+  </div>
+
+  <div class="fc-row fc-indent">
+    <div class="fc-box fail">⨯ no password</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">UPGRADE</div>
+  </div>
+
+  <div class="fc-row fc-indent">
+    <div class="fc-box fail">⨯ locked</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">LOCKED SCREEN</div>
+    <div class="fc-sub">→ PIN / biometric / password</div>
+  </div>
+
+  <div class="fc-row fc-indent">
+    <div class="fc-box ok">✅ all checks pass</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box check">Vault has credentials?</div>
+  </div>
+
+  <div class="fc-row" style="padding-left:80px;">
+    <div class="fc-box fail">⨯ none (fresh install)</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">DIALOG: "Set up quick unlock?"</div>
+  </div>
+
+  <div class="fc-row" style="padding-left:80px;">
+    <div class="fc-box ok">✅ already set up</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">DASHBOARD 🎉</div>
+  </div>
+
+  <div class="fc-row" style="padding-left:120px;">
+    <div class="fc-box check">SET UP</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">Biometric enroll</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box action">OR PIN fallback</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box ok">DASHBOARD</div>
+  </div>
+
+  <div class="fc-row" style="padding-left:120px;">
+    <div class="fc-box check">SKIP</div>
+    <div class="fc-arrow">→</div>
+    <div class="fc-box ok">DASHBOARD</div>
+  </div>
+
+</div>
+</div>
+
+<div style="color:#2a2a5e;font-size:11px;text-align:center;margin-top:20px;max-width:800px;">
+<strong style="color:#d4a847;">What changed — all placeholders eliminated:</strong><br>
+<span style="color:#66cc88;">✓</span> Biometric toggle reads from SecureVaultService / enrolls on toggle ON / clears on toggle OFF<br>
+<span style="color:#66cc88;">✓</span> Change PIN → opens PIN entry (if set) or PIN setup (if not)<br>
+<span style="color:#66cc88;">✓</span> Export My Data → DataExportService.exportAsJson()<br>
+<span style="color:#66cc88;">✓</span> Sign out others → supabase.auth.signOut(scope: SignOutScope.others)<br>
+<span style="color:#66cc88;">✓</span> Fresh install after OTP → dialog prompts quick unlock → biometric or PIN fallback
+</div>
+
+</body>
+</html>

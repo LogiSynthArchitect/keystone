@@ -108,7 +108,7 @@ class InvoicePdfGenerator {
 
     return await doc.save().then((bytes) async {
       final dir = await _getTemporaryDirectory();
-      final file = File('${dir.path}/keystone_invoice.pdf');
+      final file = File('${dir.path}/arclock_invoice.pdf');
       await file.writeAsBytes(bytes);
       return file;
     });
@@ -126,7 +126,7 @@ class InvoicePdfGenerator {
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Text('KEYSTONE', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
+            pw.Text('ARCLOCK', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
             pw.SizedBox(height: 4),
             pw.Text('I N V O I C E', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.normal, color: PdfColors.grey600, letterSpacing: 3)),
           ],

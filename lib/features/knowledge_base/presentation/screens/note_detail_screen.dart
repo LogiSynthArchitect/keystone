@@ -12,7 +12,7 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../providers/notes_providers.dart';
 import 'add_note_screen.dart';
 import '../../domain/entities/knowledge_note_entity.dart';
@@ -389,9 +389,14 @@ class _ImageGallery extends StatelessWidget {
   final List<NoteAttachment> attachments;
   const _ImageGallery({required this.attachments});
 
-  ImageProvider<Object> _provider(NoteAttachment a) => a.url.startsWith('file://')
-      ? FileImage(File(a.url.replaceFirst('file://', ''))) as ImageProvider<Object>
-      : NetworkImage(a.url);
+  ImageProvider<Object> _provider(NoteAttachment a) {
+    if (a.url.startsWith('file_lost:')) {
+      return const AssetImage('assets/images/media_lost.png'); // placeholder
+    }
+    return a.url.startsWith('file://')
+        ? FileImage(File(a.url.replaceFirst('file://', ''))) as ImageProvider<Object>
+        : NetworkImage(a.url);
+  }
 
   void _openViewer(BuildContext context, int index) {
     Navigator.of(context).push(
@@ -793,6 +798,7 @@ class _DocumentAttachmentTile extends StatelessWidget {
   }
 
   String get _resolvedPath {
+    if (attachment.url.startsWith('file_lost:')) return '';
     // Prefer local file path (transient, for fast offline display)
     if (attachment.localPath != null) {
       return attachment.localPath!.startsWith('file://')

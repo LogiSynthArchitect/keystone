@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 class AppTextStyles {
   AppTextStyles._();
 
+  /// Centralized font family — change here to update the entire app.
+  static const String fontFamily = 'BarlowSemiCondensed';
+
   static TextStyle get display => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 32,
         fontWeight: FontWeight.w900,
         letterSpacing: -0.5,
@@ -13,7 +16,7 @@ class AppTextStyles {
       );
 
   static TextStyle get h1 => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 24,
         fontWeight: FontWeight.w900,
         letterSpacing: -0.3,
@@ -22,7 +25,7 @@ class AppTextStyles {
       );
 
   static TextStyle get h2 => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 20,
         fontWeight: FontWeight.w900,
         letterSpacing: -0.2,
@@ -31,7 +34,7 @@ class AppTextStyles {
       );
 
   static TextStyle get h3 => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 17,
         fontWeight: FontWeight.w900,
         letterSpacing: 0,
@@ -40,7 +43,7 @@ class AppTextStyles {
       );
 
   static TextStyle get bodyLarge => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w800,
         letterSpacing: 0,
@@ -49,7 +52,7 @@ class AppTextStyles {
       );
 
   static TextStyle get body => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w700,
         letterSpacing: 0,
@@ -58,7 +61,7 @@ class AppTextStyles {
       );
 
   static TextStyle get bodyMedium => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w800,
         letterSpacing: 0,
@@ -67,7 +70,7 @@ class AppTextStyles {
       );
 
   static TextStyle get caption => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w800,
         letterSpacing: 0.5,
@@ -76,7 +79,7 @@ class AppTextStyles {
       );
 
   static TextStyle get captionMedium => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w900,
         letterSpacing: 0.5,
@@ -85,7 +88,7 @@ class AppTextStyles {
       );
 
   static TextStyle get label => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w900,
         letterSpacing: 1.0,
@@ -94,7 +97,7 @@ class AppTextStyles {
       );
 
   static TextStyle get labelSmall => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w900,
         letterSpacing: 1.0,
@@ -103,7 +106,7 @@ class AppTextStyles {
       );
 
   static TextStyle get amount => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 20,
         fontWeight: FontWeight.w900,
         letterSpacing: -0.2,
@@ -113,7 +116,7 @@ class AppTextStyles {
       );
 
   static TextStyle get amountSmall => const TextStyle(
-        fontFamily: 'BarlowSemiCondensed',
+        fontFamily: AppTextStyles.fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w900,
         letterSpacing: 0,

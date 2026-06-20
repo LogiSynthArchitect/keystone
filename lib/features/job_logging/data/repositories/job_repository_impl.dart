@@ -7,10 +7,11 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/errors/network_exception.dart';
 import '../../../../core/errors/storage_exception.dart' as core_storage;
 import '../../../../core/network/connectivity_service.dart';
+import '../../../../core/services/sync/sync_queue_service.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/storage/hive_service.dart';
-import 'package:keystone/features/customer_history/data/datasources/customer_local_datasource.dart';
-import 'package:keystone/features/whatsapp_followup/domain/repositories/follow_up_repository.dart';
+import 'package:arclock/features/customer_history/data/datasources/customer_local_datasource.dart';
+import 'package:arclock/features/whatsapp_followup/domain/repositories/follow_up_repository.dart';
 import '../../domain/entities/job_entity.dart';
 import '../../domain/entities/job_part_entity.dart';
 import '../../domain/entities/job_photo_entity.dart';
@@ -62,6 +63,7 @@ class JobRepositoryImpl implements JobRepository {
   final JobHardwareRemoteDatasource _hardwareRemote;
   final JobExpensesLocalDatasource _expensesLocal;
   final JobExpensesRemoteDatasource _expensesRemote;
+  final SyncQueueService _syncQueue;
 
   JobRepositoryImpl(
     this._remote,
@@ -82,23 +84,15 @@ class JobRepositoryImpl implements JobRepository {
     this._hardwareRemote,
     this._expensesLocal,
     this._expensesRemote,
+    this._syncQueue,
   );
-
-  String? _cachedInternalUserId;
-  String? _cachedAuthId;
 
   Future<String> _getInternalUserId() async {
     final authId = _supabase.auth.currentUser?.id;
     if (authId == null) throw const core_storage.StorageException(message: 'Authentication session expired. Please log in again.', code: 'AUTH_MISSING');
-    if (_cachedInternalUserId != null && _cachedAuthId != authId) {
-      _cachedInternalUserId = null;
-      _cachedAuthId = null;
-    }
-    if (_cachedInternalUserId != null) return _cachedInternalUserId!;
-    final result = await _supabase.from('users').select('id').eq('auth_id', authId).single();
-    _cachedInternalUserId = result['id'] as String;
-    _cachedAuthId = authId;
-    return _cachedInternalUserId!;
+    // Return the auth_id directly — jobs.user_id stores the Supabase Auth UID,
+    // not the internal users.id primary key.
+    return authId;
   }
 
   @override
@@ -115,7 +109,11 @@ class JobRepositoryImpl implements JobRepository {
           await _local.saveJob(m);
         }
       } catch (e) {
-        debugPrint('[KS:JOBS] Remote fetch failed, serving from cache: $e');
+        debugPrint('[KS:JOBS] Remote fetch failed: $e');
+        // If local cache is empty, propagate error so UI shows a message
+        final cached = await _local.getJobs(limit: 1);
+        if (cached.isEmpty) rethrow;
+        debugPrint('[KS:JOBS] Serving from cache (${cached.length} job(s))');
       }
     }
     var local = await _local.getJobs(limit: limit, offset: offset);
@@ -139,6 +137,14 @@ class JobRepositoryImpl implements JobRepository {
     final json = _jobEntityToJson(job);
     final model = JobModel.fromJson({...json, 'sync_status': 'pending'});
     await _local.saveJob(model);
+
+    final taskId = await _syncQueue.enqueue(
+      tableName: 'jobs',
+      operation: 'INSERT',
+      payload: model.toJson(),
+      recordId: model.id,
+    );
+
     final isOnline = await _connectivity.isConnected;
     if (isOnline) {
       try {
@@ -146,6 +152,7 @@ class JobRepositoryImpl implements JobRepository {
         if (customer != null && customer.syncStatus != SyncStatus.pending) {
           final synced = await _remote.createJob({...json, 'sync_status': 'synced'});
           await _local.saveJob(synced);
+          await _syncQueue.markComplete(taskId);
           return synced.toEntity();
         }
       } catch (e) {
@@ -199,6 +206,14 @@ class JobRepositoryImpl implements JobRepository {
     }
     final model = JobModel.fromJson({...json, 'sync_status': 'pending'});
     await _local.saveJob(model);
+
+    await _syncQueue.enqueue(
+      tableName: 'jobs',
+      operation: 'UPDATE',
+      payload: model.toJson(),
+      recordId: job.id,
+    );
+
     return model.toEntity();
   }
 
@@ -215,7 +230,14 @@ class JobRepositoryImpl implements JobRepository {
 
       final archivedModel = JobModel.fromEntity(job.copyWith(isArchived: true, syncStatus: SyncStatus.pending));
       await _local.saveJob(archivedModel);
-      
+
+      await _syncQueue.enqueue(
+        tableName: 'jobs',
+        operation: 'UPDATE',
+        payload: archivedModel.toJson(),
+        recordId: id,
+      );
+
       try {
         if (await _connectivity.isConnected) {
           await _remote.updateJob(id, {'is_archived': true});

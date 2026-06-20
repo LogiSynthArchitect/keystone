@@ -41,7 +41,9 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
 
   @override
   Future<ServiceTypeEntity> updateServiceType(ServiceTypeEntity serviceType) async {
-    final model = ServiceTypeModel.fromEntity(serviceType);
+    final model = ServiceTypeModel.fromEntity(serviceType).copyWith(
+      localEditedAt: DateTime.now(),
+    );
     await _local.saveServiceType(model);
 
     if (await _connectivity.isConnected) {
@@ -53,6 +55,7 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
         final merged = model.copyWith(
           correctionFields: remoteModel.correctionFields,
           updatedBy: remoteModel.updatedBy,
+          localEditedAt: DateTime.now(), // preserve the local edit timestamp
         );
         await _local.saveServiceType(merged);
         return merged.toEntity();
@@ -145,6 +148,31 @@ class ServiceTypeRepositoryImpl implements ServiceTypeRepository {
             category: locked.contains('category') ? local.category : remote.category,
             iconName: locked.contains('icon_name') ? local.iconName : remote.iconName,
             defaultPrice: locked.contains('default_price') ? local.defaultPrice : remote.defaultPrice,
+            createdAt: remote.createdAt,
+            updatedAt: DateTime.now().toIso8601String(),
+            correctionFields: const [],
+            updatedBy: remote.updatedBy,
+          );
+        }
+
+        // ── localEditedAt tiebreaker ──
+        // If the technician edited this record locally more recently than
+        // the server's last update, preserve the local price. This prevents
+        // a stale remote sync from silently reverting local adjustments.
+        final remoteUpdated = DateTime.tryParse(remote.updatedAt);
+        if (local != null &&
+            local.localEditedAt != null &&
+            remoteUpdated != null &&
+            local.localEditedAt!.isAfter(remoteUpdated) &&
+            local.defaultPrice != null) {
+          return ServiceTypeModel(
+            id: remote.id,
+            userId: remote.userId,
+            name: remote.name,
+            isDefault: remote.isDefault,
+            category: remote.category,
+            iconName: remote.iconName,
+            defaultPrice: local.defaultPrice,
             createdAt: remote.createdAt,
             updatedAt: DateTime.now().toIso8601String(),
             correctionFields: const [],

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import 'package:uuid/uuid.dart';
@@ -143,6 +144,37 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
     if (pending.isEmpty) return;
     for (final note in pending) {
       try {
+        // ── Attachment file health check ──
+        // If the app was reinstalled and local file paths are orphaned,
+        // mark those attachments as permanently lost so they don't block
+        // the text/metadata from syncing.
+        final healthyAttachments = <Map<String, dynamic>>[];
+        bool attachmentsChanged = false;
+
+        for (final a in note.attachments) {
+          // If remoteUrl exists, the file is safe in the cloud — skip check
+          if (a['remote_url'] != null) {
+            healthyAttachments.add(a);
+            continue;
+          }
+
+          final url = a['url'] as String? ?? '';
+          if (url.startsWith('file://')) {
+            final file = File(url.replaceFirst('file://', ''));
+            if (!await file.exists()) {
+              // Binary data permanently lost — mark as such
+              debugPrint('[KS:NOTES] Lost attachment ${a['id']} — file missing');
+              a['url'] = 'file_lost:${a['id']}';
+              attachmentsChanged = true;
+            }
+          }
+          healthyAttachments.add(a);
+        }
+
+        // If we can't find the note in Hive after modifications, skip
+        // the local save — metadata sync is still attempted.
+        final attachments = attachmentsChanged ? healthyAttachments : note.attachments;
+
         // Idempotent upsert — ON CONFLICT (id) DO UPDATE
         final remoteModel = await _remote.upsertNote({
           'id': note.id,
@@ -154,7 +186,7 @@ class KnowledgeNoteRepositoryImpl implements KnowledgeNoteRepository {
           'cover_image_url': note.coverImageUrl,
           'service_type': note.serviceType,
           'media_type': note.mediaType,
-          'attachments': note.attachments,
+          'attachments': attachments,
           'is_archived': note.isArchived,
           'is_pinned': note.isPinned,
           'created_at': note.createdAt,

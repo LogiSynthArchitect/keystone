@@ -8,6 +8,7 @@ import 'package:arclock/core/providers/supabase_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/widgets/ks_logo_animated.dart';
 import '../../../customer_history/presentation/providers/customer_providers.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
 import '../../../knowledge_base/presentation/providers/notes_providers.dart';
@@ -24,6 +25,8 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
   String _status = 'Preparing...';
   int _currentStage = 0;
   bool _isComplete = false;
+  bool _hasError = false;
+  String _errorMessage = '';
 
   static const _stages = ['Preparing', 'Customers', 'Jobs', 'Notes', 'Inventory'];
 
@@ -34,23 +37,26 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
   }
 
   Future<void> _doInitialSync() async {
+    setState(() { _hasError = false; _errorMessage = ''; _currentStage = 0; });
+
     final supabase = ref.read(supabaseClientProvider);
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
-      if (mounted) context.go(RouteNames.dashboard);
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Session expired. Please sign in again.';
+      });
       return;
     }
 
     try {
       setState(() { _status = 'Syncing customers...'; _currentStage = 1; });
       final customerRepo = ref.read(customerRepositoryProvider);
-      await customerRepo.pullRemoteChanges(); // Delta sync — full fetch on first launch
+      await customerRepo.pullRemoteChanges();
 
       setState(() { _status = 'Syncing jobs...'; _currentStage = 2; });
-      final jobRepo = ref.read(jobRepositoryProvider);
       final jobLocal = ref.read(jobLocalDatasourceProvider);
       final jobRemote = ref.read(jobRemoteDatasourceProvider);
-      final userId = supabase.auth.currentUser!.id;
       var offset = 0;
       const pageSize = 500;
       while (true) {
@@ -75,6 +81,11 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
       await ref.read(inventoryRepositoryProvider).getItems(userId);
     } catch (e) {
       debugPrint('[KS:SYNC] Initial sync error: $e');
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Sync failed: ${e.toString().split('\n').first}';
+      });
+      return;
     }
 
     final authBox = Hive.box('auth');
@@ -89,6 +100,103 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_hasError) {
+      return Scaffold(
+        backgroundColor: context.ksc.primary900,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    LineAwesomeIcons.exclamation_triangle_solid,
+                    size: 56,
+                    color: Colors.orange,
+                  ).animate().fadeIn().scaleY(begin: 0, end: 1),
+                  const SizedBox(height: 32),
+                  Text(
+                    'SYNC FAILED',
+                    style: AppTextStyles.h1.copyWith(
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ).animate().fadeIn(delay: 200.ms),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: context.ksc.neutral400,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ).animate().fadeIn(delay: 300.ms),
+                  const SizedBox(height: 48),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _doInitialSync,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: context.ksc.accent500,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'RETRY SYNC',
+                            style: AppTextStyles.label.copyWith(
+                              color: context.ksc.primary900,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
+                  const SizedBox(height: 16),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        final authBox = Hive.box('auth');
+                        authBox.put('initial_sync_complete', true).then((_) {
+                          if (mounted) context.go(RouteNames.dashboard);
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: context.ksc.primary600),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'CONTINUE WITHOUT SYNC',
+                            style: AppTextStyles.label.copyWith(
+                              color: context.ksc.neutral400,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isComplete) {
       return Scaffold(
         backgroundColor: context.ksc.primary900,
@@ -159,10 +267,9 @@ class _InitialSyncScreenState extends ConsumerState<InitialSyncScreen> {
                   ),
                 ).animate().fadeIn(delay: 300.ms),
                 const SizedBox(height: 48),
-                const CircularProgressIndicator(
-                  strokeWidth: 3,
-                ).animate().fadeIn(delay: 400.ms),
-                const SizedBox(height: 24),
+                const KsLogoAnimated(size: 120)
+                    .animate().fadeIn(delay: 400.ms),
+                const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: _stages.asMap().entries.map((entry) {

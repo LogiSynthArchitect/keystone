@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/network_exception.dart';
 import '../models/customer_model.dart';
@@ -106,18 +107,34 @@ class CustomerRemoteDatasource {
     }
   }
 
+  /// Search customers using trigram fuzzy matching (remote) with ILIKE fallback.
+  /// Results are ordered by name similarity descending.
   Future<List<CustomerModel>> searchCustomers({required String userId, required String query}) async {
     try {
-      final data = await _supabase
-          .from('customers')
-          .select()
-          .eq('user_id', userId)
-          .isFilter('deleted_at', null)
-          .or('full_name.ilike.%$query%,phone_number.ilike.%$query%')
-          .limit(20);
+      // Primary: trigram similarity search via RPC
+      final data = await _supabase.rpc('search_customers_fuzzy', params: {
+        'p_user_id': userId,
+        'p_query': query,
+        'p_limit': 20,
+        'p_min_similarity': 0.3,
+      });
+      // RPC returns same columns as customers table + similarity_score
       return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
     } on PostgrestException catch (e) {
-      throw NetworkException(message: 'Search failed.', code: 'SEARCH_FAILED', cause: e);
+      // Fallback: ILIKE search if RPC/extension is unavailable
+      debugPrint('[KS:CUSTOMERS] Fuzzy search RPC failed, falling back to ILIKE: $e');
+      try {
+        final data = await _supabase
+            .from('customers')
+            .select()
+            .eq('user_id', userId)
+            .isFilter('deleted_at', null)
+            .or('full_name.ilike.%$query%,phone_number.ilike.%$query%')
+            .limit(20);
+        return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
+      } on PostgrestException catch (e2) {
+        throw NetworkException(message: 'Search failed.', code: 'SEARCH_FAILED', cause: e2);
+      }
     } catch (e) {
       throw NetworkException(message: 'No internet connection.', code: 'NO_CONNECTION', cause: e);
     }

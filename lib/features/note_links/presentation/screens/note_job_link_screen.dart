@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import 'package:keystone/core/theme/app_text_styles.dart';
-import 'package:keystone/core/theme/ks_colors.dart';
-import 'package:keystone/core/utils/date_formatter.dart';
-import 'package:keystone/core/widgets/ks_empty_state.dart';
-import 'package:keystone/core/widgets/ks_search_bar.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
-import 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart';
+import 'package:arclock/core/theme/app_text_styles.dart';
+import 'package:arclock/core/theme/ks_colors.dart';
+import 'package:arclock/core/utils/date_formatter.dart';
+import 'package:arclock/core/widgets/ks_empty_state.dart';
+import 'package:arclock/core/widgets/ks_search_bar.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:arclock/features/knowledge_base/presentation/providers/notes_providers.dart';
 import '../providers/note_link_provider.dart';
 
 /// Bottom sheet for linking a note to a job.

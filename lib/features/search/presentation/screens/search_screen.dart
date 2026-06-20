@@ -9,9 +9,9 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
-import 'package:keystone/features/knowledge_base/domain/entities/knowledge_note_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/customer_history/domain/entities/customer_entity.dart';
+import 'package:arclock/features/knowledge_base/domain/entities/knowledge_note_entity.dart';
 import '../providers/search_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {

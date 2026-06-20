@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 
 class DeleteAccountScreen extends ConsumerStatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -10,7 +12,7 @@ class DeleteAccountScreen extends ConsumerStatefulWidget {
 
 class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   int _step = 0;
-  final _phoneCtrl = TextEditingController();
+  String _phoneNumber = '';
   bool _isLoading = false;
   bool _confirmed = false;
 
@@ -22,7 +24,6 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -84,12 +85,11 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Widget _buildConfirmation() {
     return Column(
       children: [
-        TextFormField(
-          controller: _phoneCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Enter your phone number to confirm',
-            hintText: '+233 20 147 0790',
-          ),
+        FocusSafeTextField(
+          onChanged: (v) => _phoneNumber = v,
+          hint: '+233 20 147 0790',
+          label: 'Enter your phone number to confirm',
+          keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -111,7 +111,37 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Future<void> _deleteAccount() async {
     setState(() => _isLoading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final supabase = ref.read(supabaseClientProvider);
+      final authId = supabase.auth.currentUser?.id;
+      final userPhone = supabase.auth.currentUser?.phone ?? '';
+
+      // Verify phone matches
+      String normalize(String s) => s
+          .trim()
+          .replaceAll(RegExp(r'[\s\+\-\(\)]'), '')
+          .toLowerCase();
+      final normalizedUserPhone = normalize(userPhone);
+      final normalizedEnteredPhone = normalize(_phoneNumber);
+      if (normalizedUserPhone != normalizedEnteredPhone) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phone number does not match. Deletion cancelled.')),
+          );
+        }
+        return;
+      }
+
+      // Call edge function to delete account
+      final response = await supabase.functions.invoke('delete-account', body: {
+        'user_id': authId,
+      });
+      final data = response.data as Map<String, dynamic>?;
+
+      if (data?['success'] != true) {
+        throw Exception(data?['error'] ?? 'Delete account failed');
+      }
+
+      await supabase.auth.signOut();
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } catch (e) {
       if (mounted) {

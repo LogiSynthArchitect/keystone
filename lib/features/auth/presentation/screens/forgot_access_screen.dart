@@ -13,6 +13,7 @@ import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../providers/auth_notifier.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 
 const _ghanaFlag = '\u{1F1EC}\u{1F1ED}';
 
@@ -24,31 +25,14 @@ class ForgotAccessScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
-  final _phoneController = TextEditingController();
-  final _focusNode = FocusNode();
+  String _phone = '';
 
-  @override
-  void initState() {
-    super.initState();
-    _phoneController.addListener(_onInputChanged);
-  }
-
-  @override
-  void dispose() {
-    _phoneController.removeListener(_onInputChanged);
-    _phoneController.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  bool get _canSend => _phoneController.text.trim().length >= 9;
-
-  void _onInputChanged() => setState(() {});
+  bool get _canSend => _phone.trim().length >= 9;
 
   Future<void> _onSendCode() async {
     if (!_canSend) return;
 
-    final phone = _phoneController.text.trim();
+    final phone = _phone.trim();
     final supabase = ref.read(supabaseClientProvider);
     final fullPhone = PhoneFormatter.isValid(phone) ? PhoneFormatter.normalize(phone) : '+233$phone';
     ref.read(authNotifierProvider.notifier).setPhoneNumber(fullPhone);
@@ -180,87 +164,35 @@ class _ForgotAccessScreenState extends ConsumerState<ForgotAccessScreen> {
   Widget _buildPhoneInput(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // "Phone Number" label
-          Text(
-            'Phone Number',
-            style: TextStyle(
-              fontFamily: 'BarlowSemiCondensed',
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-              color: context.ksc.neutral400,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              // Ghana flag / +233 / dropdown arrow
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _ghanaFlag,
-                    style: const TextStyle(fontSize: 22),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '+233',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: context.ksc.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 17,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    LineAwesomeIcons.angle_down_solid,
-                    size: 12,
-                    color: context.ksc.neutral400,
-                  ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: TextField(
-                  controller: _phoneController,
-                  focusNode: _focusNode,
-                  keyboardType: TextInputType.phone,
+          FocusSafeTextField(
+            label: 'Phone Number',
+            hint: '024 412 3456',
+            keyboardType: TextInputType.phone,
+            onChanged: (v) => setState(() => _phone = v),
+            onSubmitted: (_) => _onSendCode(),
+            prefix: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _ghanaFlag,
+                  style: const TextStyle(fontSize: 22),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '+233',
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: context.ksc.white,
                     fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    letterSpacing: 1.0,
+                    fontSize: 17,
                   ),
-                  cursorColor: context.ksc.accent500,
-                  decoration: InputDecoration(
-                    hintText: '024 412 3456',
-                    hintStyle: TextStyle(color: context.ksc.neutral600),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: true,
-                    fillColor: Colors.transparent,
-                  ),
-                  onSubmitted: (_) => _onSendCode(),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // gradient underline
-          Container(
-            height: 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  context.ksc.accent500,
-                  context.ksc.primary500,
-                  Colors.transparent,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
+                const SizedBox(width: 6),
+                Icon(
+                  LineAwesomeIcons.angle_down_solid,
+                  size: 12,
+                  color: context.ksc.neutral400,
+                ),
+              ],
             ),
           ),
         ],

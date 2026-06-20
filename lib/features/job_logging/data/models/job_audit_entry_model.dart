@@ -23,7 +23,7 @@ class JobAuditEntryModel {
         id: json['id'] as String,
         jobId: json['job_id'] as String,
         userId: json['user_id'] as String?,
-        action: json['action'] as String,
+        action: (json['action'] as String?) ?? '',
         oldValues: json['old_values'] as Map<String, dynamic>?,
         newValues: json['new_values'] as Map<String, dynamic>?,
         createdAt: json['created_at'] as String,

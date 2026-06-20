@@ -39,8 +39,8 @@ class JobTemplateModel {
       JobTemplateModel(
         id: json['id'] as String,
         userId: json['user_id'] as String,
-        name: json['name'] as String,
-        serviceType: json['service_type'] as String,
+        name: (json['name'] as String?) ?? '',
+        serviceType: (json['service_type'] as String?) ?? '',
         notes: json['notes'] as String?,
         services: json['services_json'] as List<dynamic>? ?? (json['services'] as List<dynamic>? ?? []),
         hardwareItems: json['hardware_json'] as List<dynamic>? ?? (json['hardwareItems'] as List<dynamic>? ?? []),

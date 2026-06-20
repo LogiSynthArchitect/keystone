@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
-import 'package:keystone/features/technician_profile/data/datasources/profile_local_datasource.dart';
+import 'package:arclock/features/technician_profile/data/datasources/profile_local_datasource.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDatasource _remote;
@@ -54,6 +54,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
       'profile_url': profile.profileUrl.contains('/')
           ? profile.profileUrl.split('/').last
           : profile.profileUrl,
+      if (profile.termsAcceptedAt != null)
+        'terms_accepted_at': profile.termsAcceptedAt!.toIso8601String(),
+      'terms_version': profile.termsVersion > 0 ? profile.termsVersion : 1,
     });
     await _local.saveProfile(model);
     return model.toEntity();

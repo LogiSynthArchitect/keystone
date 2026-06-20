@@ -57,11 +57,13 @@ class CustomerLocalDatasource {
     return box.get(HiveService.lastOnlineSyncKey) as String?;
   }
 
-  /// Persists the current UTC timestamp after a successful delta sync.
-  /// Optionally accepts an explicit [timestamp] for seeding on upgrade.
-  Future<void> setLastSyncTimestamp([String? timestamp]) async {
+  /// Persists the sync timestamp after a successful delta sync.
+  /// [timestamp] must be an ISO 8601 string from the server's response
+  /// (max updated_at from fetched records) — never client DateTime.now().
+  /// Using client time causes clock skew to silently blind future delta pulls.
+  Future<void> setLastSyncTimestamp(String timestamp) async {
     final box = HiveService.meta;
-    await box.put(HiveService.lastOnlineSyncKey, timestamp ?? DateTime.now().toUtc().toIso8601String());
+    await box.put(HiveService.lastOnlineSyncKey, timestamp);
     await box.flush();
   }
 }

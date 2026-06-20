@@ -1,4 +1,4 @@
-import 'package:keystone/features/knowledge_base/domain/entities/note_job_link_entity.dart';
+import 'package:arclock/features/knowledge_base/domain/entities/note_job_link_entity.dart';
 import '../../../../core/constants/app_enums.dart';
 
 class NoteJobLinkModel {

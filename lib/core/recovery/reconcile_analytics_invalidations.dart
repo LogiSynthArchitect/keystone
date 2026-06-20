@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:keystone/core/storage/hive_service.dart';
-import 'package:keystone/features/analytics/data/repositories/rollup_repository.dart';
+import 'package:arclock/core/storage/hive_service.dart';
+import 'package:arclock/features/analytics/data/repositories/rollup_repository.dart';
 
 /// Writes an invalidation WAL entry for a single date.
 ///

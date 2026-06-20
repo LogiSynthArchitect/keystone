@@ -77,8 +77,8 @@ class InventoryItemModel {
   factory InventoryItemModel.fromJson(Map<String, dynamic> json) => InventoryItemModel(
     id: json['id'] as String,
     userId: json['user_id'] as String,
-    category: InventoryItemCategory.fromDb(json['item_type'] as String),
-    name: json['name'] as String,
+    category: InventoryItemCategory.fromDb((json['item_type'] as String?) ?? ''),
+    name: (json['name'] as String?) ?? '',
     attributes: json['attributes'] != null
         ? Map<String, dynamic>.from(json['attributes'] as Map)
         : <String, dynamic>{},

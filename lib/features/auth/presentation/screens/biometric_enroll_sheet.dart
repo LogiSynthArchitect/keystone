@@ -47,10 +47,13 @@ class _BiometricEnrollPageState extends ConsumerState<BiometricEnrollPage> {
     final supabase = ref.read(supabaseClientProvider);
     final service = InternalAuthService(supabase);
     final bio = await service.biometric.getAvailableBiometrics();
+    final pinHash = await service.vault.getPinHash();
+    final hasPin = pinHash != null && pinHash.isNotEmpty;
     if (mounted) {
       setState(() {
         _hasBiometrics = bio.isNotEmpty;
         _hasCheckedBiometrics = true;
+        _pinEnabled = hasPin;
       });
     }
   }
@@ -107,6 +110,7 @@ class _BiometricEnrollPageState extends ConsumerState<BiometricEnrollPage> {
 
   Future<void> _onContinue() async {
     await ref.read(authStateProvider.notifier).refresh();
+    await Future.delayed(const Duration(milliseconds: 150));
     final route = widget.returnRoute ?? RouteNames.onboarding;
     if (mounted) context.go(route);
   }
@@ -241,6 +245,20 @@ class _BiometricEnrollSheetState extends ConsumerState<BiometricEnrollSheet> {
   bool _pinEnabled = false;
   bool _enrollingBiometric = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingPin();
+  }
+
+  Future<void> _checkExistingPin() async {
+    final supabase = ref.read(supabaseClientProvider);
+    final service = InternalAuthService(supabase);
+    final pinHash = await service.vault.getPinHash();
+    final hasPin = pinHash != null && pinHash.isNotEmpty;
+    if (mounted) setState(() => _pinEnabled = hasPin);
+  }
+
   Future<void> _toggleBiometric() async {
     if (_biometricEnabled) return;
     setState(() => _enrollingBiometric = true);
@@ -294,6 +312,7 @@ class _BiometricEnrollSheetState extends ConsumerState<BiometricEnrollSheet> {
   Future<void> _onContinue() async {
     Navigator.of(context).pop();
     await ref.read(authStateProvider.notifier).refresh();
+    await Future.delayed(const Duration(milliseconds: 150));
     if (mounted) context.go(RouteNames.onboarding);
   }
 
@@ -451,27 +470,39 @@ class _ChecklistCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: locked || isLoading ? null : onTap,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(8),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             decoration: BoxDecoration(
               color: context.ksc.primary800,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected ? context.ksc.accent500 : context.ksc.primary700,
+                color: isSelected
+                    ? context.ksc.accent500.withValues(alpha: 0.6)
+                    : context.ksc.primary700,
                 width: isSelected ? 1.5 : 1,
               ),
             ),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
-                  size: 22,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? context.ksc.accent500.withValues(alpha: 0.12)
+                        : context.ksc.primary700.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? context.ksc.accent500 : context.ksc.neutral400,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,13 +512,14 @@ class _ChecklistCard extends StatelessWidget {
                         style: AppTextStyles.label.copyWith(
                           color: context.ksc.white,
                           fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
                         style: AppTextStyles.caption.copyWith(
-                          color: context.ksc.neutral400,
+                          color: context.ksc.neutral500,
                           fontWeight: FontWeight.w500,
                         ),
                       ),

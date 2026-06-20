@@ -98,7 +98,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     final shareUrl = '${AppConstants.profileBaseUrl}/${state.profile!.profileUrl}';
     await Share.share(
       'Check out my locksmith profile: $shareUrl',
-      subject: 'My Keystone Profile',
+      subject: 'My Arclock Profile',
     );
     KsAnalytics.log(AnalyticsEvents.profileShared);
   }

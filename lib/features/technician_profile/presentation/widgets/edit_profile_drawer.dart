@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
-import 'package:keystone/core/widgets/ks_step_drawer.dart';
-import 'package:keystone/core/widgets/ks_confirm_dialog.dart';
+import 'package:arclock/core/widgets/focus_safe_text_field.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_step_drawer.dart';
+import 'package:arclock/core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../providers/profile_provider.dart';
@@ -193,24 +194,10 @@ class _EditProfileDrawerState extends ConsumerState<EditProfileDrawer> {
       const SizedBox(height: 8),
       Text('FULL NAME', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.8, color: ctx.ksc.accent500)),
       const SizedBox(height: 8),
-      TextField(
-        controller: _nameCtrl,
+      FocusSafeTextField(
+        hint: 'e.g. JEREMIE MENSAH',
         maxLength: 100,
-        maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
-        style: AppTextStyles.body.copyWith(color: ctx.ksc.white, fontWeight: FontWeight.w700, fontSize: 17),
-        cursorColor: ctx.ksc.accent500,
-        decoration: InputDecoration(
-          hintText: 'e.g. JEREMIE MENSAH',
-          hintStyle: AppTextStyles.body.copyWith(color: ctx.ksc.neutral600, fontSize: 17),
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: ctx.ksc.primary700.withValues(alpha: 0.5), width: 1.5),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: ctx.ksc.accent500, width: 1.5),
-          ),
-        ),
+        textCapitalization: TextCapitalization.words,
         onChanged: (_) => ss(() {}),
       ),
     ];
@@ -263,25 +250,10 @@ class _EditProfileDrawerState extends ConsumerState<EditProfileDrawer> {
       const SizedBox(height: 8),
       Text('WHATSAPP NUMBER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.8, color: ctx.ksc.accent500)),
       const SizedBox(height: 8),
-      TextField(
-        controller: _whatsappCtrl,
+      FocusSafeTextField(
+        hint: '054 412 3456',
         keyboardType: TextInputType.phone,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-        maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
-        style: AppTextStyles.body.copyWith(color: ctx.ksc.white, fontWeight: FontWeight.w700, fontSize: 17),
-        cursorColor: ctx.ksc.accent500,
-        decoration: InputDecoration(
-          hintText: '054 412 3456',
-          hintStyle: AppTextStyles.body.copyWith(color: ctx.ksc.neutral600, fontSize: 17),
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: ctx.ksc.primary700.withValues(alpha: 0.5), width: 1.5),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: ctx.ksc.accent500, width: 1.5),
-          ),
-        ),
         onChanged: (_) => ss(() {}),
       ),
       const SizedBox(height: 12),
@@ -294,26 +266,11 @@ class _EditProfileDrawerState extends ConsumerState<EditProfileDrawer> {
       const SizedBox(height: 8),
       Text('PROFESSIONAL BIO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.8, color: ctx.ksc.accent500)),
       const SizedBox(height: 8),
-      TextField(
-        controller: _bioCtrl,
+      FocusSafeTextField(
+        hint: 'Describe your expertise...',
         maxLines: 5,
         maxLength: 300,
-        maxLengthEnforcement: MaxLengthEnforcement.enforced,
-        buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
-        keyboardType: TextInputType.multiline,
-        style: AppTextStyles.body.copyWith(color: ctx.ksc.white, fontWeight: FontWeight.w700, fontSize: 17, height: 1.5),
-        cursorColor: ctx.ksc.accent500,
-        decoration: InputDecoration(
-          hintText: 'Describe your expertise...',
-          hintStyle: AppTextStyles.body.copyWith(color: ctx.ksc.neutral600, fontSize: 17),
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: ctx.ksc.primary700.withValues(alpha: 0.5), width: 1.5),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: ctx.ksc.accent500, width: 1.5),
-          ),
-        ),
+        textCapitalization: TextCapitalization.sentences,
         onChanged: (_) => ss(() {}),
       ),
     ];

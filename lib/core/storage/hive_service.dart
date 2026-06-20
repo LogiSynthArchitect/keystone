@@ -31,6 +31,7 @@ class HiveService {
   static const String authBox = 'auth';
   static const String pendingMediaUploadsBox = 'pending_media_uploads';
   static const String analyticsDailyRollupsBox = 'analytics_daily_rollups';
+  static const String syncQueueBox = 'sync_queue';
   static const String metaBox = '_meta';
   static const String lastOnlineSyncKey   = 'last_online_sync';
   static const String backupDirName      = 'hive_backups';
@@ -39,11 +40,21 @@ class HiveService {
     jobsBox, customersBox, notesBox, followUpsBox, profileBox,
     settingsBox, serviceTypesBox, jobPartsBox, jobPhotosBox,
     jobAuditLogBox, keyCodeHistoryBox, noteJobLinksBox,
-    remindersBox, activityEventsBox, jobServicesBox, jobHardwareBox, jobExpensesBox, jobTemplatesBox, inventoryItemsBox, inventoryStockAdjustmentsBox, inventoryRestocksBox, recurringSchedulesBox, authBox, pendingMediaUploadsBox, analyticsDailyRollupsBox,
+    remindersBox, activityEventsBox, jobServicesBox, jobHardwareBox, jobExpensesBox, jobTemplatesBox, inventoryItemsBox, inventoryStockAdjustmentsBox, inventoryRestocksBox, recurringSchedulesBox, authBox, pendingMediaUploadsBox, analyticsDailyRollupsBox, syncQueueBox,
   ];
 
+  /// Overridden Hive base path, if set via --dart-define=HIVE_BASE_PATH.
+  /// When null, defaults to getApplicationDocumentsDirectory().
+  static String? _customHivePath;
+
   static Future<void> initialize() async {
-    await Hive.initFlutter();
+    const envPath = String.fromEnvironment('HIVE_BASE_PATH');
+    if (envPath.isNotEmpty) {
+      _customHivePath = envPath;
+      Hive.init(envPath);
+    } else {
+      await Hive.initFlutter();
+    }
     await _openBoxes();
   }
 
@@ -115,10 +126,13 @@ class HiveService {
 
   /// Find the Hive storage directory.
   static Future<Directory?> _hiveDir() async {
+    if (_customHivePath != null) {
+      final customDir = Directory(_customHivePath!);
+      if (await customDir.exists()) return customDir;
+      return null;
+    }
     final dir = await getApplicationDocumentsDirectory();
-    // Hive default directory on mobile
-    final docDir = Directory(dir.path);
-    if (await docDir.exists()) return docDir;
+    if (await dir.exists()) return dir;
     return null;
   }
 
@@ -128,6 +142,86 @@ class HiveService {
         final box = Hive.box(name);
         await box.clear();
       } catch (_) {}
+    }
+  }
+
+  /// Per-box schema version map.
+  /// Key = box name, Value = current schema version for that box.
+  /// Bump the version for a specific box when its data format changes.
+  /// Each box's version is stored as `schema_version_{boxName}` in _meta.
+  /// All boxes start at version 1. A no-op migration (v0→v1) establishes
+  /// the tracking infrastructure and logs entry counts as a health check.
+  static const Map<String, int> boxSchemaVersions = {
+    jobsBox: 1,
+    customersBox: 1,
+    notesBox: 1,
+    followUpsBox: 1,
+    profileBox: 1,
+    settingsBox: 1,
+    serviceTypesBox: 1,
+    jobPartsBox: 1,
+    jobPhotosBox: 1,
+    jobAuditLogBox: 1,
+    keyCodeHistoryBox: 1,
+    noteJobLinksBox: 1,
+    remindersBox: 1,
+    activityEventsBox: 1,
+    jobServicesBox: 1,
+    jobHardwareBox: 1,
+    jobExpensesBox: 1,
+    jobTemplatesBox: 1,
+    inventoryItemsBox: 1,
+    inventoryStockAdjustmentsBox: 1,
+    inventoryRestocksBox: 1,
+    recurringSchedulesBox: 1,
+    authBox: 1,
+    pendingMediaUploadsBox: 1,
+    analyticsDailyRollupsBox: 1,
+    syncQueueBox: 1,
+  };
+
+  static int _boxSchemaVersion(String boxName) =>
+      boxSchemaVersions[boxName] ?? 0;
+
+  /// Returns the stored schema version for [boxName] from the meta box.
+  static int _storedBoxVersion(String boxName) {
+    final box = Hive.box(metaBox);
+    return box.get('schema_version_$boxName', defaultValue: 0) as int;
+  }
+
+  /// Migrate a single data box to the latest schema version.
+  /// Returns true if a migration was applied, false if already current.
+  static Future<bool> maybeMigrateBox(String boxName) async {
+    final current = _boxSchemaVersion(boxName);
+    final stored = _storedBoxVersion(boxName);
+    if (stored >= current) return false;
+
+    debugPrint('[KS:HIVE] Migrating $boxName $stored → $current');
+
+    final box = Hive.box(boxName);
+
+    // ── v0 → v1: Baseline migration ──
+    // No data transformations needed — this establishes the version tracking
+    // infrastructure and logs entry counts as a health check for every box.
+    if (stored < 1) {
+      final count = box.length;
+      final keys = box.keys.take(5).join(', ');
+      debugPrint('[KS:HIVE] $boxName baseline: $count entries'
+          '${count > 0 ? ", sample keys: $keys" : ""}');
+    }
+
+    // Persist updated version
+    final meta = Hive.box(metaBox);
+    await meta.put('schema_version_$boxName', current);
+    await meta.flush();
+    return true;
+  }
+
+  /// Migrate ALL data boxes that have schema version bumps.
+  /// Call during startup instead of the nuclear wipe.
+  static Future<void> migrateAllBoxes() async {
+    for (final boxName in boxSchemaVersions.keys) {
+      await maybeMigrateBox(boxName);
     }
   }
 

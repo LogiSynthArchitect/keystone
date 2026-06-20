@@ -1,0 +1,6 @@
+{
+  "code": "42703",
+  "details": null,
+  "hint": null,
+  "message": "column job_services.user_id does not exist"
+}

@@ -30,6 +30,8 @@ class KsReminderCard extends StatelessWidget {
       case ReminderType.followUpPending:      return context.ksc.primary400;
       case ReminderType.followUpNoResponse:   return context.ksc.primary400;
       case ReminderType.recurringJobOverdue:  return context.ksc.accent500;
+      case ReminderType.lowStock:             return context.ksc.error500;
+      case ReminderType.dormantCustomer:      return context.ksc.neutral400;
     }
   }
 
@@ -40,6 +42,8 @@ class KsReminderCard extends StatelessWidget {
       case ReminderType.followUpPending:      return LineAwesomeIcons.whatsapp;
       case ReminderType.followUpNoResponse:   return LineAwesomeIcons.comment_dots;
       case ReminderType.recurringJobOverdue:  return LineAwesomeIcons.calendar_check_solid;
+      case ReminderType.lowStock:             return LineAwesomeIcons.box_solid;
+      case ReminderType.dormantCustomer:      return LineAwesomeIcons.user_solid;
     }
   }
 

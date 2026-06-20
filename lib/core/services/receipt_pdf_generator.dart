@@ -38,7 +38,7 @@ class ReceiptPdfGenerator {
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            pw.Text('KEYSTONE', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
+            pw.Text('ARCLOCK', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
             pw.SizedBox(height: 2),
             pw.Text('P A Y M E N T   R E C E I P T', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.normal, color: PdfColors.grey500, letterSpacing: 2)),
             pw.SizedBox(height: 4),
@@ -80,7 +80,7 @@ class ReceiptPdfGenerator {
 
     return await doc.save().then((bytes) async {
       final dir = Directory.systemTemp;
-      final file = File('${dir.path}/keystone_receipt_${data.receiptNumber}.pdf');
+      final file = File('${dir.path}/arclock_receipt_${data.receiptNumber}.pdf');
       await file.writeAsBytes(bytes);
       return file;
     });

@@ -8,6 +8,8 @@ class ProfileEntity {
   final String whatsappNumber;
   final bool isPublic;
   final String profileUrl;
+  final DateTime? termsAcceptedAt;
+  final int termsVersion;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,12 +23,15 @@ class ProfileEntity {
     required this.whatsappNumber,
     required this.isPublic,
     required this.profileUrl,
+    this.termsAcceptedAt,
+    this.termsVersion = 0,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get hasPhoto => photoUrl != null && photoUrl!.isNotEmpty;
   bool get hasBio => bio != null && bio!.isNotEmpty;
+  bool get hasAcceptedTerms => termsAcceptedAt != null;
 
   ProfileEntity copyWith({
     String? id,
@@ -38,6 +43,8 @@ class ProfileEntity {
     String? whatsappNumber,
     bool? isPublic,
     String? profileUrl,
+    DateTime? termsAcceptedAt,
+    int? termsVersion,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -51,6 +58,8 @@ class ProfileEntity {
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
       isPublic: isPublic ?? this.isPublic,
       profileUrl: profileUrl ?? this.profileUrl,
+      termsAcceptedAt: termsAcceptedAt ?? this.termsAcceptedAt,
+      termsVersion: termsVersion ?? this.termsVersion,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

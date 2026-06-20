@@ -1,4 +1,4 @@
-name: keystone
+name: arclock
 description: Job management for professional locksmiths in Ghana
 publish_to: 'none'
 version: 1.0.0+1
@@ -66,6 +66,11 @@ dependencies:
 
   # Charts
   fl_chart: ^1.2.0
+  flutter_markdown: ^0.7.7+1
+
+  fluttersdk_artisan: any
+  fluttersdk_dusk: any
+  fluttersdk_telescope: any
 
 dev_dependencies:
   flutter_test:
@@ -88,6 +93,7 @@ flutter:
     - assets/logo/
     - assets/fonts/
     - assets/flags/
+    - assets/legal/
     - assets/services/
     - assets/icons/3d/
     - assets/icons/3d/transparent/

@@ -8,5 +8,5 @@ flutter_native_splash:
   android_12:
     color: "#0A1628"
     # Android 12 icon is set manually in values-v31/styles.xml and values-night-v31/styles.xml
-    # referencing @drawable/ic_keystone_splash_logo (the XML vector).
+    # referencing @drawable/ic_arclock_splash_logo (the XML vector).
   web: false

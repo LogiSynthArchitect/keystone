@@ -33,75 +33,76 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
   String? _firstPin;
   String? _error;
 
-  _PinStep get _step =>
-      _firstPin == null ? _PinStep.choose : _PinStep.confirm;
+  _PinStep get _step => _firstPin == null ? _PinStep.choose : _PinStep.confirm;
 
   @override
   Widget build(BuildContext context) {
     final supabase = ref.read(supabaseClientProvider);
     final service = InternalAuthService(supabase);
 
-    return Scaffold(
-      backgroundColor: context.ksc.primary900,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top section: back button + step header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 16),
-                  _AuthBackButton(onTap: () => context.pop()),
-                  const SizedBox(height: 32),
-                  const AuthStepHeader(
-                    totalSteps: 4,
-                    currentStep: 3,
-                    icon: LineAwesomeIcons.lock_solid,
-                    stepLabel: 'PIN',
-                  ),
-                ],
-              ),
-            ),
-            // Numpad fills remaining space, no scroll
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    KsNumpad(
-                      onReady: (c) => _controls = c,
-                      title: _step == _PinStep.choose
-                          ? 'CREATE A PIN'
-                          : 'CONFIRM PIN',
-                      subtitle: _step == _PinStep.choose
-                          ? 'Choose a 6-digit PIN to unlock the app'
-                          : 'Enter your PIN again to confirm',
-                      hasError: _error != null,
-                      onCompleted: (code) => _onComplete(code, service),
-                      onChanged: (_) {
-                        if (_error != null) {
-                          setState(() => _error = null);
-                        }
-                      },
-                    ),
-                    if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: KsBanner(
-                          message: _error!,
-                          type: KsBannerType.alert,
-                        ),
+    return PopScope(
+        canPop: widget.popOnSuccess,
+        child: Scaffold(
+          backgroundColor: context.ksc.primary900,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Top section: back button + step header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 16),
+                      _AuthBackButton(onTap: () => context.pop()),
+                      const SizedBox(height: 32),
+                      const AuthStepHeader(
+                        totalSteps: 4,
+                        currentStep: 3,
+                        icon: LineAwesomeIcons.lock_solid,
+                        stepLabel: 'PIN',
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                // Numpad fills remaining space, no scroll
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        KsNumpad(
+                          onReady: (c) => _controls = c,
+                          title: _step == _PinStep.choose
+                              ? 'CREATE A PIN'
+                              : 'CONFIRM PIN',
+                          subtitle: _step == _PinStep.choose
+                              ? 'Choose a 6-digit PIN to unlock the app'
+                              : 'Enter your PIN again to confirm',
+                          hasError: _error != null,
+                          onCompleted: (code) => _onComplete(code, service),
+                          onChanged: (_) {
+                            if (_error != null) {
+                              setState(() => _error = null);
+                            }
+                          },
+                        ),
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: KsBanner(
+                              message: _error!,
+                              type: KsBannerType.alert,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 
   Future<void> _onComplete(String code, InternalAuthService service) async {
@@ -119,13 +120,16 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       return;
     }
 
-    debugPrint('[KS:PIN_SETUP] _onComplete step=${_step} popOnSuccess=${widget.popOnSuccess}');
+    debugPrint(
+        '[KS:PIN_SETUP] _onComplete step=${_step} popOnSuccess=${widget.popOnSuccess}');
     try {
       final ok = await service.enrollPin(code);
       debugPrint('[KS:PIN_SETUP] enrollPin result=$ok');
       if (ok && mounted) {
         debugPrint('[KS:PIN_SETUP] refreshing auth state...');
         await ref.read(authStateProvider.notifier).refresh();
+        // User just enrolled PIN — implicitly unlock current session
+        ref.read(authStateProvider.notifier).setLocallyUnlocked(true);
         debugPrint('[KS:PIN_SETUP] auth refreshed, navigating...');
         if (mounted) {
           if (widget.popOnSuccess) {
@@ -171,8 +175,8 @@ class _AuthBackButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.ksc.primary800.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-              color: context.ksc.primary700.withValues(alpha: 0.3)),
+          border:
+              Border.all(color: context.ksc.primary700.withValues(alpha: 0.3)),
         ),
         child: Icon(LineAwesomeIcons.angle_left_solid,
             size: 14, color: context.ksc.white),

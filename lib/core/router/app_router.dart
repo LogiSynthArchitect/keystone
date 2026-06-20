@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../providers/auth_provider.dart';
+import '../../features/auth/presentation/providers/dev_state_provider.dart';
 import 'route_names.dart';
 import 'route_transitions.dart';
 
@@ -11,8 +13,11 @@ import '../../features/auth/presentation/screens/otp_verify_screen.dart';
 import '../../features/auth/presentation/screens/create_password_screen.dart';
 import '../../features/auth/presentation/screens/password_entry_screen.dart';
 import '../../features/auth/presentation/screens/pin_entry_screen.dart';
+import '../../features/auth/presentation/screens/pin_setup_screen.dart';
 import '../../features/auth/presentation/screens/biometric_enroll_sheet.dart';
 import '../../features/auth/presentation/screens/locked_screen.dart';
+import '../../features/auth/presentation/screens/password_unlock_screen.dart';
+import '../../features/auth/presentation/screens/pin_unlock_screen.dart';
 import '../../features/auth/presentation/screens/upgrade_account_screen.dart';
 import '../../features/auth/presentation/screens/forgot_access_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
@@ -21,6 +26,7 @@ import '../../features/auth/presentation/screens/transition_screen.dart';
 import '../../features/auth/presentation/screens/stale_data_screen.dart';
 import '../../features/auth/presentation/screens/initial_sync_screen.dart';
 import '../../features/auth/presentation/screens/min_version_gate_screen.dart';
+import '../../features/auth/presentation/screens/terms_screen.dart';
 import '../../core/services/internal_auth/models/unlock_result.dart';
 import '../../features/job_logging/presentation/screens/job_list_screen.dart';
 
@@ -35,6 +41,7 @@ import '../../features/knowledge_base/presentation/screens/notes_list_screen.dar
 import '../../features/knowledge_base/presentation/screens/add_note_screen.dart';
 import '../../features/knowledge_base/presentation/screens/note_detail_screen.dart';
 import '../../features/auth/presentation/screens/security_screen.dart';
+import '../../features/auth/presentation/screens/change_phone_screen.dart';
 import '../../features/technician_profile/presentation/screens/profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/public_profile_screen.dart';
 import '../../features/technician_profile/presentation/screens/permissions_screen.dart';
@@ -52,14 +59,31 @@ import '../../features/auth/presentation/screens/setup_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/hub/presentation/screens/hub_screen.dart';
 
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}
+
+final _routerRefreshNotifier = _RouterRefreshNotifier();
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authStateAsync = ref.watch(authStateProvider);
-  final authState = authStateAsync.valueOrNull ?? const AuthState();
+  // Trigger redirect re-evaluation on auth state change WITHOUT rebuilding GoRouter
+  ref.listen(mergedAuthStateProvider, (_, __) {
+    _routerRefreshNotifier.refresh();
+  });
 
   return GoRouter(
     initialLocation: RouteNames.transition,
     debugLogDiagnostics: true,
+    refreshListenable: _routerRefreshNotifier,
     redirect: (context, state) {
+      // Guard against empty locations during rapid auth state changes
+      if (state.matchedLocation.isEmpty) {
+        debugPrint('[KS:ROUTER] Empty location detected, skipping redirect');
+        return null;
+      }
+
+      final authStateAsync = ref.read(mergedAuthStateProvider);
+      final authState = authStateAsync.valueOrNull ?? const AuthState();
       final path = state.uri.path;
       final isPublicProfile = path.startsWith('/p/');
 
@@ -77,8 +101,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authPaths = [
         RouteNames.landing, RouteNames.phoneEntry, RouteNames.otpVerify,
         RouteNames.createPassword, RouteNames.passwordEntry, RouteNames.pinEntry,
-        RouteNames.biometricEnroll, RouteNames.locked, RouteNames.forgotAccess,
-        RouteNames.resetPassword,
+        RouteNames.pinSetup, RouteNames.biometricEnroll, RouteNames.locked,
+        RouteNames.forgotAccess, RouteNames.resetPassword,
+        RouteNames.onboarding,
       ];
       final upgradePath = RouteNames.upgradeAccount;
       final isInAuthFlow = authPaths.contains(path);
@@ -93,36 +118,62 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!isLoggedIn) {
         if (isInAuthFlow || isPublicProfile) return null;
+        debugPrint('[KS:ROUTER] !isLoggedIn → redirect to landing');
         return RouteNames.landing;
       }
 
-      if (isLoggedIn && needsUpgrade) {
-        if (isPublicProfile) return null;
-        if (isInPasswordUpgrade) return null;
-        final alreadyUpgraded = authBox.get('password_upgraded') as bool? ?? false;
-        if (alreadyUpgraded) return null;
-        return RouteNames.upgradeAccount;
-      }
-
       if (isLoggedIn && !hasProfile) {
-        if (isOnboarding || isPublicProfile || path == RouteNames.biometricEnroll) return null;
+        final allowed = isOnboarding || isPublicProfile || path == RouteNames.biometricEnroll || path == RouteNames.createPassword || path == RouteNames.pinSetup;
+        debugPrint('[KS:ROUTER] isLoggedIn && !hasProfile path=$path allowed=$allowed → ${allowed ? "null" : "onboarding"}');
+        if (allowed) return null;
         return RouteNames.onboarding;
       }
 
-      if (isLoggedIn && hasProfile) {
+      if (isLoggedIn && hasProfile && needsUpgrade) {
         if (isPublicProfile) return null;
-        if (path == RouteNames.initialSync) return null;
-        if (isInAuthFlow || isInPasswordUpgrade || isOnboarding || path == RouteNames.transition || path == RouteNames.biometricEnroll) {
-          return RouteNames.dashboard;
-        }
+        if (isInPasswordUpgrade) return null;
+        // Allow createPassword — OTP-verified users with existing profiles
+        // use it to set their first password (same as upgrade flow).
+        if (path == RouteNames.createPassword) return null;
+        // Allow local security setup during upgrade flow
+        if (path == RouteNames.biometricEnroll || path == RouteNames.pinSetup) return null;
+        return RouteNames.upgradeAccount;
       }
 
       if (isLoggedIn && hasProfile) {
+        if (isPublicProfile) return null;
+
+        // 1. LOCAL SECURITY FIRST — whitelist PIN/biometric setup & unlock routes
+        final isLocalSecurityPath = path == RouteNames.biometricEnroll ||
+                                    path == RouteNames.pinSetup ||
+                                    path == RouteNames.locked ||
+                                    path == RouteNames.pinEntry ||
+                                    path == RouteNames.passwordUnlock ||
+                                    path == RouteNames.pinUnlock;
+        if (isLocalSecurityPath) return null;
+
+        // 2. DATA SYNC SECOND
         final authBox = Hive.box('auth');
         final syncDone = authBox.get('initial_sync_complete') as bool? ?? false;
-        if (!syncDone && path != RouteNames.initialSync && !isPublicProfile) {
+        if (!syncDone && path != RouteNames.initialSync) {
           return RouteNames.initialSync;
         }
+        if (path == RouteNames.initialSync) return null;
+
+        // 3. SETUP CHECK — guard from deep-linking past setup
+        final setupDone = authState.setupComplete;
+        if (!setupDone && path != RouteNames.setup) {
+          return RouteNames.setup;
+        }
+        if (path == RouteNames.setup) return null;
+
+        // 4. AUTH PATH CLEANUP — send to Transition Gatekeeper for tryAutoLogin()
+        if (isInAuthFlow || isInPasswordUpgrade || isOnboarding) {
+          debugPrint('[KS:ROUTER] isLoggedIn && hasProfile → redirect to transition (was at $path)');
+          return RouteNames.transition;
+        }
+
+        return null;
       }
 
       return null;
@@ -134,12 +185,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.createPassword, builder: (context, state) => const CreatePasswordScreen()),
       GoRoute(path: RouteNames.passwordEntry, builder: (context, state) => const PasswordEntryScreen()),
       GoRoute(path: RouteNames.pinEntry, builder: (context, state) => const PinEntryScreen()),
-      GoRoute(path: RouteNames.biometricEnroll, builder: (context, state) => const BiometricEnrollPage()),
+      GoRoute(path: RouteNames.pinSetup, builder: (context, state) => PinSetupScreen(popOnSuccess: state.extra == true)),
+      GoRoute(path: RouteNames.biometricEnroll, builder: (context, state) => BiometricEnrollPage(returnRoute: state.extra as String?)),
       GoRoute(path: RouteNames.locked, builder: (context, state) => const LockedScreen()),
+      GoRoute(path: RouteNames.passwordUnlock, builder: (context, state) => const PasswordUnlockScreen()),
+      GoRoute(path: RouteNames.pinUnlock, builder: (context, state) => const PinUnlockScreen()),
       GoRoute(path: RouteNames.upgradeAccount, builder: (context, state) => const UpgradeAccountScreen()),
       GoRoute(path: RouteNames.forgotAccess, builder: (context, state) => const ForgotAccessScreen()),
       GoRoute(path: RouteNames.resetPassword, builder: (context, state) => const ResetPasswordScreen()),
       GoRoute(path: RouteNames.onboarding, builder: (context, state) => const OnboardingScreen()),
+      GoRoute(path: RouteNames.termsAccept, builder: (context, state) => const TermsScreen()),
       GoRoute(path: RouteNames.staleData, builder: (context, state) => StaleDataScreen(result: state.extra as UnlockNeedsOnline)),
       GoRoute(path: RouteNames.transition, builder: (context, state) => const TransitionScreen()),
       GoRoute(path: RouteNames.initialSync, builder: (context, state) => const InitialSyncScreen()),
@@ -161,6 +216,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Note editing via AddNoteScreen.show(context, existingNote: note) — no dedicated route
       routeWithTransition(path: RouteNames.profile, builder: (context, state) => const ProfileScreen()),
       routeWithTransition(path: '/profile/security', builder: (context, state) => const SecurityScreen()),
+      routeWithTransition(path: '/profile/change-phone', builder: (context, state) => const ChangePhoneScreen()),
       // Link screen replaced by bottom sheet — NoteJobLinkScreen.show(context, noteId)
       routeWithTransition(path: RouteNames.serviceTypes, builder: (context, state) => const ServiceTypesScreen()),
       routeWithTransition(path: RouteNames.pricing, builder: (context, state) => const PricingScreen()),

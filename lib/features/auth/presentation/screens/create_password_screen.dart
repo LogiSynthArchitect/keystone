@@ -10,6 +10,7 @@ import '../../../../core/widgets/auth_step_header.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 import '../../../../core/services/internal_auth/internal_auth_service.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../providers/auth_notifier.dart';
@@ -23,41 +24,15 @@ class CreatePasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen> {
-  final _passwordController = TextEditingController();
-  final _confirmController = TextEditingController();
-  final _passwordFocus = FocusNode();
-  final _confirmFocus = FocusNode();
-  bool _obscurePassword = true;
-  bool _obscureConfirm = true;
-  bool _passwordFocused = false;
-  bool _confirmFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _passwordFocus.addListener(
-        () => setState(() => _passwordFocused = _passwordFocus.hasFocus));
-    _confirmFocus.addListener(
-        () => setState(() => _confirmFocused = _confirmFocus.hasFocus));
-  }
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    _confirmController.dispose();
-    _passwordFocus.dispose();
-    _confirmFocus.dispose();
-    super.dispose();
-  }
+  String _password = '';
+  String _confirm = '';
 
   bool get _canSubmit {
-    final pw = _passwordController.text;
-    final confirm = _confirmController.text;
-    return pw.length >= 8 &&
-        pw.contains(RegExp(r'[A-Za-z]')) &&
-        pw.contains(RegExp(r'[0-9]')) &&
-        confirm.isNotEmpty &&
-        pw == confirm;
+    return _password.length >= 8 &&
+        _password.contains(RegExp(r'[A-Za-z]')) &&
+        _password.contains(RegExp(r'[0-9]')) &&
+        _confirm.isNotEmpty &&
+        _password == _confirm;
   }
 
   Future<void> _onSubmit() async {
@@ -67,8 +42,7 @@ class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen> {
     final service = InternalAuthService(supabase);
     final phone = ref.read(authNotifierProvider).phoneNumber ?? '';
 
-    final success =
-        await service.enrollPassword(phone, _passwordController.text);
+    final success = await service.enrollPassword(phone, _password);
     if (success && mounted) {
       await authNotifier.setPasswordCreated();
       await KsSuccessMoment.show(context, title: 'PASSWORD CREATED');
@@ -145,11 +119,24 @@ class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen> {
                       const SizedBox(height: 24),
                     ],
 
-                    _buildPasswordField(context),
+                    FocusSafeTextField(
+                      label: 'PASSWORD',
+                      hint: 'Enter password',
+                      obscureText: true,
+                      textInputAction: TextInputAction.next,
+                      onChanged: (v) => setState(() => _password = v),
+                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
                     const SizedBox(height: 24),
-                    _buildConfirmField(context),
+                    FocusSafeTextField(
+                      label: 'CONFIRM PASSWORD',
+                      hint: 'Confirm password',
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      onChanged: (v) => setState(() => _confirm = v),
+                      onSubmitted: (_) => _onSubmit(),
+                    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0),
                     const SizedBox(height: 20),
-                    _buildPasswordHint(context),
+                    _buildPasswordHint(),
                   ],
                 ),
               ),
@@ -183,146 +170,11 @@ class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen> {
         ),
       );
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required bool isFocused,
-    required bool obscure,
-    required VoidCallback onToggleObscure,
-    required String hint,
-    required VoidCallback onChanged,
-    String? label,
-    VoidCallback? onSubmitted,
-    TextInputAction textInputAction = TextInputAction.next,
-    Iterable<String>? autofillHints,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (label != null) ...[
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'BarlowSemiCondensed',
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-              color: context.ksc.neutral400,
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                onChanged: (_) => onChanged(),
-                obscureText: obscure,
-                style: TextStyle(
-                  fontFamily: 'BarlowSemiCondensed',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: context.ksc.white,
-                ),
-                cursorColor: context.ksc.accent500,
-                keyboardType: TextInputType.visiblePassword,
-                textInputAction: textInputAction,
-                autofillHints: autofillHints,
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: TextStyle(
-                    fontFamily: 'BarlowSemiCondensed',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: context.ksc.neutral500,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                ),
-                onSubmitted: (_) => onSubmitted?.call(),
-              ),
-            ),
-            GestureDetector(
-              onTap: onToggleObscure,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  obscure
-                      ? LineAwesomeIcons.eye_solid
-                      : LineAwesomeIcons.eye_slash_solid,
-                  size: 18,
-                  color: context.ksc.neutral400.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-          ],
-        ),
-        AnimatedOpacity(
-          opacity: isFocused ? 1.0 : 0.4,
-          duration: const Duration(milliseconds: 200),
-          child: Container(
-            height: 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  context.ksc.accent500,
-                  context.ksc.primary500,
-                  Colors.transparent,
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPasswordField(BuildContext context) =>
-      _buildTextField(
-        controller: _passwordController,
-        focusNode: _passwordFocus,
-        isFocused: _passwordFocused,
-        obscure: _obscurePassword,
-        hint: 'Enter password',
-        label: 'PASSWORD',
-        onToggleObscure: () =>
-            setState(() => _obscurePassword = !_obscurePassword),
-        onChanged: () => setState(() {}),
-        onSubmitted: () => _confirmFocus.requestFocus(),
-        autofillHints: const [AutofillHints.newPassword],
-      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
-
-  Widget _buildConfirmField(BuildContext context) =>
-      _buildTextField(
-        controller: _confirmController,
-        focusNode: _confirmFocus,
-        isFocused: _confirmFocused,
-        obscure: _obscureConfirm,
-        hint: 'Confirm password',
-        label: 'CONFIRM PASSWORD',
-        onToggleObscure: () =>
-            setState(() => _obscureConfirm = !_obscureConfirm),
-        onChanged: () => setState(() {}),
-        onSubmitted: () => _onSubmit(),
-        textInputAction: TextInputAction.done,
-        autofillHints: const [AutofillHints.newPassword],
-      ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0);
-
-  Widget _buildPasswordHint(BuildContext context) {
-    final pw = _passwordController.text;
-    final min8 = pw.length >= 8;
-    final hasLetter = pw.contains(RegExp(r'[A-Za-z]'));
-    final hasNumber = pw.contains(RegExp(r'[0-9]'));
-    final match = _confirmController.text.isNotEmpty &&
-        _confirmController.text == _passwordController.text;
+  Widget _buildPasswordHint() {
+    final min8 = _password.length >= 8;
+    final hasLetter = _password.contains(RegExp(r'[A-Za-z]'));
+    final hasNumber = _password.contains(RegExp(r'[0-9]'));
+    final match = _confirm.isNotEmpty && _password == _confirm;
 
     return Padding(
       padding: const EdgeInsets.only(left: 4),
@@ -365,5 +217,4 @@ class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen> {
       ],
     );
   }
-
 }

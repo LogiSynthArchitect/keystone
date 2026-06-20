@@ -1,5 +1,9 @@
 class RouteNames {
   RouteNames._();
+
+  /// Current version of the Terms & Conditions. Bump when content changes.
+  static const int currentTermsVersion = 1;
+
   // Auth
   static const String landing        = '/';
   static const String phoneEntry     = '/auth/phone';
@@ -7,6 +11,7 @@ class RouteNames {
   static const String createPassword = '/auth/create-password';
   static const String passwordEntry  = '/auth/password';
   static const String pinEntry       = '/auth/pin';
+  static const String pinSetup       = '/auth/pin-setup';
   static const String biometricEnroll = '/auth/biometric-enroll';
   static const String locked         = '/auth/locked';
   static const String upgradeAccount = '/auth/upgrade';
@@ -16,7 +21,11 @@ class RouteNames {
   static const String staleData      = '/auth/stale';
   static const String initialSync    = '/auth/initial-sync';
   static const String versionGate    = '/auth/version-gate';
+  static const String termsAccept    = '/auth/terms';
   static const String transition     = '/auth/transition';
+  // Unlock screens (dedicated, bypass authPaths redirect)
+  static const String passwordUnlock = '/auth/password-unlock';
+  static const String pinUnlock      = '/auth/pin-unlock';
   // Main tabs
   static const String dashboard  = '/dashboard';
   static const String jobs        = '/jobs';

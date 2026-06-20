@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:keystone/features/inventory/data/models/pending_restock_wal.dart';
-import 'package:keystone/core/storage/hive_service.dart';
+import 'package:arclock/features/inventory/data/models/pending_restock_wal.dart';
+import 'package:arclock/core/storage/hive_service.dart';
 
 /// Startup recovery hook for restock Write-Ahead Log.
 ///

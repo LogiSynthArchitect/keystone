@@ -22,6 +22,12 @@ class ServiceTypeModel {
   final bool isDeleted;
   final Map<String, dynamic> preserved;
 
+  /// Transient Hive-only field. Tracks when the user last edited this record
+  /// locally. Used as a tiebreaker in sync merge to preserve local pricing
+  /// edits that happened more recently than the server's `updated_at`.
+  /// Never serialized to JSON or sent to the server.
+  final DateTime? localEditedAt;
+
   ServiceTypeModel({
     required this.id,
     required this.userId,
@@ -36,6 +42,7 @@ class ServiceTypeModel {
     this.updatedBy = 'mobile',
     this.isDeleted = false,
     this.preserved = const {},
+    this.localEditedAt,
   });
 
   factory ServiceTypeModel.fromJson(Map<String, dynamic> json) => ServiceTypeModel(
@@ -54,6 +61,7 @@ class ServiceTypeModel {
     updatedBy: json['updated_by'] as String? ?? 'mobile',
     isDeleted: json['is_deleted'] as bool? ?? false,
     preserved: ForwardCompatible.extractPreserved(json, _kKnown),
+    // localEditedAt is never read from JSON (transient Hive-only)
   );
 
   Map<String, dynamic> toJson() => ForwardCompatible.buildJson(preserved, {
@@ -69,6 +77,7 @@ class ServiceTypeModel {
     'updated_by': updatedBy,
     if (isDeleted) 'is_deleted': true,
   });
+  // localEditedAt is never serialized to JSON (transient Hive-only)
 
   /// Build a PATCH payload — only transmits fields listed in [correctionFields].
   Map<String, dynamic> toPatchJson() {
@@ -130,6 +139,7 @@ class ServiceTypeModel {
     String? updatedBy,
     bool? isDeleted,
     Map<String, dynamic>? preserved,
+    DateTime? localEditedAt,
   }) {
     return ServiceTypeModel(
       id: id ?? this.id,
@@ -145,6 +155,7 @@ class ServiceTypeModel {
       updatedBy: updatedBy ?? this.updatedBy,
       isDeleted: isDeleted ?? this.isDeleted,
       preserved: preserved ?? this.preserved,
+      localEditedAt: localEditedAt ?? this.localEditedAt,
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:keystone/core/providers/supabase_provider.dart';
-import 'package:keystone/core/providers/connectivity_provider.dart';
-import 'package:keystone/features/knowledge_base/domain/entities/note_job_link_entity.dart';
+import 'package:arclock/core/providers/supabase_provider.dart';
+import 'package:arclock/core/providers/connectivity_provider.dart';
+import 'package:arclock/features/knowledge_base/domain/entities/note_job_link_entity.dart';
 import '../../data/datasources/note_link_local_datasource.dart';
 import '../../data/datasources/note_link_remote_datasource.dart';
 import '../../data/repositories/note_link_repository_impl.dart';

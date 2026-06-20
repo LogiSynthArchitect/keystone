@@ -4,6 +4,8 @@ enum ReminderType {
   followUpPending,
   followUpNoResponse,
   recurringJobOverdue,
+  lowStock,
+  dormantCustomer,
 }
 
 extension ReminderTypeLabel on ReminderType {
@@ -14,6 +16,8 @@ extension ReminderTypeLabel on ReminderType {
       case ReminderType.followUpPending:      return 'FOLLOW-UP NEEDED';
       case ReminderType.followUpNoResponse:   return 'AWAITING RESPONSE';
       case ReminderType.recurringJobOverdue:  return 'RECURRING JOB DUE';
+      case ReminderType.lowStock:             return 'LOW STOCK';
+      case ReminderType.dormantCustomer:      return 'DORMANT CUSTOMER';
     }
   }
 
@@ -24,6 +28,8 @@ extension ReminderTypeLabel on ReminderType {
       case ReminderType.followUpPending:      return 'Follow-up not sent yet';
       case ReminderType.followUpNoResponse:   return 'No response — resend WhatsApp';
       case ReminderType.recurringJobOverdue:  return 'Schedule is past due date';
+      case ReminderType.lowStock:             return 'Item quantity below minimum threshold';
+      case ReminderType.dormantCustomer:      return 'No recent jobs from this customer';
     }
   }
 }

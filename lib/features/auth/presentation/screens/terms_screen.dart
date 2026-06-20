@@ -12,6 +12,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../providers/auth_notifier.dart';
+import '../../../technician_profile/presentation/providers/profile_provider.dart';
 
 /// Standalone T&C acceptance screen for existing users on app upgrade.
 /// Uses scroll-to-accept pattern (no checkbox), matching HTML prototype.
@@ -61,18 +62,33 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(authNotifierProvider.notifier).updateTermsAcceptance(
+      final success = await ref.read(authNotifierProvider.notifier).updateTermsAcceptance(
         termsAcceptedAt: DateTime.now(),
         termsVersion: _termsVersion,
       );
 
+      if (!success) {
+        if (mounted) {
+          ref.read(authNotifierProvider.notifier).setError(
+            'Unable to save acceptance. Your session may have expired. Please sign in again.',
+          );
+        }
+        return;
+      }
+
       if (mounted) {
         await ref.read(authStateProvider.notifier).refresh();
+        ref.invalidate(profileProvider);
         if (mounted) context.go(RouteNames.transition);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _onDecline() async {
+    await ref.read(authNotifierProvider.notifier).logout();
+    if (mounted) context.go(RouteNames.phoneEntry);
   }
 
   @override
@@ -94,73 +110,54 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    const SizedBox(height: 48),
-
-                    Text(
-                      'UPDATED TERMS',
-                      style: AppTextStyles.h1.copyWith(
-                        color: context.ksc.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                      ),
-                    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
-
-                    const SizedBox(height: 24),
-                    Text(
-                      'Read and scroll to accept.',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: context.ksc.neutral400,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms),
-
-                    const SizedBox(height: 28),
-
-                    // Error banner
-                    if (errorMessage != null && errorMessage.isNotEmpty) ...[
-                      KsBanner(message: errorMessage),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Scrollable T&C — max-height 190px per HTML
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 190),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: context.ksc.primary800,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: context.ksc.primary700),
-                        ),
-                        child: _isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : Markdown(
-                                controller: _termsScrollController,
-                                data: _termsContent,
-                                styleSheet: MarkdownStyleSheet(
-                                  h1: AppTextStyles.h3.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800),
-                                  h2: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-                                  p: AppTextStyles.caption.copyWith(color: context.ksc.neutral300, fontSize: 11, height: 1.6),
-                                  listBullet: AppTextStyles.caption.copyWith(color: context.ksc.neutral400),
-                                  strong: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                      ).animate().fadeIn(delay: 200.ms),
+            // Fixed header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 48),
+                  Text(
+                    'UPDATED TERMS',
+                    style: AppTextStyles.h1.copyWith(
+                      color: context.ksc.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
                     ),
-
-                    const SizedBox(height: 24),
+                  ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Read and scroll to accept.',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: context.ksc.neutral400,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ).animate().fadeIn(delay: 200.ms),
+                  const SizedBox(height: 28),
+                  if (errorMessage != null && errorMessage.isNotEmpty) ...[
+                    KsBanner(message: errorMessage),
+                    const SizedBox(height: 16),
                   ],
-                ),
+                ],
               ),
             ),
-
+            // Terms content fills viewport — no border, no container
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Markdown(
+                      controller: _termsScrollController,
+                      data: _termsContent,
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      styleSheet: MarkdownStyleSheet(
+                        h1: AppTextStyles.h3.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w800),
+                        h2: AppTextStyles.caption.copyWith(color: context.ksc.accent500, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                        p: AppTextStyles.caption.copyWith(color: context.ksc.neutral300, fontSize: 14, height: 1.6),
+                        listBullet: AppTextStyles.caption.copyWith(color: context.ksc.neutral400),
+                        strong: AppTextStyles.caption.copyWith(color: context.ksc.white, fontWeight: FontWeight.w700),
+                      ),
+                    ).animate().fadeIn(delay: 200.ms),
+            ),
             // Edge-to-edge CTA button
             KsButton(
               label: 'I ACCEPT',
@@ -169,6 +166,13 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
               isLoading: _isLoading,
               onPressed: _termsScrolledToBottom && !_isLoading ? _onAccept : null,
             ).animate().fadeIn(delay: 600.ms),
+            const SizedBox(height: 12),
+            KsButton(
+              label: 'DECLINE & SIGN OUT',
+              variant: KsButtonVariant.secondary,
+              edgeToEdge: true,
+              onPressed: _isLoading ? null : _onDecline,
+            ).animate().fadeIn(delay: 700.ms),
           ],
         ),
       ),

@@ -5,7 +5,8 @@ import '../../../../core/errors/storage_exception.dart' as core_storage;
 import '../../../../core/errors/duplicate_customer_exception.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/network/connectivity_service.dart';
-import 'package:keystone/features/job_logging/data/datasources/job_local_datasource.dart';
+import '../../../../core/services/sync/sync_queue_service.dart';
+import 'package:arclock/features/job_logging/data/datasources/job_local_datasource.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/repositories/customer_repository.dart';
@@ -19,8 +20,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
   final ConnectivityService _connectivity;
   final SupabaseClient _supabase;
   final JobLocalDatasource _jobLocal;
+  final SyncQueueService _syncQueue;
 
-  CustomerRepositoryImpl(this._remote, this._local, this._connectivity, this._supabase, this._jobLocal);
+  CustomerRepositoryImpl(this._remote, this._local, this._connectivity, this._supabase, this._jobLocal, this._syncQueue);
 
   String get _userId {
     final id = _supabase.auth.currentUser?.id;
@@ -38,9 +40,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   /// Pull incremental changes from the server using delta sync.
   /// On first launch (no prior sync), fetches ALL non-deleted customers.
-  /// On subsequent calls, fetches only records with updated_at > last_synced_at.
+  /// On subsequent calls, fetches only records with updated_at > last_synced_at
+  /// minus a 5-second overlap window to prevent commit-timing race conditions.
   /// Handles soft-deletes: records with deleted_at > last_synced are hard-deleted
   /// from the local cache.
+  ///
+  /// The sync token is always the server's max updated_at from the response,
+  /// NOT client DateTime.now() — this immunizes against device clock skew.
   ///
   /// Returns the number of changed records processed (0 if offline or no changes).
   @override
@@ -59,9 +65,19 @@ class CustomerRepositoryImpl implements CustomerRepository {
         await _local.setLastSyncTimestamp(updatedAfter);
       }
 
+      // Add 5-second overlap to the query window to catch records
+      // committed at the exact boundary (PostgreSQL transaction timing).
+      // The stored sync token is still the server's actual max updated_at.
+      if (updatedAfter != null) {
+        final overlapped = DateTime.parse(updatedAfter).subtract(const Duration(seconds: 5));
+        updatedAfter = overlapped.toIso8601String();
+      }
+
       final models = await _remote.getCustomers(userId: _userId, updatedAfter: updatedAfter);
       if (models.isEmpty) {
-        await _local.setLastSyncTimestamp();
+        // No changes since last sync — don't update the timestamp.
+        // This keeps the existing sync window so the next pull retries
+        // with the same boundary (safe with 5s overlap below).
         return 0;
       }
 
@@ -75,7 +91,12 @@ class CustomerRepositoryImpl implements CustomerRepository {
         }
       }
 
-      await _local.setLastSyncTimestamp();
+      // Use the server's max updated_at as the sync token — NOT client time.
+      // This immunizes delta sync against clock skew on the technician's phone.
+      final serverTimestamp = models
+          .map((m) => m.updatedAt)
+          .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
+      await _local.setLastSyncTimestamp(serverTimestamp);
       return models.length;
     } catch (e) {
       debugPrint('[KS:SYNC:CUSTOMERS] Delta pull failed: $e');
@@ -149,6 +170,14 @@ class CustomerRepositoryImpl implements CustomerRepository {
     );
     await _local.saveCustomer(localModel);
 
+    // Enqueue mutation for background sync worker
+    final taskId = await _syncQueue.enqueue(
+      tableName: 'customers',
+      operation: 'INSERT',
+      payload: localModel.toJson(),
+      recordId: localModel.id,
+    );
+
     if (await _connectivity.isConnected) {
       try {
         final remoteModel = await _remote.createCustomer({
@@ -179,9 +208,11 @@ class CustomerRepositoryImpl implements CustomerRepository {
         }
 
         await _local.saveCustomer(syncedModel);
+        await _syncQueue.markComplete(taskId);
         return syncedModel.toEntity();
       } catch (e) {
         debugPrint('[KS:CUSTOMERS] Remote create failed, customer queued as pending: $e');
+        // Queue task remains for SyncWorker retry
       }
     }
     return localModel.toEntity();
@@ -209,6 +240,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
     
     await _local.saveCustomer(pendingModel);
 
+    final taskId = await _syncQueue.enqueue(
+      tableName: 'customers',
+      operation: 'UPDATE',
+      payload: pendingModel.toJson(),
+      recordId: customer.id,
+    );
+
     if (await _connectivity.isConnected) {
       try {
         final remoteModel = await _remote.updateCustomer(customer.id, {
@@ -234,6 +272,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
           updatedAt: remoteModel.updatedAt,
         );
         await _local.saveCustomer(syncedModel);
+        await _syncQueue.markComplete(taskId);
         return syncedModel.toEntity();
       } catch (e) {
         debugPrint('[KS:CUSTOMERS] Remote update failed, customer queued as pending: $e');
@@ -251,12 +290,20 @@ class CustomerRepositoryImpl implements CustomerRepository {
       // Mark as deleted locally (tombstone)
       await _local.tombstoneCustomer(id);
 
+      final taskId = await _syncQueue.enqueue(
+        tableName: 'customers',
+        operation: 'DELETE',
+        payload: {'id': id},
+        recordId: id,
+      );
+
       // Attempt remote delete if connected
       if (await _connectivity.isConnected) {
         try {
           await _remote.deleteCustomer(id);
-          // If remote success, we can hard delete locally
+          // If remote success, hard delete locally and remove from queue
           await _local.deleteCustomer(id);
+          await _syncQueue.markComplete(taskId);
         } catch (e) {
           debugPrint('[KS:CUSTOMERS] Remote delete failed, tombstone kept for retry: $e');
         }
@@ -264,6 +311,27 @@ class CustomerRepositoryImpl implements CustomerRepository {
     } catch (e) {
       debugPrint('[KS:CUSTOMERS] deleteCustomer failed for id=$id: $e');
     }
+  }
+
+  /// Simple Jaccard character bigram similarity for offline fuzzy name matching.
+  /// Returns a score 0.0–1.0. Used as local fallback when remote trigram is unavailable.
+  static double _nameSimilarity(String a, String b) {
+    if (a == b) return 1.0;
+    if (a.isEmpty || b.isEmpty) return 0.0;
+    final a2 = a.toLowerCase().trim();
+    final b2 = b.toLowerCase().trim();
+    // Build character bigram sets
+    final bigramsA = <String>{};
+    final bigramsB = <String>{};
+    for (int i = 0; i < a2.length - 1; i++) { bigramsA.add(a2.substring(i, i + 2)); }
+    for (int i = 0; i < b2.length - 1; i++) { bigramsB.add(b2.substring(i, i + 2)); }
+    if (bigramsA.isEmpty || bigramsB.isEmpty) {
+      // Fall back to character-level overlap for very short strings
+      return a2.contains(b2) || b2.contains(a2) ? 0.5 : 0.0;
+    }
+    final intersection = bigramsA.intersection(bigramsB).length;
+    final union = bigramsA.union(bigramsB).length;
+    return union > 0 ? intersection / union : 0.0;
   }
 
   @override
@@ -278,10 +346,16 @@ class CustomerRepositoryImpl implements CustomerRepository {
     }
     final localModels = await _local.getCustomers();
     final q = query.toLowerCase();
-    return localModels
-        .where((m) => m.fullName.toLowerCase().contains(q) || m.phoneNumber.contains(q))
-        .map((m) => m.toEntity())
-        .toList();
+    // Local: score by Jaccard bigram similarity, sort by relevance
+    final scored = <({CustomerModel model, double score})>[];
+    for (final m in localModels) {
+      final score = _nameSimilarity(m.fullName, q);
+      if (score > 0.25 || m.fullName.toLowerCase().contains(q) || m.phoneNumber.contains(q)) {
+        scored.add((model: m, score: score));
+      }
+    }
+    scored.sort((a, b) => b.score.compareTo(a.score));
+    return scored.map((s) => s.model.toEntity()).toList();
   }
 
   @override
@@ -367,9 +441,12 @@ class CustomerRepositoryImpl implements CustomerRepository {
         final originalCustomer = toUpserts.firstWhereOrNull((c) => c.id == localId);
         if (originalCustomer == null) continue;
 
+        // Apply server-returned sync_version (server-incremented) to local record
+        final serverVersion = (syncedItem['sync_version'] as num?)?.toInt();
         final updatedModel = originalCustomer.copyWith(
           id: serverId,
           syncStatus: syncStatus,
+          syncVersion: serverVersion,
         );
 
         if (localId != serverId) {

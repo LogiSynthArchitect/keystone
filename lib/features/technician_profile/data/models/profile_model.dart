@@ -1,3 +1,4 @@
+import '../../../../core/utils/phone_formatter.dart';
 import '../../domain/entities/profile_entity.dart';
 
 class ProfileModel {
@@ -10,39 +11,41 @@ class ProfileModel {
   final String whatsappNumber;
   final bool isPublic;
   final String profileUrl;
+  final String? termsAcceptedAt;
+  final int termsVersion;
   final String createdAt;
   final String updatedAt;
 
-  const ProfileModel({
+  ProfileModel({
     required this.id,
     required this.userId,
     required this.displayName,
     this.bio,
     this.photoUrl,
     required this.services,
-    required this.whatsappNumber,
+    required String whatsappNumber,
     required this.isPublic,
     required this.profileUrl,
+    this.termsAcceptedAt,
+    this.termsVersion = 0,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : whatsappNumber = PhoneFormatter.normalize(whatsappNumber);
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
-    String whatsapp = json['whatsapp_number'] as String;
-    // Format to 0-prefix if it's +233 prefix
-    if (whatsapp.startsWith('+233')) {
-      whatsapp = '0${whatsapp.substring(4)}';
-    }
+    final whatsapp = (json['whatsapp_number'] as String?) ?? '';
     return ProfileModel(
         id: json['id'] as String,
         userId: json['user_id'] as String,
-        displayName: json['display_name'] as String,
+        displayName: (json['display_name'] as String?) ?? '',
         bio: json['bio'] as String?,
         photoUrl: json['photo_url'] as String?,
         services: List<String>.from(json['services'] as List? ?? []),
         whatsappNumber: whatsapp,
         isPublic: json['is_public'] as bool? ?? true,
-        profileUrl: json['profile_url'] as String,
+        profileUrl: (json['profile_url'] as String?) ?? '',
+        termsAcceptedAt: json['terms_accepted_at'] as String?,
+        termsVersion: json['terms_version'] as int? ?? 0,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
       );
@@ -58,6 +61,8 @@ class ProfileModel {
         'whatsapp_number': whatsappNumber,
         'is_public': isPublic,
         'profile_url': profileUrl,
+        'terms_accepted_at': termsAcceptedAt,
+        'terms_version': termsVersion,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -72,6 +77,8 @@ class ProfileModel {
         whatsappNumber: whatsappNumber,
         isPublic: isPublic,
         profileUrl: profileUrl,
+        termsAcceptedAt: termsAcceptedAt != null ? DateTime.parse(termsAcceptedAt!) : null,
+        termsVersion: termsVersion,
         createdAt: DateTime.parse(createdAt),
         updatedAt: DateTime.parse(updatedAt),
       );

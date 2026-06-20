@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
-import 'package:keystone/core/widgets/ks_success_moment.dart';
-import 'package:keystone/core/widgets/ks_confirm_dialog.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_success_moment.dart';
+import 'package:arclock/core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/router/route_names.dart' show RouteNames;
 import 'package:go_router/go_router.dart';
@@ -45,6 +45,7 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   String? _duplicateId;
   String? _duplicateName;
   String? _duplicateByName;
+  List<String> _similarNameSuggestions = [];
 
   static const _propertyTypes = [
     ('residential', 'Residential'),
@@ -93,19 +94,26 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
   }
 
   Future<void> _checkDuplicateName(String name) async {
-    if (name.trim().length < 2) {
-      setState(() => _duplicateByName = null);
+    final trimmed = name.trim();
+    if (trimmed.length < 2) {
+      setState(() { _duplicateByName = null; _similarNameSuggestions = []; });
       return;
     }
-    final results = await ref.read(customerRepositoryProvider).searchCustomers(name.trim());
-    CustomerEntity? match;
+    final results = await ref.read(customerRepositoryProvider).searchCustomers(trimmed);
+    CustomerEntity? exactMatch;
+    final similar = <String>[];
     for (final c in results) {
-      if (c.fullName.toLowerCase() == name.trim().toLowerCase()) {
-        match = c;
-        break;
+      if (c.fullName.toLowerCase() == trimmed.toLowerCase()) {
+        exactMatch = c;
+      } else if (c.fullName.toLowerCase().contains(trimmed.toLowerCase()) ||
+                 trimmed.toLowerCase().contains(c.fullName.toLowerCase())) {
+        if (similar.length < 2) similar.add(c.fullName);
       }
     }
-    setState(() => _duplicateByName = match?.fullName);
+    setState(() {
+      _duplicateByName = exactMatch?.fullName;
+      _similarNameSuggestions = similar;
+    });
   }
 
   bool get _isDirty =>
@@ -255,6 +263,32 @@ class _AddCustomerScreenState extends ConsumerState<AddCustomerScreen> {
                       const TextSpan(text: "A customer named "),
                       TextSpan(text: _duplicateByName, style: const TextStyle(fontWeight: FontWeight.w900)),
                       const TextSpan(text: " already exists. Consider checking for duplicates."),
+                    ],
+                  )),
+                ),
+              ],
+            ),
+          ),
+        ] else if (_similarNameSuggestions.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: context.ksc.accent500.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4), border: Border.all(color: context.ksc.accent500.withValues(alpha: 0.3))),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.people_outline, size: 16, color: context.ksc.accent500),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text.rich(TextSpan(
+                    style: AppTextStyles.caption.copyWith(color: context.ksc.neutral400, fontSize: 11),
+                    children: [
+                      const TextSpan(text: "Similar names found: "),
+                      TextSpan(
+                        text: _similarNameSuggestions.join(', '),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontStyle: FontStyle.italic),
+                      ),
+                      const TextSpan(text: ". Possible duplicate?"),
                     ],
                   )),
                 ),

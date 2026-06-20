@@ -6,9 +6,8 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/config/dev_mode.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../../../core/storage/hive_service.dart';
 import '../../../../core/services/internal_auth/internal_auth_service.dart';
+import '../../../../core/storage/hive_service.dart';
 import 'package:arclock/features/technician_profile/domain/entities/profile_entity.dart';
 import 'package:arclock/features/technician_profile/domain/repositories/profile_repository.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
@@ -146,7 +145,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       String cleanError = e.toString();
       debugPrint('[KS:AUTH] requestOtp RAW ERROR: $e');
       if (cleanError.contains('20003') || cleanError.contains('invalid username')) {
-        cleanError = "SMS Gateway Fault: Check Twilio Credentials.";
+        cleanError = "Could not send SMS. Please try again later.";
       } else {
         cleanError = cleanError.replaceFirst(RegExp(r"AppException\(\d+\):\s*"), "").trim();
       }
@@ -253,16 +252,26 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     }
   }
 
-  Future<bool> changePhone(String newPhone) async {
-    debugPrint('[KS:AUTH] changePhone: $newPhone');
+  Future<bool> verifyOtpAndChangePhone(String newPhone, String otpCode) async {
+    debugPrint('[KS:AUTH] verifyOtpAndChangePhone: $newPhone');
     state = state.copyWith(isLoading: true);
     try {
       final supabase = _ref.read(supabaseClientProvider);
+      // First verify the OTP to confirm ownership of the new phone
+      final response = await supabase.auth.verifyOTP(
+        phone: newPhone,
+        token: otpCode,
+        type: supa.OtpType.sms,
+      ).timeout(const Duration(seconds: 30));
+      if (response.session == null) {
+        throw Exception('Invalid OTP. Phone not changed.');
+      }
+      // OTP verified — now update the phone on the user record
       await supabase.auth.updateUser(supa.UserAttributes(phone: newPhone));
-      debugPrint('[KS:AUTH] changePhone SUCCESS');
+      debugPrint('[KS:AUTH] verifyOtpAndChangePhone SUCCESS');
       return true;
     } catch (e) {
-      debugPrint('[KS:AUTH] changePhone error: $e');
+      debugPrint('[KS:AUTH] verifyOtpAndChangePhone error: $e');
       state = state.copyWith(isLoading: false, errorMessage: '$e');
       return false;
     }
@@ -310,17 +319,17 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
       await _profileRepo.createProfile(profile);
       debugPrint('[KS:ONBOARD] createProfile success');
 
-      // If this user was created via dev-bypass (already has password), mark it
-      final authBox = Hive.box('auth');
-      if (authBox.get('password_exists', defaultValue: false) as bool) {
-        final supabase = _ref.read(supabaseClientProvider);
-        try {
-          await supabase.from('profiles').update({
-            'password_created': true,
-          }).eq('user_id', user.authId!);
-          debugPrint('[KS:ONBOARD] password_created set to true (dev-bypass)');
-        } catch (_) {}
-        await authBox.delete('password_exists');
+      // Mark password_created on profile so the router doesn't redirect
+      // back to the upgrade screen. User created a password during the
+      // create_password_screen flow — this flag persists that fact.
+      final supabase = _ref.read(supabaseClientProvider);
+      try {
+        await supabase.from('profiles').update({
+          'password_created': true,
+        }).eq('user_id', user.authId!);
+        debugPrint('[KS:ONBOARD] password_created set to true');
+      } catch (e) {
+        debugPrint('[KS:ONBOARD] password_created update failed (non-fatal): $e');
       }
       
       // 3. Force refresh router and profile state
@@ -339,10 +348,13 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     }
   }
 
-  Future<void> updateTermsAcceptance({required DateTime termsAcceptedAt, required int termsVersion}) async {
+  Future<bool> updateTermsAcceptance({required DateTime termsAcceptedAt, required int termsVersion}) async {
     final supabase = _ref.read(supabaseClientProvider);
     final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return;
+    if (userId == null) {
+      debugPrint('[KS:AUTH] updateTermsAcceptance — userId is null');
+      return false;
+    }
 
     try {
       await supabase.from('profiles').update({
@@ -359,8 +371,10 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
         );
         await _profileRepo.updateProfile(updated);
       }
+      return true;
     } catch (e) {
       debugPrint('[KS:AUTH] updateTermsAcceptance error: $e');
+      return false;
     }
   }
 
@@ -390,7 +404,7 @@ class AuthNotifier extends StateNotifier<AuthUiState> {
     } catch (e) {
       debugPrint('[KS:AUTH] Logout error (proceeding anyway): $e');
     }
-    state = state.copyWith(isLoading: false);
+    state = AuthUiState();
   }
 }
 

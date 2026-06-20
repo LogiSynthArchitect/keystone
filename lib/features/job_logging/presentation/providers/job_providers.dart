@@ -5,13 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/providers/sync_queue_provider.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/errors/validation_exception.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/storage/hive_service.dart';
 import '../../../../core/services/pending_media_upload_service.dart';
-import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
+import 'package:arclock/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../../data/datasources/job_local_datasource.dart';
 import '../../data/models/job_model.dart';
 import '../../domain/usecases/recovery_save_usecase.dart';
@@ -48,7 +49,7 @@ import '../../domain/usecases/update_payment_status_usecase.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
 import '../../../../core/providers/auth_provider.dart';
-import 'package:keystone/features/inventory/presentation/providers/inventory_providers.dart';
+import 'package:arclock/features/inventory/presentation/providers/inventory_providers.dart';
 
 import '../../domain/entities/correction_request_entity.dart';
 import '../../domain/repositories/correction_request_repository.dart';
@@ -97,6 +98,7 @@ final jobRepositoryProvider = Provider<JobRepository>((ref) => JobRepositoryImpl
   ref.watch(jobHardwareRemoteDatasourceProvider),
   ref.watch(jobExpensesLocalDatasourceProvider),
   ref.watch(jobExpensesRemoteDatasourceProvider),
+  ref.watch(syncQueueServiceProvider),
 ));
 
 final correctionRequestRepositoryProvider = Provider<CorrectionRequestRepository>((ref) =>
@@ -592,7 +594,7 @@ final jobListProvider = StateNotifierProvider<JobListNotifier, JobListState>((re
 /// User-configurable monthly revenue target, persisted in Hive settings.
 final monthlyTargetProvider = StateProvider<int>((ref) {
   final saved = HiveService.settings.get('monthlyTarget');
-  return (saved is int && saved > 0) ? saved : 800000;
+  return (saved is int && saved > 0) ? saved : 0;
 });
 
 class LogJobState {

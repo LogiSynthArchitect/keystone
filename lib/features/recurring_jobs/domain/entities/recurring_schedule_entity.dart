@@ -75,5 +75,13 @@ class RecurringScheduleEntity {
     }
   }
 
-  bool get isDue => nextDueDate.isBefore(DateTime.now()) || nextDueDate.isAtSameMomentAs(DateTime.now());
+  /// Whether the schedule is due for job generation as of today.
+  /// Uses date-level comparison (ignores time-of-day) to stay correct
+  /// across device timezone changes. All dates use local-midnight semantics.
+  bool get isDue {
+    final now = DateTime.now();
+    return nextDueDate.year < now.year ||
+        (nextDueDate.year == now.year && nextDueDate.month < now.month) ||
+        (nextDueDate.year == now.year && nextDueDate.month == now.month && nextDueDate.day <= now.day);
+  }
 }

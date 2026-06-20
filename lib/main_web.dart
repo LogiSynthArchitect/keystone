@@ -22,11 +22,11 @@ void main() async {
     anonKey: SupabaseConstants.anonKey,
   );
 
-  runApp(const ProviderScope(child: KeystoneWebLite()));
+  runApp(const ProviderScope(child: ArclockWebLite()));
 }
 
-class KeystoneWebLite extends StatelessWidget {
-  const KeystoneWebLite({super.key});
+class ArclockWebLite extends StatelessWidget {
+  const ArclockWebLite({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class KeystoneWebLite extends StatelessWidget {
     );
 
     return MaterialApp.router(
-      title: 'Keystone',
+      title: 'Arclock',
       theme: buildLightAppTheme(),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
@@ -88,14 +88,14 @@ class _WebGatewayScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(5),
                         child: SvgPicture.asset(
-                          'assets/logo/keystone_logo.svg',
+                          'assets/logo/arclock_logo.svg',
                           colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'KEYSTONE',
+                      'ARCLOCK',
                       style: AppTextStyles.body.copyWith(
                         color: context.ksc.white,
                         fontWeight: FontWeight.w900,
@@ -137,14 +137,14 @@ class _WebGatewayScreen extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(18),
                           child: SvgPicture.asset(
-                            'assets/logo/keystone_logo.svg',
+                            'assets/logo/arclock_logo.svg',
                             colorFilter: ColorFilter.mode(context.ksc.accent500, BlendMode.srcIn),
                           ),
                         ),
                       ),
                       const SizedBox(height: 28),
                       Text(
-                        'Keystone',
+                        'Arclock',
                         style: AppTextStyles.h1.copyWith(
                           color: context.ksc.white,
                           fontWeight: FontWeight.w800,

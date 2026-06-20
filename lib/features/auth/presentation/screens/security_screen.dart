@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../../core/services/data_export_service.dart';
+import '../../../../core/services/internal_auth/models/auth_method.dart';
+import '../../../../core/services/internal_auth/secure_vault_service.dart';
+import '../../../../core/services/internal_auth/internal_auth_service.dart';
+
+import 'package:supabase_flutter/supabase_flutter.dart' show SignOutScope;
 import 'change_password_sheet.dart';
 import 'delete_account_screen.dart';
 
@@ -68,14 +77,114 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen>
   }
 }
 
-// ─── Security Tab ──────────────────────────────────────────────
-class _SecurityTab extends StatelessWidget {
+// ═══════════════════════════════════════════════════════════════════
+//  SECURITY TAB — fully wired
+// ═══════════════════════════════════════════════════════════════════
+
+class _SecurityTab extends ConsumerStatefulWidget {
   final VoidCallback onChangePassword;
   const _SecurityTab({required this.onChangePassword});
 
   @override
+  ConsumerState<_SecurityTab> createState() => _SecurityTabState();
+}
+
+class _SecurityTabState extends ConsumerState<_SecurityTab> {
+  bool _hasBiometric = false;
+  bool _hasPin = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMethod();
+  }
+
+  Future<void> _loadMethod() async {
+    final vault = SecureVaultService();
+    final hasBio = await vault.getHasBiometric();
+    final pinHash = await vault.getPinHash();
+    if (mounted) {
+      setState(() {
+        _hasBiometric = hasBio;
+        _hasPin = pinHash != null && pinHash.isNotEmpty;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleBiometric(bool wantEnabled) async {
+    if (wantEnabled) {
+      // Enroll biometric
+      final supabase = ref.read(supabaseClientProvider);
+      final service = InternalAuthService(supabase);
+      try {
+        final enrolled = await service.enrollBiometric();
+        if (mounted) {
+          if (enrolled) {
+            _loadMethod();
+          } else {
+            // User cancelled or biometric not available
+            if (mounted) {
+              // Only push to PIN setup if user has no PIN yet
+              final vault = SecureVaultService();
+              final pinHash = await vault.getPinHash();
+              if (pinHash == null || pinHash.isEmpty) {
+                if (mounted) context.push(RouteNames.pinSetup);
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Biometric enrollment failed. Your PIN is still active.'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              }
+              _loadMethod();
+            }
+          }
+        }
+      } on BiometricAuthException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.userMessage),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } else {
+      // Disable biometric ONLY — preserve PIN
+      final supabase = ref.read(supabaseClientProvider);
+      final service = InternalAuthService(supabase);
+      await service.clearBiometricOnly();
+      if (mounted) _loadMethod();
+    }
+  }
+
+  Future<void> _setupPin() async {
+    final vault = SecureVaultService();
+    final pinHash = await vault.getPinHash();
+
+    if (pinHash != null && pinHash.isNotEmpty) {
+      // PIN already exists — open PIN entry for verification
+      if (mounted) context.push(RouteNames.pinEntry);
+    } else {
+      // No PIN — open setup
+      if (mounted) context.push(RouteNames.pinSetup);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Check actual credential existence, not just enrolled_method
+    final hasBiometric = _hasBiometric;
+    final hasPin = _hasPin;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -85,7 +194,7 @@ class _SecurityTab extends StatelessWidget {
           icon: Icons.lock_outline,
           title: 'Change Password',
           subtitle: 'Update your account password',
-          onTap: onChangePassword,
+          onTap: widget.onChangePassword,
         ),
         const SizedBox(height: 24),
         _SectionHeader(title: 'Quick Unlock'),
@@ -93,15 +202,28 @@ class _SecurityTab extends StatelessWidget {
         _SettingsTile(
           icon: Icons.fingerprint,
           title: 'Biometric Unlock',
-          subtitle: 'Fingerprint or Face ID to unlock app',
-          trailing: Switch(value: false, onChanged: (_) {}),
+          subtitle: _loading
+              ? 'Loading...'
+              : hasBiometric
+                  ? 'Fingerprint or Face ID enabled'
+                  : 'Not set up — tap to enable',
+          trailing: _loading
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : Switch(
+                  value: hasBiometric,
+                  onChanged: _toggleBiometric,
+                ),
         ),
         const SizedBox(height: 8),
         _SettingsTile(
           icon: Icons.pin_outlined,
-          title: 'Change PIN',
-          subtitle: 'Update your 6-digit unlock PIN',
-          onTap: () {},
+          title: 'PIN Unlock',
+          subtitle: _loading
+              ? 'Loading...'
+              : hasPin
+                  ? 'PIN is set up'
+                  : 'Not set up — tap to create',
+          onTap: _setupPin,
         ),
         const SizedBox(height: 24),
         _SectionHeader(title: 'Danger Zone'),
@@ -128,13 +250,24 @@ class _SecurityTab extends StatelessWidget {
   }
 }
 
-// ─── Account Tab ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+//  ACCOUNT TAB — Export My Data wired
+// ═══════════════════════════════════════════════════════════════════
+
 class _AccountTab extends ConsumerWidget {
   final VoidCallback onChangePhone;
   const _AccountTab({required this.onChangePhone});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.read(supabaseClientProvider).auth.currentUser;
+    final phone = currentUser?.phone ?? 'Unknown';
+    final createdAt = currentUser?.createdAt != null
+        ? () {
+            final dt = DateTime.parse(currentUser!.createdAt!);
+            return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+          }()
+        : 'Unknown';
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -143,14 +276,14 @@ class _AccountTab extends ConsumerWidget {
         _SettingsTile(
           icon: Icons.phone,
           title: 'Phone Number',
-          subtitle: '+233 20 147 0790',
+          subtitle: phone,
           onTap: onChangePhone,
         ),
         const SizedBox(height: 8),
         _SettingsTile(
           icon: Icons.calendar_today,
           title: 'Account Created',
-          subtitle: 'Fetching...',
+          subtitle: createdAt,
         ),
         const SizedBox(height: 24),
         _SectionHeader(title: 'Data'),
@@ -159,14 +292,27 @@ class _AccountTab extends ConsumerWidget {
           icon: Icons.download,
           title: 'Export My Data',
           subtitle: 'Download all your data as JSON',
-          onTap: () {},
+          onTap: () async {
+            try {
+              await DataExportService.exportAsJson();
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Export failed: $e')),
+                );
+              }
+            }
+          },
         ),
       ],
     );
   }
 }
 
-// ─── Sessions Tab ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+//  SESSIONS TAB — Sign out others wired
+// ═══════════════════════════════════════════════════════════════════
+
 class _SessionsTab extends ConsumerWidget {
   const _SessionsTab();
 
@@ -201,7 +347,7 @@ class _SessionsTab extends ConsumerWidget {
                   children: [
                     Text('This Device',
                         style: Theme.of(context).textTheme.titleSmall),
-                    Text('Infinix X6532 • Last active: now',
+                    Text('Current session',
                         style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
@@ -226,7 +372,13 @@ class _SessionsTab extends ConsumerWidget {
                 ),
               );
               if (confirmed == true) {
-                // supabase.auth.signOut(scope: SignOutScope.others)
+                final supabase = ref.read(supabaseClientProvider);
+                await supabase.auth.signOut(scope: SignOutScope.others);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Signed out of all other devices')),
+                  );
+                }
               }
             },
             icon: const Icon(Icons.logout),
@@ -238,7 +390,10 @@ class _SessionsTab extends ConsumerWidget {
   }
 }
 
-// ─── Shared Widgets ────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+//  Shared Widgets
+// ═══════════════════════════════════════════════════════════════════
+
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});

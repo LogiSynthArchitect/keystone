@@ -1,0 +1,88 @@
+<h2>Current Hub Screen — Auth Gaps</h2>
+<p class="subtitle">The Hub is the settings center. Here's what exists vs what's missing for auth.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Current Hub (what exists)</div>
+    <div class="mockup-body">
+      <div style="padding:12px;font-family:monospace;font-size:13px">
+        <div style="border-bottom:1px solid #e5e7eb;padding-bottom:8px;margin-bottom:8px">
+          <strong style="color:#2563eb">TOOLS</strong><br/>
+          Knowledge Base • Inventory • Pricing<br/>
+          Templates • Analytics • Timeline
+        </div>
+        <div style="border-bottom:1px solid #e5e7eb;padding-bottom:8px;margin-bottom:8px">
+          <strong style="color:#2563eb">SETTINGS</strong><br/>
+          Appearance • Reminders • Recurring Jobs<br/>
+          Service Types
+        </div>
+        <div style="border-bottom:1px solid #e5e7eb;padding-bottom:8px;margin-bottom:8px">
+          <strong style="color:#2563eb">DATA</strong><br/>
+          CSV/JSON Exports
+        </div>
+        <div style="border-bottom:1px solid #e5e7eb;padding-bottom:8px;margin-bottom:8px">
+          <strong style="color:#2563eb">ADMIN</strong><br/>
+          Requests • Permissions
+        </div>
+        <div style="padding:8px;margin-bottom:8px;border:2px dashed #ef4444;border-radius:6px">
+          <span style="color:#ef4444;font-weight:bold">✕ MISSING: Account & Security</span><br/>
+          <span style="color:#dc2626;font-size:12px">Change password • Change phone<br/>Delete account • Session management</span>
+        </div>
+        <div style="margin-top:4px">
+          <div style="background:#fee2e2;color:#dc2626;padding:10px;border-radius:6px;text-align:center">
+            Sign Out
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">What's Broken / Missing</div>
+    <div class="mockup-body">
+      <div style="padding:12px">
+        <div class="pros-cons" style="margin-top:0">
+          <div class="cons" style="width:100%">
+            <h4 style="margin-top:0">❌ Problems Found</h4>
+            <ul style="font-size:13px;line-height:1.5;padding-left:16px">
+              <li><strong>No change password</strong> — once set, never changeable from UI</li>
+              <li><strong>No change phone number</strong> — identity locked forever</li>
+              <li><strong>No delete account</strong> — privacy/compliance gap</li>
+              <li><strong>No session management</strong> — can't see or revoke sessions</li>
+              <li><strong>Sign out is destructive</strong> — clears all offline data with no clear warning</li>
+              <li><strong>PIN has no fallback</strong> — forget PIN = force clear app data</li>
+              <li><strong>bypassOtp() is dead code</strong> — references deleted edge function</li>
+              <li><strong>Mgmt API PAT exposed</strong> — full admin access in edge function secret</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px">Question: Where should Account & Security live?</h3>
+
+<div class="options">
+  <div class="option" data-choice="hub-section" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>New section in Hub</h3>
+      <p>Add "Account & Security" section in the existing Hub/Menu screen between Settings and Data</p>
+    </div>
+  </div>
+  <div class="option" data-choice="dedicated-screen" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dedicated Account Screen</h3>
+      <p>Full `/profile/security` route accessible from Profile and Hub, with tabs for Security, Sessions, and Account</p>
+    </div>
+  </div>
+  <div class="option" data-choice="bottom-sheet" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Bottom Sheet from Hub</h3>
+      <p>Modal bottom sheet from the Hub's Sign Out area — lighter weight, no new route</p>
+    </div>
+  </div>
+</div>

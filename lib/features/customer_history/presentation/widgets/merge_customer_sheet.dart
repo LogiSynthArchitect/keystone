@@ -7,7 +7,7 @@ import '../../../../core/widgets/ks_card.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../providers/customer_providers.dart';
 import '../../domain/usecases/merge_customers_usecase.dart';

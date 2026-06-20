@@ -10,6 +10,7 @@ import '../../../../core/router/route_names.dart'
     show RouteNames;
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
@@ -27,21 +28,20 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  final _nameController = TextEditingController();
-  final _nameFocusNode = FocusNode();
   int _step = 0;
   final List<String> _selectedServices = [];
   bool _termsScrolledToBottom = false;
   String _termsContent = '';
   bool _termsLoading = true;
   ScrollController? _termsScrollController;
+  final ValueNotifier<bool> _nameValid = ValueNotifier(false);
+  String _nameValue = '';
 
   int get _termsVersion => RouteNames.currentTermsVersion;
 
   @override
   void initState() {
     super.initState();
-    _nameController.addListener(_onNameChanged);
     _loadTerms();
   }
 
@@ -68,15 +68,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   void dispose() {
-    _nameController.removeListener(_onNameChanged);
-    _nameController.dispose();
-    _nameFocusNode.dispose();
+    _nameValid.dispose();
     _termsScrollController?.removeListener(_onTermsScroll);
     _termsScrollController?.dispose();
     super.dispose();
   }
 
-  bool get _isValidName => _nameController.text.trim().length >= 2;
+  bool get _isValidName => _nameValid.value;
   bool get _canContinue => switch (_step) {
         0 => _isValidName,
         1 => _selectedServices.isNotEmpty,
@@ -89,14 +87,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     if (_step == 0) {
       if (!_isValidName) return;
-      _nameFocusNode.unfocus();
       ref.invalidate(serviceTypeProvider);
       setState(() => _step = 1);
     } else if (_step == 1) {
       setState(() => _step = 2);
     } else {
       final success = await ref.read(authNotifierProvider.notifier).completeOnboarding(
-            name: _nameController.text.trim(),
+            name: _nameValue.trim(),
             services: _selectedServices,
             termsAcceptedAt: DateTime.now(),
             termsVersion: _termsVersion,
@@ -110,9 +107,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  void _onNameChanged() {
+  void _onNameChanged(String value) {
+    _nameValue = value;
+    final valid = value.trim().length >= 2;
+    if (valid != _nameValid.value) {
+      _nameValid.value = valid;
+    }
     ref.read(authNotifierProvider.notifier).clearError();
-    setState(() {});
   }
 
   void _toggleService(String name) {
@@ -137,48 +138,133 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: _step == 2
             ? _buildTermsView(keyboardVisible, errorMessage, authState.isLoading)
-            : Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16),
-                          _buildBackButton(context),
-                          const SizedBox(height: 48),
-
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            child: switch (_step) {
-                              0 => _buildNameStep(context, key: const ValueKey('step0')),
-                              1 => _buildServicesStep(context, key: const ValueKey('step1')),
-                              _ => const SizedBox.shrink(),
-                            },
+            : _step == 1
+                ? _buildServicesView(keyboardVisible, errorMessage, authState.isLoading)
+                : Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 16),
+                              _buildBackButton(context),
+                              const SizedBox(height: 48),
+                              _buildNameStep(context, key: const ValueKey('step0')),
+                              if (errorMessage != null && errorMessage.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                KsBanner(message: errorMessage),
+                              ],
+                              const SizedBox(height: 48),
+                            ],
                           ),
-
-                          if (errorMessage != null && errorMessage.isNotEmpty) ...[
-                            const SizedBox(height: 24),
-                            KsBanner(message: errorMessage),
-                          ],
-
-                          const SizedBox(height: 48),
-                        ],
+                        ),
                       ),
-                    ),
+                      if (!keyboardVisible) _buildBottomBar(context, authState.isLoading),
+                    ],
                   ),
-
-                  if (!keyboardVisible) _buildBottomBar(context, authState.isLoading),
-                ],
-              ),
       ),
     );
   }
 
+  /// Step 1 layout: fixed header + scrollable services list.
+  Widget _buildServicesView(bool keyboardVisible, String? errorMessage, bool isLoading) {
+    final serviceTypesAsync = ref.watch(serviceTypeProvider);
+    return Column(
+      children: [
+        // Fixed header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              _buildBackButton(context),
+              const SizedBox(height: 48),
+              Text(
+                'YOUR SERVICES',
+                style: AppTextStyles.h1.copyWith(
+                  color: context.ksc.white,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                ),
+              ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
+              const SizedBox(height: 24),
+              Text('Select what you offer.',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                      color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 32),
+              _buildStepIndicator(context),
+              const SizedBox(height: 24),
+              if (errorMessage != null && errorMessage.isNotEmpty) ...[
+                KsBanner(message: errorMessage),
+                const SizedBox(height: 24),
+              ],
+            ],
+          ),
+        ),
+        // Scrollable services list
+        Expanded(
+          child: serviceTypesAsync.when(
+            loading: () => const Center(child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            )),
+            error: (_, __) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                KsBanner(message: 'Failed to load services.'),
+                const SizedBox(height: 12),
+                KsButton(
+                  label: 'RETRY',
+                  onPressed: () => ref.invalidate(serviceTypeProvider),
+                  edgeToEdge: false,
+                ),
+              ],
+            ),
+            data: (types) {
+              final grouped = _groupByCategory(types);
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: grouped.entries.map((entry) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            entry.key.toUpperCase(),
+                            style: AppTextStyles.caption.copyWith(
+                              color: context.ksc.accent500,
+                              letterSpacing: 1.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        ...entry.value.map((type) => _serviceTile(type)),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+        ),
+        if (!keyboardVisible) _buildBottomBar(context, isLoading),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  //  SHARED WIDGETS
+  // ═══════════════════════════════════════════════
+
   Widget _buildBackButton(BuildContext context) {
     if (_step == 0) return const SizedBox.shrink();
-
     return GestureDetector(
       onTap: () => setState(() => _step--),
       child: Container(
@@ -249,117 +335,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                focusNode: _nameFocusNode,
+              FocusSafeTextField(
+                hint: 'Jeremie Mensah',
                 textCapitalization: TextCapitalization.words,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: context.ksc.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                  letterSpacing: 1.0,
-                ),
-                cursorColor: context.ksc.accent500,
-                decoration: InputDecoration(
-                  hintText: 'Jeremie Mensah',
-                  hintStyle: TextStyle(color: context.ksc.neutral600),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: true,
-                  fillColor: Colors.transparent,
-                ),
-                onSubmitted: (_) => _onContinue(),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                height: 2,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      context.ksc.accent500,
-                      context.ksc.primary500,
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                ),
+                onChanged: _onNameChanged,
+                autofocus: true,
               ),
             ],
           ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
         ],
       );
-
-  Widget _buildServicesStep(BuildContext context, {Key? key}) {
-    final serviceTypesAsync = ref.watch(serviceTypeProvider);
-
-    return Column(
-      key: key,
-      crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'YOUR SERVICES',
-          style: AppTextStyles.h1.copyWith(
-            color: context.ksc.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.0,
-          ),
-        ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1, end: 0),
-
-        const SizedBox(height: 24),
-        Text('Select what you offer.',
-            style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 32),
-        _buildStepIndicator(context),
-        const SizedBox(height: 32),
-
-        serviceTypesAsync.when(
-          loading: () => const Center(child: Padding(
-            padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(),
-          )),
-          error: (err, _) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              KsBanner(message: 'Failed to load services.'),
-              const SizedBox(height: 12),
-              KsButton(
-                label: 'RETRY',
-                onPressed: () => ref.invalidate(serviceTypeProvider),
-                edgeToEdge: false,
-              ),
-            ],
-          ),
-          data: (types) {
-            final grouped = _groupByCategory(types);
-            return Column(
-              children: grouped.entries.map((entry) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        entry.key.toUpperCase(),
-                        style: AppTextStyles.caption.copyWith(
-                          color: context.ksc.accent500,
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    ...entry.value.map((type) => _serviceTile(type)),
-                  ],
-                );
-              }).toList(),
-            );
-          },
-        ),
-      ],
-    );
-  }
 
   Widget _buildTermsView(bool keyboardVisible, String? errorMessage, bool isLoading) {
     _termsScrollController ??= ScrollController()..addListener(_onTermsScroll);
@@ -398,9 +383,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ),
 
-        // Constrained scrollable terms — max-height 190px matching HTML
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 190),
+        // Terms content fills viewport between header and bottom bar
+        Expanded(
           child: _termsLoading
               ? const Center(child: CircularProgressIndicator())
               : Markdown(
@@ -492,12 +476,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildBottomBar(BuildContext context, bool isLoading) {
-    return KsButton(
-      label: _bottomBarLabel,
-      variant: KsButtonVariant.cta,
-      edgeToEdge: true,
-      isLoading: isLoading,
-      onPressed: _canContinue ? _onContinue : null,
-    ).animate().fadeIn(delay: 600.ms);
+    Widget button(String label, bool enabled, VoidCallback? onPressed) {
+      return KsButton(
+        label: label,
+        variant: KsButtonVariant.cta,
+        edgeToEdge: true,
+        isLoading: isLoading,
+        onPressed: enabled ? onPressed : null,
+      ).animate().fadeIn(delay: 600.ms);
+    }
+
+    if (_step == 0) {
+      return ValueListenableBuilder<bool>(
+        valueListenable: _nameValid,
+        builder: (_, valid, __) => button(_bottomBarLabel, valid, _onContinue),
+      );
+    }
+
+    return button(_bottomBarLabel, _canContinue, _onContinue);
   }
 }

@@ -4,8 +4,8 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 
 /// Shows a compact status card indicating whether a follow-up was sent
 /// and the current response status. Read-only — used in the COMMUNICATION

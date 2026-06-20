@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:keystone/features/job_logging/data/models/pending_edit_transaction.dart';
-import 'package:keystone/core/storage/hive_service.dart';
+import 'package:arclock/features/job_logging/data/models/pending_edit_transaction.dart';
+import 'package:arclock/core/storage/hive_service.dart';
 
 /// Startup recovery hook for cross-box Write-Ahead Log.
 ///

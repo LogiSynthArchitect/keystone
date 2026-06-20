@@ -17,6 +17,11 @@ import '../../../reminders/presentation/providers/reminders_provider.dart';
 import '../../../technician_profile/domain/entities/profile_entity.dart';
 import '../../../technician_profile/presentation/providers/profile_provider.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';
+import '../../../knowledge_base/presentation/providers/notes_providers.dart';
+import '../../../service_types/presentation/providers/service_type_provider.dart';
+import '../../../inventory/presentation/providers/inventory_providers.dart';
+import '../../../job_templates/presentation/providers/job_template_provider.dart';
+import '../../../analytics/presentation/providers/analytics_provider.dart';
 
 class HubScreen extends ConsumerWidget {
   const HubScreen({super.key});
@@ -33,6 +38,16 @@ class HubScreen extends ConsumerWidget {
     final remindersCount = ref.watch(remindersProvider).activeCount;
     final jobState = ref.watch(jobListProvider);
     final monthlyTarget = ref.watch(monthlyTargetProvider);
+    final notesState = ref.watch(notesListProvider);
+    final notesCount = notesState.notes.length;
+    final servicesAsync = ref.watch(serviceTypeProvider);
+    final servicesCount = servicesAsync.valueOrNull?.length ?? 0;
+    final invAsync = ref.watch(inventoryProvider);
+    final invItems = invAsync.valueOrNull ?? [];
+    final lowStockCount = invItems.where((i) => i.isLowStock).length;
+    final templatesAsync = ref.watch(jobTemplateProvider);
+    final templatesCount = templatesAsync.valueOrNull?.length ?? 0;
+    final analyticsState = ref.watch(analyticsProvider);
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -75,7 +90,13 @@ class HubScreen extends ConsumerWidget {
                         const SizedBox(height: 28),
                         _sectionHeader(context, "TOOLS"),
                         const SizedBox(height: 16),
-                        _buildToolsBento(context, ref),
+                        _buildToolsBento(context, ref,
+                          notesCount: notesCount,
+                          lowStockCount: lowStockCount,
+                          servicesCount: servicesCount,
+                          templatesCount: templatesCount,
+                          profitMargin: analyticsState.profitMargin,
+                          jobCount: jobState.allJobs.length),
                         const SizedBox(height: 28),
                         _sectionHeader(context, "ACCOUNT"),
                         const SizedBox(height: 16),
@@ -266,7 +287,9 @@ class HubScreen extends ConsumerWidget {
   //  TOOLS – BENTO GRID
   // ═══════════════════════════════════════════════
 
-  Widget _buildToolsBento(BuildContext context, WidgetRef ref) {
+  Widget _buildToolsBento(BuildContext context, WidgetRef ref,
+      {required int notesCount, required int lowStockCount, required int servicesCount,
+      required int templatesCount, required double profitMargin, required int jobCount}) {
     return Column(
       children: [
         Row(
@@ -280,7 +303,7 @@ class HubScreen extends ConsumerWidget {
                 label: "KNOWLEDGE BASE",
                 subtitle: "Notes and references",
                 onTap: () => context.push(RouteNames.notes),
-                child: _inlineTags(context, const ["24 notes", "8 linked"]),
+                child: _inlineTags(context, ["$notesCount notes"]),
               ),
             ),
           ],
@@ -296,7 +319,7 @@ class HubScreen extends ConsumerWidget {
                 label: "INVENTORY",
                 subtitle: "Track parts and hardware",
                 onTap: () => context.push(RouteNames.inventory),
-                child: _liveMetric(context, "3", "low stock"),
+                child: _liveMetric(context, "$lowStockCount", "low stock"),
               ),
             ),
             const SizedBox(width: 12),
@@ -307,7 +330,7 @@ class HubScreen extends ConsumerWidget {
                 label: "PRICING",
                 subtitle: "Default service prices",
                 onTap: () => context.push(RouteNames.pricing),
-                child: _liveMetric(context, "8", "service types"),
+                child: _liveMetric(context, "$servicesCount", "service types"),
               ),
             ),
           ],
@@ -323,7 +346,7 @@ class HubScreen extends ConsumerWidget {
                 label: "TEMPLATES",
                 subtitle: "Save and load job templates",
                 onTap: () => context.push(RouteNames.templates),
-                child: _inlineTags(context, const ["5 saved"]),
+                child: _inlineTags(context, ["$templatesCount saved"]),
               ),
             ),
             const SizedBox(width: 12),
@@ -334,7 +357,8 @@ class HubScreen extends ConsumerWidget {
                 label: "ANALYTICS",
                 subtitle: "Revenue and trends",
                 onTap: () => context.push(RouteNames.analytics),
-                child: _progressBar(context, 0.68, "68%"),
+                child: _progressBar(context, profitMargin.clamp(0.0, 1.0),
+                    "${(profitMargin * 100).toInt()}%"),
               ),
             ),
           ],
@@ -350,7 +374,7 @@ class HubScreen extends ConsumerWidget {
                 label: "TIMELINE",
                 subtitle: "Full audit trail",
                 onTap: () => context.push(RouteNames.timeline),
-                child: _liveMetric(context, "142", "events"),
+                child: _liveMetric(context, "$jobCount", "jobs"),
               ),
             ),
             const SizedBox(width: 12),

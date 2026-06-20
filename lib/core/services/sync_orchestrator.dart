@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../features/inventory/domain/repositories/inventory_repository.dart';
 import '../../features/service_types/domain/repositories/service_type_repository.dart';
@@ -5,6 +6,7 @@ import '../../features/knowledge_base/domain/repositories/knowledge_note_reposit
 import '../../features/customer_history/domain/repositories/customer_repository.dart';
 import '../../features/job_logging/domain/repositories/job_repository.dart';
 import '../network/connectivity_service.dart';
+import 'sync/sync_worker.dart';
 
 /// Result of a single sync phase.
 class SyncPhaseResult {
@@ -16,9 +18,11 @@ class SyncPhaseResult {
 
 /// Centralized sync daemon with DAG phase ordering.
 ///
-/// Phase order: Service Types → Inventory → Customers → Jobs → Notes
+/// Phase order: SyncWorker (outbox queue drain) → Service Types → Inventory →
+/// Customers → Jobs → Notes
 /// Each phase: PUSH pending → PULL diff merge → advance to next phase
 class SyncOrchestrator {
+  final SyncWorker? _syncWorker;
   final InventoryRepository _inventoryRepo;
   final ServiceTypeRepository _serviceTypeRepo;
   final KnowledgeNoteRepository _notesRepo;
@@ -28,6 +32,7 @@ class SyncOrchestrator {
   final String _userId;
 
   SyncOrchestrator({
+    SyncWorker? syncWorker,
     required InventoryRepository inventoryRepo,
     required ServiceTypeRepository serviceTypeRepo,
     required KnowledgeNoteRepository notesRepo,
@@ -35,7 +40,8 @@ class SyncOrchestrator {
     required JobRepository jobsRepo,
     required ConnectivityService connectivity,
     required String userId,
-  })  : _inventoryRepo = inventoryRepo,
+  })  : _syncWorker = syncWorker,
+        _inventoryRepo = inventoryRepo,
         _serviceTypeRepo = serviceTypeRepo,
         _notesRepo = notesRepo,
         _customersRepo = customersRepo,
@@ -49,6 +55,14 @@ class SyncOrchestrator {
     if (!await _connectivity.isConnected) return [];
 
     final results = <SyncPhaseResult>[];
+
+    // Phase 0: Drain the mutation outbox queue
+    results.add(await _runPhase('SyncWorker (outbox queue)', () async {
+      final processed = await _syncWorker?.processQueue() ?? 0;
+      if (processed > 0) {
+        debugPrint('[KS:SYNC] SyncWorker drained $processed tasks from queue');
+      }
+    }));
 
     // Phase 1: Service Types — PULL diff-merge
     results.add(await _runPhase('Service Types', () async {
@@ -81,9 +95,12 @@ class SyncOrchestrator {
   Future<SyncPhaseResult> _runPhase(String name, Future<void> Function() fn) async {
     try {
       debugPrint('[KS:SYNC] Starting phase: $name');
-      await fn();
+      await fn().timeout(const Duration(seconds: 30));
       debugPrint('[KS:SYNC] Completed phase: $name');
       return SyncPhaseResult(name, true);
+    } on TimeoutException {
+      debugPrint('[KS:SYNC] Timed out phase: $name');
+      return SyncPhaseResult(name, false, error: 'Timed out after 30s');
     } catch (e) {
       debugPrint('[KS:SYNC] Failed phase: $name — $e');
       return SyncPhaseResult(name, false, error: e.toString());

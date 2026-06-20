@@ -30,6 +30,8 @@ class RemindersScreen extends ConsumerWidget {
     final stuckCount = undismissed.where((r) => r.type == ReminderType.stuckInProgress).length;
     final followUpCount = undismissed.where((r) => r.type == ReminderType.followUpPending || r.type == ReminderType.followUpNoResponse).length;
     final recurringCount = undismissed.where((r) => r.type == ReminderType.recurringJobOverdue).length;
+    final lowStockCount = undismissed.where((r) => r.type == ReminderType.lowStock).length;
+    final dormantCustomerCount = undismissed.where((r) => r.type == ReminderType.dormantCustomer).length;
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -74,6 +76,10 @@ class RemindersScreen extends ConsumerWidget {
                   KsSubtitleSegment('$followUpCount follow-up', color: context.ksc.warning500),
                 if (recurringCount > 0)
                   KsSubtitleSegment('$recurringCount recurring', color: context.ksc.success500),
+                if (lowStockCount > 0)
+                  KsSubtitleSegment('$lowStockCount low stock', color: context.ksc.error500),
+                if (dormantCustomerCount > 0)
+                  KsSubtitleSegment('$dormantCustomerCount dormant', color: context.ksc.neutral400),
               ],
               subtitleIcon: LineAwesomeIcons.bell_solid,
             ),
@@ -89,6 +95,8 @@ class RemindersScreen extends ConsumerWidget {
                     showResend: (r) => r.type == ReminderType.followUpNoResponse,
                   ),
                   _buildSection(context, ref, "RECURRING OVERDUE", undismissed.where((r) => r.type == ReminderType.recurringJobOverdue).toList()),
+                  _buildSection(context, ref, "LOW STOCK", undismissed.where((r) => r.type == ReminderType.lowStock).toList()),
+                  _buildSection(context, ref, "DORMANT CUSTOMERS", undismissed.where((r) => r.type == ReminderType.dormantCustomer).toList()),
                   // Dismissed section
                   if (dismissed.isNotEmpty) ...[
                     _sectionHeader(context, "DISMISSED"),

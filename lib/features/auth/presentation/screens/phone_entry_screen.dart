@@ -1,3 +1,4 @@
+import 'dart:async' show TimeoutException;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,9 +12,11 @@ import '../../../../core/widgets/auth_step_header.dart';
 import '../../../../core/widgets/ks_banner.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
+import '../../../../core/widgets/ks_logo.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/dev_auth_provider.dart';
+import '../../../../core/widgets/focus_safe_text_field.dart';
 
 /// Ghana flag emoji constant to avoid the SVG import.
 const _ghanaFlag = '\u{1F1EC}\u{1F1ED}';
@@ -26,42 +29,55 @@ class PhoneEntryScreen extends ConsumerStatefulWidget {
 }
 
 class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
+  String _phone = '';
+  String _initialPhone = '';
 
   @override
   void initState() {
     super.initState();
+
+    // DEV_MODE auto-fill phone
+    if (kDevMode) {
+      final devPhone = ref.read(devAutoFillPhoneProvider);
+      if (devPhone != null && devPhone.isNotEmpty) {
+        _initialPhone = devPhone;
+        _phone = devPhone;
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(authNotifierProvider.notifier).reset();
-
-      // DEV_MODE auto-fill phone
-      if (kDevMode) {
-        final devPhone = ref.read(devAutoFillPhoneProvider);
-        if (devPhone != null && devPhone.isNotEmpty) {
-          _controller.text = devPhone;
-          setState(() {});
-        }
-      }
     });
   }
 
   bool get _canContinue =>
-      _controller.text.trim().length == 10 ||
-      _controller.text.trim().length == 9;
+      _phone.trim().length == 10 ||
+      _phone.trim().length == 9;
 
   void _onPhoneChanged(String value) {
+    _phone = value;
     ref.read(authNotifierProvider.notifier).clearError();
   }
 
   Future<void> _onContinue() async {
-    _focusNode.unfocus();
-    final raw = _controller.text.trim();
+    final raw = _phone.trim();
     if (!_canContinue) return;
 
     final normalized = PhoneFormatter.normalize(raw);
-    final route =
-        await ref.read(authNotifierProvider.notifier).checkAuthState(normalized);
+    String? route;
+    try {
+      route = await ref
+          .read(authNotifierProvider.notifier)
+          .checkAuthState(normalized)
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException catch (_) {
+      if (mounted) {
+        ref.read(authNotifierProvider.notifier).setError(
+          'Connection timed out. Please check your network and try again.',
+        );
+      }
+      return;
+    }
     if (route != null && mounted) {
       if (route == RouteNames.otpVerify) {
         await KsSuccessMoment.show(
@@ -93,6 +109,11 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                   children: [
                     const SizedBox(height: 16),
                     _buildBackButton(context),
+                    const SizedBox(height: 20),
+
+                    // Brand logo
+                    const Center(child: KsLogo(size: 32)),
+
                     const SizedBox(height: 20),
 
                     // Step ring header
@@ -178,108 +199,45 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
   Widget _buildPhoneInput(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // "Phone Number" label
-          Text(
-            'Phone Number',
-            style: TextStyle(
-              fontFamily: 'BarlowSemiCondensed',
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.0,
-              color: context.ksc.neutral400,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Country code row + input
-          Row(
-              children: [
-                // Ghana flag / +233 / dropdown arrow
-                Container(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _ghanaFlag,
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '+233',
-                        style: TextStyle(
-                          fontFamily: 'BarlowSemiCondensed',
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: context.ksc.white,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        LineAwesomeIcons.angle_down_solid,
-                        size: 12,
-                        color: context.ksc.neutral400,
-                      ),
-                    ],
+          FocusSafeTextField(
+            initialText: _initialPhone.isNotEmpty ? _initialPhone : null,
+            label: 'Phone Number',
+            hint: '024 123 4567',
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
+            onChanged: (v) => _onPhoneChanged(v),
+            prefix: Container(
+              padding: const EdgeInsets.only(right: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _ghanaFlag,
+                    style: const TextStyle(fontSize: 22),
                   ),
-                ),
-
-                // Phone number input
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    onChanged: _onPhoneChanged,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                    ],
+                  const SizedBox(width: 8),
+                  Text(
+                    '+233',
                     style: TextStyle(
                       fontFamily: 'BarlowSemiCondensed',
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                       color: context.ksc.white,
                     ),
-                    cursorColor: context.ksc.accent500,
-                    decoration: InputDecoration(
-                      hintText: '024 123 4567',
-                      hintStyle: TextStyle(
-                        fontFamily: 'BarlowSemiCondensed',
-                        fontSize: 17,
-                        fontWeight: FontWeight.w500,
-                        color: context.ksc.neutral500,
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      filled: true,
-                      fillColor: Colors.transparent,
-                    ),
                   ),
-                ),
-              ],
-            ),
-
-          // Gradient underline
-          const SizedBox(height: 6),
-          Container(
-            height: 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  context.ksc.accent500,
-                  context.ksc.primary500,
-                  Colors.transparent,
+                  const SizedBox(width: 6),
+                  Icon(
+                    LineAwesomeIcons.angle_down_solid,
+                    size: 12,
+                    color: context.ksc.neutral400,
+                  ),
                 ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
               ),
             ),
           ),
-
           const SizedBox(height: 14),
           Text(
             "We'll send a one-time SMS to this number.",

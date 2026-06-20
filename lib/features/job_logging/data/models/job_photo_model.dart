@@ -20,7 +20,7 @@ class JobPhotoModel {
   factory JobPhotoModel.fromJson(Map<String, dynamic> json) => JobPhotoModel(
         id: json['id'] as String,
         jobId: json['job_id'] as String,
-        storagePath: json['storage_path'] as String,
+        storagePath: (json['storage_path'] as String?) ?? '',
         label: json['label'] as String?,
         mediaType: json['media_type'] as String? ?? 'image',
         createdAt: json['created_at'] as String,

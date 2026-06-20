@@ -3,23 +3,31 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../storage/hive_service.dart';
+import '../../features/job_logging/domain/entities/job_entity.dart';
 
 class DataExportService {
   DataExportService._();
 
+  /// Helper to safely extract a typed Map from a dynamic Hive value.
+  /// Returns an empty map if the value is null or not a Map.
+  static Map<String, dynamic> _toMap(dynamic value) {
+    if (value is Map) return value.cast<String, dynamic>();
+    return <String, dynamic>{};
+  }
+
   static Future<void> exportAsJson() async {
     final data = _collectData();
     final json = const JsonEncoder.withIndent('  ').convert(data);
-    final file = await _writeTempFile('keystone_export.json', json);
+    final file = await _writeTempFile('arclock_export.json', json);
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'application/json')],
-      text: 'Keystone data export',
+      text: 'Arclock data export',
     );
   }
 
   static Future<void> exportAsCsv() async {
     final jobs = HiveService.jobs.values.toList();
-    final rawList = jobs.map((j) => Map<String, dynamic>.from(j)).toList();
+    final rawList = jobs.map((j) => _toMap(j)).toList();
     final buffer = StringBuffer();
     buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes,coverImageUrl');
     for (final m in rawList) {
@@ -36,14 +44,14 @@ class DataExportService {
         _csv(m['cover_image_url']),
       ].join(','));
     }
-    final file = await _writeTempFile('keystone_jobs.csv', buffer.toString());
+    final file = await _writeTempFile('arclock_jobs.csv', buffer.toString());
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
-      text: 'Keystone jobs export',
+      text: 'Arclock jobs export',
     );
   }
 
-  static Future<void> exportJobsAsCsv(dynamic selectedJobs) async {
+  static Future<void> exportJobsAsCsv(List<JobEntity> selectedJobs) async {
     final buffer = StringBuffer();
     buffer.writeln('id,serviceType,status,paymentStatus,amountCharged,createdAt,location,notes,customerId,coverImageUrl,partsSummary,partsCost,expensesSummary,expensesTotal,grossProfit');
     for (final job in selectedJobs) {
@@ -52,7 +60,7 @@ class DataExportService {
       String partsSummary = '';
       int partsCost = 0;
       final partMaps = HiveService.jobParts.values
-          .map((j) => Map<String, dynamic>.from(j))
+          .map((j) => _toMap(j))
           .where((p) => p['job_id'] == jobId)
           .toList();
       if (partMaps.isNotEmpty) {
@@ -67,7 +75,7 @@ class DataExportService {
       String expensesSummary = '';
       int expensesTotal = 0;
       final expMaps = HiveService.jobExpenses.values
-          .map((j) => Map<String, dynamic>.from(j))
+          .map((j) => _toMap(j))
           .where((e) => e['job_id'] == jobId)
           .toList();
       if (expMaps.isNotEmpty) {
@@ -99,47 +107,22 @@ class DataExportService {
         _csv(grossProfit / 100.0),
       ].join(','));
     }
-    final file = await _writeTempFile('keystone_selected_jobs.csv', buffer.toString());
+    final file = await _writeTempFile('arclock_selected_jobs.csv', buffer.toString());
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
       text: 'Selected jobs export',
     );
   }
 
-  static Future<void> _exportJobCsv(List<dynamic> jobs, String filename) async {
-    final buffer = StringBuffer();
-    buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),createdAt,location,notes,coverImageUrl');
-    for (final raw in jobs) {
-      final m = Map<String, dynamic>.from(raw);
-      final amount = (m['amount_charged'] as num?)?.toInt();
-      buffer.writeln([
-        _csv(m['id']),
-        _csv(m['service_type']),
-        _csv(m['status']),
-        _csv(m['payment_status']),
-        amount != null ? (amount / 100).toStringAsFixed(2) : '',
-        _csv(m['created_at']),
-        _csv(m['location']),
-        _csv(m['notes']),
-        _csv(m['cover_image_url']),
-      ].join(','));
-    }
-    final file = await _writeTempFile(filename, buffer.toString());
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'text/csv')],
-      text: 'Keystone jobs export',
-    );
-  }
-
   static Map<String, dynamic> _collectData() {
     return {
       'exported_at': DateTime.now().toIso8601String(),
-      'jobs': HiveService.jobs.values.map((e) => Map<String, dynamic>.from(e)).toList(),
-      'customers': HiveService.customers.values.map((e) => Map<String, dynamic>.from(e)).toList(),
-      'notes': HiveService.notes.values.map((e) => Map<String, dynamic>.from(e)).toList(),
-      'service_types': HiveService.serviceTypes.values.map((e) => Map<String, dynamic>.from(e)).toList(),
-      'job_parts': HiveService.jobParts.values.map((e) => Map<String, dynamic>.from(e)).toList(),
-      'job_photos': HiveService.jobPhotos.values.map((e) => Map<String, dynamic>.from(e)).toList(),
+      'jobs': HiveService.jobs.values.map((e) => _toMap(e)).toList(),
+      'customers': HiveService.customers.values.map((e) => _toMap(e)).toList(),
+      'notes': HiveService.notes.values.map((e) => _toMap(e)).toList(),
+      'service_types': HiveService.serviceTypes.values.map((e) => _toMap(e)).toList(),
+      'job_parts': HiveService.jobParts.values.map((e) => _toMap(e)).toList(),
+      'job_photos': HiveService.jobPhotos.values.map((e) => _toMap(e)).toList(),
     };
   }
 
@@ -148,7 +131,7 @@ class DataExportService {
     final buffer = StringBuffer();
     buffer.writeln('name,phone,propertyType,leadSource,location,totalJobs,lastJobDate,notes');
     for (final raw in customers) {
-      final m = Map<String, dynamic>.from(raw);
+      final m = _toMap(raw);
       buffer.writeln([
         _csv(m['full_name']),
         _csv(m['phone_number']),
@@ -160,7 +143,7 @@ class DataExportService {
         _csv(m['notes']),
       ].join(','));
     }
-    final file = await _writeTempFile('keystone_customers.csv', buffer.toString());
+    final file = await _writeTempFile('arclock_customers.csv', buffer.toString());
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
       text: 'Customers export',
@@ -172,7 +155,7 @@ class DataExportService {
     final buffer = StringBuffer();
     buffer.writeln('name,category,brand,model,quantity,costPrice(GHS),salePrice(GHS),location,lowStock,archived');
     for (final raw in items) {
-      final m = Map<String, dynamic>.from(raw);
+      final m = _toMap(raw);
       final costPrice = (m['default_cost_price'] as num?)?.toInt();
       final salePrice = (m['default_sale_price'] as num?)?.toInt();
       buffer.writeln([
@@ -188,7 +171,7 @@ class DataExportService {
         _csv(m['is_archived'] ?? false),
       ].join(','));
     }
-    final file = await _writeTempFile('keystone_inventory.csv', buffer.toString());
+    final file = await _writeTempFile('arclock_inventory.csv', buffer.toString());
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
       text: 'Inventory export',
@@ -200,7 +183,7 @@ class DataExportService {
     final buffer = StringBuffer();
     buffer.writeln('title,description,tags,serviceType,mediaType,createdAt,updatedAt,archived,pinned');
     for (final raw in notes) {
-      final m = Map<String, dynamic>.from(raw);
+      final m = _toMap(raw);
       final tags = (m['tags'] as List<dynamic>?)?.join('; ') ?? '';
       buffer.writeln([
         _csv(m['title']),
@@ -214,7 +197,7 @@ class DataExportService {
         _csv(m['is_pinned'] ?? false),
       ].join(','));
     }
-    final file = await _writeTempFile('keystone_notes.csv', buffer.toString());
+    final file = await _writeTempFile('arclock_notes.csv', buffer.toString());
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
       text: 'Notes export',
@@ -227,7 +210,7 @@ class DataExportService {
     final buffer = StringBuffer();
     buffer.writeln('id,serviceType,status,paymentStatus,amountCharged(GHS),date,location,notes,customerId,coverImageUrl,partsSummary,partsCost(GHS),expensesSummary,expensesTotal(GHS),grossProfit(GHS)');
     for (final raw in jobs) {
-      final m = Map<String, dynamic>.from(raw);
+      final m = _toMap(raw);
       final jobId = m['id'] as String? ?? '';
       final amount = (m['amount_charged'] as num?)?.toInt() ?? 0;
 
@@ -235,7 +218,7 @@ class DataExportService {
       String partsSummary = '';
       int partsCost = 0;
       final partMaps = HiveService.jobParts.values
-          .map((p) => Map<String, dynamic>.from(p))
+          .map((p) => _toMap(p))
           .where((p) => p['job_id'] == jobId)
           .toList();
       if (partMaps.isNotEmpty) {
@@ -251,7 +234,7 @@ class DataExportService {
       String expensesSummary = '';
       int expensesTotal = 0;
       final expMaps = HiveService.jobExpenses.values
-          .map((e) => Map<String, dynamic>.from(e))
+          .map((e) => _toMap(e))
           .where((e) => e['job_id'] == jobId)
           .toList();
       if (expMaps.isNotEmpty) {
@@ -282,7 +265,7 @@ class DataExportService {
         (grossProfit / 100).toStringAsFixed(2),
       ].join(','));
     }
-    final file = await _writeTempFile('keystone_jobs_detailed.csv', buffer.toString());
+    final file = await _writeTempFile('arclock_jobs_detailed.csv', buffer.toString());
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'text/csv')],
       text: 'Detailed jobs export',

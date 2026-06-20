@@ -22,7 +22,7 @@ class JobPartModel {
   factory JobPartModel.fromJson(Map<String, dynamic> json) => JobPartModel(
         id: json['id'] as String,
         jobId: json['job_id'] as String,
-        partName: json['part_name'] as String,
+        partName: (json['part_name'] as String?) ?? '',
         quantity: json['quantity'] as int?,
         unitPrice: json['unit_price'] != null ? (num.parse(json['unit_price'].toString()) * 100).round() : null,
         inventoryItemId: json['inventory_item_id'] as String?,

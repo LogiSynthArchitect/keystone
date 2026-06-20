@@ -8,7 +8,7 @@
 //   - The main app isolate has exclusive write access to the `reminders` box.
 //   - This background worker has exclusive write access to the `background_notified` box.
 //   - This worker READS from these boxes (read-only, safe for concurrent access):
-//       jobs, follow_ups, recurring_schedules, reminders, settings
+//       jobs, follow_ups, recurring_schedules, reminders, settings, inventory_items, customers
 //   - This worker WRITES only to `background_notified` (never opened by main app).
 //
 // DESERIALIZATION WARNING:
@@ -22,15 +22,17 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:keystone/core/storage/hive_service.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/core/constants/app_enums.dart';
-import 'package:keystone/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
+import 'package:arclock/core/storage/hive_service.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/core/constants/app_enums.dart';
+import 'package:arclock/features/recurring_jobs/domain/entities/recurring_schedule_entity.dart';
+import 'package:arclock/features/inventory/domain/entities/inventory_item_entity.dart';
+import 'package:arclock/features/customer_history/domain/entities/customer_entity.dart';
 import '../domain/models/reminder_model.dart';
 import '../domain/models/reminder_thresholds.dart';
 import 'reminder_engine.dart';
 
-const String backgroundTaskName = 'keystone_reminder_check';
+const String backgroundTaskName = 'arclock_reminder_check';
 
 /// Dedicated Hive box for background worker writes.
 /// The main app isolate NEVER opens this box — no file handle collision.
@@ -63,6 +65,8 @@ Future<void> _openReminderBoxes() async {
     HiveService.recurringSchedulesBox,
     HiveService.remindersBox,
     HiveService.settingsBox,
+    HiveService.inventoryItemsBox,
+    HiveService.customersBox,
   ];
   // WRITE-ONLY box (never opened by main app — no file collision)
   final writeBoxes = [_backgroundNotifiedBox];
@@ -100,11 +104,19 @@ Future<void> _runReminderCheck() async {
   // Read recurring schedules from Hive
   final schedules = _readSchedulesFromHive(now);
 
+  // Read inventory items from Hive
+  final inventoryItems = _readInventoryFromHive();
+
+  // Read customers from Hive
+  final customers = _readCustomersFromHive();
+
   // Compute reminders
   final result = ReminderEngine.compute(
     jobs: jobs,
     followUps: followUps,
     recurringSchedules: schedules,
+    inventoryItems: inventoryItems,
+    customers: customers,
     thresholds: thresholds,
     dismissedKeys: dismissedKeys,
     now: now,
@@ -134,13 +146,23 @@ Future<void> _fireNotifications(List<Reminder> reminders) async {
       ReminderType.followUpPending => 'Follow-up Pending',
       ReminderType.followUpNoResponse => 'No Response on Follow-up',
       ReminderType.recurringJobOverdue => 'Recurring Job Overdue',
+      ReminderType.lowStock => 'Low Stock Alert',
+      ReminderType.dormantCustomer => 'Customer Dormant',
     };
 
     final amount = r.amountCharged != null ? 'GHS ${(r.amountCharged! / 100).toStringAsFixed(0)}' : null;
-    final body = [r.jobServiceType, if (amount != null) amount].join(' — ');
+    String body;
+    if (r.type == ReminderType.lowStock) {
+      body = '${r.jobServiceType} — low stock';
+    } else if (r.type == ReminderType.dormantCustomer) {
+      final days = DateTime.now().difference(r.jobDate).inDays;
+      body = '${r.jobServiceType} — no job in $days days';
+    } else {
+      body = [r.jobServiceType, if (amount != null) amount].join(' — ');
+    }
 
     const androidDetails = AndroidNotificationDetails(
-      'keystone_reminders',
+      'arclock_reminders',
       'Job Reminders',
       channelDescription: 'Reminders for unpaid, stuck, and follow-up jobs',
       importance: Importance.high,
@@ -197,6 +219,77 @@ Map<String, Map<String, dynamic>> _readFollowUpsFromHive() {
   } catch (e) {
     print('[KS:WORKMANAGER] Failed to read follow-ups: $e');
     return {};
+  }
+}
+
+List<InventoryItemEntity> _readInventoryFromHive() {
+  try {
+    final box = Hive.box(HiveService.inventoryItemsBox);
+    return box.values
+        .map((e) {
+          final m = e as Map<dynamic, dynamic>;
+          return InventoryItemEntity(
+            id: m['id'] as String? ?? '',
+            userId: m['user_id'] as String? ?? '',
+            category: InventoryItemCategory.values.firstWhere(
+              (c) => c.dbValue == (m['category'] as String? ?? ''),
+              orElse: () => InventoryItemCategory.consumable,
+            ),
+            name: m['name'] as String? ?? '',
+            attributes: (m['attributes'] as Map?)?.cast<String, dynamic>() ?? {},
+            brand: m['brand'] as String?,
+            model: m['model'] as String?,
+            keySpec: m['key_spec'] as String?,
+            material: m['material'] as String?,
+            finish: m['finish'] as String?,
+            dimensions: m['dimensions'] as String?,
+            defaultCostPrice: m['default_cost_price'] as int?,
+            defaultSalePrice: m['default_sale_price'] as int?,
+            quantity: m['quantity'] as int? ?? 0,
+            lowStockThreshold: m['low_stock_threshold'] as int?,
+            location: m['location'] as String?,
+            isArchived: m['is_archived'] as bool? ?? false,
+            snoozeLowStockUntil: m['snooze_low_stock_until'] != null
+                ? DateTime.tryParse(m['snooze_low_stock_until'] as String)
+                : null,
+            createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+            updatedAt: DateTime.tryParse(m['updated_at'] as String? ?? '') ?? DateTime.now(),
+            isDeleted: m['is_deleted'] as bool? ?? false,
+          );
+        })
+        .where((item) => !item.isDeleted)
+        .toList();
+  } catch (e) {
+    print('[KS:WORKMANAGER] Failed to read inventory: $e');
+    return [];
+  }
+}
+
+List<CustomerEntity> _readCustomersFromHive() {
+  try {
+    final box = Hive.box(HiveService.customersBox);
+    return box.values
+        .map((e) {
+          final m = e as Map<dynamic, dynamic>;
+          return CustomerEntity(
+            id: m['id'] as String? ?? '',
+            userId: m['user_id'] as String? ?? '',
+            fullName: m['full_name'] as String? ?? '',
+            phoneNumber: m['phone_number'] as String? ?? '',
+            location: m['location'] as String?,
+            notes: m['notes'] as String?,
+            totalJobs: m['total_jobs'] as int? ?? 0,
+            lastJobAt: m['last_job_at'] != null
+                ? DateTime.tryParse(m['last_job_at'] as String)
+                : null,
+            createdAt: DateTime.tryParse(m['created_at'] as String? ?? '') ?? DateTime.now(),
+            updatedAt: DateTime.tryParse(m['updated_at'] as String? ?? '') ?? DateTime.now(),
+          );
+        })
+        .toList();
+  } catch (e) {
+    print('[KS:WORKMANAGER] Failed to read customers: $e');
+    return [];
   }
 }
 

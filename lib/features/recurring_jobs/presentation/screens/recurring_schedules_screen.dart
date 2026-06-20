@@ -7,7 +7,7 @@ import '../../../../core/widgets/ks_app_bar.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_summary_strip.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/ks_bottom_sheet_scaffold.dart';
 import '../../../../core/widgets/ks_filter_sheet.dart';

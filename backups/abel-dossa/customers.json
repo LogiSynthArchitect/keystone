@@ -1,0 +1,18 @@
+[
+  {
+    "id": "f6d0d84d-19ca-4ec0-a364-b02f12ebdaa4",
+    "user_id": "273649c3-15bc-4026-b9fb-a7f44aa0ec16",
+    "full_name": "Delali",
+    "phone_number": "+233244412931",
+    "location": "East Legon",
+    "notes": null,
+    "total_jobs": 2,
+    "last_job_at": "2026-03-22T22:14:06.444749+00:00",
+    "deleted_at": null,
+    "created_at": "2026-03-20T23:37:42.381776+00:00",
+    "updated_at": "2026-03-22T22:14:06.444749+00:00",
+    "lead_source": null,
+    "property_type": null,
+    "cover_image_url": null
+  }
+]

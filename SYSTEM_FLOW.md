@@ -20,6 +20,93 @@
   │                   │
   │ Enter phone (233) │
   ▼                   │
+─── ALWAYS: requestOtp() ─────────────────
+  │
+  ▼
+[OtpVerify] (6-digit code)
+  │ verifyOTP() → session created
+  │ authStateProvider fires
+  ▼
+[Router — check order]
+  │
+  ├── !hasProfile → [OnboardingScreen]
+  │     │ Step 1: Display Name
+  │     │ Step 2: Service Categories
+  │     │ completeOnboarding() → profile created
+  │     │ Router re-evaluates:
+  │     │   hasProfile=true, needsUpgrade=true → [UpgradeAccount]
+  │     ▼
+  │
+  ├── hasProfile + needsUpgrade → [UpgradeAccount]
+  │     │ enter password → updateUser()
+  │     │ success → prompt PIN/Biometric
+  │     │         → [TransitionScreen] → [Dashboard]
+  │     │ skip (3x max, persistent)
+  │     │         → [TransitionScreen] → [Dashboard]
+  │     ▼
+  │
+  └── hasProfile + !needsUpgrade → [TransitionScreen]
+        │ wait 800ms
+        │ tryAutoLogin()
+        ▼
+┌────────┼────────┐
+│        │        │
+UnlockSuccess  │   UnlockLocked
+│        │        │
+▼        │        ▼
+[Dashboard]    │   [PinEntryScreen]
+               │        │ 3 fails?
+               │        ├──► [PasswordEntry]
+               │        │ correct?
+               │        └──► [TransitionScreen] → [Dashboard]
+               │
+       UnlockNeedsOnline
+               │
+               ▼
+       [StaleDataScreen]
+         │              │
+   "VERIFY"        "PROCEED CACHED"
+   │ refresh           │ (offline only)
+   │ session &         │
+   │ markSync          │
+   ▼                   ▼
+[Dashboard]        [Dashboard]
+
+──────────────────────────────
+  Returning user (fast unlock):
+──────────────────────────────
+[TransitionScreen]
+  │ tryAutoLogin()
+  │   ├── AuthMethod.none → UnlockNeedsNetwork → [PasswordEntry]
+  │   ├── AuthMethod.biometric → authenticate()
+  │   │     ├── success → check session validity
+  │   │     │              ├── session null → UnlockNeedsNetwork → [PasswordEntry]
+  │   │     │              └── session valid → check staleness (24h)
+  │   │     │                    ├── fresh → UnlockSuccess → [Dashboard]
+  │   │     │                    └── stale → UnlockNeedsOnline → [StaleDataScreen]
+  │   │     └── failed → UnlockLocked → [PinEntryScreen]
+  │   └── AuthMethod.pin → check session + staleness (same as biometric)
+  │
+  │ Session loss (auth guard listener):
+  │   supabase.onAuthStateChange
+  │     ├── session == null → clearAll Hive boxes + vault
+  │     └── invalidate(authStateProvider)
+```
+[App Launch] → [Auth Guard: check session]
+                      │
+                ┌─────┴──────┐
+                │ Has session? │
+                └─────┬──────┘
+                 No   │   Yes
+                  │   │
+[LandingScreen] ◄─┘   │
+  │                   │
+  │ "GET STARTED"     │
+  ▼                   │
+[PhoneEntryScreen]    │
+  │                   │
+  │ Enter phone (233) │
+  ▼                   │
 ─── RPC: get_auth_strategy(phone) ─────────────────
   │                   │              │
   ▼                   ▼              ▼
@@ -557,11 +644,11 @@ public.users
 ### Path A: New technician setup
 ```
 Install app → Landing → PhoneEntry (enter 024XXXXXXX)
-  → RPC returns NEW_USER → CreatePassword (create password)
-  → PhoneEntry again (sign in with new password)
-  → BiometricEnroll (setup fingerprint)
+  → OTP sent to phone → OtpVerify (enter 6-digit code)
   → Onboarding Step 1 (enter display name)
   → Onboarding Step 2 (select services)
+  → Create Password (upgrade from phone-only)
+  → PIN/Biometric enrollment prompt
   → Transition → Dashboard
 
 Technician then:

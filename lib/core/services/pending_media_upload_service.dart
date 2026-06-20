@@ -1,8 +1,7 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import '../storage/hive_service.dart';
 import 'cloudinary_service.dart';
 
 class PendingMediaUpload {
@@ -62,12 +61,20 @@ class PendingMediaUpload {
 
 class PendingMediaUploadService {
   final CloudinaryService _cloudinary;
+  Timer? _retryTimer;
 
   static const _boxName = 'pending_media_uploads';
   static const _maxRetries = 3;
   static const _retryDelaySeconds = 60;
 
   PendingMediaUploadService() : _cloudinary = CloudinaryService();
+
+  /// Cancel any pending retry. Call when the service is disposed or
+  /// a full sync cycle completes so stale retries don't fire.
+  void cancelRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+  }
 
   Box _box() => Hive.box(_boxName);
 
@@ -92,7 +99,7 @@ class PendingMediaUploadService {
     this.pending = items;
   }
 
-  Future<int> retryAll({required String Function() getSupabaseUrl}) async {
+  Future<int> retryAll() async {
     final items = pending;
     if (items.isEmpty) return 0;
 
@@ -136,8 +143,9 @@ class PendingMediaUploadService {
   }
 
   void _scheduleRetry() {
-    Future.delayed(Duration(seconds: _retryDelaySeconds), () {
-      retryAll(getSupabaseUrl: () => '');
+    _retryTimer?.cancel();
+    _retryTimer = Timer(const Duration(seconds: _retryDelaySeconds), () {
+      retryAll();
     });
   }
 }

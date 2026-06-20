@@ -1,38 +1,30 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import '../constants/supabase_constants.dart';
 
 class CloudinaryConfig {
   CloudinaryConfig._();
 
   static const String cloudName = String.fromEnvironment('CLOUDINARY_NAME', defaultValue: '');
   static const String apiKey = String.fromEnvironment('CLOUDINARY_API_KEY', defaultValue: '');
-  static const String apiSecret = String.fromEnvironment('CLOUDINARY_API_SECRET', defaultValue: '');
+  static const String uploadPreset = String.fromEnvironment('CLOUDINARY_UPLOAD_PRESET', defaultValue: '');
 
   static bool get isConfigured =>
-      cloudName.isNotEmpty && apiKey.isNotEmpty && apiSecret.isNotEmpty;
+      cloudName.isNotEmpty && apiKey.isNotEmpty && uploadPreset.isNotEmpty;
 
   static String uploadUrlFor(String cn) => 'https://api.cloudinary.com/v1_1/$cn/auto/upload';
   static String get uploadUrl => uploadUrlFor(cloudName);
-  static String destroyUrlFor(String cn, String url) {
-    final isVideo = url.contains('/video/upload/');
-    final isRaw = url.contains('/raw/upload/');
-    final resource = isVideo ? 'video' : isRaw ? 'raw' : 'image';
-    return 'https://api.cloudinary.com/v1_1/$cn/$resource/destroy';
+
+  /// Edge function URL for signed deletion.
+  static String get deleteFunctionUrl {
+    final base = SupabaseConstants.url.replaceAll(RegExp(r'/*$'), '');
+    return '$base/functions/v1/cloudinary-delete';
   }
 }
 
 class CloudinaryService {
-  static int timestamp() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-  static String sign(int ts, String secret) =>
-      sha1.convert(utf8.encode('timestamp=$ts$secret')).toString();
-
-  static String signWithPayload(String payload, String apiSecret) =>
-      sha1.convert(utf8.encode('$payload$apiSecret')).toString();
-
   static String? publicIdFromUrl(String url) {
     try {
       final parts = Uri.parse(url).path.split('/');
@@ -44,24 +36,32 @@ class CloudinaryService {
     }
   }
 
+  /// Extracts resource type segment from a Cloudinary URL.
+  static String _resourceTypeFromUrl(String url) {
+    if (url.contains('/video/upload/')) return 'video';
+    if (url.contains('/raw/upload/')) return 'raw';
+    return 'image';
+  }
+
   Future<bool> deleteMedia(String url) async {
     if (!CloudinaryConfig.isConfigured) return false;
     final publicId = publicIdFromUrl(url);
     if (publicId == null) return false;
+
     try {
-      final ts = timestamp();
-      final payload = 'public_id=$publicId&timestamp=$ts';
-      final sig = signWithPayload(payload, CloudinaryConfig.apiSecret);
       final client = HttpClient();
-      final request = await client.postUrl(Uri.parse(CloudinaryConfig.destroyUrlFor(CloudinaryConfig.cloudName, url)));
-      request.headers.set('Content-Type', 'application/x-www-form-urlencoded');
-      final body = 'public_id=$publicId&api_key=${CloudinaryConfig.apiKey}&timestamp=$ts&signature=$sig';
-      request.write(body);
+      final request = await client.postUrl(Uri.parse(CloudinaryConfig.deleteFunctionUrl));
+      request.headers.set('Content-Type', 'application/json');
+      request.write(jsonEncode({
+        'public_id': publicId,
+        'resource_type': _resourceTypeFromUrl(url),
+      }));
       final response = await request.close();
       final respBody = await response.transform(utf8.decoder).join();
       final json = jsonDecode(respBody) as Map<String, dynamic>;
       return json['result'] == 'ok';
     } catch (_) {
+      debugPrint('[KS:CLOUD] deleteMedia failed for $publicId');
       return false;
     }
   }
@@ -95,9 +95,6 @@ class CloudinaryService {
     if (!CloudinaryConfig.isConfigured) return null;
 
     try {
-      final ts = timestamp();
-      final sig = sign(ts, CloudinaryConfig.apiSecret);
-
       final client = HttpClient();
       final request = await client.postUrl(Uri.parse(CloudinaryConfig.uploadUrl));
       request.headers.set('Content-Type', 'multipart/form-data');
@@ -113,8 +110,7 @@ class CloudinaryService {
       }
 
       writeField('api_key', CloudinaryConfig.apiKey);
-      writeField('timestamp', ts.toString());
-      writeField('signature', sig);
+      writeField('upload_preset', CloudinaryConfig.uploadPreset);
       if (publicId != null) writeField('public_id', publicId);
 
       body.write('--$boundary$nl');

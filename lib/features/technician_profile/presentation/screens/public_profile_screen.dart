@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import '../../../../core/services/seo_service.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/utils/phone_formatter.dart';
@@ -30,7 +31,7 @@ class PublicProfileScreen extends ConsumerWidget {
   Future<void> _openWhatsApp(String number) async {
     try {
       final normalized = PhoneFormatter.normalize(number);
-      await WhatsAppLauncher.openChat(phoneNumber: normalized, message: 'Hello from Keystone Services.');
+      await WhatsAppLauncher.openChat(phoneNumber: normalized, message: 'Hello from Arclock Services.');
     } catch (_) {
       // WhatsApp not installed or invalid number — silently handled
     }
@@ -49,6 +50,21 @@ class PublicProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(publicProfileProvider(slug));
+
+    // Update meta tags for social sharing when profile loads
+    ref.listen(publicProfileProvider(slug), (prev, next) {
+      final profile = next.asData?.value;
+      if (profile != null && prev?.asData?.value != profile) {
+        final desc = profile.bio != null && profile.bio!.isNotEmpty
+            ? '${profile.displayName} — Locksmith in Ghana. ${profile.bio!.length > 120 ? profile.bio!.substring(0, 120) : profile.bio}'
+            : '${profile.displayName} — Locksmith in Ghana. View services and contact on WhatsApp.';
+        SeoService.updateProfileMeta(
+          title: profile.displayName,
+          description: desc,
+          image: profile.photoUrl,
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
@@ -153,14 +169,14 @@ class PublicProfileScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(5),
                   child: SvgPicture.asset(
-                    'assets/logo/keystone_logo.svg',
+                    'assets/logo/arclock_logo.svg',
                     colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
                 ),
               ),
               const SizedBox(width: 10),
               Text(
-                'KEYSTONE',
+                'ARCLOCK',
                 style: AppTextStyles.body.copyWith(
                   color: context.ksc.white,
                   fontWeight: FontWeight.w900,
@@ -391,14 +407,14 @@ class PublicProfileScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SvgPicture.asset(
-              'assets/logo/keystone_logo.svg',
+              'assets/logo/arclock_logo.svg',
               colorFilter: ColorFilter.mode(context.ksc.neutral300, BlendMode.srcIn),
               width: 12,
               height: 12,
             ),
             const SizedBox(width: 6),
             Text(
-              'Made with Keystone',
+              'Made with Arclock',
               style: AppTextStyles.caption.copyWith(
                 color: context.ksc.neutral300,
                 fontWeight: FontWeight.w600,

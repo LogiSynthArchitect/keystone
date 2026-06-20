@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/ks_colors.dart';
 import '../../../../core/widgets/ks_app_bar.dart';
+import '../../../../core/providers/supabase_provider.dart';
 import '../../../technician_profile/presentation/widgets/edit_profile_drawer.dart';
 
 class SetupScreen extends ConsumerStatefulWidget {
@@ -33,9 +34,13 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     }
   }
 
-  void _complete() {
-    HiveService.settings.put('setup_complete', true);
-    context.go(RouteNames.dashboard);
+  void _complete() async {
+    HiveService.auth.put('setup_complete', true);
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      await supabase.from('profiles').update({'setup_complete': true}).eq('user_id', supabase.auth.currentUser!.id);
+    } catch (_) {}
+    if (mounted) context.go(RouteNames.dashboard);
   }
 
   @override
@@ -47,9 +52,13 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         showBack: true,
         actions: [
           TextButton(
-            onPressed: () {
-              HiveService.settings.put('setup_complete', true);
-              context.go(RouteNames.jobs);
+            onPressed: () async {
+              HiveService.auth.put('setup_complete', true);
+              try {
+                final supabase = ref.read(supabaseClientProvider);
+                await supabase.from('profiles').update({'setup_complete': true}).eq('user_id', supabase.auth.currentUser!.id);
+              } catch (_) {}
+              if (mounted) context.go(RouteNames.jobs);
             },
             child: Text('SKIP', style: AppTextStyles.caption.copyWith(color: context.ksc.neutral500, letterSpacing: 1.0)),
           ),

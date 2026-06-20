@@ -11,9 +11,9 @@ class AppConstants {
   static bool get isDev  => environment == AppEnvironment.development;
   static bool get isProd => environment == AppEnvironment.production;
 
-  static const String appName    = String.fromEnvironment('APP_NAME', defaultValue: 'Keystone (Dev)');
+  static const String appName    = String.fromEnvironment('APP_NAME', defaultValue: 'Arclock (Dev)');
   static const String appVersion = '1.0.0';
 
-  static const String webBaseUrl = 'https://keystone-inky-five.vercel.app';
+  static const String webBaseUrl = 'https://arclock-inky-five.vercel.app';
   static const String profileBaseUrl = '$webBaseUrl/p';
 }

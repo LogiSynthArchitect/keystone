@@ -1,3 +1,4 @@
+import '../../../../core/utils/phone_formatter.dart';
 import '../../domain/entities/restock_entity.dart';
 
 class RestockModel {
@@ -12,7 +13,7 @@ class RestockModel {
   final String? notes;
   final String createdAt;
 
-  const RestockModel({
+  RestockModel({
     required this.id,
     required this.itemId,
     required this.userId,
@@ -20,18 +21,20 @@ class RestockModel {
     required this.unitCost,
     required this.totalCost,
     this.vendor,
-    this.supplierPhone,
+    String? supplierPhone,
     this.notes,
     required this.createdAt,
-  });
+  }) : supplierPhone = supplierPhone != null
+          ? PhoneFormatter.normalize(supplierPhone)
+          : null;
 
   factory RestockModel.fromJson(Map<String, dynamic> json) => RestockModel(
     id: json['id'] as String,
-    itemId: json['item_id'] as String,
+    itemId: (json['item_id'] as String?) ?? '',
     userId: json['user_id'] as String,
-    quantity: json['quantity'] as int,
-    unitCost: json['unit_cost'] as int,
-    totalCost: json['total_cost'] as int,
+    quantity: (json['quantity'] as int?) ?? 0,
+    unitCost: (json['unit_cost'] as int?) ?? 0,
+    totalCost: (json['total_cost'] as int?) ?? 0,
     vendor: json['vendor'] as String?,
     supplierPhone: json['supplier_phone'] as String?,
     notes: json['notes'] as String?,

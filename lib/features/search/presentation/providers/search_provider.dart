@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
-import 'package:keystone/features/knowledge_base/domain/entities/knowledge_note_entity.dart';
-import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
-import 'package:keystone/features/customer_history/presentation/providers/customer_providers.dart';
-import 'package:keystone/features/knowledge_base/presentation/providers/notes_providers.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/customer_history/domain/entities/customer_entity.dart';
+import 'package:arclock/features/knowledge_base/domain/entities/knowledge_note_entity.dart';
+import 'package:arclock/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:arclock/features/customer_history/presentation/providers/customer_providers.dart';
+import 'package:arclock/features/knowledge_base/presentation/providers/notes_providers.dart';
 
 class SearchResults {
   final List<JobEntity> jobs;

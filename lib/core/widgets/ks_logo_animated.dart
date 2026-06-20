@@ -40,7 +40,7 @@ class KsLogoAnimated extends StatelessWidget {
               .fadeIn(duration: 400.ms)
               .slideX(begin: 0.5, end: 0, curve: Curves.easeOutBack, duration: 700.ms),
 
-          // 02. THE GOLD KEYSTONE - Drop, Snap, then Infinite Breathing Pulse
+          // 02. THE GOLD ARCLOCK - Drop, Snap, then Infinite Breathing Pulse
           Animate(
             onPlay: (controller) => controller.repeat(reverse: true),
             effects: [
@@ -70,7 +70,7 @@ class KsLogoAnimated extends StatelessWidget {
                 curve: Curves.easeInOutSine
               ),
             ],
-            child: _buildPart('assets/logo/keystone_block.svg', goldFilter),
+            child: _buildPart('assets/logo/arclock_block.svg', goldFilter),
           ),
 
           // 03. THE KEYHOLE - Final Detail (Once)

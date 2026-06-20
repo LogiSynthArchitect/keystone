@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -89,8 +89,9 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
         final supabase = _ref.read(supabaseClientProvider);
         final authId = supabase.auth.currentUser?.id;
         debugPrint('[KS:PRICING] auth.currentUser?.id = $authId');
+
+        // Try server-side RPC if we have a real Supabase auth session
         if (authId != null) {
-          // Try server-side RPC first
           bool seeded = false;
           try {
             seeded = await supabase
@@ -99,38 +100,47 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
           } catch (e) {
             debugPrint('[KS:PRICING] RPC failed: $e');
           }
+          if (seeded) {
+            // Pull seeded types directly
+            debugPrint('[KS:PRICING] pulling seeded types via sync+get');
+            final repo = _ref.read(serviceTypeRepositoryProvider);
+            await repo.syncServiceTypes();
+            final syncedTypes = await repo.getServiceTypes();
+            debugPrint('[KS:PRICING] syncedTypes count: ${syncedTypes.length}');
+            state = AsyncValue.data(syncedTypes);
+            return;
+          }
+        } else {
+          debugPrint('[KS:PRICING] authId is null — trying client-side seed');
+        }
 
-          if (!seeded) {
-            // Client-side fallback: get internal users.id, batch insert defaults
-            debugPrint('[KS:PRICING] falling back to client-side seed');
-            final currentUserAsync = _ref.read(currentUserProvider);
-            debugPrint('[KS:PRICING] currentUserProvider state: $currentUserAsync');
-            final authUser = currentUserAsync.valueOrNull;
-            debugPrint('[KS:PRICING] currentUser: ${authUser?.id} / authId: ${authUser?.authId}');
-            final userId = authUser?.id;
-            if (userId != null) {
-              final now = DateTime.now().toIso8601String();
-              final rows = _defaultServices.map((d) => {
-                    'user_id': userId,
-                    'name': d.$1,
-                    'is_default': true,
-                    'category': d.$2,
-                    'icon_name': d.$3,
-                    'default_price': d.$4,
-                    'created_at': now,
-                    'updated_at': now,
-                  }).toList();
-              debugPrint('[KS:PRICING] inserting ${rows.length} default services for userId=$userId');
-              try {
-                await supabase.from('service_types').insert(rows);
-                debugPrint('[KS:PRICING] batch insert succeeded');
-              } catch (insertErr) {
-                debugPrint('[KS:PRICING] batch insert FAILED: $insertErr');
-                rethrow;
-              }
-            } else {
-              debugPrint('[KS:PRICING] userId is null — cannot seed client-side');
-            }
+        // Client-side fallback: get internal users.id, batch insert defaults
+        // Works in dev mode where supabase.auth.currentUser is null.
+        debugPrint('[KS:PRICING] falling back to client-side seed');
+        final currentUserAsync = _ref.read(currentUserProvider);
+        debugPrint('[KS:PRICING] currentUserProvider state: $currentUserAsync');
+        final authUser = currentUserAsync.valueOrNull;
+        debugPrint('[KS:PRICING] currentUser: ${authUser?.id} / authId: ${authUser?.authId}');
+        final userId = authUser?.id;
+        if (userId != null) {
+          final now = DateTime.now().toIso8601String();
+          final rows = _defaultServices.map((d) => ({
+                'user_id': userId,
+                'name': d.$1,
+                'is_default': true,
+                'category': d.$2,
+                'icon_name': d.$3,
+                'default_price': d.$4,
+                'created_at': now,
+                'updated_at': now,
+              })).toList();
+          debugPrint('[KS:PRICING] inserting ${rows.length} default services for userId=$userId');
+          try {
+            await supabase.from('service_types').insert(rows);
+            debugPrint('[KS:PRICING] batch insert succeeded');
+          } catch (insertErr) {
+            debugPrint('[KS:PRICING] batch insert FAILED: $insertErr');
+            rethrow;
           }
 
           // Pull seeded types
@@ -142,12 +152,36 @@ class ServiceTypeNotifier extends StateNotifier<AsyncValue<List<ServiceTypeEntit
           state = AsyncValue.data(syncedTypes);
           return;
         } else {
-          debugPrint('[KS:PRICING] authId is null — skipping seed entirely');
+          // Dev mode / no real user — serve defaults directly as in-memory entities
+          debugPrint('[KS:PRICING] userId is null — using in-memory defaults');
+          const uuid = Uuid();
+          final now = DateTime.now();
+          final defaultEntities = _defaultServices.map((d) => ServiceTypeEntity(
+            id: uuid.v4(),
+            userId: '', // ephemeral — not persisted
+            name: d.$1,
+            category: d.$2,
+            iconName: d.$3,
+            defaultPrice: d.$4,
+            isDefault: true,
+            createdAt: now,
+            updatedAt: now,
+          )).toList();
+          debugPrint('[KS:PRICING] serving ${defaultEntities.length} in-memory defaults');
+          state = AsyncValue.data(defaultEntities);
+          return;
         }
       }
 
       debugPrint('[KS:PRICING] setting state with ${types.length} types');
-      state = AsyncValue.data(types);
+      // Deduplicate by name — the same default service may be seeded via
+      // RPC, server sync, and client-side fallback with different IDs.
+      final seen = <String>{};
+      final deduped = types.where((t) => seen.add(t.name)).toList();
+      if (deduped.length < types.length) {
+        debugPrint('[KS:PRICING] deduplicated ${types.length - deduped.length} entries');
+      }
+      state = AsyncValue.data(deduped);
     } catch (e, st) {
       debugPrint('[KS:PRICING] CATASTROPHIC ERROR — $e\n$st');
       state = AsyncValue.error(e, st);

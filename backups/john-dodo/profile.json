@@ -1,0 +1,19 @@
+[
+  {
+    "id": "dd9baa7f-7c54-4711-a259-00c7215951e3",
+    "user_id": "f897b65b-33e4-4cea-b702-d6d4cb2b8cd1",
+    "display_name": "John DODO",
+    "bio": "",
+    "photo_url": "",
+    "services": [
+      "car_lock_programming",
+      "door_lock_repair"
+    ],
+    "whatsapp_number": "+233531307502",
+    "is_public": true,
+    "profile_url": "john-dodo",
+    "created_at": "2026-03-20T23:37:54.654978+00:00",
+    "updated_at": "2026-03-20T23:37:54.654978+00:00",
+    "password_created": false
+  }
+]

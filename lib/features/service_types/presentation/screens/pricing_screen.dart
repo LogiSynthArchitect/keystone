@@ -13,7 +13,7 @@ import '../../../../core/widgets/ks_summary_strip.dart';
 import '../../../../core/widgets/search_panel_body.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_confirm_dialog.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_step_drawer.dart';
 import '../../../../core/widgets/ks_success_moment.dart';
 import '../../../../core/widgets/ks_watermark.dart';

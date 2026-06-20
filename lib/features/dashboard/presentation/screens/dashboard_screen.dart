@@ -13,7 +13,8 @@ import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
 
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
+import '../../../../core/config/dev_mode.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/services/demo_data_seeder.dart';
 import '../../../inventory/data/datasources/inventory_local_datasource.dart';
@@ -65,6 +66,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isSeeding = false;
 
   void _handleTitleTap() {
+    if (!kDevMode) return;
     if (_isSeeding) return; // lock — prevents race during active seed
     final now = DateTime.now();
     if (_firstTap == null || now.difference(_firstTap!) > const Duration(seconds: 3)) {
@@ -87,6 +89,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _toggleDemoData() async {
+    if (!kDevMode) return;
     final userId = ref.read(currentUserProvider).valueOrNull?.id;
     if (userId == null) {
       if (mounted) KsSlidingNotification.show(context, message: 'Please log in first', type: KsNotificationType.error);
@@ -160,9 +163,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (jobListState.isLoading) {
       return Scaffold(
         backgroundColor: context.ksc.primary900,
-        appBar: _buildAppBar(context, followUpCount: 0),
-        body: const KsLoadingIndicator(fullScreen: true),
-        bottomNavigationBar: _buildBottomNav(context),
+        appBar: _buildAppBar(context, badgeCount: 0),
       );
     }
 
@@ -170,7 +171,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (jobListState.errorMessage != null) {
       return Scaffold(
         backgroundColor: context.ksc.primary900,
-        appBar: _buildAppBar(context, followUpCount: 0),
+        appBar: _buildAppBar(context, badgeCount: 0),
         body: Center(
           child: KsEmptyState(
             icon: LineAwesomeIcons.exclamation_triangle_solid,
@@ -212,7 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: context.ksc.primary900,
-      appBar: _buildAppBar(context, followUpCount: totalActiveReminders),
+      appBar: _buildAppBar(context, badgeCount: totalActiveReminders),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -308,7 +309,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  KsAppBar _buildAppBar(BuildContext context, {required int followUpCount}) {
+  KsAppBar _buildAppBar(BuildContext context, {required int badgeCount}) {
     return KsAppBar(
       title: "DASHBOARD",
       titleWidget: GestureDetector(
@@ -339,8 +340,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       actions: [
         KsIconWell(
           icon: LineAwesomeIcons.bell_solid,
-          isActive: followUpCount > 0,
-          badgeCount: followUpCount,
+          isActive: badgeCount > 0,
+          badgeCount: badgeCount,
           onTap: () => context.push(RouteNames.reminders),
         ),
         KsIconWell(
@@ -373,6 +374,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildMonthlyProgress(BuildContext context, int monthRevenue) {
     final monthlyTarget = ref.watch(monthlyTargetProvider);
+
+    // No target set — prompt user to set one
+    if (monthlyTarget <= 0) {
+      return GestureDetector(
+        onTap: _showTargetEditDrawer,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [context.ksc.primary800, context.ksc.primary800.withValues(alpha: 0.6)],
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: context.ksc.primary700),
+          ),
+          child: Row(
+            children: [
+              Icon(LineAwesomeIcons.chart_line_solid, size: 20, color: context.ksc.neutral500),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text("Set a monthly revenue target",
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: context.ksc.neutral400, fontWeight: FontWeight.w600)),
+              ),
+              Icon(LineAwesomeIcons.angle_right_solid, size: 16, color: context.ksc.neutral500),
+            ],
+          ),
+        ),
+      );
+    }
+
     final pct = ((monthRevenue / monthlyTarget).clamp(0.0, 1.0) * 100).round();
     return Container(
       padding: const EdgeInsets.all(16),

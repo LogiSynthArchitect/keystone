@@ -26,8 +26,13 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   final _pinController = TextEditingController();
   final _focusNode = FocusNode();
   static const int _codeExpirySeconds = 90;
+  static const int _resendCooldownSeconds = 30;
+  static const int _maxResendAttempts = 3;
   int _codeCountdown = _codeExpirySeconds;
+  int _resendCooldown = 0;
+  int _resendAttempts = 0;
   Timer? _timer;
+  Timer? _resendTimer;
   bool _canVerify = false;
   bool _codeExpired = false;
 
@@ -44,6 +49,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     _pinController.dispose();
     _focusNode.dispose();
     _timer?.cancel();
+    _resendTimer?.cancel();
     super.dispose();
   }
 
@@ -71,34 +77,71 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     });
   }
 
-  String get _formattedCountdown {
-    final min = (_codeCountdown ~/ 60).toString().padLeft(2, '0');
-    final sec = (_codeCountdown % 60).toString().padLeft(2, '0');
-    return '$min:$sec';
-  }
-
   Future<void> _onVerify() async {
     if (_pinController.text.length != 6 || _codeExpired) return;
     _focusNode.unfocus();
-    final success = await ref
-        .read(authNotifierProvider.notifier)
-        .verifyOtp(_pinController.text.trim());
+    bool success;
+    try {
+      success = await ref
+          .read(authNotifierProvider.notifier)
+          .verifyOtp(_pinController.text.trim())
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException catch (_) {
+      ref.read(authNotifierProvider.notifier).setError(
+        'Connection timed out. Please check your network and try again.',
+      );
+      return;
+    }
     if (success && mounted) {
       HapticFeedback.heavyImpact();
       await KsSuccessMoment.show(context, title: 'VERIFIED');
-      if (mounted) context.go(RouteNames.createPassword);
+      if (mounted) context.go(RouteNames.transition);
     }
   }
 
-  void _onResend() {
+  Future<void> _onResend() async {
+    if (_resendCooldown > 0) return;
+    if (_resendAttempts >= _maxResendAttempts) {
+      ref.read(authNotifierProvider.notifier).setError(
+        'Too many resend attempts. Please wait a few minutes and try again.',
+      );
+      return;
+    }
+
     final phone = ref.read(authNotifierProvider).phoneNumber ?? '';
-    ref.read(authNotifierProvider.notifier).requestOtp(phone);
+    try {
+      await ref
+          .read(authNotifierProvider.notifier)
+          .requestOtp(phone)
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException catch (_) {
+      ref.read(authNotifierProvider.notifier).setError(
+        'Connection timed out. Could not resend code.',
+      );
+      return;
+    }
     _pinController.clear();
     setState(() {
       _canVerify = false;
       _codeExpired = false;
+      _resendAttempts++;
+      _resendCooldown = _resendCooldownSeconds;
     });
     _startCodeCountdown();
+    _startResendCooldown();
+  }
+
+  void _startResendCooldown() {
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) { t.cancel(); return; }
+      if (_resendCooldown <= 0) {
+        t.cancel();
+        setState(() {});
+      } else {
+        setState(() => _resendCooldown--);
+      }
+    });
   }
 
   @override
@@ -280,13 +323,20 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   }
 
   Widget _buildCountdownOrResend(BuildContext context) {
-    if (_codeCountdown > 0 && !_codeExpired) {
-      // "Code expires in 0:42"
+    final codeActive = _codeCountdown > 0 && !_codeExpired;
+    final canResend = _resendCooldown <= 0 && _resendAttempts < _maxResendAttempts;
+
+    if (codeActive || (!canResend && _resendCooldown > 0)) {
+      // Show whichever countdown is longer: code expiry or resend cooldown
+      final displayCountdown = codeActive ? _codeCountdown : _resendCooldown;
+      final label = codeActive ? 'Code expires in ' : 'Resend available in ';
+      final min = (displayCountdown ~/ 60).toString().padLeft(2, '0');
+      final sec = (displayCountdown % 60).toString().padLeft(2, '0');
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Code expires in ',
+            label,
             style: TextStyle(
               fontFamily: 'BarlowSemiCondensed',
               fontSize: 12,
@@ -295,7 +345,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
             ),
           ),
           Text(
-            _formattedCountdown,
+            '$min:$sec',
             style: TextStyle(
               fontFamily: 'BarlowSemiCondensed',
               fontSize: 12,
@@ -308,31 +358,52 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     }
 
     // "Code expired? RESEND CODE" — link is accent
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Code expired? ',
-          style: TextStyle(
-            fontFamily: 'BarlowSemiCondensed',
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: context.ksc.neutral500,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Code expired? ',
+              style: TextStyle(
+                fontFamily: 'BarlowSemiCondensed',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: context.ksc.neutral500,
+              ),
+            ),
+            GestureDetector(
+              onTap: canResend ? _onResend : null,
+              child: Text(
+                'RESEND CODE',
+                style: TextStyle(
+                  fontFamily: 'BarlowSemiCondensed',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: canResend ? context.ksc.accent500 : context.ksc.neutral600,
+                ),
+              ),
+            ),
+          ],
         ),
-        GestureDetector(
-          onTap: _onResend,
-          child: Text(
-            'RESEND CODE',
-            style: TextStyle(
-              fontFamily: 'BarlowSemiCondensed',
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.0,
-              color: context.ksc.accent500,
+        if (_resendAttempts >= _maxResendAttempts) ...[
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Text(
+              'USE A DIFFERENT NUMBER',
+              style: TextStyle(
+                fontFamily: 'BarlowSemiCondensed',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: context.ksc.accent500,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     ).animate().fadeIn(delay: 500.ms);
   }

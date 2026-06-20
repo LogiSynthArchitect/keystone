@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:keystone/core/storage/hive_service.dart';
+import 'package:arclock/core/storage/hive_service.dart';
 import '../models/daily_rollup.dart';
 
 /// Date utilities used by the rollup engine.

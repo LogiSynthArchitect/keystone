@@ -7,8 +7,8 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/widgets/ks_badge.dart';
 import '../../../../core/widgets/sync_status_indicator.dart';
-import 'package:keystone/features/customer_history/domain/entities/customer_entity.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/customer_history/domain/entities/customer_entity.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
 import 'job_recovery_sheet.dart';
 
 /// Job list card — info only, no action buttons.

@@ -9,8 +9,8 @@ import '../../../../core/utils/whatsapp_launcher.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/constants/whatsapp_constants.dart';
 import '../../../../core/providers/shared_feature_providers.dart';
-import 'package:keystone/features/job_logging/domain/entities/job_entity.dart';
-import 'package:keystone/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
+import 'package:arclock/features/job_logging/domain/entities/job_entity.dart';
+import 'package:arclock/features/whatsapp_followup/presentation/providers/follow_up_provider.dart';
 import '../providers/editable_followup_provider.dart';
 
 class FollowUpButton extends ConsumerStatefulWidget {

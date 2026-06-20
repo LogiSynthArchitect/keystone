@@ -15,8 +15,10 @@ import '../../../../core/widgets/ks_filter_sheet.dart';
 import '../../../../core/widgets/ks_icon_well.dart';
 import '../../../../core/widgets/ks_button.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/widgets/ks_search_bar.dart';
+import '../../../../core/widgets/ks_error_state.dart';
+import '../../../../core/widgets/ks_shimmer_list.dart';
 import 'log_job_screen.dart';
 import '../providers/job_providers.dart';
 import '../widgets/job_card.dart';
@@ -421,51 +423,18 @@ class _JobListScreenState extends ConsumerState<JobListScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, WidgetRef ref) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LineAwesomeIcons.exclamation_triangle_solid, size: 64, color: context.ksc.error500),
-            const SizedBox(height: 24),
-            Text(
-              "FAILED TO LOAD",
-              style: AppTextStyles.h2.copyWith(color: context.ksc.white, fontWeight: FontWeight.w900, letterSpacing: 1.0),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "Could not load jobs. Check your connection and try again.",
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyLarge.copyWith(color: context.ksc.neutral400, height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            KsButton(
-              label: "TAP TO RETRY",
-              variant: KsButtonVariant.primary,
-              size: KsButtonSize.small,
-              fullWidth: false,
-              onPressed: () => ref.read(jobListProvider.notifier).load(),
-            ),
-          ],
-        ),
-      ),
+    return KsErrorState(
+      subtitle: 'Could not load jobs. Check your connection and try again.',
+      onRetry: () => ref.read(jobListProvider.notifier).load(),
     );
   }
 
   Widget _buildLoadingState() {
-    return ListView.separated(
-      padding: const EdgeInsets.all(24.0),
+    return const KsShimmerList(
       itemCount: 4,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (_, __) => Container(
-        height: 100,
-        decoration: BoxDecoration(
-          color: context.ksc.primary800,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.ksc.primary700),
-        ),
-      ).animate(onPlay: (controller) => controller.repeat()),
+      itemHeight: 100,
+      separatorHeight: 16,
+      shimmerEnabled: false,
     );
   }
 

@@ -15,7 +15,7 @@ import '../../../../core/widgets/ks_confirm_dialog.dart';
 import '../../../../core/widgets/ks_content_drawer.dart';
 import '../../../../core/widgets/ks_empty_state.dart';
 import '../../../../core/widgets/ks_loading_indicator.dart';
-import 'package:keystone/core/widgets/ks_sliding_notification.dart';
+import 'package:arclock/core/widgets/ks_sliding_notification.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../job_logging/presentation/screens/log_job_screen.dart';
 import '../../../job_logging/presentation/providers/job_providers.dart';

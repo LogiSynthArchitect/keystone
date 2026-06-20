@@ -93,8 +93,8 @@ class _NavItem extends StatelessWidget {
               label,
               style: AppTextStyles.caption.copyWith(
                 color: isActive ? activeColor : inactiveColor,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-                fontSize: 9,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 10,
                 letterSpacing: 0.5,
               ),
             ),

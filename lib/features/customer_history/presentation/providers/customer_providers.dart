@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,8 +7,9 @@ import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/duplicate_customer_exception.dart';
 import '../../../../core/providers/supabase_provider.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/providers/sync_queue_provider.dart';
 import '../../../../core/storage/hive_service.dart';
-import 'package:keystone/features/job_logging/presentation/providers/job_providers.dart';
+import 'package:arclock/features/job_logging/presentation/providers/job_providers.dart';
 import '../../data/datasources/customer_remote_datasource.dart';
 import '../../data/datasources/customer_local_datasource.dart';
 import '../../data/repositories/customer_repository_impl.dart';
@@ -34,7 +34,8 @@ final customerRepositoryProvider = Provider<CustomerRepository>(
     ref.watch(customerLocalDatasourceProvider),
     ref.watch(connectivityServiceProvider),
     ref.watch(supabaseClientProvider),
-    ref.watch(jobLocalDatasourceProvider)
+    ref.watch(jobLocalDatasourceProvider),
+    ref.watch(syncQueueServiceProvider),
   ));
 
 final getCustomersUsecaseProvider = Provider<GetCustomersUsecase>(
