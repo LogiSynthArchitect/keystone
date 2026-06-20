@@ -69,7 +69,7 @@ Expected: `Finished supabase db push.` or equivalent success.
 ```bash
 python3 -c "
 import requests
-pat = 'sbp_bbad3bb70accac79e57cd841986be80f2c9705f3'
+pat = '<SUPABASE_PAT>'
 h = {'apikey': pat, 'Authorization': f'Bearer {pat}'}
 r = requests.get('https://api.supabase.com/v1/projects/ifzpdizxitlvjbmzozew/api-keys', headers=h)
 sr_key = next(k['api_key'] for k in r.json() if k['name'] == 'service_role')
@@ -687,7 +687,7 @@ Expected: `Deployed Functions on project ...`
 ```bash
 python3 -c "
 import requests
-pat = 'sbp_bbad3bb70accac79e57cd841986be80f2c9705f3'
+pat = '<SUPABASE_PAT>'
 h = {'apikey': pat, 'Authorization': f'Bearer {pat}'}
 r = requests.patch(
     'https://api.supabase.com/v1/projects/ifzpdizxitlvjbmzozew/functions/delete-account',
@@ -1234,7 +1234,7 @@ Expected: `Deployed Functions on project ...`
 ```bash
 python3 -c "
 import requests
-pat = 'sbp_bbad3bb70accac79e57cd841986be80f2c9705f3'
+pat = '<SUPABASE_PAT>'
 h = {'apikey': pat, 'Authorization': f'Bearer {pat}'}
 r = requests.patch(
     'https://api.supabase.com/v1/projects/ifzpdizxitlvjbmzozew/functions/send-login-otp',
@@ -1288,7 +1288,7 @@ Wait for app to launch, then check that:
 ```bash
 python3 -c "
 import requests, json
-pat = 'sbp_bbad3bb70accac79e57cd841986be80f2c9705f3'
+pat = '<SUPABASE_PAT>'
 h = {'apikey': pat, 'Authorization': f'Bearer {pat}'}
 r = requests.get('https://api.supabase.com/v1/projects/ifzpdizxitlvjbmzozew/api-keys', headers=h)
 sr_key = next(k['api_key'] for k in r.json() if k['name'] == 'service_role')
@@ -1308,7 +1308,7 @@ Expected: 200 with session data or 406 (no data).
 ```bash
 python3 -c "
 import requests
-pat = 'sbp_bbad3bb70accac79e57cd841986be80f2c9705f3'
+pat = '<SUPABASE_PAT>'
 h = {'apikey': pat, 'Authorization': f'Bearer {pat}'}
 r = requests.get('https://api.supabase.com/v1/projects/ifzpdizxitlvjbmzozew/functions', headers=h)
 for f in r.json():
